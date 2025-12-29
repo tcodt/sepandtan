@@ -1,12 +1,210 @@
-import { ModeToggle } from "@/components/common/mode-toggle";
-import { Button } from "@/components/ui/button";
-
 export default function Home() {
   return (
     <div>
-      <h1 className="text-gray-800 text-3xl font-bold">سلام دنیا</h1>
-      <Button>Hey</Button>
-      <ModeToggle />
+      <p>
+        Lorem ipsum dolor sit amet consectetur adipisicing elit. Omnis
+        provident, blanditiis nemo ducimus modi, sed asperiores in praesentium
+        sit, officia ipsa tenetur quo debitis fuga cumque perspiciatis quasi
+        doloribus alias!
+      </p>
+      <p>
+        Lorem ipsum dolor sit amet consectetur adipisicing elit. Omnis
+        provident, blanditiis nemo ducimus modi, sed asperiores in praesentium
+        sit, officia ipsa tenetur quo debitis fuga cumque perspiciatis quasi
+        doloribus alias!
+      </p>
+      <p>
+        Lorem ipsum dolor sit amet consectetur adipisicing elit. Omnis
+        provident, blanditiis nemo ducimus modi, sed asperiores in praesentium
+        sit, officia ipsa tenetur quo debitis fuga cumque perspiciatis quasi
+        doloribus alias!
+      </p>
+      <p>
+        Lorem ipsum dolor sit amet consectetur adipisicing elit. Omnis
+        provident, blanditiis nemo ducimus modi, sed asperiores in praesentium
+        sit, officia ipsa tenetur quo debitis fuga cumque perspiciatis quasi
+        doloribus alias!
+      </p>
+      <p>
+        Lorem ipsum dolor sit amet consectetur adipisicing elit. Omnis
+        provident, blanditiis nemo ducimus modi, sed asperiores in praesentium
+        sit, officia ipsa tenetur quo debitis fuga cumque perspiciatis quasi
+        doloribus alias!
+      </p>
+      <p>
+        Lorem ipsum dolor sit amet consectetur adipisicing elit. Omnis
+        provident, blanditiis nemo ducimus modi, sed asperiores in praesentium
+        sit, officia ipsa tenetur quo debitis fuga cumque perspiciatis quasi
+        doloribus alias!
+      </p>
+      <p>
+        Lorem ipsum dolor sit amet consectetur adipisicing elit. Omnis
+        provident, blanditiis nemo ducimus modi, sed asperiores in praesentium
+        sit, officia ipsa tenetur quo debitis fuga cumque perspiciatis quasi
+        doloribus alias!
+      </p>
+      <p>
+        Lorem ipsum dolor sit amet consectetur adipisicing elit. Omnis
+        provident, blanditiis nemo ducimus modi, sed asperiores in praesentium
+        sit, officia ipsa tenetur quo debitis fuga cumque perspiciatis quasi
+        doloribus alias!
+      </p>
+      <p>
+        Lorem ipsum dolor sit amet consectetur adipisicing elit. Omnis
+        provident, blanditiis nemo ducimus modi, sed asperiores in praesentium
+        sit, officia ipsa tenetur quo debitis fuga cumque perspiciatis quasi
+        doloribus alias!
+      </p>
+      <p>
+        Lorem ipsum dolor sit amet consectetur adipisicing elit. Omnis
+        provident, blanditiis nemo ducimus modi, sed asperiores in praesentium
+        sit, officia ipsa tenetur quo debitis fuga cumque perspiciatis quasi
+        doloribus alias!
+      </p>
+      <p>
+        Lorem ipsum dolor sit amet consectetur adipisicing elit. Omnis
+        provident, blanditiis nemo ducimus modi, sed asperiores in praesentium
+        sit, officia ipsa tenetur quo debitis fuga cumque perspiciatis quasi
+        doloribus alias!
+      </p>
+      <p>
+        Lorem ipsum dolor sit amet consectetur adipisicing elit. Omnis
+        provident, blanditiis nemo ducimus modi, sed asperiores in praesentium
+        sit, officia ipsa tenetur quo debitis fuga cumque perspiciatis quasi
+        doloribus alias!
+      </p>
+      <p>
+        Lorem ipsum dolor sit amet consectetur adipisicing elit. Omnis
+        provident, blanditiis nemo ducimus modi, sed asperiores in praesentium
+        sit, officia ipsa tenetur quo debitis fuga cumque perspiciatis quasi
+        doloribus alias!
+      </p>
+      <p>
+        Lorem ipsum dolor sit amet consectetur adipisicing elit. Omnis
+        provident, blanditiis nemo ducimus modi, sed asperiores in praesentium
+        sit, officia ipsa tenetur quo debitis fuga cumque perspiciatis quasi
+        doloribus alias!
+      </p>
+      <p>
+        Lorem ipsum dolor sit amet consectetur adipisicing elit. Omnis
+        provident, blanditiis nemo ducimus modi, sed asperiores in praesentium
+        sit, officia ipsa tenetur quo debitis fuga cumque perspiciatis quasi
+        doloribus alias!
+      </p>
+      <p>
+        Lorem ipsum dolor sit amet consectetur adipisicing elit. Omnis
+        provident, blanditiis nemo ducimus modi, sed asperiores in praesentium
+        sit, officia ipsa tenetur quo debitis fuga cumque perspiciatis quasi
+        doloribus alias!
+      </p>
+      <p>
+        Lorem ipsum dolor sit amet consectetur adipisicing elit. Omnis
+        provident, blanditiis nemo ducimus modi, sed asperiores in praesentium
+        sit, officia ipsa tenetur quo debitis fuga cumque perspiciatis quasi
+        doloribus alias!
+      </p>
+      <p>
+        Lorem ipsum dolor sit amet consectetur adipisicing elit. Omnis
+        provident, blanditiis nemo ducimus modi, sed asperiores in praesentium
+        sit, officia ipsa tenetur quo debitis fuga cumque perspiciatis quasi
+        doloribus alias!
+      </p>
+      <p>
+        Lorem ipsum dolor sit amet consectetur adipisicing elit. Omnis
+        provident, blanditiis nemo ducimus modi, sed asperiores in praesentium
+        sit, officia ipsa tenetur quo debitis fuga cumque perspiciatis quasi
+        doloribus alias!
+      </p>
+      <p>
+        Lorem ipsum dolor sit amet consectetur adipisicing elit. Omnis
+        provident, blanditiis nemo ducimus modi, sed asperiores in praesentium
+        sit, officia ipsa tenetur quo debitis fuga cumque perspiciatis quasi
+        doloribus alias!
+      </p>
+      <p>
+        Lorem ipsum dolor sit amet consectetur adipisicing elit. Omnis
+        provident, blanditiis nemo ducimus modi, sed asperiores in praesentium
+        sit, officia ipsa tenetur quo debitis fuga cumque perspiciatis quasi
+        doloribus alias!
+      </p>
+      <p>
+        Lorem ipsum dolor sit amet consectetur adipisicing elit. Omnis
+        provident, blanditiis nemo ducimus modi, sed asperiores in praesentium
+        sit, officia ipsa tenetur quo debitis fuga cumque perspiciatis quasi
+        doloribus alias!
+      </p>
+      <p>
+        Lorem ipsum dolor sit amet consectetur adipisicing elit. Omnis
+        provident, blanditiis nemo ducimus modi, sed asperiores in praesentium
+        sit, officia ipsa tenetur quo debitis fuga cumque perspiciatis quasi
+        doloribus alias!
+      </p>
+      <p>
+        Lorem ipsum dolor sit amet consectetur adipisicing elit. Omnis
+        provident, blanditiis nemo ducimus modi, sed asperiores in praesentium
+        sit, officia ipsa tenetur quo debitis fuga cumque perspiciatis quasi
+        doloribus alias!
+      </p>
+      <p>
+        Lorem ipsum dolor sit amet consectetur adipisicing elit. Omnis
+        provident, blanditiis nemo ducimus modi, sed asperiores in praesentium
+        sit, officia ipsa tenetur quo debitis fuga cumque perspiciatis quasi
+        doloribus alias!
+      </p>
+      <p>
+        Lorem ipsum dolor sit amet consectetur adipisicing elit. Omnis
+        provident, blanditiis nemo ducimus modi, sed asperiores in praesentium
+        sit, officia ipsa tenetur quo debitis fuga cumque perspiciatis quasi
+        doloribus alias!
+      </p>
+      <p>
+        Lorem ipsum dolor sit amet consectetur adipisicing elit. Omnis
+        provident, blanditiis nemo ducimus modi, sed asperiores in praesentium
+        sit, officia ipsa tenetur quo debitis fuga cumque perspiciatis quasi
+        doloribus alias!
+      </p>
+      <p>
+        Lorem ipsum dolor sit amet consectetur adipisicing elit. Omnis
+        provident, blanditiis nemo ducimus modi, sed asperiores in praesentium
+        sit, officia ipsa tenetur quo debitis fuga cumque perspiciatis quasi
+        doloribus alias!
+      </p>
+      <p>
+        Lorem ipsum dolor sit amet consectetur adipisicing elit. Omnis
+        provident, blanditiis nemo ducimus modi, sed asperiores in praesentium
+        sit, officia ipsa tenetur quo debitis fuga cumque perspiciatis quasi
+        doloribus alias!
+      </p>
+      <p>
+        Lorem ipsum dolor sit amet consectetur adipisicing elit. Omnis
+        provident, blanditiis nemo ducimus modi, sed asperiores in praesentium
+        sit, officia ipsa tenetur quo debitis fuga cumque perspiciatis quasi
+        doloribus alias!
+      </p>
+      <p>
+        Lorem ipsum dolor sit amet consectetur adipisicing elit. Omnis
+        provident, blanditiis nemo ducimus modi, sed asperiores in praesentium
+        sit, officia ipsa tenetur quo debitis fuga cumque perspiciatis quasi
+        doloribus alias!
+      </p>
+      <p>
+        Lorem ipsum dolor sit amet consectetur adipisicing elit. Omnis
+        provident, blanditiis nemo ducimus modi, sed asperiores in praesentium
+        sit, officia ipsa tenetur quo debitis fuga cumque perspiciatis quasi
+        doloribus alias!
+      </p>
+      <p>
+        Lorem ipsum dolor sit amet consectetur adipisicing elit. Omnis
+        provident, blanditiis nemo ducimus modi, sed asperiores in praesentium
+        sit, officia ipsa tenetur quo debitis fuga cumque perspiciatis quasi
+        doloribus alias!
+      </p>
+      <p>
+        Lorem ipsum dolor sit amet consectetur adipisicing elit. Omnis
+        provident, blanditiis nemo ducimus modi, sed asperiores in praesentium
+        sit, officia ipsa tenetur quo debitis fuga cumque perspiciatis quasi
+        doloribus alias!
+      </p>
     </div>
   );
 }
