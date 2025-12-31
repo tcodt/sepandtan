@@ -29,7 +29,7 @@ export default function Navbar() {
             <DropdownMenuTrigger asChild>
               <Button
                 variant={"default"}
-                className="rounded-full cursor-pointer md:hidden sm:block"
+                className="rounded-full md:hidden sm:block"
               >
                 <UserRound />
               </Button>
@@ -64,7 +64,7 @@ export default function Navbar() {
 
           <Button
             variant={"default"}
-            className="rounded-full cursor-pointer hidden md:flex items-center gap-1"
+            className="rounded-full hidden md:flex items-center gap-1"
           >
             شروع کنید <Flame />
           </Button>
@@ -73,7 +73,7 @@ export default function Navbar() {
 
           <DropdownMenu dir="rtl">
             <DropdownMenuTrigger asChild>
-              <Button variant={"ghost"} className="rounded-full cursor-pointer">
+              <Button variant={"ghost"} className="rounded-full">
                 <Image src="/images/ir.png" alt="flag" width={20} height={20} />
               </Button>
             </DropdownMenuTrigger>
