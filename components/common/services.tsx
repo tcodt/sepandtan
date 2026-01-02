@@ -39,7 +39,9 @@ export default function Services() {
     <section className="my-12 p-4 md:p-8">
       <div className="flex flex-row items-center justify-between">
         <div className="md:w-2/4 w-full">
-          <h3 className="text-xl font-semibold text-forground">چرا سپندتن؟</h3>
+          <h3 className="md:text-2xl text-xl font-semibold text-forground">
+            چرا سپندتن؟
+          </h3>
           <p className="text-sm text-muted-foreground font-medium mt-2 hidden md:block">
             با هوش مصنوعی پیشرفته و تمرکز کامل روی نیازهای واقعی، برنامه‌ای شخصی
             می‌سازیم که واقعاً برای شما کار می‌کند بدون سردرگمی، بدون برنامه‌های
@@ -61,12 +63,12 @@ export default function Services() {
           return (
             <div
               key={service.id}
-              className="bg-muted p-4 rounded-2xl hover:shadow-lg transition-shadow duration-300 text-center"
+              className="bg-muted p-4 rounded-2xl hover:shadow-lg transition-shadow duration-300 text-center border border-border"
             >
               <span className="bg-primary/20 inline-block p-2 rounded-full text-primary">
                 <Icon size={30} />
               </span>
-              <h4 className="text-gray-700 text-sm md:text-base font-semibold my-4">
+              <h4 className="text-gray-700 dark:text-gray-200 text-sm md:text-base font-semibold my-4">
                 {service.title}
               </h4>
               <p className="text-muted-foreground text-xs md:text-sm font-medium leading-normal">
