@@ -9,7 +9,7 @@ import { motion } from "framer-motion";
 export default function HeroSection() {
   return (
     <div className="flex flex-col gap-8 md:gap-20 md:flex-row items-center justify-between relative overflow-hidden bg-muted p-8 md:p-16">
-      <div className="space-y-4">
+      <div className="space-y-4 text-center md:text-start">
         <h1 className="text-3xl md:text-5xl font-extrabold text-foreground leading-tight">
           سپندتن
           <span className="block text-primary">مربی شخصی هوشمند تو</span>
@@ -42,7 +42,7 @@ export default function HeroSection() {
             <span className="text-primary font-semibold">10</span> هزار ورزشکار
           </p>
         </div>
-        <div className="flex items-center gap-4 my-8">
+        <div className="flex items-center justify-center md:justify-start gap-4 my-8">
           <Button variant={"default"} className="rounded-full" size={"lg"}>
             شروع رایگان
           </Button>
@@ -60,9 +60,9 @@ export default function HeroSection() {
         <motion.div
           animate={{ rotate: [0, 10, -10, 0] }}
           transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute bottom-4 left-4 bg-popover py-2 px-4 rounded-2xl shadow-md flex items-center gap-2"
+          className="absolute bottom-4 left-4 bg-popover py-1 px-3 md:py-2 md:px-4 rounded-2xl shadow-md flex items-center gap-2"
         >
-          <div className="p-2 rounded-full bg-green-100 flex items-center justify-center shadow-lg">
+          <div className="p-1 md:p-2 rounded-full bg-green-100 flex items-center justify-center shadow-lg">
             <HeartPulseIcon className="text-green-500" />
           </div>{" "}
           <span className="text-xs text-foreground">ضربان قلب 128 bpm</span>
