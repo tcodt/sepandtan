@@ -1,9 +1,11 @@
 import HeroSection from "@/components/common/hero-section";
+import Services from "@/components/common/services";
 
 export default function Home() {
   return (
     <div>
       <HeroSection />
+      <Services />
 
       <p>
         Lorem ipsum dolor sit amet, consectetur adipisicing elit. Aut magni
