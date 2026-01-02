@@ -63,7 +63,7 @@ export default function Services() {
           return (
             <div
               key={service.id}
-              className="bg-muted p-4 rounded-2xl hover:shadow-lg transition-shadow duration-300 text-center"
+              className="bg-muted p-4 rounded-2xl hover:shadow-lg transition-shadow duration-300 text-center border border-border"
             >
               <span className="bg-primary/20 inline-block p-2 rounded-full text-primary">
                 <Icon size={30} />
