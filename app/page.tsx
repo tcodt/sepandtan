@@ -1,3 +1,4 @@
+import AboutFeature from "@/components/common/about-feature";
 import HeroSection from "@/components/common/hero-section";
 import Services from "@/components/common/services";
 import Usage from "@/components/common/usage";
@@ -8,6 +9,7 @@ export default function Home() {
       <HeroSection />
       <Services />
       <Usage />
+      <AboutFeature />
 
       <p>
         Lorem ipsum dolor sit amet, consectetur adipisicing elit. Aut magni
