@@ -2,14 +2,28 @@
 
 import Image from "next/image";
 import { Button } from "../ui/button";
-import { BotIcon, HeartPulseIcon } from "lucide-react";
+import { BotIcon, BrainCircuitIcon, HeartPulseIcon } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { motion } from "framer-motion";
+import Threads from "../Threads";
 
 export default function HeroSection() {
   return (
-    <div className="flex flex-col gap-8 md:gap-20 md:flex-row items-center justify-between relative overflow-hidden bg-muted p-8 md:p-16">
-      <div className="space-y-4 text-center md:text-start">
+    <section className="flex flex-col gap-8 md:gap-20 md:flex-row items-center justify-between relative overflow-hidden bg-muted p-8 md:p-16 z-10">
+      <div className="absolute -top-32 md:top-0 left-0 w-full h-screen -z-10">
+        <Threads
+          color={[1, 0.47058823529411764, 0.16862745098039217]}
+          amplitude={1.8}
+          distance={0.3}
+          enableMouseInteraction={false}
+        />
+      </div>
+      <div className="space-y-4 text-center md:text-start relative">
+        <div className="absolute -top-20 right-0 py-1 px-3 bg-primary/10 rounded-full border border-primary/40 hidden md:block">
+          <span className="text-xs text-primary font-semibold flex items-center gap-1">
+            <BrainCircuitIcon /> قدرت گرفته از هوش مصنوعی
+          </span>
+        </div>
         <h1 className="text-3xl md:text-5xl font-extrabold text-foreground leading-tight">
           سپندتن
           <span className="block text-primary">مربی شخصی هوشمند تو</span>
@@ -43,10 +57,18 @@ export default function HeroSection() {
           </p>
         </div>
         <div className="flex items-center justify-center md:justify-start gap-4 my-8">
-          <Button variant={"default"} className="rounded-full" size={"lg"}>
+          <Button
+            variant={"default"}
+            className="rounded-full shadow-lg"
+            size={"lg"}
+          >
             شروع رایگان
           </Button>
-          <Button variant={"outline"} className="rounded-full" size={"lg"}>
+          <Button
+            variant={"outline"}
+            className="rounded-full shadow-lg"
+            size={"lg"}
+          >
             برنامه شخصی
             <BotIcon />
           </Button>
@@ -75,6 +97,6 @@ export default function HeroSection() {
           height={600}
         />
       </motion.div>
-    </div>
+    </section>
   );
 }
