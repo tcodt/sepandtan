@@ -11,7 +11,7 @@ export default function Home() {
       <Services />
       <Usage />
       <AboutFeature />
-      <div className="w-full h-screen mb-12 pb-12">
+      <div className="w-full h-[80vh] mb-12 pb-12">
         <h3 className="md:text-2xl text-xl text-center md:text-start text-foreground font-semibold p-4 md:p-8">
           ورزشکاران هفته
         </h3>
