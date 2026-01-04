@@ -61,7 +61,16 @@ export default function AboutFeature() {
             ))}
           </div>
         </div>
-        <div>
+        <div className="relative">
+          <div className="absolute bottom-6 right-6 z-20 w-1/2">
+            <h4 className="text-3xl font-bold text-background mb-2">
+              جایی که فیتنس <span className="text-primary">هوشمند</span> میشود
+            </h4>
+            <p className="text-base font-medium text-muted">
+              اولین برنامه تناسب اندام که با بیولوژی شما سازگار است.
+            </p>
+          </div>
+          <div className="absolute inset-0 bg-black/50 rounded-2xl z-10"></div>
           <Image
             src="/images/dumbbell.jpg"
             alt="Dumbbell"
