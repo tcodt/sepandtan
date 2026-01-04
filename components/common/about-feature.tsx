@@ -63,10 +63,10 @@ export default function AboutFeature() {
         </div>
         <div className="relative">
           <div className="absolute bottom-6 right-6 z-20 w-1/2">
-            <h4 className="text-3xl font-bold text-background mb-2">
+            <h4 className="text-3xl font-bold text-white mb-2">
               جایی که فیتنس <span className="text-primary">هوشمند</span> میشود
             </h4>
-            <p className="text-base font-medium text-muted">
+            <p className="text-base font-medium text-white/70">
               اولین برنامه تناسب اندام که با بیولوژی شما سازگار است.
             </p>
           </div>
