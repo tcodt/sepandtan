@@ -98,6 +98,7 @@ export default function HeroSection() {
           className="object-contain rounded-2xl border border-border"
           width={600}
           height={600}
+          loading="eager"
         />
       </motion.div>
     </section>
