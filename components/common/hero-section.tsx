@@ -5,19 +5,22 @@ import { Button } from "../ui/button";
 import { BotIcon, BrainCircuitIcon, HeartPulseIcon } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { motion } from "framer-motion";
-import Threads from "../Threads";
+// import Threads from "../Threads";
 
 export default function HeroSection() {
   return (
-    <section className="flex flex-col gap-8 md:gap-20 md:flex-row items-center justify-between relative overflow-hidden bg-muted p-8 md:p-16 z-10">
-      <div className="absolute -top-32 md:top-0 left-0 w-full h-screen -z-10">
+    <section
+      className="flex flex-col gap-8 md:gap-20 md:flex-row items-center justify-between relative overflow-hidden bg-muted p-8 md:p-16 z-10"
+      id="hero_section"
+    >
+      {/* <div className="absolute -top-32 md:top-0 left-0 w-full h-screen -z-10">
         <Threads
           color={[1, 0.47058823529411764, 0.16862745098039217]}
           amplitude={1.8}
           distance={0.3}
           enableMouseInteraction={false}
         />
-      </div>
+      </div> */}
       <div className="space-y-4 text-center md:text-start relative">
         <div className="absolute -top-20 right-0 py-1 px-3 bg-primary/10 rounded-full border border-primary/40 hidden md:block">
           <span className="text-xs text-primary font-semibold flex items-center gap-1">
