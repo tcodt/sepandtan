@@ -1,5 +1,6 @@
 import AboutFeature from "@/components/common/about-feature";
 import HeroSection from "@/components/common/hero-section";
+import Plans from "@/components/common/plans";
 import Services from "@/components/common/services";
 import Usage from "@/components/common/usage";
 import DomeGallery from "@/components/DomeGallery";
@@ -17,6 +18,7 @@ export default function Home() {
         </h3>
         <DomeGallery grayscale={false} />
       </div>
+      <Plans />
 
       <p>
         Lorem ipsum dolor sit amet, consectetur adipisicing elit. Aut magni
