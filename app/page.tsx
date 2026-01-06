@@ -3,6 +3,7 @@ import HeroSection from "@/components/common/hero-section";
 import Plans from "@/components/common/plans";
 import Services from "@/components/common/services";
 import Usage from "@/components/common/usage";
+import UserResult from "@/components/common/user-result";
 import DomeGallery from "@/components/DomeGallery";
 
 export default function Home() {
@@ -19,6 +20,7 @@ export default function Home() {
         <DomeGallery grayscale={false} />
       </div>
       <Plans />
+      <UserResult />
 
       <p>
         Lorem ipsum dolor sit amet, consectetur adipisicing elit. Aut magni
