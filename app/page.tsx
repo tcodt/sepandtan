@@ -1,4 +1,5 @@
 import AboutFeature from "@/components/common/about-feature";
+import Footer from "@/components/common/footer";
 import HeroSection from "@/components/common/hero-section";
 import Plans from "@/components/common/plans";
 import Services from "@/components/common/services";
@@ -21,55 +22,7 @@ export default function Home() {
       </div>
       <Plans />
       <UserResult />
-
-      <p>
-        Lorem ipsum dolor sit amet, consectetur adipisicing elit. Aut magni
-        fugiat blanditiis placeat iure atque, accusantium animi cumque ducimus
-        reprehenderit facilis voluptatum consequatur corporis est beatae aperiam
-        cum. Minus, omnis?
-      </p>
-      <p>
-        Lorem ipsum dolor sit amet, consectetur adipisicing elit. Aut magni
-        fugiat blanditiis placeat iure atque, accusantium animi cumque ducimus
-        reprehenderit facilis voluptatum consequatur corporis est beatae aperiam
-        cum. Minus, omnis?
-      </p>
-      <p>
-        Lorem ipsum dolor sit amet, consectetur adipisicing elit. Aut magni
-        fugiat blanditiis placeat iure atque, accusantium animi cumque ducimus
-        reprehenderit facilis voluptatum consequatur corporis est beatae aperiam
-        cum. Minus, omnis?
-      </p>
-      <p>
-        Lorem ipsum dolor sit amet, consectetur adipisicing elit. Aut magni
-        fugiat blanditiis placeat iure atque, accusantium animi cumque ducimus
-        reprehenderit facilis voluptatum consequatur corporis est beatae aperiam
-        cum. Minus, omnis?
-      </p>
-      <p>
-        Lorem ipsum dolor sit amet, consectetur adipisicing elit. Aut magni
-        fugiat blanditiis placeat iure atque, accusantium animi cumque ducimus
-        reprehenderit facilis voluptatum consequatur corporis est beatae aperiam
-        cum. Minus, omnis?
-      </p>
-      <p>
-        Lorem ipsum dolor sit amet, consectetur adipisicing elit. Aut magni
-        fugiat blanditiis placeat iure atque, accusantium animi cumque ducimus
-        reprehenderit facilis voluptatum consequatur corporis est beatae aperiam
-        cum. Minus, omnis?
-      </p>
-      <p>
-        Lorem ipsum dolor sit amet, consectetur adipisicing elit. Aut magni
-        fugiat blanditiis placeat iure atque, accusantium animi cumque ducimus
-        reprehenderit facilis voluptatum consequatur corporis est beatae aperiam
-        cum. Minus, omnis?
-      </p>
-      <p>
-        Lorem ipsum dolor sit amet, consectetur adipisicing elit. Aut magni
-        fugiat blanditiis placeat iure atque, accusantium animi cumque ducimus
-        reprehenderit facilis voluptatum consequatur corporis est beatae aperiam
-        cum. Minus, omnis?
-      </p>
+      <Footer />
     </div>
   );
 }
