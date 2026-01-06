@@ -8,13 +8,13 @@ import {
   DumbbellIcon,
   SearchIcon,
 } from "lucide-react";
-
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useEffect, useState, useRef, useCallback } from "react";
 
 const items = [
   {
@@ -30,9 +30,74 @@ const items = [
 ];
 
 export default function MobileNavigation() {
+  const [isVisible, setIsVisible] = useState(true);
+  const [lastScrollY, setLastScrollY] = useState(0);
+  const navRef = useRef<HTMLDivElement>(null);
+
+  const controlNavbar = useCallback(() => {
+    if (typeof window !== "undefined") {
+      const currentScrollY = window.scrollY;
+
+      // Calculate how close we are to the bottom
+      const windowHeight = window.innerHeight;
+      const documentHeight = document.documentElement.scrollHeight;
+      const scrollPosition = window.scrollY + windowHeight;
+
+      // If we're within 300px of the bottom (footer area), hide the nav
+      const isNearBottom = documentHeight - scrollPosition < 300;
+
+      // If scrolling down OR near bottom, hide navbar
+      if (currentScrollY > lastScrollY || isNearBottom) {
+        setIsVisible(false);
+      }
+      // If scrolling up AND not near bottom, show navbar
+      else if (currentScrollY < lastScrollY && !isNearBottom) {
+        setIsVisible(true);
+      }
+
+      setLastScrollY(currentScrollY);
+    }
+  }, [lastScrollY]);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.addEventListener("scroll", controlNavbar, { passive: true });
+
+      return () => {
+        window.removeEventListener("scroll", controlNavbar);
+      };
+    }
+  }, [controlNavbar]);
+
+  // Also hide nav on page load if user is at bottom
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const checkInitialPosition = () => {
+        const windowHeight = window.innerHeight;
+        const documentHeight = document.documentElement.scrollHeight;
+        const scrollPosition = window.scrollY + windowHeight;
+
+        const isAtBottom = documentHeight - scrollPosition < 400;
+        if (isAtBottom) {
+          setIsVisible(false);
+        }
+      };
+
+      // Check after a short delay to ensure DOM is fully loaded
+      setTimeout(checkInitialPosition, 100);
+    }
+  }, []);
+
   return (
     <TooltipProvider delayDuration={150}>
-      <div className="fixed bottom-4 left-1/2 z-50 w-[98%] max-w-lg -translate-x-1/2 md:hidden">
+      <div
+        ref={navRef}
+        className={`fixed bottom-4 left-1/2 z-50 w-[98%] max-w-lg -translate-x-1/2 md:hidden transition-all duration-300 ease-in-out ${
+          isVisible
+            ? "translate-y-0 opacity-100"
+            : "translate-y-32 opacity-0 pointer-events-none"
+        }`}
+      >
         <div className="relative h-16 bg-popover/60 backdrop-blur-xs border border-default rounded-full shadow-lg">
           {/* Floating center button */}
           <Tooltip>
