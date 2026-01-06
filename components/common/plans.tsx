@@ -195,7 +195,7 @@ export default function Plans() {
                     <p className="text-2xl md:text-3xl font-bold mt-3">
                       <span className="text-primary">{plan.price}</span>
                       <span className="text-xs md:text-sm text-muted-foreground block mt-1">
-                        /ماه
+                        {plan?.featured ? "45 روزه" : "/ماه"}
                       </span>
                     </p>
                   </CardHeader>
@@ -260,7 +260,7 @@ export default function Plans() {
                   <p className="text-2xl md:text-3xl font-bold mt-3">
                     <span className="text-primary">{plan.price}</span>
                     <span className="text-xs md:text-sm text-muted-foreground block mt-1">
-                      /ماه
+                      {plan?.featured ? "45 روزه" : "/ماه"}
                     </span>
                   </p>
                 </CardHeader>
