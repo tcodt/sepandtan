@@ -1,5 +1,4 @@
 import AboutFeature from "@/components/common/about-feature";
-import Footer from "@/components/common/footer";
 import HeroSection from "@/components/common/hero-section";
 import Plans from "@/components/common/plans";
 import Services from "@/components/common/services";
@@ -22,7 +21,6 @@ export default function Home() {
       </div>
       <Plans />
       <UserResult />
-      <Footer />
     </div>
   );
 }

@@ -13,7 +13,6 @@ import {
   Phone,
   Mail,
   Heart,
-  Dumbbell,
   Apple,
   Brain,
   Shield,
@@ -23,6 +22,7 @@ import {
   Clock,
   TrendingUp,
 } from "lucide-react";
+import Image from "next/image";
 
 export default function Footer() {
   return (
@@ -35,13 +35,20 @@ export default function Footer() {
             <div className="flex items-center gap-3 mb-6">
               <div className="relative">
                 <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full"></div>
-                <Dumbbell className="h-8 w-8 text-primary relative z-10" />
+                {/* <Dumbbell className="h-8 w-8 text-primary relative z-10" /> */}
+                <Image
+                  src="/images/main-logo.png"
+                  alt="Logo Footer"
+                  width={80}
+                  height={80}
+                  className="rounded-full object-contain"
+                />
               </div>
               <div>
                 <h2 className="text-2xl font-bold tracking-tight bg-linear-to-r from-primary to-primary/70 bg-clip-text text-transparent">
                   سپندتن
                 </h2>
-                <p className="text-sm text-gray-400">هوش مصنوعی سلامت ایرانی</p>
+                <p className="text-sm text-gray-400">فیتنس با هوش مصنوعی</p>
               </div>
             </div>
             <p className="text-gray-300 mb-6 leading-relaxed">
