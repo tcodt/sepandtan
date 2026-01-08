@@ -179,7 +179,7 @@ export default function Plans() {
                   className={`transition-all duration-300 flex flex-col h-full w-full ${
                     plan.featured
                       ? "border-2 border-primary shadow-lg relative bg-accent"
-                      : "border border-border hover:shadow-lg hover:border-primary"
+                      : "border border-border hover:shadow-lg hover:border-primary bg-muted"
                   }`}
                 >
                   {plan.featured && (
@@ -246,7 +246,7 @@ export default function Plans() {
                 className={`transition-all duration-300 flex flex-col h-full ${
                   plan.featured
                     ? "border-2 border-primary shadow-lg relative bg-accent"
-                    : "border border-border hover:shadow-lg hover:border-primary"
+                    : "border border-border hover:shadow-lg hover:border-primary bg-muted"
                 }`}
               >
                 {plan.featured && (
