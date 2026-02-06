@@ -136,7 +136,7 @@ export default function Plans() {
               // Update slide heights when slide changes
               setTimeout(() => {
                 const slides = document.querySelectorAll(
-                  ".plans-swiper .swiper-slide"
+                  ".plans-swiper .swiper-slide",
                 );
                 let maxHeight = 0;
 
@@ -158,6 +158,7 @@ export default function Plans() {
               // Initial height adjustment
               setTimeout(() => {
                 const slides = swiper.slides;
+                if (!slides || slides.length === 0) return;
                 let maxHeight = 0;
 
                 slides.forEach((slide) => {

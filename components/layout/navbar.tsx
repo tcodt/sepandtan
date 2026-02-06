@@ -22,7 +22,7 @@ import MobileNavigation from "../common/mobile-navigation";
 
 export default function Navbar() {
   return (
-    <header className="w-full bg-popover p-4 border-b border-border">
+    <header className="w-full bg-muted p-4 border-b border-border">
       <nav className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <DropdownMenu dir="rtl">

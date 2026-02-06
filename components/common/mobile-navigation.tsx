@@ -25,7 +25,7 @@ const items = [
   },
   { id: "explore", icon: SearchIcon, label: "اکسپلور", href: "/explore" },
   { id: "ai", icon: BotIcon, label: "هوش مصنوعی", center: true, href: "/ai" },
-  { id: "store", icon: StoreIcon, label: "محصولات", href: "/store" },
+  { id: "store", icon: StoreIcon, label: "فروشگاه", href: "/store" },
   { id: "workouts", icon: DumbbellIcon, label: "حرکات", href: "/workouts" },
 ];
 
