@@ -5,120 +5,21 @@ import { ArrowLeftIcon, ShoppingCartIcon } from "lucide-react";
 import Image from "next/image";
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
+import {
+  Card,
+  CardAction,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import Link from "next/link";
+import { items } from "@/lib/products";
 
 const categories = [
   { id: "all", name: "همه" },
   { id: "apparel", name: "لباس ورزشی" },
   { id: "equipment", name: "تجهیزات" },
   { id: "nutrition", name: "مکمل‌ها" },
-];
-
-const items = [
-  {
-    id: 1,
-    category: "apparel",
-    name: "تی‌شرت ورزشی آبی",
-    price: 150000,
-    image: "/images/store/product-1.webp",
-  },
-  {
-    id: 2,
-    category: "apparel",
-    name: "تی‌شرت ورزشی سیاه",
-    price: 160000,
-    image: "/images/store/product-2.webp",
-  },
-  {
-    id: 3,
-    category: "apparel",
-    name: "تی‌شرت ورزشی قرمز",
-    price: 155000,
-    image: "/images/store/product-3.jpg",
-  },
-  {
-    id: 4,
-    category: "apparel",
-    name: "تی‌شرت ورزشی سفید",
-    price: 145000,
-    image: "/images/store/product-4.jpg",
-  },
-  {
-    id: 5,
-    category: "apparel",
-    name: "تی‌شرت ورزشی خاکستری",
-    price: 150000,
-    image: "/images/store/product-5.jpg",
-  },
-  {
-    id: 6,
-    category: "apparel",
-    name: "تی‌شرت ورزشی سبز",
-    price: 155000,
-    image: "/images/store/product-6.jpg",
-  },
-  {
-    id: 7,
-    category: "nutrition",
-    name: "پروتئین وی",
-    price: 450000,
-    image: "/images/store/supplement-1.webp",
-  },
-  {
-    id: 8,
-    category: "nutrition",
-    name: "کراتین مونوهیدرات",
-    price: 280000,
-    image: "/images/store/supplement-2.webp",
-  },
-  {
-    id: 9,
-    category: "nutrition",
-    name: "BCAA",
-    price: 320000,
-    image: "/images/store/supplement-3.webp",
-  },
-  {
-    id: 10,
-    category: "nutrition",
-    name: "ویتامین مولتی",
-    price: 200000,
-    image: "/images/store/supplement-4.webp",
-  },
-  {
-    id: 11,
-    category: "nutrition",
-    name: "اسپیرولینا",
-    price: 250000,
-    image: "/images/store/supplement-5.webp",
-  },
-  {
-    id: 12,
-    category: "nutrition",
-    name: "آمینو اسید",
-    price: 380000,
-    image: "/images/store/supplement-6.avif",
-  },
-  {
-    id: 13,
-    category: "equipment",
-    name: "دمبل 10 کیلوگرمی",
-    price: 350000,
-    image: "/images/store/dumbbell-1.avif",
-  },
-  {
-    id: 14,
-    category: "equipment",
-    name: "دمبل 20 کیلوگرمی",
-    price: 600000,
-    image: "/images/store/dumbbell-2.webp",
-  },
-  {
-    id: 15,
-    category: "equipment",
-    name: "دمبل 30 کیلوگرمی",
-    price: 850000,
-    image: "/images/store/dumbbell-4.jpg",
-  },
 ];
 
 export default function Store() {
@@ -167,26 +68,36 @@ export default function Store() {
 
         {/* Items */}
         <div className="mt-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-4">
             {filteredItems.length > 0 &&
               filteredItems.map((item) => (
-                <div
+                <Card
                   key={item.id}
-                  className="border border-border rounded-xl p-3 bg-muted flex flex-col gap-8 md:gap-10"
+                  className="p-3 flex flex-col gap-4 md:gap-10"
                 >
-                  <div className="h-40 md:h-80 rounded-xl">
-                    <Image
-                      src={item.image}
-                      alt={item.name}
-                      width={300}
-                      height={300}
-                      className="rounded-xl object-contain"
-                    />
-                  </div>
-                  <h3 className="text-base md:text-lg font-semibold text-foreground line-clamp-1">
-                    {item.name}
-                  </h3>
-                  <div className="flex flex-row md:flex-col-reverse md:gap-4 md:items-end items-center justify-between">
+                  <CardHeader className="h-32 md:h-52 rounded-xl mb-4">
+                    <Link href={`/store/${item.id}`} className="w-full h-full">
+                      <Image
+                        src={item.image}
+                        alt={item.name}
+                        width={200}
+                        height={200}
+                        className="rounded-xl object-contain mx-auto"
+                      />
+                    </Link>
+                  </CardHeader>
+                  <CardTitle className="line-clamp-1">
+                    <Link
+                      href={`/store/${item.id}`}
+                      className="hover:underline"
+                    >
+                      {item.name}
+                    </Link>
+                  </CardTitle>
+                  <CardDescription className="line-clamp-1">
+                    {item.description}
+                  </CardDescription>
+                  <CardAction className="flex flex-row md:flex-col-reverse md:gap-4 md:items-end items-center justify-between w-full">
                     <Button
                       className="w-full mt-2 hidden md:flex items-center gap-2"
                       size={"lg"}
@@ -197,11 +108,11 @@ export default function Store() {
                     <Button className="md:hidden" variant={"default"}>
                       <ShoppingCartIcon />
                     </Button>
-                    <p className="text-sm md:text-base text-muted-foreground font-bold line-clamp-1">
+                    <CardDescription>
                       {item.price.toLocaleString()} تومان
-                    </p>
-                  </div>
-                </div>
+                    </CardDescription>
+                  </CardAction>
+                </Card>
               ))}
           </div>
         </div>
