@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card";
 
 export default function ProductGallery({ product }: any) {
   return (
-    <Card className="p-6 rounded-2xl shadow-md">
+    <Card className="p-6 rounded-2xl border-none shadow-none bg-transparent">
       <div className="relative w-full aspect-square">
         <Image
           src={product.image}
