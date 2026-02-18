@@ -4,6 +4,7 @@ import React from "react";
 import ProductGallery from "./product-gallery";
 import ProductInfo from "./product-info";
 import ProductTabs from "./product-tabs";
+import { Product } from "@/lib/products-type";
 
 type Props = {
   params: Promise<{ id: string }>;
@@ -18,12 +19,12 @@ export default async function ProductDetailPage({ params }: Props) {
   return (
     <div className="container mx-auto py-10 px-4">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-        <ProductGallery product={product} />
-        <ProductInfo product={product} />
+        <ProductGallery product={product as Product} />
+        <ProductInfo product={product as Product} />
       </div>
 
       <div className="mt-12">
-        <ProductTabs product={product} />
+        <ProductTabs product={product as Product} />
       </div>
     </div>
   );
