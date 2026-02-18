@@ -95,7 +95,7 @@ export function CommentsDrawer({
           </div>
         </DrawerHeader>
 
-        <ScrollArea className="flex-1 p-4">
+        <ScrollArea className="flex-1 p-4 h-2/4">
           <div className="space-y-4">
             {productComments.map((comment) => (
               <div key={comment.id} className="flex gap-3 border-b pb-4">
