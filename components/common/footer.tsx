@@ -218,7 +218,7 @@ export default function Footer() {
               {[
                 {
                   icon: <Instagram className="h-5 w-5" />,
-                  href: "#",
+                  href: "https://instagram.com/sepandtan",
                   label: "اینستاگرام",
                 },
                 {
