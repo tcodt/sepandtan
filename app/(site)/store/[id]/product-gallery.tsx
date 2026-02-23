@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { BookmarkIcon, HeartIcon, SendIcon } from "lucide-react";
+import { BookmarkIcon, HeartIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
@@ -12,6 +12,8 @@ import {
 } from "@/components/ui/tooltip";
 import { CommentsDrawer } from "./comments-drawer";
 import { Product } from "@/lib/products-type";
+import ShareDialog from "@/components/common/share-dialog";
+import { toast } from "sonner";
 
 export default function ProductGallery({ product }: { product: Product }) {
   return (
@@ -28,12 +30,31 @@ export default function ProductGallery({ product }: { product: Product }) {
       <div className="flex items-center gap-4">
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button variant={"ghost"}>
+            <Button
+              variant={"ghost"}
+              onClick={() =>
+                toast.success("محصول ذخیره شد!", {
+                  position: "bottom-right",
+                })
+              }
+            >
               <BookmarkIcon />
             </Button>
           </TooltipTrigger>
           <TooltipContent>
             <p>ذخیره</p>
+          </TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            {/* <Button variant={"ghost"}>
+              <SendIcon />
+            </Button> */}
+
+            <ShareDialog title={product.name} />
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>ارسال</p>
           </TooltipContent>
         </Tooltip>
         <Tooltip>
@@ -47,16 +68,6 @@ export default function ProductGallery({ product }: { product: Product }) {
           </TooltipTrigger>
           <TooltipContent>
             <p>علاقه‌مند</p>
-          </TooltipContent>
-        </Tooltip>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button variant={"ghost"}>
-              <SendIcon />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>ارسال</p>
           </TooltipContent>
         </Tooltip>
 
