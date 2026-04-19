@@ -102,8 +102,13 @@ export default function Store() {
                       className="w-full mt-2 hidden md:flex items-center gap-2"
                       size={"lg"}
                     >
-                      افزودن به سبد خرید
-                      <ShoppingCartIcon size={25} />
+                      <Link
+                        href={`/store/${item.id}`}
+                        className="flex items-center gap-2"
+                      >
+                        افزودن به سبد خرید
+                        <ShoppingCartIcon size={25} />
+                      </Link>
                     </Button>
                     <Button className="md:hidden" variant={"default"}>
                       <ShoppingCartIcon />
