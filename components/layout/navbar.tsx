@@ -123,7 +123,7 @@ export default function Navbar() {
               href="/about"
               className={buttonVariants({ variant: "ghost" })}
             >
-              درباره ما
+              اکسپلور
             </Link>
           </li>
         </ul>
