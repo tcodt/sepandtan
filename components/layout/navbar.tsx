@@ -1,3 +1,5 @@
+"use client";
+
 /* eslint-disable @next/next/no-img-element */
 import Link from "next/link";
 import React from "react";
@@ -120,7 +122,7 @@ export default function Navbar() {
           </li>
           <li>
             <Link
-              href="/about"
+              href="/explore"
               className={buttonVariants({ variant: "ghost" })}
             >
               اکسپلور
