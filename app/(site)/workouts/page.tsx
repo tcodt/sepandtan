@@ -1,18 +1,9 @@
 "use client";
+
 import { useState } from "react";
-import {
-  Clock,
-  Flame,
-  Users,
-  Dumbbell,
-  Heart,
-  Sparkles,
-  Award,
-  Zap,
-  TrendingUp,
-} from "lucide-react";
+import { Dumbbell, Heart, Sparkles, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardAction, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
@@ -20,6 +11,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import "swiper/css";
 import "swiper/css/navigation";
 import Image from "next/image";
+import Category from "./_components/category";
 
 // --- Data with more variety ---
 const coaches = [
@@ -221,7 +213,7 @@ export default function Workouts() {
       : workouts.filter((w) => w.category === categoryMap[selected]);
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950" dir="rtl">
+    <main className="min-h-screen bg-gray-50 dark:bg-gray-950" dir="rtl">
       {/* Header */}
       <div className="sticky top-0 z-20 border-b border-gray-100 bg-white/80 backdrop-blur-sm dark:border-gray-800 dark:bg-gray-900/80">
         <div className="container mx-auto px-4 py-4">
@@ -245,6 +237,7 @@ export default function Workouts() {
       <div className="px-4 py-6">
         <div className="grid gap-6 lg:grid-cols-[1fr_280px]">
           <div>
+            {/* Tips */}
             <div className="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <div>
@@ -266,37 +259,14 @@ export default function Workouts() {
             </div>
 
             {/* Categories UI */}
-            <div className="mt-6 flex flex-col md:flex-row items-center justify-between gap-4">
-              <div className="flex items-center gap-3 flex-wrap overflow-x-hidden py-2">
-                {categories.map((cat) => {
-                  const Icon = cat.icon;
-                  const active = selected === cat.id;
-                  return (
-                    <button
-                      key={cat.id}
-                      onClick={() => setSelected(cat.id)}
-                      className={`flex items-center gap-2 cursor-pointer whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition-colors ${
-                        active
-                          ? "bg-orange-500 text-white shadow"
-                          : "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300"
-                      }`}
-                    >
-                      <Icon
-                        className={`h-4 w-4 ${active ? "text-white" : "text-orange-500"}`}
-                      />
-                      <span>{cat.name}</span>
-                      {/* <span className="ml-2 rounded-full bg-white/20 px-2 text-xs">
-                        {cat.count}
-                      </span> */}
-                    </button>
-                  );
-                })}
-              </div>
-              <div className="text-sm text-gray-500 dark:text-gray-400">
-                {filteredWorkouts.length} نتیجه
-              </div>
-            </div>
+            <Category
+              categories={categories}
+              filteredWorkouts={filteredWorkouts.length}
+              selected={selected}
+              onCategoryChange={(categoryId) => setSelected(categoryId)}
+            />
 
+            {/* Workouts */}
             <div className="mt-4 grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
               {filteredWorkouts.map((workout) => (
                 <Card
@@ -317,7 +287,7 @@ export default function Workouts() {
                       </Badge>
                     )}
                   </div>
-                  <CardContent className="p-6">
+                  <CardContent>
                     <div className="flex items-center justify-between gap-3">
                       <Badge className="rounded-full bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-200">
                         {workout.category}
@@ -326,14 +296,14 @@ export default function Workouts() {
                         {workout.duration}
                       </span>
                     </div>
-                    <h3 className="mt-4 text-lg font-semibold text-gray-900 dark:text-gray-100">
+                    <h3 className="mt-4 text-lg font-semibold text-gray-900 dark:text-gray-100 line-clamp-1">
                       {workout.title}
                     </h3>
-                    <p className="mt-2 text-sm leading-6 text-gray-600 dark:text-gray-300">
+                    <p className="mt-2 text-sm leading-6 text-gray-600 dark:text-gray-300 line-clamp-1">
                       {workout.description}
                     </p>
                     <div className="mt-5 space-y-3 text-sm text-gray-500 dark:text-gray-400">
-                      <div className="flex items-center justify-between gap-3">
+                      {/* <div className="flex items-center justify-between gap-3">
                         <span className="flex items-center gap-1">
                           <Clock className="h-4 w-4" /> {workout.duration}
                         </span>
@@ -361,7 +331,7 @@ export default function Workouts() {
                         <span className="text-sm text-gray-600 dark:text-gray-300">
                           تجهیزات: {workout.equipment}
                         </span>
-                      </div>
+                      </div> */}
                       <div className="flex items-center gap-3 pt-3 border-t border-gray-100 text-gray-600 dark:border-gray-800 dark:text-gray-300">
                         <Avatar className="h-10 w-10">
                           <AvatarFallback>
@@ -378,6 +348,11 @@ export default function Workouts() {
                         </div>
                       </div>
                     </div>
+                    <CardAction className="w-full mt-4">
+                      <Button className="w-full" variant={"default"}>
+                        جزئیات بیشتر
+                      </Button>
+                    </CardAction>
                   </CardContent>
                 </Card>
               ))}
@@ -385,19 +360,17 @@ export default function Workouts() {
           </div>
 
           <aside className="space-y-6">
-            <Card className="rounded-3xl bg-white shadow-sm dark:bg-gray-900">
+            <Card className="rounded-3xl bg-linear-to-b from-orange-500 to-orange-400 shadow-sm dark:bg-gray-900 sticky top-24">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      مرور سریع
-                    </p>
-                    <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
+                    <p className="text-sm text-white/50">مرور سریع</p>
+                    <h3 className="text-xl font-semibold text-white dark:text-gray-100">
                       نکات برای انتخاب تمرین
                     </h3>
                   </div>
                 </div>
-                <div className="mt-4 space-y-4 text-sm text-gray-600 dark:text-gray-300">
+                <div className="mt-4 space-y-4 text-sm text-white/70 dark:text-gray-300">
                   <p>
                     تمریناتی را انتخاب کنید که با هدف فیزیکی و زمان شما همخوانی
                     داشته باشند.
@@ -416,6 +389,6 @@ export default function Workouts() {
           </aside>
         </div>
       </div>
-    </div>
+    </main>
   );
 }

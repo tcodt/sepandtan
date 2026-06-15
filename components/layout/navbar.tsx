@@ -131,10 +131,12 @@ export default function Navbar() {
         </ul>
 
         <Link href="/">
-          <img
+          <Image
             src="/images/main-logo.png"
             alt="Logo"
-            className="rounded-full object-cover h-20"
+            className="rounded-full object-cover"
+            height={80}
+            width={80}
           />
         </Link>
       </nav>
