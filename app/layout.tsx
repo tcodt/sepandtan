@@ -16,8 +16,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "SepandTan",
-  description: "SepandTan is a fitness app with an amazing AI coach!",
+  title: "سپندتن",
+  description: "سپندتن، مربی هوشمند تو!",
   icons: {
     icon: "/images/main-logo.png",
     apple: "/images/main-logo.png",
