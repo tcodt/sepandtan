@@ -1,5 +1,7 @@
+"use client";
+
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { persist, createJSONStorage } from "zustand/middleware";
 
 export type BodyInfo = {
   gender: "male" | "female";
@@ -21,7 +23,6 @@ export type Goal =
 export type UserProfile = {
   id: string;
   name: string;
-  lastName: string;
   email?: string;
   phone?: string;
   bodyInfo?: BodyInfo;
@@ -34,6 +35,9 @@ export type UserProfile = {
 type UserState = {
   user: UserProfile | null;
   isAuthenticated: boolean;
+  _hasHydrated: boolean;
+
+  setHasHydrated: (value: boolean) => void;
   setUser: (user: UserProfile) => void;
   updateProfile: (data: Partial<UserProfile>) => void;
   logout: () => void;
@@ -49,8 +53,15 @@ export const useUserStore = create<UserState>()(
     (set, get) => ({
       user: null,
       isAuthenticated: false,
+      _hasHydrated: false,
 
-      setUser: (user) => set({ user, isAuthenticated: true }),
+      setHasHydrated: (value) => set({ _hasHydrated: value }),
+
+      setUser: (user) =>
+        set({
+          user,
+          isAuthenticated: true,
+        }),
 
       updateProfile: (data) => {
         const current = get().user;
@@ -58,15 +69,22 @@ export const useUserStore = create<UserState>()(
         set({ user: { ...current, ...data } });
       },
 
-      logout: () => set({ user: null, isAuthenticated: false }),
+      logout: () =>
+        set({
+          user: null,
+          isAuthenticated: false,
+        }),
 
       completeOnboarding: (data) => {
         const current = get().user;
         if (!current) return;
+
         set({
           user: {
             ...current,
-            ...data,
+            bodyInfo: data.bodyInfo,
+            equipment: data.equipment,
+            goal: data.goal,
             onboardingCompleted: true,
           },
         });
@@ -74,6 +92,28 @@ export const useUserStore = create<UserState>()(
     }),
     {
       name: "sepandtan-user",
+      storage: createJSONStorage(() => localStorage),
+      // فقط این فیلدها ذخیره شوند
+      partialize: (state) => ({
+        user: state.user,
+        isAuthenticated: state.isAuthenticated,
+      }),
+      onRehydrateStorage: () => (state) => {
+        state?.setHasHydrated(true);
+      },
     },
   ),
 );
+
+/** هوک کمکی: صبر تا hydrate تمام شود */
+export function useAuthReady() {
+  const hasHydrated = useUserStore((s) => s._hasHydrated);
+  const isAuthenticated = useUserStore((s) => s.isAuthenticated);
+  const user = useUserStore((s) => s.user);
+
+  return {
+    ready: hasHydrated,
+    isAuthenticated,
+    user,
+  };
+}

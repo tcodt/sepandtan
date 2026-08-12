@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   Flame,
   UserRound,
@@ -36,24 +36,31 @@ const navLinks = [
 
 export default function Navbar() {
   const pathname = usePathname();
-  const { user, isAuthenticated, logout } = useUserStore();
+  const router = useRouter();
+
+  const hasHydrated = useUserStore((s) => s._hasHydrated);
+  const user = useUserStore((s) => s.user);
+  const isAuthenticated = useUserStore((s) => s.isAuthenticated);
+  const logout = useUserStore((s) => s.logout);
+
+  const loggedIn = hasHydrated && isAuthenticated && !!user;
 
   const handleLogout = () => {
     logout();
-    // بعداً می‌تونی router.push("/login") هم اضافه کنی
+    router.replace("/login");
   };
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-border bg-background/80 backdrop-blur-md supports-backdrop-filter:bg-background/70">
-      <nav className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6 overflow-hidden">
-        {/* Right side (RTL): Logo */}
+      <nav className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
+        {/* Logo */}
         <Link href="/" className="flex items-center gap-2 shrink-0">
           <Image
-            src="/images/main-logo-removebg-preview.png"
+            src="/images/main-logo.png"
             alt="سپندتن"
-            width={55}
-            height={55}
-            className="rounded-full object-cover h-14 w-14 dark:bg-white/50"
+            width={44}
+            height={44}
+            className="rounded-full object-cover"
             priority
           />
           <span className="hidden sm:block font-bold text-lg text-foreground">
@@ -61,7 +68,7 @@ export default function Navbar() {
           </span>
         </Link>
 
-        {/* Center: Desktop Links */}
+        {/* Desktop Links */}
         <ul className="hidden lg:flex items-center gap-1">
           {navLinks.map((link) => {
             const isActive =
@@ -91,9 +98,9 @@ export default function Navbar() {
           })}
         </ul>
 
-        {/* Left side (RTL): Actions */}
+        {/* Actions */}
         <div className="flex items-center gap-1.5 sm:gap-2">
-          {/* Language (اختیاری – فعلاً ساده نگه داشتم) */}
+          {/* Language */}
           <DropdownMenu dir="rtl">
             <DropdownMenuTrigger asChild>
               <Button
@@ -143,8 +150,10 @@ export default function Navbar() {
 
           <ModeToggle />
 
-          {/* Auth state */}
-          {isAuthenticated && user ? (
+          {/* Auth UI — بعد از hydrate */}
+          {!hasHydrated ? (
+            <div className="w-20 h-8 rounded-full bg-muted animate-pulse hidden md:block" />
+          ) : loggedIn ? (
             <DropdownMenu dir="rtl">
               <DropdownMenuTrigger asChild>
                 <Button
@@ -186,7 +195,7 @@ export default function Navbar() {
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   onClick={handleLogout}
-                  className="text-destructive focus:text-destructive"
+                  className="text-destructive focus:text-destructive cursor-pointer"
                 >
                   <LogOut className="w-4 h-4" />
                   خروج
@@ -216,7 +225,7 @@ export default function Navbar() {
             </>
           )}
 
-          {/* Mobile user menu */}
+          {/* Mobile menu */}
           <DropdownMenu dir="rtl">
             <DropdownMenuTrigger asChild>
               <Button
@@ -228,7 +237,7 @@ export default function Navbar() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
-              {isAuthenticated && user ? (
+              {!hasHydrated ? null : loggedIn ? (
                 <>
                   <DropdownMenuItem asChild>
                     <Link href="/dashboard" className="flex items-center gap-2">
@@ -251,7 +260,7 @@ export default function Navbar() {
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                     onClick={handleLogout}
-                    className="text-destructive focus:text-destructive"
+                    className="text-destructive focus:text-destructive cursor-pointer"
                   >
                     <LogOut className="w-4 h-4" />
                     خروج

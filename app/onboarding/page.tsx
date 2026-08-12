@@ -2,30 +2,31 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useUserStore } from "@/lib/store/user-store";
-import { OnboardingWizard } from "../../components/onboarding/onboarding-wizard";
+import { OnboardingWizard } from "@/components/onboarding/onboarding-wizard";
+import { useRequireAuth } from "@/hooks/use-require-auth";
 
 export default function OnboardingPage() {
   const router = useRouter();
-  const { isAuthenticated, user } = useUserStore();
+  const { isLoading, isAuthenticated, user } = useRequireAuth({
+    requireOnboarding: false, // اینجا onboarding لازم نیست
+  });
 
   useEffect(() => {
-    // اگر کاربر لاگین نباشد → ثبت‌نام
-    if (!isAuthenticated || !user) {
-      router.replace("/register");
-      return;
-    }
-
-    // اگر قبلاً آنبوردینگ را کامل کرده → داشبورد
-    if (user.onboardingCompleted) {
+    if (isLoading) return;
+    if (isAuthenticated && user?.onboardingCompleted) {
       router.replace("/dashboard");
     }
-  }, [isAuthenticated, user, router]);
+  }, [isLoading, isAuthenticated, user, router]);
 
-  // تا زمانی که چک‌ها انجام شود چیزی نشان نده
-  if (!isAuthenticated || !user || user.onboardingCompleted) {
-    return null;
+  if (isLoading || !isAuthenticated) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+      </div>
+    );
   }
+
+  if (user?.onboardingCompleted) return null;
 
   return <OnboardingWizard />;
 }
