@@ -1,3 +1,5 @@
+![SepandTan Logo](public/images/main-logo.png)
+
 # سپندتن | SepandTan
 
 <div align="center">
