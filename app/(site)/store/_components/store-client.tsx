@@ -26,7 +26,7 @@ const StoreClient = ({ initialItems }: StoreClientProps) => {
   };
 
   return (
-    <main className="p-4 md:p-8">
+    <div className="p-4 md:p-8">
       <div>
         <div className="flex flex-row justify-between items-start">
           <div>
@@ -51,7 +51,7 @@ const StoreClient = ({ initialItems }: StoreClientProps) => {
           <ProductGrid items={filteredItems} />
         </div>
       </div>
-    </main>
+    </div>
   );
 };
 

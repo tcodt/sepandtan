@@ -33,11 +33,11 @@ export default function Footer() {
           {/* Brand & Description */}
           <div className="lg:col-span-1">
             <div className="flex items-center gap-3 mb-6">
-              <div className="relative">
+              <div className="relative bg-white rounded-full w-20 h-20 flex items-center justify-center">
                 <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full"></div>
                 {/* <Dumbbell className="h-8 w-8 text-primary relative z-10" /> */}
                 <Image
-                  src="/images/main-logo.png"
+                  src="/images/main-logo-removebg-preview.png"
                   alt="Logo Footer"
                   width={80}
                   height={80}
@@ -86,6 +86,7 @@ export default function Footer() {
           </div>
 
           {/* Quick Links */}
+          {/* Quick Links */}
           <div>
             <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
               <TrendingUp className="h-5 w-5 text-primary" />
@@ -93,19 +94,19 @@ export default function Footer() {
             </h3>
             <ul className="space-y-3">
               {[
-                { name: "برنامه تمرینی هوشمند", href: "/workout" },
-                { name: "رژیم غذایی شخصی", href: "/nutrition" },
-                { name: "پیگیری پیشرفت", href: "/progress" },
-                { name: "مربی هوش مصنوعی", href: "/ai-coach" },
-                { name: "باشگاه آنلاین", href: "/community" },
-                { name: "وبلاگ سلامت", href: "/blog" },
+                { name: "خانه", href: "/" },
+                { name: "فروشگاه", href: "/store" },
+                { name: "حرکات", href: "/workouts" },
+                { name: "هوش مصنوعی", href: "/ai" },
+                { name: "درباره ما", href: "/about" },
+                { name: "تماس با ما", href: "/contact" },
               ].map((link) => (
                 <li key={link.name}>
                   <Link
                     href={link.href}
                     className="text-gray-300 hover:text-primary transition-colors flex items-center gap-2 group"
                   >
-                    <div className="w-1 h-1 bg-primary rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                    <div className="w-1 h-1 bg-primary rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
                     {link.name}
                   </Link>
                 </li>

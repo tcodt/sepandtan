@@ -213,9 +213,9 @@ export default function Workouts() {
       : workouts.filter((w) => w.category === categoryMap[selected]);
 
   return (
-    <main className="min-h-screen bg-gray-50 dark:bg-gray-950" dir="rtl">
+    <div className="min-h-screen bg-background">
       {/* Header */}
-      <div className="sticky top-0 z-20 border-b border-gray-100 bg-white/80 backdrop-blur-sm dark:border-gray-800 dark:bg-gray-900/80">
+      <div className="sticky top-0 z-20 border-b border-popover bg-popover/80 backdrop-blur-sm dark:border-gray-800">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div>
@@ -238,7 +238,7 @@ export default function Workouts() {
         <div className="grid gap-6 lg:grid-cols-[1fr_280px]">
           <div>
             {/* Tips */}
-            <div className="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+            <div className="rounded-3xl border border-muted bg-muted p-6 shadow-sm dark:border-gray-800">
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <div>
                   <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -271,7 +271,7 @@ export default function Workouts() {
               {filteredWorkouts.map((workout) => (
                 <Card
                   key={workout.id}
-                  className="overflow-hidden rounded-3xl bg-white shadow-sm dark:bg-gray-900"
+                  className="overflow-hidden rounded-3xl bg-muted shadow-sm"
                 >
                   <div className="relative overflow-hidden">
                     <Image
@@ -332,9 +332,9 @@ export default function Workouts() {
                           تجهیزات: {workout.equipment}
                         </span>
                       </div> */}
-                      <div className="flex items-center gap-3 pt-3 border-t border-gray-100 text-gray-600 dark:border-gray-800 dark:text-gray-300">
+                      <div className="flex items-center gap-3 pt-3 border-t border-gray-200 text-gray-600 dark:border-popover dark:text-gray-300">
                         <Avatar className="h-10 w-10">
-                          <AvatarFallback>
+                          <AvatarFallback className="bg-background border border-gray-200 dark:border-popover">
                             {workout.coach.name.split(" ")[0].slice(0, 1)}
                           </AvatarFallback>
                         </Avatar>
@@ -389,6 +389,6 @@ export default function Workouts() {
           </aside>
         </div>
       </div>
-    </main>
+    </div>
   );
 }

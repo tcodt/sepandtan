@@ -1,126 +1,114 @@
-/* eslint-disable @next/next/no-html-link-for-pages */
-
 import Link from "next/link";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Home, Search, ArrowRight, Flame } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Home, Search, AlertCircle } from "lucide-react";
-import "./globals.css";
 
 export default function NotFound() {
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-linear-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-950">
-      <div className="container max-w-2xl">
-        {/* آیکون و هدر */}
+    <div className="min-h-screen flex items-center justify-center bg-background p-4 relative overflow-hidden">
+      {/* Background glow */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-1/4 -right-24 w-80 h-80 bg-primary/10 dark:bg-primary/15 rounded-full blur-3xl" />
+        <div className="absolute bottom-1/4 -left-20 w-64 h-64 bg-primary/5 dark:bg-primary/10 rounded-full blur-3xl" />
+      </div>
+
+      <div className="relative z-10 w-full max-w-lg">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-red-100 dark:bg-red-900/30 mb-6">
-            <AlertCircle className="w-12 h-12 text-red-600 dark:text-red-400" />
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-6">
+            <Flame className="w-8 h-8 text-primary" />
           </div>
-          <h1 className="text-8xl font-bold text-gray-900 dark:text-gray-100 mb-4">
+
+          <h1 className="text-7xl sm:text-8xl font-extrabold text-primary tracking-tight mb-3">
             ۴۰۴
           </h1>
-          <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-200 mb-2">
-            صفحه‌ای که به دنبال آن بودید پیدا نشد!
+          <h2 className="text-xl sm:text-2xl font-bold text-foreground mb-2">
+            صفحه پیدا نشد
           </h2>
+          <p className="text-muted-foreground text-sm sm:text-base max-w-sm mx-auto">
+            آدرسی که وارد کردی وجود ندارد یا جابه‌جا شده. نگران نباش، سریع
+            برمی‌گردونیم‌ت به مسیر درست.
+          </p>
         </div>
 
-        {/* کارت اصلی */}
-        <Card className="shadow-xl border-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm">
-          <CardHeader>
-            <CardTitle className="text-center text-xl">
-              اوه! صفحه گم شده
+        <Card className="border-border bg-card/90 dark:bg-card/80 backdrop-blur-md shadow-xl">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg text-center">
+              چیکار می‌تونی بکنی؟
             </CardTitle>
-            <CardDescription className="text-center text-base">
-              متأسفیم، صفحه‌ای که به دنبال آن هستید وجود ندارد یا حذف شده است.
-              ممکن است آدرس را اشتباه وارد کرده باشید یا صفحه جابه‌جا شده باشد.
+            <CardDescription className="text-center">
+              یکی از گزینه‌های زیر را انتخاب کن
             </CardDescription>
           </CardHeader>
 
-          <CardContent className="space-y-6">
-            {/* باکس پیشنهادات */}
-            <div className="bg-blue-50 dark:bg-blue-950/30 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
-              <h3 className="font-semibold text-blue-900 dark:text-blue-300 mb-3 text-right">
-                راه‌های پیشنهادی:
-              </h3>
-              <ul className="space-y-2 text-blue-800 dark:text-blue-200 text-right">
-                <li className="flex items-center gap-2 justify-start">
-                  <span className="text-blue-500">•</span>
-                  <span>آدرس صفحه را بررسی کنید</span>
-                </li>
-                <li className="flex items-center gap-2 justify-start">
-                  <span className="text-blue-500">•</span>
-                  <span>از منوی اصلی به صفحه مورد نظر بروید</span>
-                </li>
-                <li className="flex items-center gap-2 justify-start">
-                  <span className="text-blue-500">•</span>
-                  <span>با پشتیبانی تماس بگیرید</span>
-                </li>
-              </ul>
-            </div>
-
-            {/* دکمه‌های اقدام */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <Button asChild variant="default" className="gap-2">
-                <a href="/">
+          <CardContent className="space-y-3">
+            <Button asChild className="w-full h-11 justify-between">
+              <Link href="/">
+                <span className="flex items-center gap-2">
                   <Home className="w-4 h-4" />
                   بازگشت به صفحه اصلی
-                </a>
-              </Button>
-
-              <Link
-                href="/search"
-                className={buttonVariants({ variant: "outline" })}
-              >
-                <Search className="w-4 h-4" />
-                جستجو در سایت
+                </span>
+                <ArrowRight className="w-4 h-4 rotate-180" />
               </Link>
-            </div>
-          </CardContent>
+            </Button>
 
-          <CardFooter className="border-t pt-6 flex justify-center">
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              اگر فکر می‌کنید این یک خطاست، لطفاً با تیم پشتیبانی تماس بگیرید
-            </p>
-          </CardFooter>
+            <Button
+              asChild
+              variant="outline"
+              className="w-full h-11 justify-between"
+            >
+              <Link href="/store">
+                <span className="flex items-center gap-2">
+                  <Search className="w-4 h-4" />
+                  رفتن به فروشگاه
+                </span>
+                <ArrowRight className="w-4 h-4 rotate-180" />
+              </Link>
+            </Button>
+
+            <Button
+              asChild
+              variant="outline"
+              className="w-full h-11 justify-between"
+            >
+              <Link href="/contact">
+                <span className="flex items-center gap-2">
+                  <Flame className="w-4 h-4" />
+                  تماس با پشتیبانی
+                </span>
+                <ArrowRight className="w-4 h-4 rotate-180" />
+              </Link>
+            </Button>
+          </CardContent>
         </Card>
 
-        {/* لینک‌های پرکاربرد */}
-        <div className="mt-8 text-center">
-          <div className="flex flex-wrap justify-center gap-4 text-sm">
-            <Link
-              href="/"
-              className="text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-            >
-              صفحه اصلی
-            </Link>
-            <span className="text-gray-300 dark:text-gray-700">|</span>
-            <Link
-              href="/about"
-              className="text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-            >
-              درباره ما
-            </Link>
-            <span className="text-gray-300 dark:text-gray-700">|</span>
-            <Link
-              href="/contact"
-              className="text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-            >
-              تماس با ما
-            </Link>
-            <span className="text-gray-300 dark:text-gray-700">|</span>
-            <Link
-              href="/blog"
-              className="text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-            >
-              وبلاگ
-            </Link>
-          </div>
+        <div className="mt-8 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-sm text-muted-foreground">
+          <Link href="/" className="hover:text-primary transition-colors">
+            خانه
+          </Link>
+          <span className="text-border">|</span>
+          <Link href="/about" className="hover:text-primary transition-colors">
+            درباره ما
+          </Link>
+          <span className="text-border">|</span>
+          <Link
+            href="/contact"
+            className="hover:text-primary transition-colors"
+          >
+            تماس با ما
+          </Link>
+          <span className="text-border">|</span>
+          <Link
+            href="/workouts"
+            className="hover:text-primary transition-colors"
+          >
+            حرکات
+          </Link>
         </div>
       </div>
     </div>
