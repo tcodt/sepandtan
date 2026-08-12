@@ -25,6 +25,7 @@ export type UserProfile = {
   name: string;
   email?: string;
   phone?: string;
+  avatarUrl?: string; // data URL یا لینک سرور
   bodyInfo?: BodyInfo;
   equipment?: Equipment;
   goal?: Goal;

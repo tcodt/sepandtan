@@ -161,7 +161,16 @@ export default function Navbar() {
                   size="sm"
                   className="rounded-full gap-2 hidden md:flex"
                 >
-                  <UserRound className="w-4 h-4" />
+                  {user.avatarUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={user.avatarUrl}
+                      alt={user.name}
+                      className="w-6 h-6 rounded-full object-cover"
+                    />
+                  ) : (
+                    <UserRound className="w-4 h-4" />
+                  )}
                   <span className="max-w-25 truncate">
                     {user.name.split(" ")[0]}
                   </span>
