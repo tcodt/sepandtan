@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import { items } from "@/lib/products";
 import { notFound } from "next/navigation";
 import ProductGallery from "../_components/product-gallery";
-import ProductInfo from "../_components/product-info";
 import ProductTabs from "../_components/product-tabs";
 import { Product } from "@/lib/products-type";
+import ProductInfo from "@/components/store/product-info";
 
 type Props = {
   params: Promise<{ id: string }>;
@@ -34,7 +34,7 @@ export default async function ProductDetailPage({ params }: Props) {
   if (!product) return notFound();
 
   return (
-    <div className="container mx-auto py-10 px-4">
+    <div className="container max-w-6xl mx-auto py-8 sm:py-10 px-4 sm:px-6">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
         <ProductGallery product={product as Product} />
         <ProductInfo product={product as Product} />

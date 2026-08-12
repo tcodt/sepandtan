@@ -1,7 +1,7 @@
 import { items } from "@/lib/products";
 import { Metadata } from "next";
-import StoreClient from "./_components/store-client";
 import { Product } from "@/lib/products-type";
+import StoreClient from "@/components/store/store-client";
 
 export const metadata: Metadata = {
   title: "سپندتن | فروشگاه",

@@ -1,11 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
-import { ArrowRight, User, LogOut, Shield, Info } from "lucide-react";
+import { ArrowRight, User, Shield, Info } from "lucide-react";
 import { toast } from "sonner";
-
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { SettingsSection } from "./settings-section";
@@ -13,12 +11,11 @@ import { SettingsRow } from "./settings-row";
 import { useSettingsStore } from "@/lib/store/settings-store";
 import { useUserStore } from "@/lib/store/user-store";
 import { cn } from "@/lib/utils";
+import { LogoutDialog } from "../common/logout-dialog";
 
 export function SettingsScreen() {
-  const router = useRouter();
   const { theme, setTheme } = useTheme();
   const user = useUserStore((s) => s.user);
-  const logout = useUserStore((s) => s.logout);
 
   const {
     notificationsEnabled,
@@ -38,12 +35,6 @@ export function SettingsScreen() {
     setLanguage,
     setReduceMotion,
   } = useSettingsStore();
-
-  const handleLogout = () => {
-    logout();
-    toast.success("از حساب خارج شدی");
-    router.replace("/login");
-  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -253,14 +244,10 @@ export function SettingsScreen() {
         </SettingsSection>
 
         {/* خروج */}
-        <Button
-          variant="destructive"
-          className="w-full h-11 gap-2"
-          onClick={handleLogout}
-        >
-          <LogOut className="w-4 h-4" />
-          خروج از حساب
-        </Button>
+        <LogoutDialog
+          triggerClassName="w-full h-11 gap-2 bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          triggerLabel="خروج از حساب"
+        />
 
         <p className="text-center text-[11px] text-muted-foreground pb-4">
           سپندتن · نسخه آزمایشی

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import {
   Flame,
   UserRound,
@@ -24,6 +24,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useUserStore } from "@/lib/store/user-store";
 import { cn } from "@/lib/utils";
+import { LogoutDialog } from "../common/logout-dialog";
+import { useCartStore } from "@/lib/store/cart-store";
 
 const navLinks = [
   { href: "/", label: "خانه" },
@@ -36,19 +38,13 @@ const navLinks = [
 
 export default function Navbar() {
   const pathname = usePathname();
-  const router = useRouter();
-
   const hasHydrated = useUserStore((s) => s._hasHydrated);
+  const totalItems = useCartStore((s) => s.totalItems);
+
   const user = useUserStore((s) => s.user);
   const isAuthenticated = useUserStore((s) => s.isAuthenticated);
-  const logout = useUserStore((s) => s.logout);
 
   const loggedIn = hasHydrated && isAuthenticated && !!user;
-
-  const handleLogout = () => {
-    logout();
-    router.replace("/login");
-  };
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-border bg-background/80 backdrop-blur-md supports-backdrop-filter:bg-background/70">
@@ -150,6 +146,15 @@ export default function Navbar() {
 
           <ModeToggle />
 
+          <Link href="/cart" className="relative ...">
+            <ShoppingCart className="w-4 h-4" />
+            {hasHydrated && totalItems() > 0 && (
+              <span className="absolute -top-1 -left-1 min-w-4 h-4 px-1 rounded-full bg-primary text-primary-foreground text-[10px] flex items-center justify-center">
+                {totalItems()}
+              </span>
+            )}
+          </Link>
+
           {/* Auth UI — بعد از hydrate */}
           {!hasHydrated ? (
             <div className="w-20 h-8 rounded-full bg-muted animate-pulse hidden md:block" />
@@ -202,13 +207,15 @@ export default function Navbar() {
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={handleLogout}
-                  className="text-destructive focus:text-destructive cursor-pointer"
-                >
-                  <LogOut className="w-4 h-4" />
-                  خروج
-                </DropdownMenuItem>
+                <LogoutDialog>
+                  <button
+                    type="button"
+                    className="relative flex w-full cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm text-destructive outline-none hover:bg-destructive/10"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    خروج
+                  </button>
+                </LogoutDialog>
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
@@ -267,13 +274,15 @@ export default function Navbar() {
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    onClick={handleLogout}
-                    className="text-destructive focus:text-destructive cursor-pointer"
-                  >
-                    <LogOut className="w-4 h-4" />
-                    خروج
-                  </DropdownMenuItem>
+                  <LogoutDialog>
+                    <button
+                      type="button"
+                      className="relative flex w-full cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm text-destructive outline-none hover:bg-destructive/10"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      خروج
+                    </button>
+                  </LogoutDialog>
                 </>
               ) : (
                 <>
