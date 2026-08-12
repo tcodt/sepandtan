@@ -1,22 +1,33 @@
 "use client";
 
+import { useEffect } from "react";
 import Link from "next/link";
 import { Apple, ChevronLeft } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-
-// ==================== MOCK ====================
-const meals = [
-  { name: "صبحانه", cal: 420, done: true },
-  { name: "میان‌وعده", cal: 180, done: true },
-  { name: "ناهار", cal: 550, done: false },
-  { name: "شام", cal: 480, done: false },
-];
-const totalConsumed = 600;
-const target = 2100;
-// ==============================================
+import { Progress } from "@/components/ui/progress";
+import { useNutritionStore } from "@/lib/store/nutrition-store";
+import { todayMealPlan, mealTypeLabels } from "@/lib/data/nutrition";
 
 export function NutritionSummary() {
+  const {
+    initToday,
+    meals,
+    targetCalories,
+    getSelectedMeal,
+    consumedCalories,
+    eatenCount,
+    totalMeals,
+  } = useNutritionStore();
+
+  useEffect(() => {
+    initToday();
+  }, [initToday]);
+
+  const consumed = consumedCalories();
+  const target = targetCalories;
+  const progress = target > 0 ? Math.min((consumed / target) * 100, 100) : 0;
+
   return (
     <Card className="border-border bg-card/80 dark:bg-card/60 backdrop-blur-sm">
       <CardHeader className="pb-3 flex flex-row items-center justify-between">
@@ -27,40 +38,54 @@ export function NutritionSummary() {
           <div>
             <CardTitle className="text-base">تغذیه امروز</CardTitle>
             <p className="text-xs text-muted-foreground">
-              {totalConsumed.toLocaleString("fa-IR")} از{" "}
-              {target.toLocaleString("fa-IR")} کالری
+              {consumed.toLocaleString("fa-IR")} از{" "}
+              {target.toLocaleString("fa-IR")} کالری · {eatenCount()} از{" "}
+              {totalMeals()} وعده
             </p>
           </div>
         </div>
       </CardHeader>
 
       <CardContent className="space-y-3">
-        {meals.map((meal) => (
-          <div
-            key={meal.name}
-            className="flex items-center justify-between text-sm"
-          >
-            <span
-              className={
-                meal.done
-                  ? "text-muted-foreground line-through"
-                  : "text-foreground"
-              }
-            >
-              {meal.name}
-            </span>
-            <span className="text-muted-foreground">{meal.cal} کالری</span>
-          </div>
-        ))}
+        <Progress value={progress} className="h-2" />
+
+        <div className="space-y-2">
+          {todayMealPlan.map((slot) => {
+            const log = meals.find((m) => m.type === slot.type);
+            const meal = getSelectedMeal(slot.type);
+            if (!log || !meal) return null;
+
+            return (
+              <div
+                key={slot.type}
+                className="flex items-center justify-between gap-3 text-sm"
+              >
+                <span
+                  className={
+                    log.eaten
+                      ? "text-muted-foreground line-through"
+                      : "text-foreground"
+                  }
+                >
+                  {mealTypeLabels[slot.type]}
+                </span>
+                <span className="text-muted-foreground tabular-nums shrink-0">
+                  {meal.calories.toLocaleString("fa-IR")} کالری
+                  {log.eaten ? " ✓" : ""}
+                </span>
+              </div>
+            );
+          })}
+        </div>
 
         <Button
           asChild
           variant="outline"
           size="sm"
-          className="w-full mt-2 gap-1"
+          className="w-full mt-1 gap-1"
         >
           <Link href="/nutrition">
-            مشاهده رژیم کامل
+            مشاهده و ثبت رژیم
             <ChevronLeft className="w-3.5 h-3.5" />
           </Link>
         </Button>
