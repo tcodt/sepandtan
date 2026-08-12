@@ -26,8 +26,8 @@ import {
   SidebarSeparator,
 } from "@/components/ui/sidebar";
 import { useUserStore } from "@/lib/store/user-store";
-import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { LogoutDialog } from "../common/logout-dialog";
 
 // ==================== MOCK HISTORY ====================
 const chatHistory = [
@@ -59,14 +59,7 @@ export function AiSidebar({
   onNewChat,
   onSelectChat,
 }: AiSidebarProps) {
-  const router = useRouter();
   const user = useUserStore((s) => s.user);
-  const logout = useUserStore((s) => s.logout);
-
-  const handleLogout = () => {
-    logout();
-    router.replace("/login");
-  };
 
   return (
     <Sidebar
@@ -158,13 +151,12 @@ export function AiSidebar({
           </div>
           <SidebarMenu>
             <SidebarMenuItem>
-              <SidebarMenuButton
-                onClick={handleLogout}
-                className="text-destructive hover:text-destructive rounded-lg"
-              >
-                <LogOut className="w-4 h-4" />
-                <span>خروج</span>
-              </SidebarMenuButton>
+              <LogoutDialog>
+                <SidebarMenuButton className="text-destructive hover:text-destructive rounded-lg">
+                  <LogOut className="w-4 h-4" />
+                  <span>خروج</span>
+                </SidebarMenuButton>
+              </LogoutDialog>
             </SidebarMenuItem>
           </SidebarMenu>
         </div>
