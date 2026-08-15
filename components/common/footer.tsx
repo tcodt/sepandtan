@@ -13,16 +13,15 @@ import {
   Phone,
   Mail,
   Heart,
-  Apple,
   Brain,
   Shield,
-  Download,
   Award,
   Users,
   Clock,
   TrendingUp,
 } from "lucide-react";
 import Image from "next/image";
+import { InstallPrompt } from "../pwa/install-prompt";
 
 export default function Footer() {
   return (
@@ -58,29 +57,17 @@ export default function Footer() {
             </p>
 
             {/* App Download Buttons */}
+            {/* App install – PWA، نه فروشگاه‌های native */}
             <div className="space-y-3">
               <p className="text-sm font-semibold text-gray-300">
-                دانلود اپلیکیشن
+                نصب اپلیکیشن
+              </p>
+              <p className="text-xs text-gray-400 leading-relaxed">
+                سپندتن را روی صفحه اصلی گوشی اضافه کن تا سریع‌تر به تمرین و رژیم
+                دسترسی داشته باشی.
               </p>
               <div className="flex flex-col sm:flex-row gap-3">
-                <Button className="bg-gray-800 hover:bg-gray-700 text-white border border-gray-700">
-                  <div className="flex items-center gap-2">
-                    <Apple className="h-5 w-5" />
-                    <div className="text-right">
-                      <div className="text-xs">دانلود از</div>
-                      <div className="font-semibold">App Store</div>
-                    </div>
-                  </div>
-                </Button>
-                <Button className="bg-gray-800 hover:bg-gray-700 text-white border border-gray-700">
-                  <div className="flex items-center gap-2">
-                    <Download className="h-5 w-5" />
-                    <div className="text-right">
-                      <div className="text-xs">دانلود از</div>
-                      <div className="font-semibold">Google Play</div>
-                    </div>
-                  </div>
-                </Button>
+                <InstallPrompt variant="footer" />
               </div>
             </div>
           </div>

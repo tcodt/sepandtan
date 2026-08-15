@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -16,12 +16,26 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "سپندتن",
-  description: "سپندتن، مربی هوشمند تو!",
-  icons: {
-    icon: "/images/main-logo.png",
-    apple: "/images/main-logo.png",
+  applicationName: "سپندتن",
+  title: {
+    default: "سپندتن | مربی هوشمند فیتنس",
+    template: "%s | سپندتن",
   },
+  description: "برنامه تمرینی و رژیم شخصی با هوش مصنوعی",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "سپندتن",
+  },
+  formatDetection: {
+    telephone: false,
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#f97316",
+  width: "device-width",
+  initialScale: 1,
 };
 
 export default function RootLayout({

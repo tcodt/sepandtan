@@ -1,6 +1,7 @@
 import Navbar from "@/components/layout/navbar";
 import Footer from "@/components/common/footer";
 import MobileNavigation from "@/components/common/mobile-navigation";
+import { InstallPrompt } from "@/components/pwa/install-prompt";
 
 export default function SiteLayout({
   children,
@@ -13,6 +14,7 @@ export default function SiteLayout({
       <main>{children}</main>
       <Footer />
       <MobileNavigation />
+      <InstallPrompt variant="banner" />
     </>
   );
 }
