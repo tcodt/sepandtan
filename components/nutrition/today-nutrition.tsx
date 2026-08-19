@@ -1,112 +1,261 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Apple, CheckCircle2, Circle, Loader2, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
-import { todayMealPlan, type MealType } from "@/lib/data/nutrition";
-import { useNutritionStore } from "@/lib/store/nutrition-store";
-import { MealCard } from "./meal-card";
-import { ReplaceMealSheet } from "./replace-meal-sheet";
-import { CalorieSummary } from "./calorie-summary";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+import { cn } from "@/lib/utils";
+import { useUserPlan } from "@/hooks/use-user-plan";
+import {
+  getNutritionLogByDate,
+  saveNutritionLog,
+  updateNutritionLog,
+} from "@/lib/api/logs";
+import type { PlanMeal } from "@/lib/types/plan";
+
+const MEAL_LABELS: Record<PlanMeal["type"], string> = {
+  breakfast: "صبحانه",
+  snack: "میان‌وعده",
+  lunch: "ناهار",
+  dinner: "شام",
+};
+
+type MealStatus = "pending" | "eaten" | "skipped" | "replaced";
+
+type LocalMealState = {
+  mealId: string;
+  status: MealStatus;
+};
 
 export function TodayNutrition() {
-  const {
-    initToday,
-    meals,
-    targetCalories,
-    markEaten,
-    replaceMeal,
-    getSelectedMeal,
-    consumedCalories,
-    eatenCount,
-    totalMeals,
-  } = useNutritionStore();
+  const { plan, todayDay, currentDayNumber, isLoading, hasPlan, error, user } =
+    useUserPlan();
 
-  const [replaceType, setReplaceType] = useState<MealType | null>(null);
+  const [mealStates, setMealStates] = useState<LocalMealState[]>([]);
+  const [logId, setLogId] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  const meals = useMemo(() => todayDay?.meals ?? [], [todayDay]);
+  const targetCalories = todayDay?.dailyCaloriesTarget ?? 0;
 
   useEffect(() => {
-    initToday();
-  }, [initToday]);
+    if (!todayDay || !user?.id) return;
 
-  const activeSlot = todayMealPlan.find((s) => s.type === replaceType);
-  const activeLog = meals.find((m) => m.type === replaceType);
+    const today = new Date().toISOString().split("T")[0];
+    const defaults: LocalMealState[] = todayDay.meals.map((m) => ({
+      mealId: m.id,
+      status: "pending" as MealStatus,
+    }));
+    setMealStates(defaults);
+
+    getNutritionLogByDate(user.id, today)
+      .then((log) => {
+        if (!log) return;
+        setLogId(log.id);
+        setMealStates(
+          todayDay.meals.map((m) => {
+            const found = log.meals.find((x) => x.mealId === m.id);
+            return {
+              mealId: m.id,
+              status: (found?.status as MealStatus) || "pending",
+            };
+          }),
+        );
+      })
+      .catch(() => {
+        // اگر API بالا نباشد، با حالت پیش‌فرض ادامه بده
+      });
+  }, [todayDay, user?.id, plan?.id]);
+
+  const consumed = useMemo(() => {
+    return meals.reduce((sum, m) => {
+      const st = mealStates.find((s) => s.mealId === m.id);
+      if (st?.status === "eaten") return sum + m.calories;
+      return sum;
+    }, 0);
+  }, [meals, mealStates]);
+
+  const eatenCount = mealStates.filter((s) => s.status === "eaten").length;
+  const progress =
+    targetCalories > 0 ? Math.min((consumed / targetCalories) * 100, 100) : 0;
+
+  const setStatus = (mealId: string, status: MealStatus) => {
+    setMealStates((prev) =>
+      prev.map((m) => (m.mealId === mealId ? { ...m, status } : m)),
+    );
+  };
+
+  const handleSave = async () => {
+    if (!user?.id || !plan?.id) {
+      toast.error("کاربر یا برنامه پیدا نشد");
+      return;
+    }
+
+    setSaving(true);
+    const payload = {
+      userId: user.id,
+      planId: plan.id,
+      date: new Date().toISOString().split("T")[0],
+      meals: mealStates.map((m) => ({
+        mealId: m.mealId,
+        status: m.status,
+      })),
+    };
+
+    try {
+      if (logId) {
+        await updateNutritionLog(logId, payload);
+      } else {
+        const saved = await saveNutritionLog(payload);
+        setLogId(saved.id);
+      }
+      toast.success("رژیم امروز ثبت شد");
+    } catch (e) {
+      console.error(e);
+      toast.message("ذخیره محلی انجام شد", {
+        description: "json-server در دسترس نبود",
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (error || !hasPlan || !todayDay) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4 p-4">
+        <p className="text-sm text-muted-foreground text-center">
+          {error || "رژیمی برای امروز پیدا نشد."}
+        </p>
+        <Button asChild variant="outline">
+          <Link href="/dashboard">بازگشت به داشبورد</Link>
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-lg mx-auto px-4 py-6 space-y-6">
-        <div className="flex items-center justify-between gap-3">
-          <Button variant="ghost" size="sm" asChild className="gap-1.5 -mr-2">
-            <Link href="/dashboard">
-              <ArrowRight className="w-4 h-4" />
-              داشبورد
-            </Link>
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h1 className="text-xl font-bold text-foreground flex items-center gap-2">
+              <Apple className="w-5 h-5 text-primary" />
+              رژیم امروز
+            </h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              روز {currentDayNumber} — هدف{" "}
+              {targetCalories.toLocaleString("fa-IR")} کالری
+            </p>
+          </div>
+          <Button asChild variant="ghost" size="sm">
+            <Link href="/dashboard">داشبورد</Link>
           </Button>
-          <h1 className="text-lg font-bold text-foreground">رژیم امروز</h1>
-          <div className="w-16" />
         </div>
 
-        <CalorieSummary
-          consumed={consumedCalories()}
-          target={targetCalories}
-          eatenCount={eatenCount()}
-          totalMeals={totalMeals()}
-        />
+        <Card className="border-border bg-card/80 backdrop-blur-sm">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">
+              {consumed.toLocaleString("fa-IR")} از{" "}
+              {targetCalories.toLocaleString("fa-IR")} کالری · {eatenCount} از{" "}
+              {meals.length} وعده
+            </CardTitle>
+            <Progress value={progress} className="h-2 mt-2" />
+          </CardHeader>
+        </Card>
 
         <div className="space-y-3">
-          {todayMealPlan.map((slot) => {
-            const log = meals.find((m) => m.type === slot.type);
-            const meal = getSelectedMeal(slot.type);
-            if (!log || !meal) return null;
+          {meals.map((meal) => {
+            const st =
+              mealStates.find((s) => s.mealId === meal.id)?.status || "pending";
+            const isEaten = st === "eaten";
+            const isSkipped = st === "skipped";
 
             return (
-              <MealCard
-                key={slot.type}
-                label={slot.label}
-                timeLabel={slot.timeLabel}
-                meal={meal}
-                eaten={log.eaten}
-                onToggleEaten={() => {
-                  const next = !log.eaten;
-                  markEaten(slot.type, next);
-                  toast.success(
-                    next
-                      ? `${slot.label} ثبت شد`
-                      : `ثبت ${slot.label} برداشته شد`,
-                  );
-                }}
-                onReplace={() => setReplaceType(slot.type)}
-              />
+              <Card
+                key={meal.id}
+                className={cn(
+                  "border transition-colors",
+                  isEaten && "border-primary/30 bg-primary/5",
+                  isSkipped && "opacity-60",
+                )}
+              >
+                <CardContent className="p-4 space-y-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-xs text-muted-foreground">
+                        {MEAL_LABELS[meal.type]}
+                      </p>
+                      <p className="text-sm font-medium text-foreground mt-0.5">
+                        {meal.title}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {meal.description}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1 tabular-nums">
+                        {meal.calories.toLocaleString("fa-IR")} کالری
+                        {meal.protein ? ` · پروتئین ${meal.protein}` : ""}
+                      </p>
+                    </div>
+                    {isEaten ? (
+                      <CheckCircle2 className="w-5 h-5 text-primary shrink-0" />
+                    ) : (
+                      <Circle className="w-5 h-5 text-muted-foreground shrink-0" />
+                    )}
+                  </div>
+
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      variant={isEaten ? "default" : "outline"}
+                      className="flex-1"
+                      onClick={() => setStatus(meal.id, "eaten")}
+                    >
+                      خوردم
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant={isSkipped ? "secondary" : "outline"}
+                      className="flex-1"
+                      onClick={() => setStatus(meal.id, "skipped")}
+                    >
+                      رد کردم
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setStatus(meal.id, "pending")}
+                    >
+                      <RotateCcw className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
             );
           })}
         </div>
 
-        {eatenCount() === totalMeals() && totalMeals() > 0 && (
-          <div className="rounded-2xl border border-primary/30 bg-primary/5 p-4 text-center space-y-1">
-            <p className="text-sm font-semibold text-primary">
-              آفرین! همه وعده‌های امروز ثبت شد
-            </p>
-            <p className="text-xs text-muted-foreground">
-              فردا دوباره سر بزن تا پیشتاز بمونی
-            </p>
-          </div>
-        )}
+        <Button className="w-full h-11" onClick={handleSave} disabled={saving}>
+          {saving ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              در حال ذخیره...
+            </>
+          ) : (
+            "ثبت رژیم امروز"
+          )}
+        </Button>
       </div>
-
-      {activeSlot && activeLog && (
-        <ReplaceMealSheet
-          open={!!replaceType}
-          onOpenChange={(open) => !open && setReplaceType(null)}
-          label={activeSlot.label}
-          alternatives={activeSlot.alternatives}
-          selectedId={activeLog.selectedMealId}
-          onSelect={(mealId) => {
-            replaceMeal(activeSlot.type, mealId);
-            toast.success("وعده جایگزین شد");
-          }}
-        />
-      )}
     </div>
   );
 }

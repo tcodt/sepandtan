@@ -5,14 +5,10 @@ import { ModeToggle } from "@/components/common/mode-toggle";
 import { Button } from "@/components/ui/button";
 import { LogOut, Settings, Flame } from "lucide-react";
 import Link from "next/link";
+import { LogoutDialog } from "../common/logout-dialog";
 
 export function DashboardHeader() {
-  const { user, logout } = useUserStore();
-
-  const handleLogout = () => {
-    logout();
-    // بعداً می‌تونی به /login ریدایرکت کنی
-  };
+  const { user } = useUserStore();
 
   return (
     <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-30">
@@ -47,14 +43,16 @@ export function DashboardHeader() {
               <Settings className="w-4 h-4" />
             </Link>
           </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="rounded-full"
-            onClick={handleLogout}
-          >
-            <LogOut className="w-4 h-4" />
-          </Button>
+          <LogoutDialog>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-destructive hover:text-destructive rounded-lg w-auto px-1 py-0.5"
+            >
+              <LogOut className="w-4 h-4" />
+              <span>خروج</span>
+            </Button>
+          </LogoutDialog>
         </div>
       </div>
     </header>

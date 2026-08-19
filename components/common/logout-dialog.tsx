@@ -78,7 +78,7 @@ export function LogoutDialog({
           </AlertDialogDescription>
         </AlertDialogHeader>
 
-        <AlertDialogFooter className="flex-row-reverse gap-2 sm:gap-2">
+        <AlertDialogFooter className="flex-row-reverse gap-2 sm:gap-2 rtl:flex-row-reverse">
           <AlertDialogCancel className="mt-0 flex-1 sm:flex-none">
             انصراف
           </AlertDialogCancel>

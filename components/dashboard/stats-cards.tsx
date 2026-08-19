@@ -1,8 +1,20 @@
 "use client";
 
+import { useEffect, useMemo, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Activity, Flame, Target, TrendingDown } from "lucide-react";
+import { Activity, Flame, Target, TrendingDown, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useUserPlan } from "@/hooks/use-user-plan";
+import { getWeightLogs, getWorkoutLogs } from "@/lib/api/logs";
+import type { WeightLog, WorkoutLog } from "@/lib/types/plan";
+
+const goalLabels: Record<string, string> = {
+  lose_weight: "کاهش وزن",
+  build_muscle: "عضله‌سازی",
+  maintain: "حفظ تناسب",
+  endurance: "استقامت",
+  general_fitness: "آمادگی عمومی",
+};
 
 type StatItem = {
   label: string;
@@ -12,41 +24,124 @@ type StatItem = {
   icon: React.ElementType;
 };
 
-// ==================== MOCK DATA ====================
-// بعداً از API یا Zustand بگیر
-const stats: StatItem[] = [
-  {
-    label: "وزن فعلی",
-    value: "۷۲.۴ کیلو",
-    change: "−۰.۸ از هفته قبل",
-    changeType: "positive",
-    icon: TrendingDown,
-  },
-  {
-    label: "کالری امروز",
-    value: "۱٬۸۴۰",
-    change: "از ۲٬۱۰۰ هدف",
-    changeType: "neutral",
-    icon: Flame,
-  },
-  {
-    label: "تمرین این هفته",
-    value: "۴ از ۵",
-    change: "۸۰٪ تکمیل",
-    changeType: "positive",
-    icon: Activity,
-  },
-  {
-    label: "هدف اصلی",
-    value: "کاهش وزن",
-    change: "در حال پیشرفت",
-    changeType: "positive",
-    icon: Target,
-  },
-];
-// ==================================================
-
 export function StatsCards() {
+  const { user, todayDay, plan, isLoading: planLoading } = useUserPlan();
+  const [weightLogs, setWeightLogs] = useState<WeightLog[]>([]);
+  const [workoutLogs, setWorkoutLogs] = useState<WorkoutLog[]>([]);
+  const [logsLoading, setLogsLoading] = useState(false);
+
+  useEffect(() => {
+    if (!user?.id) return;
+
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setLogsLoading(true);
+    Promise.all([getWeightLogs(user.id), getWorkoutLogs(user.id)])
+      .then(([weights, workouts]) => {
+        setWeightLogs(weights || []);
+        setWorkoutLogs(workouts || []);
+      })
+      .catch(() => {
+        // اگر API بالا نباشد، با داده کاربر ادامه می‌دهیم
+      })
+      .finally(() => setLogsLoading(false));
+  }, [user?.id]);
+
+  const stats: StatItem[] = useMemo(() => {
+    const latestWeight =
+      weightLogs.length > 0
+        ? weightLogs[weightLogs.length - 1].weight
+        : user?.bodyInfo?.weight;
+
+    const prevWeight =
+      weightLogs.length > 1
+        ? weightLogs[weightLogs.length - 2].weight
+        : undefined;
+
+    let weightChange = "ثبت نشده";
+    let weightChangeType: StatItem["changeType"] = "neutral";
+
+    if (latestWeight != null && prevWeight != null) {
+      const diff = Number((latestWeight - prevWeight).toFixed(1));
+      if (diff < 0) {
+        weightChange = `${diff.toLocaleString("fa-IR")} از قبل`;
+        weightChangeType = "positive";
+      } else if (diff > 0) {
+        weightChange = `+${diff.toLocaleString("fa-IR")} از قبل`;
+        weightChangeType = "negative";
+      } else {
+        weightChange = "بدون تغییر";
+      }
+    } else if (latestWeight != null) {
+      weightChange = "آخرین وزن ثبت‌شده";
+    }
+
+    const calorieTarget = todayDay?.dailyCaloriesTarget;
+    const goalLabel = user?.goal ? goalLabels[user.goal] : "تعیین‌نشده";
+
+    // تمرین این هفته (۷ روز اخیر)
+    const weekAgo = new Date();
+    weekAgo.setDate(weekAgo.getDate() - 7);
+    const weekLogs = workoutLogs.filter((log) => {
+      const d = new Date(log.date);
+      return d >= weekAgo;
+    });
+    const weekDone = weekLogs.length;
+    const weekTarget = 5;
+    const weekPct = Math.round((weekDone / weekTarget) * 100);
+
+    return [
+      {
+        label: "وزن فعلی",
+        value:
+          latestWeight != null
+            ? `${latestWeight.toLocaleString("fa-IR")} کیلو`
+            : "—",
+        change: weightChange,
+        changeType: weightChangeType,
+        icon: TrendingDown,
+      },
+      {
+        label: "کالری هدف امروز",
+        value:
+          calorieTarget != null ? calorieTarget.toLocaleString("fa-IR") : "—",
+        change: todayDay ? "بر اساس برنامه شخصی" : "برنامه فعال نیست",
+        changeType: "neutral" as const,
+        icon: Flame,
+      },
+      {
+        label: "تمرین این هفته",
+        value: `${weekDone.toLocaleString("fa-IR")} از ${weekTarget.toLocaleString("fa-IR")}`,
+        change: `${weekPct.toLocaleString("fa-IR")}٪ تکمیل`,
+        changeType: weekPct >= 60 ? "positive" : "neutral",
+        icon: Activity,
+      },
+      {
+        label: "هدف اصلی",
+        value: goalLabel,
+        change: plan ? "برنامه فعال" : "بدون برنامه",
+        changeType: plan ? "positive" : "neutral",
+        icon: Target,
+      },
+    ];
+  }, [user, todayDay, plan, weightLogs, workoutLogs]);
+
+  if (planLoading || logsLoading) {
+    return (
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <Card
+            key={i}
+            className="border-border bg-card/80 dark:bg-card/60 backdrop-blur-sm"
+          >
+            <CardContent className="p-4 sm:p-5 flex items-center justify-center h-24">
+              <Loader2 className="w-5 h-5 animate-spin text-primary" />
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
+  }
+
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
       {stats.map((stat) => {

@@ -2,36 +2,15 @@
 
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
+import type {
+  BodyInfo,
+  Equipment,
+  Goal,
+  UserProfile,
+  SubscriptionStatus,
+} from "@/lib/types/plan";
 
-export type BodyInfo = {
-  gender: "male" | "female";
-  age: number;
-  height: number;
-  weight: number;
-  activityLevel: "sedentary" | "light" | "moderate" | "active" | "very_active";
-};
-
-export type Equipment = "home" | "gym" | "both";
-
-export type Goal =
-  | "lose_weight"
-  | "build_muscle"
-  | "maintain"
-  | "endurance"
-  | "general_fitness";
-
-export type UserProfile = {
-  id: string;
-  name: string;
-  email?: string;
-  phone?: string;
-  avatarUrl?: string; // data URL یا لینک سرور
-  bodyInfo?: BodyInfo;
-  equipment?: Equipment;
-  goal?: Goal;
-  onboardingCompleted: boolean;
-  createdAt: string;
-};
+export type { BodyInfo, Equipment, Goal, UserProfile };
 
 type UserState = {
   user: UserProfile | null;
@@ -46,6 +25,8 @@ type UserState = {
     bodyInfo: BodyInfo;
     equipment: Equipment;
     goal: Goal;
+    currentPlanId: string;
+    targetWeight?: number;
   }) => void;
 };
 
@@ -86,7 +67,10 @@ export const useUserStore = create<UserState>()(
             bodyInfo: data.bodyInfo,
             equipment: data.equipment,
             goal: data.goal,
+            currentPlanId: data.currentPlanId,
+            targetWeight: data.targetWeight,
             onboardingCompleted: true,
+            subscriptionStatus: "ai_plan" as SubscriptionStatus,
           },
         });
       },
@@ -94,7 +78,6 @@ export const useUserStore = create<UserState>()(
     {
       name: "sepandtan-user",
       storage: createJSONStorage(() => localStorage),
-      // فقط این فیلدها ذخیره شوند
       partialize: (state) => ({
         user: state.user,
         isAuthenticated: state.isAuthenticated,
@@ -106,7 +89,7 @@ export const useUserStore = create<UserState>()(
   ),
 );
 
-/** هوک کمکی: صبر تا hydrate تمام شود */
+/** صبر تا hydrate از localStorage تمام شود */
 export function useAuthReady() {
   const hasHydrated = useUserStore((s) => s._hasHydrated);
   const isAuthenticated = useUserStore((s) => s.isAuthenticated);

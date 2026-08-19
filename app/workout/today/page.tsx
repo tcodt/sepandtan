@@ -1,26 +1,20 @@
 "use client";
 
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { TodayWorkout } from "@/components/workout/today-workout";
-import { useUserStore } from "@/lib/store/user-store";
+import { useRequireAuth } from "@/hooks/use-require-auth";
 
 export default function TodayWorkoutPage() {
-  const router = useRouter();
-  const { isAuthenticated, user } = useUserStore();
+  const { isLoading, isAuthenticated } = useRequireAuth({
+    requireOnboarding: true,
+  });
 
-  useEffect(() => {
-    if (!isAuthenticated || !user) {
-      router.replace("/login");
-      return;
-    }
-    if (!user.onboardingCompleted) {
-      router.replace("/onboarding");
-    }
-  }, [isAuthenticated, user, router]);
-
-  if (!isAuthenticated || !user || !user.onboardingCompleted) {
-    return null;
+  // تا hydrate و چک auth تمام نشده، redirect نکن و spinner نشان بده
+  if (isLoading || !isAuthenticated) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+      </div>
+    );
   }
 
   return <TodayWorkout />;

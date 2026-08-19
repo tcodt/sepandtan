@@ -42,8 +42,8 @@ export function ChatMessage({ message }: ChatMessageProps) {
         className={cn(
           "max-w-[85%] sm:max-w-[75%] rounded-2xl px-3.5 py-2.5 text-sm leading-7",
           isUser
-            ? "bg-primary text-primary-foreground rounded-tl-md"
-            : "bg-muted text-foreground rounded-tr-md",
+            ? "bg-primary text-primary-foreground rounded-tr-md"
+            : "bg-muted text-foreground rounded-tl-md",
         )}
       >
         <p className="whitespace-pre-wrap text-right">{message.content}</p>

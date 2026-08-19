@@ -9,21 +9,24 @@ import { GeneratingState } from "./generating-state";
 import { BodyStep } from "./steps/body-step";
 import { EquipmentStep } from "./steps/equipment-step";
 import { GoalStep } from "./steps/goal-step";
+import { ProgressHeader } from "./progress-header";
 import {
   useUserStore,
   type BodyInfo,
   type Equipment,
   type Goal,
 } from "@/lib/store/user-store";
-import { ProgressHeader } from "./progress-header";
+import { generateAndSavePlan } from "@/lib/api/plans";
+import { usePlanStore } from "@/lib/store/plan-store";
 
 export function OnboardingWizard() {
   const router = useRouter();
+  const user = useUserStore((s) => s.user);
   const completeOnboarding = useUserStore((s) => s.completeOnboarding);
+  const setPlan = usePlanStore((s) => s.setPlan);
 
   const [step, setStep] = useState(1);
   const [isGenerating, setIsGenerating] = useState(false);
-
   const [bodyInfo, setBodyInfo] = useState<BodyInfo | null>(null);
   const [equipment, setEquipment] = useState<Equipment | null>(null);
 
@@ -38,28 +41,60 @@ export function OnboardingWizard() {
   };
 
   const handleGoalNext = async (goal: Goal) => {
-    if (!bodyInfo || !equipment) return;
+    if (!bodyInfo || !equipment || !user?.id) {
+      toast.error("اطلاعات کاربر ناقص است. دوباره وارد شو.");
+      return;
+    }
 
     setIsGenerating(true);
 
-    // ==================== MOCK ====================
-    // وقتی بک‌اند آماده شد این بخش را جایگزین کن:
-    // await fetch("/api/plans/generate", {
-    //   method: "POST",
-    //   body: JSON.stringify({ bodyInfo, equipment, goal }),
-    // });
-    // ==============================================
+    try {
+      const { plan } = await generateAndSavePlan({
+        userId: user.id,
+        bodyInfo,
+        equipment,
+        goal,
+        targetWeight:
+          goal === "lose_weight" && bodyInfo.weight > 0
+            ? Math.round(bodyInfo.weight * 0.92)
+            : undefined,
+      });
 
-    await new Promise((resolve) => setTimeout(resolve, 2200));
+      // state محلی
+      completeOnboarding({
+        bodyInfo,
+        equipment,
+        goal,
+        currentPlanId: plan.id,
+        targetWeight:
+          goal === "lose_weight" && bodyInfo.weight > 0
+            ? Math.round(bodyInfo.weight * 0.92)
+            : undefined,
+      });
 
-    completeOnboarding({
-      bodyInfo,
-      equipment,
-      goal,
-    });
+      // برای استفاده فوری در داشبورد
+      setPlan(plan);
 
-    toast.success("برنامه شخصی‌ات آماده شد!");
-    router.push("/dashboard");
+      toast.success("برنامه شخصی‌ات آماده شد!");
+      router.push("/dashboard");
+    } catch (err) {
+      console.error(err);
+
+      // Fallback اگر json-server بالا نباشد
+      const fallbackPlanId = `local_plan_${user.id}_${Date.now()}`;
+      completeOnboarding({
+        bodyInfo,
+        equipment,
+        goal,
+        currentPlanId: fallbackPlanId,
+      });
+
+      toast.message("برنامه به‌صورت محلی ذخیره شد", {
+        description:
+          "json-server در دسترس نبود. با npm run api سرور را بالا بیاور.",
+      });
+      router.push("/dashboard");
+    }
   };
 
   if (isGenerating) {
