@@ -1,31 +1,74 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Apple, ChevronLeft } from "lucide-react";
+import { Apple, ChevronLeft, Loader2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { useNutritionStore } from "@/lib/store/nutrition-store";
-import { todayMealPlan, mealTypeLabels } from "@/lib/data/nutrition";
+import { cn } from "@/lib/utils";
+import { useUserPlan } from "@/hooks/use-user-plan";
+import { getNutritionLogByDate } from "@/lib/api/logs";
+import type { NutritionLog } from "@/lib/types/plan";
+
+const MEAL_LABELS: Record<string, string> = {
+  breakfast: "صبحانه",
+  snack: "میان‌وعده",
+  lunch: "ناهار",
+  dinner: "شام",
+};
 
 export function NutritionSummary() {
-  const {
-    initToday,
-    meals,
-    targetCalories,
-    getSelectedMeal,
-    consumedCalories,
-    eatenCount,
-    totalMeals,
-  } = useNutritionStore();
+  const { user, todayDay, isLoading, hasPlan } = useUserPlan();
+  const [todayLog, setTodayLog] = useState<NutritionLog | null>(null);
 
   useEffect(() => {
-    initToday();
-  }, [initToday]);
+    if (!user?.id) return;
+    const today = new Date().toISOString().split("T")[0];
+    getNutritionLogByDate(user.id, today)
+      .then((log) => setTodayLog(log))
+      .catch(() => setTodayLog(null));
+  }, [user?.id, todayDay?.dayNumber]);
 
-  const consumed = consumedCalories();
-  const target = targetCalories;
+  const statusMap = useMemo(() => {
+    const map = new Map<string, string>();
+    todayLog?.meals?.forEach((m) => map.set(m.mealId, m.status));
+    return map;
+  }, [todayLog]);
+
+  if (isLoading) {
+    return (
+      <Card className="border-border bg-card/80 dark:bg-card/60 backdrop-blur-sm">
+        <CardContent className="flex items-center justify-center py-10">
+          <Loader2 className="w-5 h-5 animate-spin text-primary" />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!hasPlan || !todayDay) {
+    return (
+      <Card className="border-border bg-card/80 dark:bg-card/60 backdrop-blur-sm">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">تغذیه امروز</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground mb-3">
+            برنامه‌ای برای امروز پیدا نشد.
+          </p>
+          <Button asChild variant="outline" size="sm" className="w-full">
+            <Link href="/onboarding">ساخت برنامه</Link>
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const meals = todayDay.meals;
+  const target = todayDay.dailyCaloriesTarget;
+
+  const eatenMeals = meals.filter((m) => statusMap.get(m.id) === "eaten");
+  const consumed = eatenMeals.reduce((sum, m) => sum + m.calories, 0);
   const progress = target > 0 ? Math.min((consumed / target) * 100, 100) : 0;
 
   return (
@@ -39,8 +82,9 @@ export function NutritionSummary() {
             <CardTitle className="text-base">تغذیه امروز</CardTitle>
             <p className="text-xs text-muted-foreground">
               {consumed.toLocaleString("fa-IR")} از{" "}
-              {target.toLocaleString("fa-IR")} کالری · {eatenCount()} از{" "}
-              {totalMeals()} وعده
+              {target.toLocaleString("fa-IR")} کالری ·{" "}
+              {eatenMeals.length.toLocaleString("fa-IR")} از{" "}
+              {meals.length.toLocaleString("fa-IR")} وعده
             </p>
           </div>
         </div>
@@ -50,28 +94,28 @@ export function NutritionSummary() {
         <Progress value={progress} className="h-2" />
 
         <div className="space-y-2">
-          {todayMealPlan.map((slot) => {
-            const log = meals.find((m) => m.type === slot.type);
-            const meal = getSelectedMeal(slot.type);
-            if (!log || !meal) return null;
+          {meals.map((meal) => {
+            const status = statusMap.get(meal.id) || "pending";
+            const eaten = status === "eaten";
+            const skipped = status === "skipped";
 
             return (
               <div
-                key={slot.type}
+                key={meal.id}
                 className="flex items-center justify-between gap-3 text-sm"
               >
                 <span
-                  className={
-                    log.eaten
-                      ? "text-muted-foreground line-through"
-                      : "text-foreground"
-                  }
+                  className={cn(
+                    eaten && "text-muted-foreground line-through",
+                    skipped && "opacity-60",
+                    !eaten && !skipped && "text-foreground",
+                  )}
                 >
-                  {mealTypeLabels[slot.type]}
+                  {MEAL_LABELS[meal.type] || meal.type}
+                  {eaten ? " ✓" : skipped ? " —" : ""}
                 </span>
                 <span className="text-muted-foreground tabular-nums shrink-0">
                   {meal.calories.toLocaleString("fa-IR")} کالری
-                  {log.eaten ? " ✓" : ""}
                 </span>
               </div>
             );

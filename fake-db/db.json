@@ -1,0 +1,6428 @@
+{
+  "users": [
+    {
+      "id": "user_demo_1",
+      "name": "علی رضایی",
+      "email": "ali@sepandtan.test",
+      "phone": "09121234567",
+      "password": "123456",
+      "role": "user",
+      "bodyInfo": {
+        "gender": "male",
+        "age": 28,
+        "height": 178,
+        "weight": 75,
+        "activityLevel": "moderate"
+      },
+      "equipment": "both",
+      "goal": "lose_weight",
+      "onboardingCompleted": true,
+      "currentPlanId": "plan_demo_1",
+      "subscriptionStatus": "ai_plan",
+      "targetWeight": 75,
+      "createdAt": "2026-08-01T10:00:00.000Z",
+      "updatedAt": "2026-08-19T12:17:40.283Z"
+    },
+    {
+      "id": "user_demo_2",
+      "name": "سارا محمدی",
+      "email": "sara@sepandtan.test",
+      "phone": "09129876543",
+      "password": "123456",
+      "role": "user",
+      "onboardingCompleted": true,
+      "currentPlanId": "Wwk9LYE1krM",
+      "subscriptionStatus": "ai_plan",
+      "createdAt": "2026-08-10T12:00:00.000Z",
+      "bodyInfo": {
+        "gender": "female",
+        "age": 24,
+        "height": 165,
+        "weight": 57,
+        "activityLevel": "sedentary"
+      },
+      "equipment": "gym",
+      "goal": "maintain",
+      "updatedAt": "2026-08-15T17:03:36.463Z"
+    },
+    {
+      "id": "coach_user_1",
+      "name": "مهدی احمدی",
+      "email": "mehdi.coach@sepandtan.test",
+      "phone": "09121112233",
+      "password": "123456",
+      "role": "coach",
+      "onboardingCompleted": true,
+      "currentPlanId": null,
+      "subscriptionStatus": "free",
+      "createdAt": "2026-07-15T08:00:00.000Z"
+    },
+    {
+      "name": "امیر خانجانی",
+      "email": "amir@sepandtan.test",
+      "password": "amir123",
+      "role": "user",
+      "onboardingCompleted": false,
+      "currentPlanId": null,
+      "subscriptionStatus": "free",
+      "createdAt": "2026-08-15T16:52:57.635Z",
+      "id": "qy3iSRwQNs4"
+    },
+    {
+      "name": "امیر خانجانی",
+      "email": "amir@gmail.com",
+      "password": "amir123",
+      "role": "user",
+      "onboardingCompleted": true,
+      "currentPlanId": "oE3RKXgsdTY",
+      "subscriptionStatus": "ai_plan",
+      "createdAt": "2026-08-19T11:31:15.186Z",
+      "id": "64Iv3Cydizw",
+      "bodyInfo": {
+        "gender": "male",
+        "age": 22,
+        "height": 177,
+        "weight": 70,
+        "activityLevel": "sedentary"
+      },
+      "equipment": "both",
+      "goal": "build_muscle",
+      "updatedAt": "2026-08-19T12:15:32.180Z"
+    }
+  ],
+  "plans": [
+    {
+      "id": "plan_demo_1",
+      "userId": "user_demo_1",
+      "goal": "lose_weight",
+      "equipment": "both",
+      "level": "intermediate",
+      "title": "برنامه کاهش وزن ۳۰ روزه",
+      "description": "برنامه دمو برای علی",
+      "startDate": "2026-08-01",
+      "durationDays": 30,
+      "source": "ai",
+      "coachId": null,
+      "createdAt": "2026-08-01T10:05:00.000Z",
+      "days": [
+        {
+          "dayNumber": 1,
+          "title": "بالاتنه فشار",
+          "focus": "سینه و شانه",
+          "isRestDay": false,
+          "estimatedMinutes": 45,
+          "dailyCaloriesTarget": 2100,
+          "exercises": [
+            {
+              "exerciseId": "2",
+              "name": "شنا سوئدی",
+              "muscle": "سینه",
+              "sets": 4,
+              "reps": "۱۰-۱۲",
+              "restSeconds": 90
+            },
+            {
+              "exerciseId": "9",
+              "name": "پرس سرشانه با دمبل",
+              "muscle": "شانه",
+              "sets": 3,
+              "reps": "۱۰-۱۲",
+              "restSeconds": 90
+            },
+            {
+              "exerciseId": "8",
+              "name": "دیپ روی صندلی",
+              "muscle": "بازو",
+              "sets": 3,
+              "reps": "۱۰-۱۲",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "3",
+              "name": "پلانک",
+              "muscle": "میان‌تنه",
+              "sets": 3,
+              "reps": "۳۰-۴۵ ثانیه",
+              "restSeconds": 45
+            }
+          ],
+          "meals": [
+            {
+              "id": "d1m1",
+              "type": "breakfast",
+              "title": "املت سبزیجات + نان جو",
+              "description": "۲ تخم‌مرغ، گوجه، نان سبوس‌دار",
+              "calories": 320,
+              "protein": 22,
+              "carbs": 25,
+              "fat": 14
+            },
+            {
+              "id": "d1m2",
+              "type": "snack",
+              "title": "سیب + بادام",
+              "description": "۱ سیب متوسط",
+              "calories": 160,
+              "protein": 4,
+              "carbs": 22,
+              "fat": 7
+            },
+            {
+              "id": "d1m3",
+              "type": "lunch",
+              "title": "سینه مرغ + سالاد",
+              "description": "۱۵۰گ مرغ",
+              "calories": 380,
+              "protein": 40,
+              "carbs": 12,
+              "fat": 18
+            },
+            {
+              "id": "d1m4",
+              "type": "dinner",
+              "title": "ماهی + سبزیجات",
+              "description": "۱۵۰گ ماهی، بروکلی",
+              "calories": 340,
+              "protein": 35,
+              "carbs": 15,
+              "fat": 14
+            }
+          ]
+        },
+        {
+          "dayNumber": 2,
+          "title": "بالاتنه کشش",
+          "focus": "پشت و بازو",
+          "isRestDay": false,
+          "estimatedMinutes": 45,
+          "dailyCaloriesTarget": 2100,
+          "exercises": [
+            {
+              "exerciseId": "10",
+              "name": "بارفیکس منفی",
+              "muscle": "پشت",
+              "sets": 4,
+              "reps": "۶-۸",
+              "restSeconds": 90
+            },
+            {
+              "exerciseId": "11",
+              "name": "قایقی با کش",
+              "muscle": "پشت",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "13",
+              "name": "فیس‌پول با کش",
+              "muscle": "شانه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 45
+            },
+            {
+              "exerciseId": "3",
+              "name": "پلانک",
+              "muscle": "میان‌تنه",
+              "sets": 3,
+              "reps": "۴۰ ثانیه",
+              "restSeconds": 40
+            }
+          ],
+          "meals": [
+            {
+              "id": "d2m1",
+              "type": "breakfast",
+              "title": "ماست یونانی + توت",
+              "description": "۲۰۰گ ماست",
+              "calories": 280,
+              "protein": 20,
+              "carbs": 28,
+              "fat": 8
+            },
+            {
+              "id": "d2m2",
+              "type": "snack",
+              "title": "هویج + حمص",
+              "description": "سبزیجات خام",
+              "calories": 140,
+              "protein": 5,
+              "carbs": 18,
+              "fat": 6
+            },
+            {
+              "id": "d2m3",
+              "type": "lunch",
+              "title": "عدس‌پلو",
+              "description": "پرس متوسط",
+              "calories": 420,
+              "protein": 18,
+              "carbs": 55,
+              "fat": 12
+            },
+            {
+              "id": "d2m4",
+              "type": "dinner",
+              "title": "بوقلمون + کینوا",
+              "description": "۱۲۰گ بوقلمون",
+              "calories": 360,
+              "protein": 32,
+              "carbs": 30,
+              "fat": 10
+            }
+          ]
+        },
+        {
+          "dayNumber": 3,
+          "title": "پایین تنه",
+          "focus": "پا و باسن",
+          "isRestDay": false,
+          "estimatedMinutes": 50,
+          "dailyCaloriesTarget": 2100,
+          "exercises": [
+            {
+              "exerciseId": "1",
+              "name": "اسکوات با وزن بدن",
+              "muscle": "پا",
+              "sets": 4,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 90
+            },
+            {
+              "exerciseId": "4",
+              "name": "لانگز معکوس",
+              "muscle": "پا",
+              "sets": 3,
+              "reps": "۱۰ هر پا",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "5",
+              "name": "ددلیفت رومانیایی",
+              "muscle": "پا",
+              "sets": 3,
+              "reps": "۱۰-۱۲",
+              "restSeconds": 90
+            },
+            {
+              "exerciseId": "14",
+              "name": "هیپ تراست",
+              "muscle": "باسن",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            }
+          ],
+          "meals": [
+            {
+              "id": "d3m1",
+              "type": "breakfast",
+              "title": "املت سبزیجات",
+              "description": "۲ تخم‌مرغ",
+              "calories": 320,
+              "protein": 22,
+              "carbs": 25,
+              "fat": 14
+            },
+            {
+              "id": "d3m2",
+              "type": "snack",
+              "title": "سیب + بادام",
+              "description": "۱ سیب",
+              "calories": 160,
+              "protein": 4,
+              "carbs": 22,
+              "fat": 7
+            },
+            {
+              "id": "d3m3",
+              "type": "lunch",
+              "title": "سینه مرغ + سالاد",
+              "description": "۱۵۰گ مرغ",
+              "calories": 380,
+              "protein": 40,
+              "carbs": 12,
+              "fat": 18
+            },
+            {
+              "id": "d3m4",
+              "type": "dinner",
+              "title": "ماهی + سبزیجات",
+              "description": "۱۵۰گ ماهی",
+              "calories": 340,
+              "protein": 35,
+              "carbs": 15,
+              "fat": 14
+            }
+          ]
+        },
+        {
+          "dayNumber": 7,
+          "title": "روز ریکاوری",
+          "focus": "استراحت فعال",
+          "isRestDay": true,
+          "estimatedMinutes": 20,
+          "dailyCaloriesTarget": 2100,
+          "exercises": [
+            {
+              "exerciseId": "3",
+              "name": "پلانک",
+              "muscle": "میان‌تنه",
+              "sets": 2,
+              "reps": "۳۰ ثانیه",
+              "restSeconds": 30
+            },
+            {
+              "exerciseId": "17",
+              "name": "ددباگ",
+              "muscle": "میان‌تنه",
+              "sets": 2,
+              "reps": "۱۰ هر طرف",
+              "restSeconds": 30
+            }
+          ],
+          "meals": [
+            {
+              "id": "d7m1",
+              "type": "breakfast",
+              "title": "املت",
+              "description": "سبک",
+              "calories": 320,
+              "protein": 22,
+              "carbs": 25,
+              "fat": 14
+            },
+            {
+              "id": "d7m2",
+              "type": "snack",
+              "title": "میوه",
+              "description": "۱ سیب",
+              "calories": 80,
+              "protein": 1,
+              "carbs": 20,
+              "fat": 0
+            },
+            {
+              "id": "d7m3",
+              "type": "lunch",
+              "title": "سالاد با مرغ",
+              "description": "سبک",
+              "calories": 350,
+              "protein": 28,
+              "carbs": 15,
+              "fat": 16
+            },
+            {
+              "id": "d7m4",
+              "type": "dinner",
+              "title": "سوپ جو",
+              "description": "سبک",
+              "calories": 280,
+              "protein": 12,
+              "carbs": 35,
+              "fat": 8
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Wwk9LYE1krM",
+      "userId": "user_demo_2",
+      "goal": "maintain",
+      "equipment": "gym",
+      "level": "beginner",
+      "title": "برنامه حفظ تناسب ۳۰ روزه",
+      "description": "برنامه شخصی‌سازی‌شده برای هدف برنامه حفظ تناسب ۳۰ روزه، سطح beginner.",
+      "startDate": "2026-08-15",
+      "durationDays": 30,
+      "days": [
+        {
+          "dayNumber": 1,
+          "title": "بالاتنه فشار",
+          "focus": "سینه و شانه",
+          "isRestDay": false,
+          "estimatedMinutes": 35,
+          "exercises": [
+            {
+              "exerciseId": "2",
+              "name": "شنا سوئدی",
+              "muscle": "سینه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "7",
+              "name": "پرس سینه با دمبل",
+              "muscle": "سینه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "8",
+              "name": "دیپ روی صندلی",
+              "muscle": "بازو",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "9",
+              "name": "پرس سرشانه با دمبل",
+              "muscle": "شانه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "3",
+              "name": "پلانک",
+              "muscle": "میان‌تنه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            }
+          ],
+          "meals": [
+            {
+              "id": "d1m1",
+              "type": "breakfast",
+              "title": "نان و پنیر و گردو",
+              "description": "صبحانه سنتی",
+              "calories": 380,
+              "protein": 16,
+              "carbs": 35,
+              "fat": 18
+            },
+            {
+              "id": "d1m2",
+              "type": "snack",
+              "title": "ماست + میوه",
+              "description": "۱ کاسه ماست",
+              "calories": 200,
+              "protein": 12,
+              "carbs": 25,
+              "fat": 5
+            },
+            {
+              "id": "d1m3",
+              "type": "lunch",
+              "title": "چلو مرغ",
+              "description": "پرس معمولی",
+              "calories": 550,
+              "protein": 35,
+              "carbs": 60,
+              "fat": 15
+            },
+            {
+              "id": "d1m4",
+              "type": "dinner",
+              "title": "سوپ جو + نان سبوس",
+              "description": "سوپ خانگی",
+              "calories": 320,
+              "protein": 14,
+              "carbs": 40,
+              "fat": 10
+            }
+          ],
+          "dailyCaloriesTarget": 1580
+        },
+        {
+          "dayNumber": 2,
+          "title": "بالاتنه کشش",
+          "focus": "پشت و بازو",
+          "isRestDay": false,
+          "estimatedMinutes": 35,
+          "exercises": [
+            {
+              "exerciseId": "10",
+              "name": "بارفیکس منفی",
+              "muscle": "پشت",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "12",
+              "name": "لت پول‌داون",
+              "muscle": "پشت",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "13",
+              "name": "فیس‌پول با کش",
+              "muscle": "شانه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "3",
+              "name": "پلانک",
+              "muscle": "میان‌تنه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "16",
+              "name": "کرانچ دوچرخه",
+              "muscle": "میان‌تنه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            }
+          ],
+          "meals": [
+            {
+              "id": "d2m1",
+              "type": "breakfast",
+              "title": "نان و پنیر و گردو",
+              "description": "صبحانه سنتی",
+              "calories": 380,
+              "protein": 16,
+              "carbs": 35,
+              "fat": 18
+            },
+            {
+              "id": "d2m2",
+              "type": "snack",
+              "title": "ماست + میوه",
+              "description": "۱ کاسه ماست",
+              "calories": 200,
+              "protein": 12,
+              "carbs": 25,
+              "fat": 5
+            },
+            {
+              "id": "d2m3",
+              "type": "lunch",
+              "title": "چلو مرغ",
+              "description": "پرس معمولی",
+              "calories": 550,
+              "protein": 35,
+              "carbs": 60,
+              "fat": 15
+            },
+            {
+              "id": "d2m4",
+              "type": "dinner",
+              "title": "سوپ جو + نان سبوس",
+              "description": "سوپ خانگی",
+              "calories": 320,
+              "protein": 14,
+              "carbs": 40,
+              "fat": 10
+            }
+          ],
+          "dailyCaloriesTarget": 1580
+        },
+        {
+          "dayNumber": 3,
+          "title": "پایین تنه",
+          "focus": "پا و باسن",
+          "isRestDay": false,
+          "estimatedMinutes": 35,
+          "exercises": [
+            {
+              "exerciseId": "1",
+              "name": "اسکوات با وزن بدن",
+              "muscle": "پا",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "4",
+              "name": "لانگز معکوس",
+              "muscle": "پا",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "5",
+              "name": "ددلیفت رومانیایی با دمبل",
+              "muscle": "پا",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "14",
+              "name": "هیپ تراست",
+              "muscle": "باسن",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "15",
+              "name": "اسکوات گابلت",
+              "muscle": "پا",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            }
+          ],
+          "meals": [
+            {
+              "id": "d3m1",
+              "type": "breakfast",
+              "title": "نان و پنیر و گردو",
+              "description": "صبحانه سنتی",
+              "calories": 380,
+              "protein": 16,
+              "carbs": 35,
+              "fat": 18
+            },
+            {
+              "id": "d3m2",
+              "type": "snack",
+              "title": "ماست + میوه",
+              "description": "۱ کاسه ماست",
+              "calories": 200,
+              "protein": 12,
+              "carbs": 25,
+              "fat": 5
+            },
+            {
+              "id": "d3m3",
+              "type": "lunch",
+              "title": "چلو مرغ",
+              "description": "پرس معمولی",
+              "calories": 550,
+              "protein": 35,
+              "carbs": 60,
+              "fat": 15
+            },
+            {
+              "id": "d3m4",
+              "type": "dinner",
+              "title": "سوپ جو + نان سبوس",
+              "description": "سوپ خانگی",
+              "calories": 320,
+              "protein": 14,
+              "carbs": 40,
+              "fat": 10
+            }
+          ],
+          "dailyCaloriesTarget": 1580
+        },
+        {
+          "dayNumber": 4,
+          "title": "تمرین ترکیبی",
+          "focus": "کل بدن",
+          "isRestDay": false,
+          "estimatedMinutes": 35,
+          "exercises": [
+            {
+              "exerciseId": "6",
+              "name": "کوهنورد",
+              "muscle": "کل بدن",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "18",
+              "name": "برپی",
+              "muscle": "کل بدن",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "19",
+              "name": "جامپینگ جک",
+              "muscle": "کل بدن",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "3",
+              "name": "پلانک",
+              "muscle": "میان‌تنه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "16",
+              "name": "کرانچ دوچرخه",
+              "muscle": "میان‌تنه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            }
+          ],
+          "meals": [
+            {
+              "id": "d4m1",
+              "type": "breakfast",
+              "title": "نان و پنیر و گردو",
+              "description": "صبحانه سنتی",
+              "calories": 380,
+              "protein": 16,
+              "carbs": 35,
+              "fat": 18
+            },
+            {
+              "id": "d4m2",
+              "type": "snack",
+              "title": "ماست + میوه",
+              "description": "۱ کاسه ماست",
+              "calories": 200,
+              "protein": 12,
+              "carbs": 25,
+              "fat": 5
+            },
+            {
+              "id": "d4m3",
+              "type": "lunch",
+              "title": "چلو مرغ",
+              "description": "پرس معمولی",
+              "calories": 550,
+              "protein": 35,
+              "carbs": 60,
+              "fat": 15
+            },
+            {
+              "id": "d4m4",
+              "type": "dinner",
+              "title": "سوپ جو + نان سبوس",
+              "description": "سوپ خانگی",
+              "calories": 320,
+              "protein": 14,
+              "carbs": 40,
+              "fat": 10
+            }
+          ],
+          "dailyCaloriesTarget": 1580
+        },
+        {
+          "dayNumber": 5,
+          "title": "بالاتنه فشار",
+          "focus": "سینه و شانه",
+          "isRestDay": false,
+          "estimatedMinutes": 35,
+          "exercises": [
+            {
+              "exerciseId": "2",
+              "name": "شنا سوئدی",
+              "muscle": "سینه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "7",
+              "name": "پرس سینه با دمبل",
+              "muscle": "سینه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "8",
+              "name": "دیپ روی صندلی",
+              "muscle": "بازو",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "9",
+              "name": "پرس سرشانه با دمبل",
+              "muscle": "شانه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "3",
+              "name": "پلانک",
+              "muscle": "میان‌تنه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            }
+          ],
+          "meals": [
+            {
+              "id": "d5m1",
+              "type": "breakfast",
+              "title": "نان و پنیر و گردو",
+              "description": "صبحانه سنتی",
+              "calories": 380,
+              "protein": 16,
+              "carbs": 35,
+              "fat": 18
+            },
+            {
+              "id": "d5m2",
+              "type": "snack",
+              "title": "ماست + میوه",
+              "description": "۱ کاسه ماست",
+              "calories": 200,
+              "protein": 12,
+              "carbs": 25,
+              "fat": 5
+            },
+            {
+              "id": "d5m3",
+              "type": "lunch",
+              "title": "چلو مرغ",
+              "description": "پرس معمولی",
+              "calories": 550,
+              "protein": 35,
+              "carbs": 60,
+              "fat": 15
+            },
+            {
+              "id": "d5m4",
+              "type": "dinner",
+              "title": "سوپ جو + نان سبوس",
+              "description": "سوپ خانگی",
+              "calories": 320,
+              "protein": 14,
+              "carbs": 40,
+              "fat": 10
+            }
+          ],
+          "dailyCaloriesTarget": 1580
+        },
+        {
+          "dayNumber": 6,
+          "title": "بالاتنه کشش",
+          "focus": "پشت و بازو",
+          "isRestDay": false,
+          "estimatedMinutes": 35,
+          "exercises": [
+            {
+              "exerciseId": "10",
+              "name": "بارفیکس منفی",
+              "muscle": "پشت",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "12",
+              "name": "لت پول‌داون",
+              "muscle": "پشت",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "13",
+              "name": "فیس‌پول با کش",
+              "muscle": "شانه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "3",
+              "name": "پلانک",
+              "muscle": "میان‌تنه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "16",
+              "name": "کرانچ دوچرخه",
+              "muscle": "میان‌تنه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            }
+          ],
+          "meals": [
+            {
+              "id": "d6m1",
+              "type": "breakfast",
+              "title": "نان و پنیر و گردو",
+              "description": "صبحانه سنتی",
+              "calories": 380,
+              "protein": 16,
+              "carbs": 35,
+              "fat": 18
+            },
+            {
+              "id": "d6m2",
+              "type": "snack",
+              "title": "ماست + میوه",
+              "description": "۱ کاسه ماست",
+              "calories": 200,
+              "protein": 12,
+              "carbs": 25,
+              "fat": 5
+            },
+            {
+              "id": "d6m3",
+              "type": "lunch",
+              "title": "چلو مرغ",
+              "description": "پرس معمولی",
+              "calories": 550,
+              "protein": 35,
+              "carbs": 60,
+              "fat": 15
+            },
+            {
+              "id": "d6m4",
+              "type": "dinner",
+              "title": "سوپ جو + نان سبوس",
+              "description": "سوپ خانگی",
+              "calories": 320,
+              "protein": 14,
+              "carbs": 40,
+              "fat": 10
+            }
+          ],
+          "dailyCaloriesTarget": 1580
+        },
+        {
+          "dayNumber": 7,
+          "title": "روز ریکاوری",
+          "focus": "استراحت فعال و کشش",
+          "isRestDay": true,
+          "estimatedMinutes": 20,
+          "exercises": [
+            {
+              "exerciseId": "3",
+              "name": "پلانک",
+              "muscle": "میان‌تنه",
+              "sets": 2,
+              "reps": "۳۰-۴۵ ثانیه",
+              "restSeconds": 30
+            },
+            {
+              "exerciseId": "16",
+              "name": "کرانچ دوچرخه",
+              "muscle": "میان‌تنه",
+              "sets": 2,
+              "reps": "۳۰-۴۵ ثانیه",
+              "restSeconds": 30
+            },
+            {
+              "exerciseId": "17",
+              "name": "ددباگ",
+              "muscle": "میان‌تنه",
+              "sets": 2,
+              "reps": "۳۰-۴۵ ثانیه",
+              "restSeconds": 30
+            }
+          ],
+          "meals": [
+            {
+              "id": "d7m1",
+              "type": "breakfast",
+              "title": "نان و پنیر و گردو",
+              "description": "صبحانه سنتی",
+              "calories": 380,
+              "protein": 16,
+              "carbs": 35,
+              "fat": 18
+            },
+            {
+              "id": "d7m2",
+              "type": "snack",
+              "title": "ماست + میوه",
+              "description": "۱ کاسه ماست",
+              "calories": 200,
+              "protein": 12,
+              "carbs": 25,
+              "fat": 5
+            },
+            {
+              "id": "d7m3",
+              "type": "lunch",
+              "title": "چلو مرغ",
+              "description": "پرس معمولی",
+              "calories": 550,
+              "protein": 35,
+              "carbs": 60,
+              "fat": 15
+            },
+            {
+              "id": "d7m4",
+              "type": "dinner",
+              "title": "سوپ جو + نان سبوس",
+              "description": "سوپ خانگی",
+              "calories": 320,
+              "protein": 14,
+              "carbs": 40,
+              "fat": 10
+            }
+          ],
+          "dailyCaloriesTarget": 1580
+        },
+        {
+          "dayNumber": 8,
+          "title": "تمرین ترکیبی",
+          "focus": "کل بدن",
+          "isRestDay": false,
+          "estimatedMinutes": 35,
+          "exercises": [
+            {
+              "exerciseId": "6",
+              "name": "کوهنورد",
+              "muscle": "کل بدن",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "18",
+              "name": "برپی",
+              "muscle": "کل بدن",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "19",
+              "name": "جامپینگ جک",
+              "muscle": "کل بدن",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "3",
+              "name": "پلانک",
+              "muscle": "میان‌تنه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "16",
+              "name": "کرانچ دوچرخه",
+              "muscle": "میان‌تنه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            }
+          ],
+          "meals": [
+            {
+              "id": "d8m1",
+              "type": "breakfast",
+              "title": "نان و پنیر و گردو",
+              "description": "صبحانه سنتی",
+              "calories": 380,
+              "protein": 16,
+              "carbs": 35,
+              "fat": 18
+            },
+            {
+              "id": "d8m2",
+              "type": "snack",
+              "title": "ماست + میوه",
+              "description": "۱ کاسه ماست",
+              "calories": 200,
+              "protein": 12,
+              "carbs": 25,
+              "fat": 5
+            },
+            {
+              "id": "d8m3",
+              "type": "lunch",
+              "title": "چلو مرغ",
+              "description": "پرس معمولی",
+              "calories": 550,
+              "protein": 35,
+              "carbs": 60,
+              "fat": 15
+            },
+            {
+              "id": "d8m4",
+              "type": "dinner",
+              "title": "سوپ جو + نان سبوس",
+              "description": "سوپ خانگی",
+              "calories": 320,
+              "protein": 14,
+              "carbs": 40,
+              "fat": 10
+            }
+          ],
+          "dailyCaloriesTarget": 1580
+        },
+        {
+          "dayNumber": 9,
+          "title": "بالاتنه فشار",
+          "focus": "سینه و شانه",
+          "isRestDay": false,
+          "estimatedMinutes": 35,
+          "exercises": [
+            {
+              "exerciseId": "2",
+              "name": "شنا سوئدی",
+              "muscle": "سینه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "7",
+              "name": "پرس سینه با دمبل",
+              "muscle": "سینه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "8",
+              "name": "دیپ روی صندلی",
+              "muscle": "بازو",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "9",
+              "name": "پرس سرشانه با دمبل",
+              "muscle": "شانه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "3",
+              "name": "پلانک",
+              "muscle": "میان‌تنه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            }
+          ],
+          "meals": [
+            {
+              "id": "d9m1",
+              "type": "breakfast",
+              "title": "نان و پنیر و گردو",
+              "description": "صبحانه سنتی",
+              "calories": 380,
+              "protein": 16,
+              "carbs": 35,
+              "fat": 18
+            },
+            {
+              "id": "d9m2",
+              "type": "snack",
+              "title": "ماست + میوه",
+              "description": "۱ کاسه ماست",
+              "calories": 200,
+              "protein": 12,
+              "carbs": 25,
+              "fat": 5
+            },
+            {
+              "id": "d9m3",
+              "type": "lunch",
+              "title": "چلو مرغ",
+              "description": "پرس معمولی",
+              "calories": 550,
+              "protein": 35,
+              "carbs": 60,
+              "fat": 15
+            },
+            {
+              "id": "d9m4",
+              "type": "dinner",
+              "title": "سوپ جو + نان سبوس",
+              "description": "سوپ خانگی",
+              "calories": 320,
+              "protein": 14,
+              "carbs": 40,
+              "fat": 10
+            }
+          ],
+          "dailyCaloriesTarget": 1580
+        },
+        {
+          "dayNumber": 10,
+          "title": "بالاتنه کشش",
+          "focus": "پشت و بازو",
+          "isRestDay": false,
+          "estimatedMinutes": 35,
+          "exercises": [
+            {
+              "exerciseId": "10",
+              "name": "بارفیکس منفی",
+              "muscle": "پشت",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "12",
+              "name": "لت پول‌داون",
+              "muscle": "پشت",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "13",
+              "name": "فیس‌پول با کش",
+              "muscle": "شانه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "3",
+              "name": "پلانک",
+              "muscle": "میان‌تنه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "16",
+              "name": "کرانچ دوچرخه",
+              "muscle": "میان‌تنه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            }
+          ],
+          "meals": [
+            {
+              "id": "d10m1",
+              "type": "breakfast",
+              "title": "نان و پنیر و گردو",
+              "description": "صبحانه سنتی",
+              "calories": 380,
+              "protein": 16,
+              "carbs": 35,
+              "fat": 18
+            },
+            {
+              "id": "d10m2",
+              "type": "snack",
+              "title": "ماست + میوه",
+              "description": "۱ کاسه ماست",
+              "calories": 200,
+              "protein": 12,
+              "carbs": 25,
+              "fat": 5
+            },
+            {
+              "id": "d10m3",
+              "type": "lunch",
+              "title": "چلو مرغ",
+              "description": "پرس معمولی",
+              "calories": 550,
+              "protein": 35,
+              "carbs": 60,
+              "fat": 15
+            },
+            {
+              "id": "d10m4",
+              "type": "dinner",
+              "title": "سوپ جو + نان سبوس",
+              "description": "سوپ خانگی",
+              "calories": 320,
+              "protein": 14,
+              "carbs": 40,
+              "fat": 10
+            }
+          ],
+          "dailyCaloriesTarget": 1580
+        },
+        {
+          "dayNumber": 11,
+          "title": "پایین تنه",
+          "focus": "پا و باسن",
+          "isRestDay": false,
+          "estimatedMinutes": 35,
+          "exercises": [
+            {
+              "exerciseId": "1",
+              "name": "اسکوات با وزن بدن",
+              "muscle": "پا",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "4",
+              "name": "لانگز معکوس",
+              "muscle": "پا",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "5",
+              "name": "ددلیفت رومانیایی با دمبل",
+              "muscle": "پا",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "14",
+              "name": "هیپ تراست",
+              "muscle": "باسن",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "15",
+              "name": "اسکوات گابلت",
+              "muscle": "پا",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            }
+          ],
+          "meals": [
+            {
+              "id": "d11m1",
+              "type": "breakfast",
+              "title": "نان و پنیر و گردو",
+              "description": "صبحانه سنتی",
+              "calories": 380,
+              "protein": 16,
+              "carbs": 35,
+              "fat": 18
+            },
+            {
+              "id": "d11m2",
+              "type": "snack",
+              "title": "ماست + میوه",
+              "description": "۱ کاسه ماست",
+              "calories": 200,
+              "protein": 12,
+              "carbs": 25,
+              "fat": 5
+            },
+            {
+              "id": "d11m3",
+              "type": "lunch",
+              "title": "چلو مرغ",
+              "description": "پرس معمولی",
+              "calories": 550,
+              "protein": 35,
+              "carbs": 60,
+              "fat": 15
+            },
+            {
+              "id": "d11m4",
+              "type": "dinner",
+              "title": "سوپ جو + نان سبوس",
+              "description": "سوپ خانگی",
+              "calories": 320,
+              "protein": 14,
+              "carbs": 40,
+              "fat": 10
+            }
+          ],
+          "dailyCaloriesTarget": 1580
+        },
+        {
+          "dayNumber": 12,
+          "title": "تمرین ترکیبی",
+          "focus": "کل بدن",
+          "isRestDay": false,
+          "estimatedMinutes": 35,
+          "exercises": [
+            {
+              "exerciseId": "6",
+              "name": "کوهنورد",
+              "muscle": "کل بدن",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "18",
+              "name": "برپی",
+              "muscle": "کل بدن",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "19",
+              "name": "جامپینگ جک",
+              "muscle": "کل بدن",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "3",
+              "name": "پلانک",
+              "muscle": "میان‌تنه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "16",
+              "name": "کرانچ دوچرخه",
+              "muscle": "میان‌تنه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            }
+          ],
+          "meals": [
+            {
+              "id": "d12m1",
+              "type": "breakfast",
+              "title": "نان و پنیر و گردو",
+              "description": "صبحانه سنتی",
+              "calories": 380,
+              "protein": 16,
+              "carbs": 35,
+              "fat": 18
+            },
+            {
+              "id": "d12m2",
+              "type": "snack",
+              "title": "ماست + میوه",
+              "description": "۱ کاسه ماست",
+              "calories": 200,
+              "protein": 12,
+              "carbs": 25,
+              "fat": 5
+            },
+            {
+              "id": "d12m3",
+              "type": "lunch",
+              "title": "چلو مرغ",
+              "description": "پرس معمولی",
+              "calories": 550,
+              "protein": 35,
+              "carbs": 60,
+              "fat": 15
+            },
+            {
+              "id": "d12m4",
+              "type": "dinner",
+              "title": "سوپ جو + نان سبوس",
+              "description": "سوپ خانگی",
+              "calories": 320,
+              "protein": 14,
+              "carbs": 40,
+              "fat": 10
+            }
+          ],
+          "dailyCaloriesTarget": 1580
+        },
+        {
+          "dayNumber": 13,
+          "title": "بالاتنه فشار",
+          "focus": "سینه و شانه",
+          "isRestDay": false,
+          "estimatedMinutes": 35,
+          "exercises": [
+            {
+              "exerciseId": "2",
+              "name": "شنا سوئدی",
+              "muscle": "سینه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "7",
+              "name": "پرس سینه با دمبل",
+              "muscle": "سینه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "8",
+              "name": "دیپ روی صندلی",
+              "muscle": "بازو",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "9",
+              "name": "پرس سرشانه با دمبل",
+              "muscle": "شانه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "3",
+              "name": "پلانک",
+              "muscle": "میان‌تنه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            }
+          ],
+          "meals": [
+            {
+              "id": "d13m1",
+              "type": "breakfast",
+              "title": "نان و پنیر و گردو",
+              "description": "صبحانه سنتی",
+              "calories": 380,
+              "protein": 16,
+              "carbs": 35,
+              "fat": 18
+            },
+            {
+              "id": "d13m2",
+              "type": "snack",
+              "title": "ماست + میوه",
+              "description": "۱ کاسه ماست",
+              "calories": 200,
+              "protein": 12,
+              "carbs": 25,
+              "fat": 5
+            },
+            {
+              "id": "d13m3",
+              "type": "lunch",
+              "title": "چلو مرغ",
+              "description": "پرس معمولی",
+              "calories": 550,
+              "protein": 35,
+              "carbs": 60,
+              "fat": 15
+            },
+            {
+              "id": "d13m4",
+              "type": "dinner",
+              "title": "سوپ جو + نان سبوس",
+              "description": "سوپ خانگی",
+              "calories": 320,
+              "protein": 14,
+              "carbs": 40,
+              "fat": 10
+            }
+          ],
+          "dailyCaloriesTarget": 1580
+        },
+        {
+          "dayNumber": 14,
+          "title": "روز ریکاوری",
+          "focus": "استراحت فعال و کشش",
+          "isRestDay": true,
+          "estimatedMinutes": 20,
+          "exercises": [
+            {
+              "exerciseId": "3",
+              "name": "پلانک",
+              "muscle": "میان‌تنه",
+              "sets": 2,
+              "reps": "۳۰-۴۵ ثانیه",
+              "restSeconds": 30
+            },
+            {
+              "exerciseId": "16",
+              "name": "کرانچ دوچرخه",
+              "muscle": "میان‌تنه",
+              "sets": 2,
+              "reps": "۳۰-۴۵ ثانیه",
+              "restSeconds": 30
+            },
+            {
+              "exerciseId": "17",
+              "name": "ددباگ",
+              "muscle": "میان‌تنه",
+              "sets": 2,
+              "reps": "۳۰-۴۵ ثانیه",
+              "restSeconds": 30
+            }
+          ],
+          "meals": [
+            {
+              "id": "d14m1",
+              "type": "breakfast",
+              "title": "نان و پنیر و گردو",
+              "description": "صبحانه سنتی",
+              "calories": 380,
+              "protein": 16,
+              "carbs": 35,
+              "fat": 18
+            },
+            {
+              "id": "d14m2",
+              "type": "snack",
+              "title": "ماست + میوه",
+              "description": "۱ کاسه ماست",
+              "calories": 200,
+              "protein": 12,
+              "carbs": 25,
+              "fat": 5
+            },
+            {
+              "id": "d14m3",
+              "type": "lunch",
+              "title": "چلو مرغ",
+              "description": "پرس معمولی",
+              "calories": 550,
+              "protein": 35,
+              "carbs": 60,
+              "fat": 15
+            },
+            {
+              "id": "d14m4",
+              "type": "dinner",
+              "title": "سوپ جو + نان سبوس",
+              "description": "سوپ خانگی",
+              "calories": 320,
+              "protein": 14,
+              "carbs": 40,
+              "fat": 10
+            }
+          ],
+          "dailyCaloriesTarget": 1580
+        },
+        {
+          "dayNumber": 15,
+          "title": "پایین تنه",
+          "focus": "پا و باسن",
+          "isRestDay": false,
+          "estimatedMinutes": 35,
+          "exercises": [
+            {
+              "exerciseId": "1",
+              "name": "اسکوات با وزن بدن",
+              "muscle": "پا",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "4",
+              "name": "لانگز معکوس",
+              "muscle": "پا",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "5",
+              "name": "ددلیفت رومانیایی با دمبل",
+              "muscle": "پا",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "14",
+              "name": "هیپ تراست",
+              "muscle": "باسن",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "15",
+              "name": "اسکوات گابلت",
+              "muscle": "پا",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            }
+          ],
+          "meals": [
+            {
+              "id": "d15m1",
+              "type": "breakfast",
+              "title": "نان و پنیر و گردو",
+              "description": "صبحانه سنتی",
+              "calories": 380,
+              "protein": 16,
+              "carbs": 35,
+              "fat": 18
+            },
+            {
+              "id": "d15m2",
+              "type": "snack",
+              "title": "ماست + میوه",
+              "description": "۱ کاسه ماست",
+              "calories": 200,
+              "protein": 12,
+              "carbs": 25,
+              "fat": 5
+            },
+            {
+              "id": "d15m3",
+              "type": "lunch",
+              "title": "چلو مرغ",
+              "description": "پرس معمولی",
+              "calories": 550,
+              "protein": 35,
+              "carbs": 60,
+              "fat": 15
+            },
+            {
+              "id": "d15m4",
+              "type": "dinner",
+              "title": "سوپ جو + نان سبوس",
+              "description": "سوپ خانگی",
+              "calories": 320,
+              "protein": 14,
+              "carbs": 40,
+              "fat": 10
+            }
+          ],
+          "dailyCaloriesTarget": 1580
+        },
+        {
+          "dayNumber": 16,
+          "title": "تمرین ترکیبی",
+          "focus": "کل بدن",
+          "isRestDay": false,
+          "estimatedMinutes": 35,
+          "exercises": [
+            {
+              "exerciseId": "6",
+              "name": "کوهنورد",
+              "muscle": "کل بدن",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "18",
+              "name": "برپی",
+              "muscle": "کل بدن",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "19",
+              "name": "جامپینگ جک",
+              "muscle": "کل بدن",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "3",
+              "name": "پلانک",
+              "muscle": "میان‌تنه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "16",
+              "name": "کرانچ دوچرخه",
+              "muscle": "میان‌تنه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            }
+          ],
+          "meals": [
+            {
+              "id": "d16m1",
+              "type": "breakfast",
+              "title": "نان و پنیر و گردو",
+              "description": "صبحانه سنتی",
+              "calories": 380,
+              "protein": 16,
+              "carbs": 35,
+              "fat": 18
+            },
+            {
+              "id": "d16m2",
+              "type": "snack",
+              "title": "ماست + میوه",
+              "description": "۱ کاسه ماست",
+              "calories": 200,
+              "protein": 12,
+              "carbs": 25,
+              "fat": 5
+            },
+            {
+              "id": "d16m3",
+              "type": "lunch",
+              "title": "چلو مرغ",
+              "description": "پرس معمولی",
+              "calories": 550,
+              "protein": 35,
+              "carbs": 60,
+              "fat": 15
+            },
+            {
+              "id": "d16m4",
+              "type": "dinner",
+              "title": "سوپ جو + نان سبوس",
+              "description": "سوپ خانگی",
+              "calories": 320,
+              "protein": 14,
+              "carbs": 40,
+              "fat": 10
+            }
+          ],
+          "dailyCaloriesTarget": 1580
+        },
+        {
+          "dayNumber": 17,
+          "title": "بالاتنه فشار",
+          "focus": "سینه و شانه",
+          "isRestDay": false,
+          "estimatedMinutes": 35,
+          "exercises": [
+            {
+              "exerciseId": "2",
+              "name": "شنا سوئدی",
+              "muscle": "سینه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "7",
+              "name": "پرس سینه با دمبل",
+              "muscle": "سینه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "8",
+              "name": "دیپ روی صندلی",
+              "muscle": "بازو",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "9",
+              "name": "پرس سرشانه با دمبل",
+              "muscle": "شانه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "3",
+              "name": "پلانک",
+              "muscle": "میان‌تنه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            }
+          ],
+          "meals": [
+            {
+              "id": "d17m1",
+              "type": "breakfast",
+              "title": "نان و پنیر و گردو",
+              "description": "صبحانه سنتی",
+              "calories": 380,
+              "protein": 16,
+              "carbs": 35,
+              "fat": 18
+            },
+            {
+              "id": "d17m2",
+              "type": "snack",
+              "title": "ماست + میوه",
+              "description": "۱ کاسه ماست",
+              "calories": 200,
+              "protein": 12,
+              "carbs": 25,
+              "fat": 5
+            },
+            {
+              "id": "d17m3",
+              "type": "lunch",
+              "title": "چلو مرغ",
+              "description": "پرس معمولی",
+              "calories": 550,
+              "protein": 35,
+              "carbs": 60,
+              "fat": 15
+            },
+            {
+              "id": "d17m4",
+              "type": "dinner",
+              "title": "سوپ جو + نان سبوس",
+              "description": "سوپ خانگی",
+              "calories": 320,
+              "protein": 14,
+              "carbs": 40,
+              "fat": 10
+            }
+          ],
+          "dailyCaloriesTarget": 1580
+        },
+        {
+          "dayNumber": 18,
+          "title": "بالاتنه کشش",
+          "focus": "پشت و بازو",
+          "isRestDay": false,
+          "estimatedMinutes": 35,
+          "exercises": [
+            {
+              "exerciseId": "10",
+              "name": "بارفیکس منفی",
+              "muscle": "پشت",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "12",
+              "name": "لت پول‌داون",
+              "muscle": "پشت",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "13",
+              "name": "فیس‌پول با کش",
+              "muscle": "شانه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "3",
+              "name": "پلانک",
+              "muscle": "میان‌تنه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "16",
+              "name": "کرانچ دوچرخه",
+              "muscle": "میان‌تنه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            }
+          ],
+          "meals": [
+            {
+              "id": "d18m1",
+              "type": "breakfast",
+              "title": "نان و پنیر و گردو",
+              "description": "صبحانه سنتی",
+              "calories": 380,
+              "protein": 16,
+              "carbs": 35,
+              "fat": 18
+            },
+            {
+              "id": "d18m2",
+              "type": "snack",
+              "title": "ماست + میوه",
+              "description": "۱ کاسه ماست",
+              "calories": 200,
+              "protein": 12,
+              "carbs": 25,
+              "fat": 5
+            },
+            {
+              "id": "d18m3",
+              "type": "lunch",
+              "title": "چلو مرغ",
+              "description": "پرس معمولی",
+              "calories": 550,
+              "protein": 35,
+              "carbs": 60,
+              "fat": 15
+            },
+            {
+              "id": "d18m4",
+              "type": "dinner",
+              "title": "سوپ جو + نان سبوس",
+              "description": "سوپ خانگی",
+              "calories": 320,
+              "protein": 14,
+              "carbs": 40,
+              "fat": 10
+            }
+          ],
+          "dailyCaloriesTarget": 1580
+        },
+        {
+          "dayNumber": 19,
+          "title": "پایین تنه",
+          "focus": "پا و باسن",
+          "isRestDay": false,
+          "estimatedMinutes": 35,
+          "exercises": [
+            {
+              "exerciseId": "1",
+              "name": "اسکوات با وزن بدن",
+              "muscle": "پا",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "4",
+              "name": "لانگز معکوس",
+              "muscle": "پا",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "5",
+              "name": "ددلیفت رومانیایی با دمبل",
+              "muscle": "پا",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "14",
+              "name": "هیپ تراست",
+              "muscle": "باسن",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "15",
+              "name": "اسکوات گابلت",
+              "muscle": "پا",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            }
+          ],
+          "meals": [
+            {
+              "id": "d19m1",
+              "type": "breakfast",
+              "title": "نان و پنیر و گردو",
+              "description": "صبحانه سنتی",
+              "calories": 380,
+              "protein": 16,
+              "carbs": 35,
+              "fat": 18
+            },
+            {
+              "id": "d19m2",
+              "type": "snack",
+              "title": "ماست + میوه",
+              "description": "۱ کاسه ماست",
+              "calories": 200,
+              "protein": 12,
+              "carbs": 25,
+              "fat": 5
+            },
+            {
+              "id": "d19m3",
+              "type": "lunch",
+              "title": "چلو مرغ",
+              "description": "پرس معمولی",
+              "calories": 550,
+              "protein": 35,
+              "carbs": 60,
+              "fat": 15
+            },
+            {
+              "id": "d19m4",
+              "type": "dinner",
+              "title": "سوپ جو + نان سبوس",
+              "description": "سوپ خانگی",
+              "calories": 320,
+              "protein": 14,
+              "carbs": 40,
+              "fat": 10
+            }
+          ],
+          "dailyCaloriesTarget": 1580
+        },
+        {
+          "dayNumber": 20,
+          "title": "تمرین ترکیبی",
+          "focus": "کل بدن",
+          "isRestDay": false,
+          "estimatedMinutes": 35,
+          "exercises": [
+            {
+              "exerciseId": "6",
+              "name": "کوهنورد",
+              "muscle": "کل بدن",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "18",
+              "name": "برپی",
+              "muscle": "کل بدن",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "19",
+              "name": "جامپینگ جک",
+              "muscle": "کل بدن",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "3",
+              "name": "پلانک",
+              "muscle": "میان‌تنه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "16",
+              "name": "کرانچ دوچرخه",
+              "muscle": "میان‌تنه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            }
+          ],
+          "meals": [
+            {
+              "id": "d20m1",
+              "type": "breakfast",
+              "title": "نان و پنیر و گردو",
+              "description": "صبحانه سنتی",
+              "calories": 380,
+              "protein": 16,
+              "carbs": 35,
+              "fat": 18
+            },
+            {
+              "id": "d20m2",
+              "type": "snack",
+              "title": "ماست + میوه",
+              "description": "۱ کاسه ماست",
+              "calories": 200,
+              "protein": 12,
+              "carbs": 25,
+              "fat": 5
+            },
+            {
+              "id": "d20m3",
+              "type": "lunch",
+              "title": "چلو مرغ",
+              "description": "پرس معمولی",
+              "calories": 550,
+              "protein": 35,
+              "carbs": 60,
+              "fat": 15
+            },
+            {
+              "id": "d20m4",
+              "type": "dinner",
+              "title": "سوپ جو + نان سبوس",
+              "description": "سوپ خانگی",
+              "calories": 320,
+              "protein": 14,
+              "carbs": 40,
+              "fat": 10
+            }
+          ],
+          "dailyCaloriesTarget": 1580
+        },
+        {
+          "dayNumber": 21,
+          "title": "روز ریکاوری",
+          "focus": "استراحت فعال و کشش",
+          "isRestDay": true,
+          "estimatedMinutes": 20,
+          "exercises": [
+            {
+              "exerciseId": "3",
+              "name": "پلانک",
+              "muscle": "میان‌تنه",
+              "sets": 2,
+              "reps": "۳۰-۴۵ ثانیه",
+              "restSeconds": 30
+            },
+            {
+              "exerciseId": "16",
+              "name": "کرانچ دوچرخه",
+              "muscle": "میان‌تنه",
+              "sets": 2,
+              "reps": "۳۰-۴۵ ثانیه",
+              "restSeconds": 30
+            },
+            {
+              "exerciseId": "17",
+              "name": "ددباگ",
+              "muscle": "میان‌تنه",
+              "sets": 2,
+              "reps": "۳۰-۴۵ ثانیه",
+              "restSeconds": 30
+            }
+          ],
+          "meals": [
+            {
+              "id": "d21m1",
+              "type": "breakfast",
+              "title": "نان و پنیر و گردو",
+              "description": "صبحانه سنتی",
+              "calories": 380,
+              "protein": 16,
+              "carbs": 35,
+              "fat": 18
+            },
+            {
+              "id": "d21m2",
+              "type": "snack",
+              "title": "ماست + میوه",
+              "description": "۱ کاسه ماست",
+              "calories": 200,
+              "protein": 12,
+              "carbs": 25,
+              "fat": 5
+            },
+            {
+              "id": "d21m3",
+              "type": "lunch",
+              "title": "چلو مرغ",
+              "description": "پرس معمولی",
+              "calories": 550,
+              "protein": 35,
+              "carbs": 60,
+              "fat": 15
+            },
+            {
+              "id": "d21m4",
+              "type": "dinner",
+              "title": "سوپ جو + نان سبوس",
+              "description": "سوپ خانگی",
+              "calories": 320,
+              "protein": 14,
+              "carbs": 40,
+              "fat": 10
+            }
+          ],
+          "dailyCaloriesTarget": 1580
+        },
+        {
+          "dayNumber": 22,
+          "title": "بالاتنه کشش",
+          "focus": "پشت و بازو",
+          "isRestDay": false,
+          "estimatedMinutes": 35,
+          "exercises": [
+            {
+              "exerciseId": "10",
+              "name": "بارفیکس منفی",
+              "muscle": "پشت",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "12",
+              "name": "لت پول‌داون",
+              "muscle": "پشت",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "13",
+              "name": "فیس‌پول با کش",
+              "muscle": "شانه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "3",
+              "name": "پلانک",
+              "muscle": "میان‌تنه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "16",
+              "name": "کرانچ دوچرخه",
+              "muscle": "میان‌تنه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            }
+          ],
+          "meals": [
+            {
+              "id": "d22m1",
+              "type": "breakfast",
+              "title": "نان و پنیر و گردو",
+              "description": "صبحانه سنتی",
+              "calories": 380,
+              "protein": 16,
+              "carbs": 35,
+              "fat": 18
+            },
+            {
+              "id": "d22m2",
+              "type": "snack",
+              "title": "ماست + میوه",
+              "description": "۱ کاسه ماست",
+              "calories": 200,
+              "protein": 12,
+              "carbs": 25,
+              "fat": 5
+            },
+            {
+              "id": "d22m3",
+              "type": "lunch",
+              "title": "چلو مرغ",
+              "description": "پرس معمولی",
+              "calories": 550,
+              "protein": 35,
+              "carbs": 60,
+              "fat": 15
+            },
+            {
+              "id": "d22m4",
+              "type": "dinner",
+              "title": "سوپ جو + نان سبوس",
+              "description": "سوپ خانگی",
+              "calories": 320,
+              "protein": 14,
+              "carbs": 40,
+              "fat": 10
+            }
+          ],
+          "dailyCaloriesTarget": 1580
+        },
+        {
+          "dayNumber": 23,
+          "title": "پایین تنه",
+          "focus": "پا و باسن",
+          "isRestDay": false,
+          "estimatedMinutes": 35,
+          "exercises": [
+            {
+              "exerciseId": "1",
+              "name": "اسکوات با وزن بدن",
+              "muscle": "پا",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "4",
+              "name": "لانگز معکوس",
+              "muscle": "پا",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "5",
+              "name": "ددلیفت رومانیایی با دمبل",
+              "muscle": "پا",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "14",
+              "name": "هیپ تراست",
+              "muscle": "باسن",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "15",
+              "name": "اسکوات گابلت",
+              "muscle": "پا",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            }
+          ],
+          "meals": [
+            {
+              "id": "d23m1",
+              "type": "breakfast",
+              "title": "نان و پنیر و گردو",
+              "description": "صبحانه سنتی",
+              "calories": 380,
+              "protein": 16,
+              "carbs": 35,
+              "fat": 18
+            },
+            {
+              "id": "d23m2",
+              "type": "snack",
+              "title": "ماست + میوه",
+              "description": "۱ کاسه ماست",
+              "calories": 200,
+              "protein": 12,
+              "carbs": 25,
+              "fat": 5
+            },
+            {
+              "id": "d23m3",
+              "type": "lunch",
+              "title": "چلو مرغ",
+              "description": "پرس معمولی",
+              "calories": 550,
+              "protein": 35,
+              "carbs": 60,
+              "fat": 15
+            },
+            {
+              "id": "d23m4",
+              "type": "dinner",
+              "title": "سوپ جو + نان سبوس",
+              "description": "سوپ خانگی",
+              "calories": 320,
+              "protein": 14,
+              "carbs": 40,
+              "fat": 10
+            }
+          ],
+          "dailyCaloriesTarget": 1580
+        },
+        {
+          "dayNumber": 24,
+          "title": "تمرین ترکیبی",
+          "focus": "کل بدن",
+          "isRestDay": false,
+          "estimatedMinutes": 35,
+          "exercises": [
+            {
+              "exerciseId": "6",
+              "name": "کوهنورد",
+              "muscle": "کل بدن",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "18",
+              "name": "برپی",
+              "muscle": "کل بدن",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "19",
+              "name": "جامپینگ جک",
+              "muscle": "کل بدن",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "3",
+              "name": "پلانک",
+              "muscle": "میان‌تنه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "16",
+              "name": "کرانچ دوچرخه",
+              "muscle": "میان‌تنه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            }
+          ],
+          "meals": [
+            {
+              "id": "d24m1",
+              "type": "breakfast",
+              "title": "نان و پنیر و گردو",
+              "description": "صبحانه سنتی",
+              "calories": 380,
+              "protein": 16,
+              "carbs": 35,
+              "fat": 18
+            },
+            {
+              "id": "d24m2",
+              "type": "snack",
+              "title": "ماست + میوه",
+              "description": "۱ کاسه ماست",
+              "calories": 200,
+              "protein": 12,
+              "carbs": 25,
+              "fat": 5
+            },
+            {
+              "id": "d24m3",
+              "type": "lunch",
+              "title": "چلو مرغ",
+              "description": "پرس معمولی",
+              "calories": 550,
+              "protein": 35,
+              "carbs": 60,
+              "fat": 15
+            },
+            {
+              "id": "d24m4",
+              "type": "dinner",
+              "title": "سوپ جو + نان سبوس",
+              "description": "سوپ خانگی",
+              "calories": 320,
+              "protein": 14,
+              "carbs": 40,
+              "fat": 10
+            }
+          ],
+          "dailyCaloriesTarget": 1580
+        },
+        {
+          "dayNumber": 25,
+          "title": "بالاتنه فشار",
+          "focus": "سینه و شانه",
+          "isRestDay": false,
+          "estimatedMinutes": 35,
+          "exercises": [
+            {
+              "exerciseId": "2",
+              "name": "شنا سوئدی",
+              "muscle": "سینه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "7",
+              "name": "پرس سینه با دمبل",
+              "muscle": "سینه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "8",
+              "name": "دیپ روی صندلی",
+              "muscle": "بازو",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "9",
+              "name": "پرس سرشانه با دمبل",
+              "muscle": "شانه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "3",
+              "name": "پلانک",
+              "muscle": "میان‌تنه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            }
+          ],
+          "meals": [
+            {
+              "id": "d25m1",
+              "type": "breakfast",
+              "title": "نان و پنیر و گردو",
+              "description": "صبحانه سنتی",
+              "calories": 380,
+              "protein": 16,
+              "carbs": 35,
+              "fat": 18
+            },
+            {
+              "id": "d25m2",
+              "type": "snack",
+              "title": "ماست + میوه",
+              "description": "۱ کاسه ماست",
+              "calories": 200,
+              "protein": 12,
+              "carbs": 25,
+              "fat": 5
+            },
+            {
+              "id": "d25m3",
+              "type": "lunch",
+              "title": "چلو مرغ",
+              "description": "پرس معمولی",
+              "calories": 550,
+              "protein": 35,
+              "carbs": 60,
+              "fat": 15
+            },
+            {
+              "id": "d25m4",
+              "type": "dinner",
+              "title": "سوپ جو + نان سبوس",
+              "description": "سوپ خانگی",
+              "calories": 320,
+              "protein": 14,
+              "carbs": 40,
+              "fat": 10
+            }
+          ],
+          "dailyCaloriesTarget": 1580
+        },
+        {
+          "dayNumber": 26,
+          "title": "بالاتنه کشش",
+          "focus": "پشت و بازو",
+          "isRestDay": false,
+          "estimatedMinutes": 35,
+          "exercises": [
+            {
+              "exerciseId": "10",
+              "name": "بارفیکس منفی",
+              "muscle": "پشت",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "12",
+              "name": "لت پول‌داون",
+              "muscle": "پشت",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "13",
+              "name": "فیس‌پول با کش",
+              "muscle": "شانه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "3",
+              "name": "پلانک",
+              "muscle": "میان‌تنه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "16",
+              "name": "کرانچ دوچرخه",
+              "muscle": "میان‌تنه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            }
+          ],
+          "meals": [
+            {
+              "id": "d26m1",
+              "type": "breakfast",
+              "title": "نان و پنیر و گردو",
+              "description": "صبحانه سنتی",
+              "calories": 380,
+              "protein": 16,
+              "carbs": 35,
+              "fat": 18
+            },
+            {
+              "id": "d26m2",
+              "type": "snack",
+              "title": "ماست + میوه",
+              "description": "۱ کاسه ماست",
+              "calories": 200,
+              "protein": 12,
+              "carbs": 25,
+              "fat": 5
+            },
+            {
+              "id": "d26m3",
+              "type": "lunch",
+              "title": "چلو مرغ",
+              "description": "پرس معمولی",
+              "calories": 550,
+              "protein": 35,
+              "carbs": 60,
+              "fat": 15
+            },
+            {
+              "id": "d26m4",
+              "type": "dinner",
+              "title": "سوپ جو + نان سبوس",
+              "description": "سوپ خانگی",
+              "calories": 320,
+              "protein": 14,
+              "carbs": 40,
+              "fat": 10
+            }
+          ],
+          "dailyCaloriesTarget": 1580
+        },
+        {
+          "dayNumber": 27,
+          "title": "پایین تنه",
+          "focus": "پا و باسن",
+          "isRestDay": false,
+          "estimatedMinutes": 35,
+          "exercises": [
+            {
+              "exerciseId": "1",
+              "name": "اسکوات با وزن بدن",
+              "muscle": "پا",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "4",
+              "name": "لانگز معکوس",
+              "muscle": "پا",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "5",
+              "name": "ددلیفت رومانیایی با دمبل",
+              "muscle": "پا",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "14",
+              "name": "هیپ تراست",
+              "muscle": "باسن",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "15",
+              "name": "اسکوات گابلت",
+              "muscle": "پا",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            }
+          ],
+          "meals": [
+            {
+              "id": "d27m1",
+              "type": "breakfast",
+              "title": "نان و پنیر و گردو",
+              "description": "صبحانه سنتی",
+              "calories": 380,
+              "protein": 16,
+              "carbs": 35,
+              "fat": 18
+            },
+            {
+              "id": "d27m2",
+              "type": "snack",
+              "title": "ماست + میوه",
+              "description": "۱ کاسه ماست",
+              "calories": 200,
+              "protein": 12,
+              "carbs": 25,
+              "fat": 5
+            },
+            {
+              "id": "d27m3",
+              "type": "lunch",
+              "title": "چلو مرغ",
+              "description": "پرس معمولی",
+              "calories": 550,
+              "protein": 35,
+              "carbs": 60,
+              "fat": 15
+            },
+            {
+              "id": "d27m4",
+              "type": "dinner",
+              "title": "سوپ جو + نان سبوس",
+              "description": "سوپ خانگی",
+              "calories": 320,
+              "protein": 14,
+              "carbs": 40,
+              "fat": 10
+            }
+          ],
+          "dailyCaloriesTarget": 1580
+        },
+        {
+          "dayNumber": 28,
+          "title": "روز ریکاوری",
+          "focus": "استراحت فعال و کشش",
+          "isRestDay": true,
+          "estimatedMinutes": 20,
+          "exercises": [
+            {
+              "exerciseId": "3",
+              "name": "پلانک",
+              "muscle": "میان‌تنه",
+              "sets": 2,
+              "reps": "۳۰-۴۵ ثانیه",
+              "restSeconds": 30
+            },
+            {
+              "exerciseId": "16",
+              "name": "کرانچ دوچرخه",
+              "muscle": "میان‌تنه",
+              "sets": 2,
+              "reps": "۳۰-۴۵ ثانیه",
+              "restSeconds": 30
+            },
+            {
+              "exerciseId": "17",
+              "name": "ددباگ",
+              "muscle": "میان‌تنه",
+              "sets": 2,
+              "reps": "۳۰-۴۵ ثانیه",
+              "restSeconds": 30
+            }
+          ],
+          "meals": [
+            {
+              "id": "d28m1",
+              "type": "breakfast",
+              "title": "نان و پنیر و گردو",
+              "description": "صبحانه سنتی",
+              "calories": 380,
+              "protein": 16,
+              "carbs": 35,
+              "fat": 18
+            },
+            {
+              "id": "d28m2",
+              "type": "snack",
+              "title": "ماست + میوه",
+              "description": "۱ کاسه ماست",
+              "calories": 200,
+              "protein": 12,
+              "carbs": 25,
+              "fat": 5
+            },
+            {
+              "id": "d28m3",
+              "type": "lunch",
+              "title": "چلو مرغ",
+              "description": "پرس معمولی",
+              "calories": 550,
+              "protein": 35,
+              "carbs": 60,
+              "fat": 15
+            },
+            {
+              "id": "d28m4",
+              "type": "dinner",
+              "title": "سوپ جو + نان سبوس",
+              "description": "سوپ خانگی",
+              "calories": 320,
+              "protein": 14,
+              "carbs": 40,
+              "fat": 10
+            }
+          ],
+          "dailyCaloriesTarget": 1580
+        },
+        {
+          "dayNumber": 29,
+          "title": "بالاتنه فشار",
+          "focus": "سینه و شانه",
+          "isRestDay": false,
+          "estimatedMinutes": 35,
+          "exercises": [
+            {
+              "exerciseId": "2",
+              "name": "شنا سوئدی",
+              "muscle": "سینه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "7",
+              "name": "پرس سینه با دمبل",
+              "muscle": "سینه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "8",
+              "name": "دیپ روی صندلی",
+              "muscle": "بازو",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "9",
+              "name": "پرس سرشانه با دمبل",
+              "muscle": "شانه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "3",
+              "name": "پلانک",
+              "muscle": "میان‌تنه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            }
+          ],
+          "meals": [
+            {
+              "id": "d29m1",
+              "type": "breakfast",
+              "title": "نان و پنیر و گردو",
+              "description": "صبحانه سنتی",
+              "calories": 380,
+              "protein": 16,
+              "carbs": 35,
+              "fat": 18
+            },
+            {
+              "id": "d29m2",
+              "type": "snack",
+              "title": "ماست + میوه",
+              "description": "۱ کاسه ماست",
+              "calories": 200,
+              "protein": 12,
+              "carbs": 25,
+              "fat": 5
+            },
+            {
+              "id": "d29m3",
+              "type": "lunch",
+              "title": "چلو مرغ",
+              "description": "پرس معمولی",
+              "calories": 550,
+              "protein": 35,
+              "carbs": 60,
+              "fat": 15
+            },
+            {
+              "id": "d29m4",
+              "type": "dinner",
+              "title": "سوپ جو + نان سبوس",
+              "description": "سوپ خانگی",
+              "calories": 320,
+              "protein": 14,
+              "carbs": 40,
+              "fat": 10
+            }
+          ],
+          "dailyCaloriesTarget": 1580
+        },
+        {
+          "dayNumber": 30,
+          "title": "بالاتنه کشش",
+          "focus": "پشت و بازو",
+          "isRestDay": false,
+          "estimatedMinutes": 35,
+          "exercises": [
+            {
+              "exerciseId": "10",
+              "name": "بارفیکس منفی",
+              "muscle": "پشت",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "12",
+              "name": "لت پول‌داون",
+              "muscle": "پشت",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "13",
+              "name": "فیس‌پول با کش",
+              "muscle": "شانه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "3",
+              "name": "پلانک",
+              "muscle": "میان‌تنه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "16",
+              "name": "کرانچ دوچرخه",
+              "muscle": "میان‌تنه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            }
+          ],
+          "meals": [
+            {
+              "id": "d30m1",
+              "type": "breakfast",
+              "title": "نان و پنیر و گردو",
+              "description": "صبحانه سنتی",
+              "calories": 380,
+              "protein": 16,
+              "carbs": 35,
+              "fat": 18
+            },
+            {
+              "id": "d30m2",
+              "type": "snack",
+              "title": "ماست + میوه",
+              "description": "۱ کاسه ماست",
+              "calories": 200,
+              "protein": 12,
+              "carbs": 25,
+              "fat": 5
+            },
+            {
+              "id": "d30m3",
+              "type": "lunch",
+              "title": "چلو مرغ",
+              "description": "پرس معمولی",
+              "calories": 550,
+              "protein": 35,
+              "carbs": 60,
+              "fat": 15
+            },
+            {
+              "id": "d30m4",
+              "type": "dinner",
+              "title": "سوپ جو + نان سبوس",
+              "description": "سوپ خانگی",
+              "calories": 320,
+              "protein": 14,
+              "carbs": 40,
+              "fat": 10
+            }
+          ],
+          "dailyCaloriesTarget": 1580
+        }
+      ],
+      "createdAt": "2026-08-15T17:03:36.137Z",
+      "source": "ai",
+      "coachId": null
+    },
+    {
+      "id": "oE3RKXgsdTY",
+      "userId": "64Iv3Cydizw",
+      "goal": "build_muscle",
+      "equipment": "both",
+      "level": "beginner",
+      "title": "برنامه عضله‌سازی ۳۰ روزه",
+      "description": "برنامه شخصی‌سازی‌شده برای هدف برنامه عضله‌سازی ۳۰ روزه، سطح beginner.",
+      "startDate": "2026-08-19",
+      "durationDays": 30,
+      "days": [
+        {
+          "dayNumber": 1,
+          "title": "بالاتنه فشار",
+          "focus": "سینه و شانه",
+          "isRestDay": false,
+          "estimatedMinutes": 35,
+          "exercises": [
+            {
+              "exerciseId": "2",
+              "name": "شنا سوئدی",
+              "muscle": "سینه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "7",
+              "name": "پرس سینه با دمبل",
+              "muscle": "سینه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "8",
+              "name": "دیپ روی صندلی",
+              "muscle": "بازو",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "9",
+              "name": "پرس سرشانه با دمبل",
+              "muscle": "شانه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "3",
+              "name": "پلانک",
+              "muscle": "میان‌تنه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            }
+          ],
+          "meals": [
+            {
+              "id": "d1m1",
+              "type": "breakfast",
+              "title": "جو دوسر + شیر + کره بادام + موز",
+              "description": "۵۰گ جو، ۲۰۰میل شیر",
+              "calories": 480,
+              "protein": 22,
+              "carbs": 55,
+              "fat": 18
+            },
+            {
+              "id": "d1m2",
+              "type": "snack",
+              "title": "شیک پروتئین + موز",
+              "description": "۱ اسکوپ وی",
+              "calories": 280,
+              "protein": 28,
+              "carbs": 30,
+              "fat": 4
+            },
+            {
+              "id": "d1m3",
+              "type": "lunch",
+              "title": "برنج + خورشت + گوشت",
+              "description": "پرس کامل",
+              "calories": 650,
+              "protein": 38,
+              "carbs": 70,
+              "fat": 22
+            },
+            {
+              "id": "d1m4",
+              "type": "dinner",
+              "title": "سینه مرغ + سیب‌زمینی",
+              "description": "۲۰۰گ مرغ",
+              "calories": 520,
+              "protein": 45,
+              "carbs": 45,
+              "fat": 12
+            }
+          ],
+          "dailyCaloriesTarget": 2340
+        },
+        {
+          "dayNumber": 2,
+          "title": "بالاتنه کشش",
+          "focus": "پشت و بازو",
+          "isRestDay": false,
+          "estimatedMinutes": 35,
+          "exercises": [
+            {
+              "exerciseId": "10",
+              "name": "بارفیکس منفی",
+              "muscle": "پشت",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "11",
+              "name": "قایقی با کش",
+              "muscle": "پشت",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "12",
+              "name": "لت پول‌داون",
+              "muscle": "پشت",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "13",
+              "name": "فیس‌پول با کش",
+              "muscle": "شانه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "3",
+              "name": "پلانک",
+              "muscle": "میان‌تنه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            }
+          ],
+          "meals": [
+            {
+              "id": "d2m1",
+              "type": "breakfast",
+              "title": "جو دوسر + شیر + کره بادام + موز",
+              "description": "۵۰گ جو، ۲۰۰میل شیر",
+              "calories": 480,
+              "protein": 22,
+              "carbs": 55,
+              "fat": 18
+            },
+            {
+              "id": "d2m2",
+              "type": "snack",
+              "title": "شیک پروتئین + موز",
+              "description": "۱ اسکوپ وی",
+              "calories": 280,
+              "protein": 28,
+              "carbs": 30,
+              "fat": 4
+            },
+            {
+              "id": "d2m3",
+              "type": "lunch",
+              "title": "برنج + خورشت + گوشت",
+              "description": "پرس کامل",
+              "calories": 650,
+              "protein": 38,
+              "carbs": 70,
+              "fat": 22
+            },
+            {
+              "id": "d2m4",
+              "type": "dinner",
+              "title": "سینه مرغ + سیب‌زمینی",
+              "description": "۲۰۰گ مرغ",
+              "calories": 520,
+              "protein": 45,
+              "carbs": 45,
+              "fat": 12
+            }
+          ],
+          "dailyCaloriesTarget": 2340
+        },
+        {
+          "dayNumber": 3,
+          "title": "پایین تنه",
+          "focus": "پا و باسن",
+          "isRestDay": false,
+          "estimatedMinutes": 35,
+          "exercises": [
+            {
+              "exerciseId": "1",
+              "name": "اسکوات با وزن بدن",
+              "muscle": "پا",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "4",
+              "name": "لانگز معکوس",
+              "muscle": "پا",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "5",
+              "name": "ددلیفت رومانیایی با دمبل",
+              "muscle": "پا",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "14",
+              "name": "هیپ تراست",
+              "muscle": "باسن",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "15",
+              "name": "اسکوات گابلت",
+              "muscle": "پا",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            }
+          ],
+          "meals": [
+            {
+              "id": "d3m1",
+              "type": "breakfast",
+              "title": "جو دوسر + شیر + کره بادام + موز",
+              "description": "۵۰گ جو، ۲۰۰میل شیر",
+              "calories": 480,
+              "protein": 22,
+              "carbs": 55,
+              "fat": 18
+            },
+            {
+              "id": "d3m2",
+              "type": "snack",
+              "title": "شیک پروتئین + موز",
+              "description": "۱ اسکوپ وی",
+              "calories": 280,
+              "protein": 28,
+              "carbs": 30,
+              "fat": 4
+            },
+            {
+              "id": "d3m3",
+              "type": "lunch",
+              "title": "برنج + خورشت + گوشت",
+              "description": "پرس کامل",
+              "calories": 650,
+              "protein": 38,
+              "carbs": 70,
+              "fat": 22
+            },
+            {
+              "id": "d3m4",
+              "type": "dinner",
+              "title": "سینه مرغ + سیب‌زمینی",
+              "description": "۲۰۰گ مرغ",
+              "calories": 520,
+              "protein": 45,
+              "carbs": 45,
+              "fat": 12
+            }
+          ],
+          "dailyCaloriesTarget": 2340
+        },
+        {
+          "dayNumber": 4,
+          "title": "تمرین ترکیبی",
+          "focus": "کل بدن",
+          "isRestDay": false,
+          "estimatedMinutes": 35,
+          "exercises": [
+            {
+              "exerciseId": "6",
+              "name": "کوهنورد",
+              "muscle": "کل بدن",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "18",
+              "name": "برپی",
+              "muscle": "کل بدن",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "19",
+              "name": "جامپینگ جک",
+              "muscle": "کل بدن",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "3",
+              "name": "پلانک",
+              "muscle": "میان‌تنه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "16",
+              "name": "کرانچ دوچرخه",
+              "muscle": "میان‌تنه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            }
+          ],
+          "meals": [
+            {
+              "id": "d4m1",
+              "type": "breakfast",
+              "title": "جو دوسر + شیر + کره بادام + موز",
+              "description": "۵۰گ جو، ۲۰۰میل شیر",
+              "calories": 480,
+              "protein": 22,
+              "carbs": 55,
+              "fat": 18
+            },
+            {
+              "id": "d4m2",
+              "type": "snack",
+              "title": "شیک پروتئین + موز",
+              "description": "۱ اسکوپ وی",
+              "calories": 280,
+              "protein": 28,
+              "carbs": 30,
+              "fat": 4
+            },
+            {
+              "id": "d4m3",
+              "type": "lunch",
+              "title": "برنج + خورشت + گوشت",
+              "description": "پرس کامل",
+              "calories": 650,
+              "protein": 38,
+              "carbs": 70,
+              "fat": 22
+            },
+            {
+              "id": "d4m4",
+              "type": "dinner",
+              "title": "سینه مرغ + سیب‌زمینی",
+              "description": "۲۰۰گ مرغ",
+              "calories": 520,
+              "protein": 45,
+              "carbs": 45,
+              "fat": 12
+            }
+          ],
+          "dailyCaloriesTarget": 2340
+        },
+        {
+          "dayNumber": 5,
+          "title": "بالاتنه فشار",
+          "focus": "سینه و شانه",
+          "isRestDay": false,
+          "estimatedMinutes": 35,
+          "exercises": [
+            {
+              "exerciseId": "2",
+              "name": "شنا سوئدی",
+              "muscle": "سینه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "7",
+              "name": "پرس سینه با دمبل",
+              "muscle": "سینه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "8",
+              "name": "دیپ روی صندلی",
+              "muscle": "بازو",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "9",
+              "name": "پرس سرشانه با دمبل",
+              "muscle": "شانه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "3",
+              "name": "پلانک",
+              "muscle": "میان‌تنه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            }
+          ],
+          "meals": [
+            {
+              "id": "d5m1",
+              "type": "breakfast",
+              "title": "جو دوسر + شیر + کره بادام + موز",
+              "description": "۵۰گ جو، ۲۰۰میل شیر",
+              "calories": 480,
+              "protein": 22,
+              "carbs": 55,
+              "fat": 18
+            },
+            {
+              "id": "d5m2",
+              "type": "snack",
+              "title": "شیک پروتئین + موز",
+              "description": "۱ اسکوپ وی",
+              "calories": 280,
+              "protein": 28,
+              "carbs": 30,
+              "fat": 4
+            },
+            {
+              "id": "d5m3",
+              "type": "lunch",
+              "title": "برنج + خورشت + گوشت",
+              "description": "پرس کامل",
+              "calories": 650,
+              "protein": 38,
+              "carbs": 70,
+              "fat": 22
+            },
+            {
+              "id": "d5m4",
+              "type": "dinner",
+              "title": "سینه مرغ + سیب‌زمینی",
+              "description": "۲۰۰گ مرغ",
+              "calories": 520,
+              "protein": 45,
+              "carbs": 45,
+              "fat": 12
+            }
+          ],
+          "dailyCaloriesTarget": 2340
+        },
+        {
+          "dayNumber": 6,
+          "title": "بالاتنه کشش",
+          "focus": "پشت و بازو",
+          "isRestDay": false,
+          "estimatedMinutes": 35,
+          "exercises": [
+            {
+              "exerciseId": "10",
+              "name": "بارفیکس منفی",
+              "muscle": "پشت",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "11",
+              "name": "قایقی با کش",
+              "muscle": "پشت",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "12",
+              "name": "لت پول‌داون",
+              "muscle": "پشت",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "13",
+              "name": "فیس‌پول با کش",
+              "muscle": "شانه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "3",
+              "name": "پلانک",
+              "muscle": "میان‌تنه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            }
+          ],
+          "meals": [
+            {
+              "id": "d6m1",
+              "type": "breakfast",
+              "title": "جو دوسر + شیر + کره بادام + موز",
+              "description": "۵۰گ جو، ۲۰۰میل شیر",
+              "calories": 480,
+              "protein": 22,
+              "carbs": 55,
+              "fat": 18
+            },
+            {
+              "id": "d6m2",
+              "type": "snack",
+              "title": "شیک پروتئین + موز",
+              "description": "۱ اسکوپ وی",
+              "calories": 280,
+              "protein": 28,
+              "carbs": 30,
+              "fat": 4
+            },
+            {
+              "id": "d6m3",
+              "type": "lunch",
+              "title": "برنج + خورشت + گوشت",
+              "description": "پرس کامل",
+              "calories": 650,
+              "protein": 38,
+              "carbs": 70,
+              "fat": 22
+            },
+            {
+              "id": "d6m4",
+              "type": "dinner",
+              "title": "سینه مرغ + سیب‌زمینی",
+              "description": "۲۰۰گ مرغ",
+              "calories": 520,
+              "protein": 45,
+              "carbs": 45,
+              "fat": 12
+            }
+          ],
+          "dailyCaloriesTarget": 2340
+        },
+        {
+          "dayNumber": 7,
+          "title": "روز ریکاوری",
+          "focus": "استراحت فعال و کشش",
+          "isRestDay": true,
+          "estimatedMinutes": 20,
+          "exercises": [
+            {
+              "exerciseId": "3",
+              "name": "پلانک",
+              "muscle": "میان‌تنه",
+              "sets": 2,
+              "reps": "۳۰-۴۵ ثانیه",
+              "restSeconds": 30
+            },
+            {
+              "exerciseId": "16",
+              "name": "کرانچ دوچرخه",
+              "muscle": "میان‌تنه",
+              "sets": 2,
+              "reps": "۳۰-۴۵ ثانیه",
+              "restSeconds": 30
+            },
+            {
+              "exerciseId": "17",
+              "name": "ددباگ",
+              "muscle": "میان‌تنه",
+              "sets": 2,
+              "reps": "۳۰-۴۵ ثانیه",
+              "restSeconds": 30
+            }
+          ],
+          "meals": [
+            {
+              "id": "d7m1",
+              "type": "breakfast",
+              "title": "جو دوسر + شیر + کره بادام + موز",
+              "description": "۵۰گ جو، ۲۰۰میل شیر",
+              "calories": 480,
+              "protein": 22,
+              "carbs": 55,
+              "fat": 18
+            },
+            {
+              "id": "d7m2",
+              "type": "snack",
+              "title": "شیک پروتئین + موز",
+              "description": "۱ اسکوپ وی",
+              "calories": 280,
+              "protein": 28,
+              "carbs": 30,
+              "fat": 4
+            },
+            {
+              "id": "d7m3",
+              "type": "lunch",
+              "title": "برنج + خورشت + گوشت",
+              "description": "پرس کامل",
+              "calories": 650,
+              "protein": 38,
+              "carbs": 70,
+              "fat": 22
+            },
+            {
+              "id": "d7m4",
+              "type": "dinner",
+              "title": "سینه مرغ + سیب‌زمینی",
+              "description": "۲۰۰گ مرغ",
+              "calories": 520,
+              "protein": 45,
+              "carbs": 45,
+              "fat": 12
+            }
+          ],
+          "dailyCaloriesTarget": 2340
+        },
+        {
+          "dayNumber": 8,
+          "title": "تمرین ترکیبی",
+          "focus": "کل بدن",
+          "isRestDay": false,
+          "estimatedMinutes": 35,
+          "exercises": [
+            {
+              "exerciseId": "6",
+              "name": "کوهنورد",
+              "muscle": "کل بدن",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "18",
+              "name": "برپی",
+              "muscle": "کل بدن",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "19",
+              "name": "جامپینگ جک",
+              "muscle": "کل بدن",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "3",
+              "name": "پلانک",
+              "muscle": "میان‌تنه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "16",
+              "name": "کرانچ دوچرخه",
+              "muscle": "میان‌تنه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            }
+          ],
+          "meals": [
+            {
+              "id": "d8m1",
+              "type": "breakfast",
+              "title": "جو دوسر + شیر + کره بادام + موز",
+              "description": "۵۰گ جو، ۲۰۰میل شیر",
+              "calories": 480,
+              "protein": 22,
+              "carbs": 55,
+              "fat": 18
+            },
+            {
+              "id": "d8m2",
+              "type": "snack",
+              "title": "شیک پروتئین + موز",
+              "description": "۱ اسکوپ وی",
+              "calories": 280,
+              "protein": 28,
+              "carbs": 30,
+              "fat": 4
+            },
+            {
+              "id": "d8m3",
+              "type": "lunch",
+              "title": "برنج + خورشت + گوشت",
+              "description": "پرس کامل",
+              "calories": 650,
+              "protein": 38,
+              "carbs": 70,
+              "fat": 22
+            },
+            {
+              "id": "d8m4",
+              "type": "dinner",
+              "title": "سینه مرغ + سیب‌زمینی",
+              "description": "۲۰۰گ مرغ",
+              "calories": 520,
+              "protein": 45,
+              "carbs": 45,
+              "fat": 12
+            }
+          ],
+          "dailyCaloriesTarget": 2340
+        },
+        {
+          "dayNumber": 9,
+          "title": "بالاتنه فشار",
+          "focus": "سینه و شانه",
+          "isRestDay": false,
+          "estimatedMinutes": 35,
+          "exercises": [
+            {
+              "exerciseId": "2",
+              "name": "شنا سوئدی",
+              "muscle": "سینه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "7",
+              "name": "پرس سینه با دمبل",
+              "muscle": "سینه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "8",
+              "name": "دیپ روی صندلی",
+              "muscle": "بازو",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "9",
+              "name": "پرس سرشانه با دمبل",
+              "muscle": "شانه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "3",
+              "name": "پلانک",
+              "muscle": "میان‌تنه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            }
+          ],
+          "meals": [
+            {
+              "id": "d9m1",
+              "type": "breakfast",
+              "title": "جو دوسر + شیر + کره بادام + موز",
+              "description": "۵۰گ جو، ۲۰۰میل شیر",
+              "calories": 480,
+              "protein": 22,
+              "carbs": 55,
+              "fat": 18
+            },
+            {
+              "id": "d9m2",
+              "type": "snack",
+              "title": "شیک پروتئین + موز",
+              "description": "۱ اسکوپ وی",
+              "calories": 280,
+              "protein": 28,
+              "carbs": 30,
+              "fat": 4
+            },
+            {
+              "id": "d9m3",
+              "type": "lunch",
+              "title": "برنج + خورشت + گوشت",
+              "description": "پرس کامل",
+              "calories": 650,
+              "protein": 38,
+              "carbs": 70,
+              "fat": 22
+            },
+            {
+              "id": "d9m4",
+              "type": "dinner",
+              "title": "سینه مرغ + سیب‌زمینی",
+              "description": "۲۰۰گ مرغ",
+              "calories": 520,
+              "protein": 45,
+              "carbs": 45,
+              "fat": 12
+            }
+          ],
+          "dailyCaloriesTarget": 2340
+        },
+        {
+          "dayNumber": 10,
+          "title": "بالاتنه کشش",
+          "focus": "پشت و بازو",
+          "isRestDay": false,
+          "estimatedMinutes": 35,
+          "exercises": [
+            {
+              "exerciseId": "10",
+              "name": "بارفیکس منفی",
+              "muscle": "پشت",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "11",
+              "name": "قایقی با کش",
+              "muscle": "پشت",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "12",
+              "name": "لت پول‌داون",
+              "muscle": "پشت",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "13",
+              "name": "فیس‌پول با کش",
+              "muscle": "شانه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "3",
+              "name": "پلانک",
+              "muscle": "میان‌تنه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            }
+          ],
+          "meals": [
+            {
+              "id": "d10m1",
+              "type": "breakfast",
+              "title": "جو دوسر + شیر + کره بادام + موز",
+              "description": "۵۰گ جو، ۲۰۰میل شیر",
+              "calories": 480,
+              "protein": 22,
+              "carbs": 55,
+              "fat": 18
+            },
+            {
+              "id": "d10m2",
+              "type": "snack",
+              "title": "شیک پروتئین + موز",
+              "description": "۱ اسکوپ وی",
+              "calories": 280,
+              "protein": 28,
+              "carbs": 30,
+              "fat": 4
+            },
+            {
+              "id": "d10m3",
+              "type": "lunch",
+              "title": "برنج + خورشت + گوشت",
+              "description": "پرس کامل",
+              "calories": 650,
+              "protein": 38,
+              "carbs": 70,
+              "fat": 22
+            },
+            {
+              "id": "d10m4",
+              "type": "dinner",
+              "title": "سینه مرغ + سیب‌زمینی",
+              "description": "۲۰۰گ مرغ",
+              "calories": 520,
+              "protein": 45,
+              "carbs": 45,
+              "fat": 12
+            }
+          ],
+          "dailyCaloriesTarget": 2340
+        },
+        {
+          "dayNumber": 11,
+          "title": "پایین تنه",
+          "focus": "پا و باسن",
+          "isRestDay": false,
+          "estimatedMinutes": 35,
+          "exercises": [
+            {
+              "exerciseId": "1",
+              "name": "اسکوات با وزن بدن",
+              "muscle": "پا",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "4",
+              "name": "لانگز معکوس",
+              "muscle": "پا",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "5",
+              "name": "ددلیفت رومانیایی با دمبل",
+              "muscle": "پا",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "14",
+              "name": "هیپ تراست",
+              "muscle": "باسن",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "15",
+              "name": "اسکوات گابلت",
+              "muscle": "پا",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            }
+          ],
+          "meals": [
+            {
+              "id": "d11m1",
+              "type": "breakfast",
+              "title": "جو دوسر + شیر + کره بادام + موز",
+              "description": "۵۰گ جو، ۲۰۰میل شیر",
+              "calories": 480,
+              "protein": 22,
+              "carbs": 55,
+              "fat": 18
+            },
+            {
+              "id": "d11m2",
+              "type": "snack",
+              "title": "شیک پروتئین + موز",
+              "description": "۱ اسکوپ وی",
+              "calories": 280,
+              "protein": 28,
+              "carbs": 30,
+              "fat": 4
+            },
+            {
+              "id": "d11m3",
+              "type": "lunch",
+              "title": "برنج + خورشت + گوشت",
+              "description": "پرس کامل",
+              "calories": 650,
+              "protein": 38,
+              "carbs": 70,
+              "fat": 22
+            },
+            {
+              "id": "d11m4",
+              "type": "dinner",
+              "title": "سینه مرغ + سیب‌زمینی",
+              "description": "۲۰۰گ مرغ",
+              "calories": 520,
+              "protein": 45,
+              "carbs": 45,
+              "fat": 12
+            }
+          ],
+          "dailyCaloriesTarget": 2340
+        },
+        {
+          "dayNumber": 12,
+          "title": "تمرین ترکیبی",
+          "focus": "کل بدن",
+          "isRestDay": false,
+          "estimatedMinutes": 35,
+          "exercises": [
+            {
+              "exerciseId": "6",
+              "name": "کوهنورد",
+              "muscle": "کل بدن",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "18",
+              "name": "برپی",
+              "muscle": "کل بدن",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "19",
+              "name": "جامپینگ جک",
+              "muscle": "کل بدن",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "3",
+              "name": "پلانک",
+              "muscle": "میان‌تنه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "16",
+              "name": "کرانچ دوچرخه",
+              "muscle": "میان‌تنه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            }
+          ],
+          "meals": [
+            {
+              "id": "d12m1",
+              "type": "breakfast",
+              "title": "جو دوسر + شیر + کره بادام + موز",
+              "description": "۵۰گ جو، ۲۰۰میل شیر",
+              "calories": 480,
+              "protein": 22,
+              "carbs": 55,
+              "fat": 18
+            },
+            {
+              "id": "d12m2",
+              "type": "snack",
+              "title": "شیک پروتئین + موز",
+              "description": "۱ اسکوپ وی",
+              "calories": 280,
+              "protein": 28,
+              "carbs": 30,
+              "fat": 4
+            },
+            {
+              "id": "d12m3",
+              "type": "lunch",
+              "title": "برنج + خورشت + گوشت",
+              "description": "پرس کامل",
+              "calories": 650,
+              "protein": 38,
+              "carbs": 70,
+              "fat": 22
+            },
+            {
+              "id": "d12m4",
+              "type": "dinner",
+              "title": "سینه مرغ + سیب‌زمینی",
+              "description": "۲۰۰گ مرغ",
+              "calories": 520,
+              "protein": 45,
+              "carbs": 45,
+              "fat": 12
+            }
+          ],
+          "dailyCaloriesTarget": 2340
+        },
+        {
+          "dayNumber": 13,
+          "title": "بالاتنه فشار",
+          "focus": "سینه و شانه",
+          "isRestDay": false,
+          "estimatedMinutes": 35,
+          "exercises": [
+            {
+              "exerciseId": "2",
+              "name": "شنا سوئدی",
+              "muscle": "سینه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "7",
+              "name": "پرس سینه با دمبل",
+              "muscle": "سینه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "8",
+              "name": "دیپ روی صندلی",
+              "muscle": "بازو",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "9",
+              "name": "پرس سرشانه با دمبل",
+              "muscle": "شانه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "3",
+              "name": "پلانک",
+              "muscle": "میان‌تنه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            }
+          ],
+          "meals": [
+            {
+              "id": "d13m1",
+              "type": "breakfast",
+              "title": "جو دوسر + شیر + کره بادام + موز",
+              "description": "۵۰گ جو، ۲۰۰میل شیر",
+              "calories": 480,
+              "protein": 22,
+              "carbs": 55,
+              "fat": 18
+            },
+            {
+              "id": "d13m2",
+              "type": "snack",
+              "title": "شیک پروتئین + موز",
+              "description": "۱ اسکوپ وی",
+              "calories": 280,
+              "protein": 28,
+              "carbs": 30,
+              "fat": 4
+            },
+            {
+              "id": "d13m3",
+              "type": "lunch",
+              "title": "برنج + خورشت + گوشت",
+              "description": "پرس کامل",
+              "calories": 650,
+              "protein": 38,
+              "carbs": 70,
+              "fat": 22
+            },
+            {
+              "id": "d13m4",
+              "type": "dinner",
+              "title": "سینه مرغ + سیب‌زمینی",
+              "description": "۲۰۰گ مرغ",
+              "calories": 520,
+              "protein": 45,
+              "carbs": 45,
+              "fat": 12
+            }
+          ],
+          "dailyCaloriesTarget": 2340
+        },
+        {
+          "dayNumber": 14,
+          "title": "روز ریکاوری",
+          "focus": "استراحت فعال و کشش",
+          "isRestDay": true,
+          "estimatedMinutes": 20,
+          "exercises": [
+            {
+              "exerciseId": "3",
+              "name": "پلانک",
+              "muscle": "میان‌تنه",
+              "sets": 2,
+              "reps": "۳۰-۴۵ ثانیه",
+              "restSeconds": 30
+            },
+            {
+              "exerciseId": "16",
+              "name": "کرانچ دوچرخه",
+              "muscle": "میان‌تنه",
+              "sets": 2,
+              "reps": "۳۰-۴۵ ثانیه",
+              "restSeconds": 30
+            },
+            {
+              "exerciseId": "17",
+              "name": "ددباگ",
+              "muscle": "میان‌تنه",
+              "sets": 2,
+              "reps": "۳۰-۴۵ ثانیه",
+              "restSeconds": 30
+            }
+          ],
+          "meals": [
+            {
+              "id": "d14m1",
+              "type": "breakfast",
+              "title": "جو دوسر + شیر + کره بادام + موز",
+              "description": "۵۰گ جو، ۲۰۰میل شیر",
+              "calories": 480,
+              "protein": 22,
+              "carbs": 55,
+              "fat": 18
+            },
+            {
+              "id": "d14m2",
+              "type": "snack",
+              "title": "شیک پروتئین + موز",
+              "description": "۱ اسکوپ وی",
+              "calories": 280,
+              "protein": 28,
+              "carbs": 30,
+              "fat": 4
+            },
+            {
+              "id": "d14m3",
+              "type": "lunch",
+              "title": "برنج + خورشت + گوشت",
+              "description": "پرس کامل",
+              "calories": 650,
+              "protein": 38,
+              "carbs": 70,
+              "fat": 22
+            },
+            {
+              "id": "d14m4",
+              "type": "dinner",
+              "title": "سینه مرغ + سیب‌زمینی",
+              "description": "۲۰۰گ مرغ",
+              "calories": 520,
+              "protein": 45,
+              "carbs": 45,
+              "fat": 12
+            }
+          ],
+          "dailyCaloriesTarget": 2340
+        },
+        {
+          "dayNumber": 15,
+          "title": "پایین تنه",
+          "focus": "پا و باسن",
+          "isRestDay": false,
+          "estimatedMinutes": 35,
+          "exercises": [
+            {
+              "exerciseId": "1",
+              "name": "اسکوات با وزن بدن",
+              "muscle": "پا",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "4",
+              "name": "لانگز معکوس",
+              "muscle": "پا",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "5",
+              "name": "ددلیفت رومانیایی با دمبل",
+              "muscle": "پا",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "14",
+              "name": "هیپ تراست",
+              "muscle": "باسن",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "15",
+              "name": "اسکوات گابلت",
+              "muscle": "پا",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            }
+          ],
+          "meals": [
+            {
+              "id": "d15m1",
+              "type": "breakfast",
+              "title": "جو دوسر + شیر + کره بادام + موز",
+              "description": "۵۰گ جو، ۲۰۰میل شیر",
+              "calories": 480,
+              "protein": 22,
+              "carbs": 55,
+              "fat": 18
+            },
+            {
+              "id": "d15m2",
+              "type": "snack",
+              "title": "شیک پروتئین + موز",
+              "description": "۱ اسکوپ وی",
+              "calories": 280,
+              "protein": 28,
+              "carbs": 30,
+              "fat": 4
+            },
+            {
+              "id": "d15m3",
+              "type": "lunch",
+              "title": "برنج + خورشت + گوشت",
+              "description": "پرس کامل",
+              "calories": 650,
+              "protein": 38,
+              "carbs": 70,
+              "fat": 22
+            },
+            {
+              "id": "d15m4",
+              "type": "dinner",
+              "title": "سینه مرغ + سیب‌زمینی",
+              "description": "۲۰۰گ مرغ",
+              "calories": 520,
+              "protein": 45,
+              "carbs": 45,
+              "fat": 12
+            }
+          ],
+          "dailyCaloriesTarget": 2340
+        },
+        {
+          "dayNumber": 16,
+          "title": "تمرین ترکیبی",
+          "focus": "کل بدن",
+          "isRestDay": false,
+          "estimatedMinutes": 35,
+          "exercises": [
+            {
+              "exerciseId": "6",
+              "name": "کوهنورد",
+              "muscle": "کل بدن",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "18",
+              "name": "برپی",
+              "muscle": "کل بدن",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "19",
+              "name": "جامپینگ جک",
+              "muscle": "کل بدن",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "3",
+              "name": "پلانک",
+              "muscle": "میان‌تنه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "16",
+              "name": "کرانچ دوچرخه",
+              "muscle": "میان‌تنه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            }
+          ],
+          "meals": [
+            {
+              "id": "d16m1",
+              "type": "breakfast",
+              "title": "جو دوسر + شیر + کره بادام + موز",
+              "description": "۵۰گ جو، ۲۰۰میل شیر",
+              "calories": 480,
+              "protein": 22,
+              "carbs": 55,
+              "fat": 18
+            },
+            {
+              "id": "d16m2",
+              "type": "snack",
+              "title": "شیک پروتئین + موز",
+              "description": "۱ اسکوپ وی",
+              "calories": 280,
+              "protein": 28,
+              "carbs": 30,
+              "fat": 4
+            },
+            {
+              "id": "d16m3",
+              "type": "lunch",
+              "title": "برنج + خورشت + گوشت",
+              "description": "پرس کامل",
+              "calories": 650,
+              "protein": 38,
+              "carbs": 70,
+              "fat": 22
+            },
+            {
+              "id": "d16m4",
+              "type": "dinner",
+              "title": "سینه مرغ + سیب‌زمینی",
+              "description": "۲۰۰گ مرغ",
+              "calories": 520,
+              "protein": 45,
+              "carbs": 45,
+              "fat": 12
+            }
+          ],
+          "dailyCaloriesTarget": 2340
+        },
+        {
+          "dayNumber": 17,
+          "title": "بالاتنه فشار",
+          "focus": "سینه و شانه",
+          "isRestDay": false,
+          "estimatedMinutes": 35,
+          "exercises": [
+            {
+              "exerciseId": "2",
+              "name": "شنا سوئدی",
+              "muscle": "سینه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "7",
+              "name": "پرس سینه با دمبل",
+              "muscle": "سینه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "8",
+              "name": "دیپ روی صندلی",
+              "muscle": "بازو",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "9",
+              "name": "پرس سرشانه با دمبل",
+              "muscle": "شانه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "3",
+              "name": "پلانک",
+              "muscle": "میان‌تنه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            }
+          ],
+          "meals": [
+            {
+              "id": "d17m1",
+              "type": "breakfast",
+              "title": "جو دوسر + شیر + کره بادام + موز",
+              "description": "۵۰گ جو، ۲۰۰میل شیر",
+              "calories": 480,
+              "protein": 22,
+              "carbs": 55,
+              "fat": 18
+            },
+            {
+              "id": "d17m2",
+              "type": "snack",
+              "title": "شیک پروتئین + موز",
+              "description": "۱ اسکوپ وی",
+              "calories": 280,
+              "protein": 28,
+              "carbs": 30,
+              "fat": 4
+            },
+            {
+              "id": "d17m3",
+              "type": "lunch",
+              "title": "برنج + خورشت + گوشت",
+              "description": "پرس کامل",
+              "calories": 650,
+              "protein": 38,
+              "carbs": 70,
+              "fat": 22
+            },
+            {
+              "id": "d17m4",
+              "type": "dinner",
+              "title": "سینه مرغ + سیب‌زمینی",
+              "description": "۲۰۰گ مرغ",
+              "calories": 520,
+              "protein": 45,
+              "carbs": 45,
+              "fat": 12
+            }
+          ],
+          "dailyCaloriesTarget": 2340
+        },
+        {
+          "dayNumber": 18,
+          "title": "بالاتنه کشش",
+          "focus": "پشت و بازو",
+          "isRestDay": false,
+          "estimatedMinutes": 35,
+          "exercises": [
+            {
+              "exerciseId": "10",
+              "name": "بارفیکس منفی",
+              "muscle": "پشت",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "11",
+              "name": "قایقی با کش",
+              "muscle": "پشت",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "12",
+              "name": "لت پول‌داون",
+              "muscle": "پشت",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "13",
+              "name": "فیس‌پول با کش",
+              "muscle": "شانه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "3",
+              "name": "پلانک",
+              "muscle": "میان‌تنه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            }
+          ],
+          "meals": [
+            {
+              "id": "d18m1",
+              "type": "breakfast",
+              "title": "جو دوسر + شیر + کره بادام + موز",
+              "description": "۵۰گ جو، ۲۰۰میل شیر",
+              "calories": 480,
+              "protein": 22,
+              "carbs": 55,
+              "fat": 18
+            },
+            {
+              "id": "d18m2",
+              "type": "snack",
+              "title": "شیک پروتئین + موز",
+              "description": "۱ اسکوپ وی",
+              "calories": 280,
+              "protein": 28,
+              "carbs": 30,
+              "fat": 4
+            },
+            {
+              "id": "d18m3",
+              "type": "lunch",
+              "title": "برنج + خورشت + گوشت",
+              "description": "پرس کامل",
+              "calories": 650,
+              "protein": 38,
+              "carbs": 70,
+              "fat": 22
+            },
+            {
+              "id": "d18m4",
+              "type": "dinner",
+              "title": "سینه مرغ + سیب‌زمینی",
+              "description": "۲۰۰گ مرغ",
+              "calories": 520,
+              "protein": 45,
+              "carbs": 45,
+              "fat": 12
+            }
+          ],
+          "dailyCaloriesTarget": 2340
+        },
+        {
+          "dayNumber": 19,
+          "title": "پایین تنه",
+          "focus": "پا و باسن",
+          "isRestDay": false,
+          "estimatedMinutes": 35,
+          "exercises": [
+            {
+              "exerciseId": "1",
+              "name": "اسکوات با وزن بدن",
+              "muscle": "پا",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "4",
+              "name": "لانگز معکوس",
+              "muscle": "پا",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "5",
+              "name": "ددلیفت رومانیایی با دمبل",
+              "muscle": "پا",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "14",
+              "name": "هیپ تراست",
+              "muscle": "باسن",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "15",
+              "name": "اسکوات گابلت",
+              "muscle": "پا",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            }
+          ],
+          "meals": [
+            {
+              "id": "d19m1",
+              "type": "breakfast",
+              "title": "جو دوسر + شیر + کره بادام + موز",
+              "description": "۵۰گ جو، ۲۰۰میل شیر",
+              "calories": 480,
+              "protein": 22,
+              "carbs": 55,
+              "fat": 18
+            },
+            {
+              "id": "d19m2",
+              "type": "snack",
+              "title": "شیک پروتئین + موز",
+              "description": "۱ اسکوپ وی",
+              "calories": 280,
+              "protein": 28,
+              "carbs": 30,
+              "fat": 4
+            },
+            {
+              "id": "d19m3",
+              "type": "lunch",
+              "title": "برنج + خورشت + گوشت",
+              "description": "پرس کامل",
+              "calories": 650,
+              "protein": 38,
+              "carbs": 70,
+              "fat": 22
+            },
+            {
+              "id": "d19m4",
+              "type": "dinner",
+              "title": "سینه مرغ + سیب‌زمینی",
+              "description": "۲۰۰گ مرغ",
+              "calories": 520,
+              "protein": 45,
+              "carbs": 45,
+              "fat": 12
+            }
+          ],
+          "dailyCaloriesTarget": 2340
+        },
+        {
+          "dayNumber": 20,
+          "title": "تمرین ترکیبی",
+          "focus": "کل بدن",
+          "isRestDay": false,
+          "estimatedMinutes": 35,
+          "exercises": [
+            {
+              "exerciseId": "6",
+              "name": "کوهنورد",
+              "muscle": "کل بدن",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "18",
+              "name": "برپی",
+              "muscle": "کل بدن",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "19",
+              "name": "جامپینگ جک",
+              "muscle": "کل بدن",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "3",
+              "name": "پلانک",
+              "muscle": "میان‌تنه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "16",
+              "name": "کرانچ دوچرخه",
+              "muscle": "میان‌تنه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            }
+          ],
+          "meals": [
+            {
+              "id": "d20m1",
+              "type": "breakfast",
+              "title": "جو دوسر + شیر + کره بادام + موز",
+              "description": "۵۰گ جو، ۲۰۰میل شیر",
+              "calories": 480,
+              "protein": 22,
+              "carbs": 55,
+              "fat": 18
+            },
+            {
+              "id": "d20m2",
+              "type": "snack",
+              "title": "شیک پروتئین + موز",
+              "description": "۱ اسکوپ وی",
+              "calories": 280,
+              "protein": 28,
+              "carbs": 30,
+              "fat": 4
+            },
+            {
+              "id": "d20m3",
+              "type": "lunch",
+              "title": "برنج + خورشت + گوشت",
+              "description": "پرس کامل",
+              "calories": 650,
+              "protein": 38,
+              "carbs": 70,
+              "fat": 22
+            },
+            {
+              "id": "d20m4",
+              "type": "dinner",
+              "title": "سینه مرغ + سیب‌زمینی",
+              "description": "۲۰۰گ مرغ",
+              "calories": 520,
+              "protein": 45,
+              "carbs": 45,
+              "fat": 12
+            }
+          ],
+          "dailyCaloriesTarget": 2340
+        },
+        {
+          "dayNumber": 21,
+          "title": "روز ریکاوری",
+          "focus": "استراحت فعال و کشش",
+          "isRestDay": true,
+          "estimatedMinutes": 20,
+          "exercises": [
+            {
+              "exerciseId": "3",
+              "name": "پلانک",
+              "muscle": "میان‌تنه",
+              "sets": 2,
+              "reps": "۳۰-۴۵ ثانیه",
+              "restSeconds": 30
+            },
+            {
+              "exerciseId": "16",
+              "name": "کرانچ دوچرخه",
+              "muscle": "میان‌تنه",
+              "sets": 2,
+              "reps": "۳۰-۴۵ ثانیه",
+              "restSeconds": 30
+            },
+            {
+              "exerciseId": "17",
+              "name": "ددباگ",
+              "muscle": "میان‌تنه",
+              "sets": 2,
+              "reps": "۳۰-۴۵ ثانیه",
+              "restSeconds": 30
+            }
+          ],
+          "meals": [
+            {
+              "id": "d21m1",
+              "type": "breakfast",
+              "title": "جو دوسر + شیر + کره بادام + موز",
+              "description": "۵۰گ جو، ۲۰۰میل شیر",
+              "calories": 480,
+              "protein": 22,
+              "carbs": 55,
+              "fat": 18
+            },
+            {
+              "id": "d21m2",
+              "type": "snack",
+              "title": "شیک پروتئین + موز",
+              "description": "۱ اسکوپ وی",
+              "calories": 280,
+              "protein": 28,
+              "carbs": 30,
+              "fat": 4
+            },
+            {
+              "id": "d21m3",
+              "type": "lunch",
+              "title": "برنج + خورشت + گوشت",
+              "description": "پرس کامل",
+              "calories": 650,
+              "protein": 38,
+              "carbs": 70,
+              "fat": 22
+            },
+            {
+              "id": "d21m4",
+              "type": "dinner",
+              "title": "سینه مرغ + سیب‌زمینی",
+              "description": "۲۰۰گ مرغ",
+              "calories": 520,
+              "protein": 45,
+              "carbs": 45,
+              "fat": 12
+            }
+          ],
+          "dailyCaloriesTarget": 2340
+        },
+        {
+          "dayNumber": 22,
+          "title": "بالاتنه کشش",
+          "focus": "پشت و بازو",
+          "isRestDay": false,
+          "estimatedMinutes": 35,
+          "exercises": [
+            {
+              "exerciseId": "10",
+              "name": "بارفیکس منفی",
+              "muscle": "پشت",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "11",
+              "name": "قایقی با کش",
+              "muscle": "پشت",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "12",
+              "name": "لت پول‌داون",
+              "muscle": "پشت",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "13",
+              "name": "فیس‌پول با کش",
+              "muscle": "شانه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "3",
+              "name": "پلانک",
+              "muscle": "میان‌تنه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            }
+          ],
+          "meals": [
+            {
+              "id": "d22m1",
+              "type": "breakfast",
+              "title": "جو دوسر + شیر + کره بادام + موز",
+              "description": "۵۰گ جو، ۲۰۰میل شیر",
+              "calories": 480,
+              "protein": 22,
+              "carbs": 55,
+              "fat": 18
+            },
+            {
+              "id": "d22m2",
+              "type": "snack",
+              "title": "شیک پروتئین + موز",
+              "description": "۱ اسکوپ وی",
+              "calories": 280,
+              "protein": 28,
+              "carbs": 30,
+              "fat": 4
+            },
+            {
+              "id": "d22m3",
+              "type": "lunch",
+              "title": "برنج + خورشت + گوشت",
+              "description": "پرس کامل",
+              "calories": 650,
+              "protein": 38,
+              "carbs": 70,
+              "fat": 22
+            },
+            {
+              "id": "d22m4",
+              "type": "dinner",
+              "title": "سینه مرغ + سیب‌زمینی",
+              "description": "۲۰۰گ مرغ",
+              "calories": 520,
+              "protein": 45,
+              "carbs": 45,
+              "fat": 12
+            }
+          ],
+          "dailyCaloriesTarget": 2340
+        },
+        {
+          "dayNumber": 23,
+          "title": "پایین تنه",
+          "focus": "پا و باسن",
+          "isRestDay": false,
+          "estimatedMinutes": 35,
+          "exercises": [
+            {
+              "exerciseId": "1",
+              "name": "اسکوات با وزن بدن",
+              "muscle": "پا",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "4",
+              "name": "لانگز معکوس",
+              "muscle": "پا",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "5",
+              "name": "ددلیفت رومانیایی با دمبل",
+              "muscle": "پا",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "14",
+              "name": "هیپ تراست",
+              "muscle": "باسن",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "15",
+              "name": "اسکوات گابلت",
+              "muscle": "پا",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            }
+          ],
+          "meals": [
+            {
+              "id": "d23m1",
+              "type": "breakfast",
+              "title": "جو دوسر + شیر + کره بادام + موز",
+              "description": "۵۰گ جو، ۲۰۰میل شیر",
+              "calories": 480,
+              "protein": 22,
+              "carbs": 55,
+              "fat": 18
+            },
+            {
+              "id": "d23m2",
+              "type": "snack",
+              "title": "شیک پروتئین + موز",
+              "description": "۱ اسکوپ وی",
+              "calories": 280,
+              "protein": 28,
+              "carbs": 30,
+              "fat": 4
+            },
+            {
+              "id": "d23m3",
+              "type": "lunch",
+              "title": "برنج + خورشت + گوشت",
+              "description": "پرس کامل",
+              "calories": 650,
+              "protein": 38,
+              "carbs": 70,
+              "fat": 22
+            },
+            {
+              "id": "d23m4",
+              "type": "dinner",
+              "title": "سینه مرغ + سیب‌زمینی",
+              "description": "۲۰۰گ مرغ",
+              "calories": 520,
+              "protein": 45,
+              "carbs": 45,
+              "fat": 12
+            }
+          ],
+          "dailyCaloriesTarget": 2340
+        },
+        {
+          "dayNumber": 24,
+          "title": "تمرین ترکیبی",
+          "focus": "کل بدن",
+          "isRestDay": false,
+          "estimatedMinutes": 35,
+          "exercises": [
+            {
+              "exerciseId": "6",
+              "name": "کوهنورد",
+              "muscle": "کل بدن",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "18",
+              "name": "برپی",
+              "muscle": "کل بدن",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "19",
+              "name": "جامپینگ جک",
+              "muscle": "کل بدن",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "3",
+              "name": "پلانک",
+              "muscle": "میان‌تنه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "16",
+              "name": "کرانچ دوچرخه",
+              "muscle": "میان‌تنه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            }
+          ],
+          "meals": [
+            {
+              "id": "d24m1",
+              "type": "breakfast",
+              "title": "جو دوسر + شیر + کره بادام + موز",
+              "description": "۵۰گ جو، ۲۰۰میل شیر",
+              "calories": 480,
+              "protein": 22,
+              "carbs": 55,
+              "fat": 18
+            },
+            {
+              "id": "d24m2",
+              "type": "snack",
+              "title": "شیک پروتئین + موز",
+              "description": "۱ اسکوپ وی",
+              "calories": 280,
+              "protein": 28,
+              "carbs": 30,
+              "fat": 4
+            },
+            {
+              "id": "d24m3",
+              "type": "lunch",
+              "title": "برنج + خورشت + گوشت",
+              "description": "پرس کامل",
+              "calories": 650,
+              "protein": 38,
+              "carbs": 70,
+              "fat": 22
+            },
+            {
+              "id": "d24m4",
+              "type": "dinner",
+              "title": "سینه مرغ + سیب‌زمینی",
+              "description": "۲۰۰گ مرغ",
+              "calories": 520,
+              "protein": 45,
+              "carbs": 45,
+              "fat": 12
+            }
+          ],
+          "dailyCaloriesTarget": 2340
+        },
+        {
+          "dayNumber": 25,
+          "title": "بالاتنه فشار",
+          "focus": "سینه و شانه",
+          "isRestDay": false,
+          "estimatedMinutes": 35,
+          "exercises": [
+            {
+              "exerciseId": "2",
+              "name": "شنا سوئدی",
+              "muscle": "سینه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "7",
+              "name": "پرس سینه با دمبل",
+              "muscle": "سینه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "8",
+              "name": "دیپ روی صندلی",
+              "muscle": "بازو",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "9",
+              "name": "پرس سرشانه با دمبل",
+              "muscle": "شانه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "3",
+              "name": "پلانک",
+              "muscle": "میان‌تنه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            }
+          ],
+          "meals": [
+            {
+              "id": "d25m1",
+              "type": "breakfast",
+              "title": "جو دوسر + شیر + کره بادام + موز",
+              "description": "۵۰گ جو، ۲۰۰میل شیر",
+              "calories": 480,
+              "protein": 22,
+              "carbs": 55,
+              "fat": 18
+            },
+            {
+              "id": "d25m2",
+              "type": "snack",
+              "title": "شیک پروتئین + موز",
+              "description": "۱ اسکوپ وی",
+              "calories": 280,
+              "protein": 28,
+              "carbs": 30,
+              "fat": 4
+            },
+            {
+              "id": "d25m3",
+              "type": "lunch",
+              "title": "برنج + خورشت + گوشت",
+              "description": "پرس کامل",
+              "calories": 650,
+              "protein": 38,
+              "carbs": 70,
+              "fat": 22
+            },
+            {
+              "id": "d25m4",
+              "type": "dinner",
+              "title": "سینه مرغ + سیب‌زمینی",
+              "description": "۲۰۰گ مرغ",
+              "calories": 520,
+              "protein": 45,
+              "carbs": 45,
+              "fat": 12
+            }
+          ],
+          "dailyCaloriesTarget": 2340
+        },
+        {
+          "dayNumber": 26,
+          "title": "بالاتنه کشش",
+          "focus": "پشت و بازو",
+          "isRestDay": false,
+          "estimatedMinutes": 35,
+          "exercises": [
+            {
+              "exerciseId": "10",
+              "name": "بارفیکس منفی",
+              "muscle": "پشت",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "11",
+              "name": "قایقی با کش",
+              "muscle": "پشت",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "12",
+              "name": "لت پول‌داون",
+              "muscle": "پشت",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "13",
+              "name": "فیس‌پول با کش",
+              "muscle": "شانه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "3",
+              "name": "پلانک",
+              "muscle": "میان‌تنه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            }
+          ],
+          "meals": [
+            {
+              "id": "d26m1",
+              "type": "breakfast",
+              "title": "جو دوسر + شیر + کره بادام + موز",
+              "description": "۵۰گ جو، ۲۰۰میل شیر",
+              "calories": 480,
+              "protein": 22,
+              "carbs": 55,
+              "fat": 18
+            },
+            {
+              "id": "d26m2",
+              "type": "snack",
+              "title": "شیک پروتئین + موز",
+              "description": "۱ اسکوپ وی",
+              "calories": 280,
+              "protein": 28,
+              "carbs": 30,
+              "fat": 4
+            },
+            {
+              "id": "d26m3",
+              "type": "lunch",
+              "title": "برنج + خورشت + گوشت",
+              "description": "پرس کامل",
+              "calories": 650,
+              "protein": 38,
+              "carbs": 70,
+              "fat": 22
+            },
+            {
+              "id": "d26m4",
+              "type": "dinner",
+              "title": "سینه مرغ + سیب‌زمینی",
+              "description": "۲۰۰گ مرغ",
+              "calories": 520,
+              "protein": 45,
+              "carbs": 45,
+              "fat": 12
+            }
+          ],
+          "dailyCaloriesTarget": 2340
+        },
+        {
+          "dayNumber": 27,
+          "title": "پایین تنه",
+          "focus": "پا و باسن",
+          "isRestDay": false,
+          "estimatedMinutes": 35,
+          "exercises": [
+            {
+              "exerciseId": "1",
+              "name": "اسکوات با وزن بدن",
+              "muscle": "پا",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "4",
+              "name": "لانگز معکوس",
+              "muscle": "پا",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "5",
+              "name": "ددلیفت رومانیایی با دمبل",
+              "muscle": "پا",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "14",
+              "name": "هیپ تراست",
+              "muscle": "باسن",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "15",
+              "name": "اسکوات گابلت",
+              "muscle": "پا",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            }
+          ],
+          "meals": [
+            {
+              "id": "d27m1",
+              "type": "breakfast",
+              "title": "جو دوسر + شیر + کره بادام + موز",
+              "description": "۵۰گ جو، ۲۰۰میل شیر",
+              "calories": 480,
+              "protein": 22,
+              "carbs": 55,
+              "fat": 18
+            },
+            {
+              "id": "d27m2",
+              "type": "snack",
+              "title": "شیک پروتئین + موز",
+              "description": "۱ اسکوپ وی",
+              "calories": 280,
+              "protein": 28,
+              "carbs": 30,
+              "fat": 4
+            },
+            {
+              "id": "d27m3",
+              "type": "lunch",
+              "title": "برنج + خورشت + گوشت",
+              "description": "پرس کامل",
+              "calories": 650,
+              "protein": 38,
+              "carbs": 70,
+              "fat": 22
+            },
+            {
+              "id": "d27m4",
+              "type": "dinner",
+              "title": "سینه مرغ + سیب‌زمینی",
+              "description": "۲۰۰گ مرغ",
+              "calories": 520,
+              "protein": 45,
+              "carbs": 45,
+              "fat": 12
+            }
+          ],
+          "dailyCaloriesTarget": 2340
+        },
+        {
+          "dayNumber": 28,
+          "title": "روز ریکاوری",
+          "focus": "استراحت فعال و کشش",
+          "isRestDay": true,
+          "estimatedMinutes": 20,
+          "exercises": [
+            {
+              "exerciseId": "3",
+              "name": "پلانک",
+              "muscle": "میان‌تنه",
+              "sets": 2,
+              "reps": "۳۰-۴۵ ثانیه",
+              "restSeconds": 30
+            },
+            {
+              "exerciseId": "16",
+              "name": "کرانچ دوچرخه",
+              "muscle": "میان‌تنه",
+              "sets": 2,
+              "reps": "۳۰-۴۵ ثانیه",
+              "restSeconds": 30
+            },
+            {
+              "exerciseId": "17",
+              "name": "ددباگ",
+              "muscle": "میان‌تنه",
+              "sets": 2,
+              "reps": "۳۰-۴۵ ثانیه",
+              "restSeconds": 30
+            }
+          ],
+          "meals": [
+            {
+              "id": "d28m1",
+              "type": "breakfast",
+              "title": "جو دوسر + شیر + کره بادام + موز",
+              "description": "۵۰گ جو، ۲۰۰میل شیر",
+              "calories": 480,
+              "protein": 22,
+              "carbs": 55,
+              "fat": 18
+            },
+            {
+              "id": "d28m2",
+              "type": "snack",
+              "title": "شیک پروتئین + موز",
+              "description": "۱ اسکوپ وی",
+              "calories": 280,
+              "protein": 28,
+              "carbs": 30,
+              "fat": 4
+            },
+            {
+              "id": "d28m3",
+              "type": "lunch",
+              "title": "برنج + خورشت + گوشت",
+              "description": "پرس کامل",
+              "calories": 650,
+              "protein": 38,
+              "carbs": 70,
+              "fat": 22
+            },
+            {
+              "id": "d28m4",
+              "type": "dinner",
+              "title": "سینه مرغ + سیب‌زمینی",
+              "description": "۲۰۰گ مرغ",
+              "calories": 520,
+              "protein": 45,
+              "carbs": 45,
+              "fat": 12
+            }
+          ],
+          "dailyCaloriesTarget": 2340
+        },
+        {
+          "dayNumber": 29,
+          "title": "بالاتنه فشار",
+          "focus": "سینه و شانه",
+          "isRestDay": false,
+          "estimatedMinutes": 35,
+          "exercises": [
+            {
+              "exerciseId": "2",
+              "name": "شنا سوئدی",
+              "muscle": "سینه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "7",
+              "name": "پرس سینه با دمبل",
+              "muscle": "سینه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "8",
+              "name": "دیپ روی صندلی",
+              "muscle": "بازو",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "9",
+              "name": "پرس سرشانه با دمبل",
+              "muscle": "شانه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "3",
+              "name": "پلانک",
+              "muscle": "میان‌تنه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            }
+          ],
+          "meals": [
+            {
+              "id": "d29m1",
+              "type": "breakfast",
+              "title": "جو دوسر + شیر + کره بادام + موز",
+              "description": "۵۰گ جو، ۲۰۰میل شیر",
+              "calories": 480,
+              "protein": 22,
+              "carbs": 55,
+              "fat": 18
+            },
+            {
+              "id": "d29m2",
+              "type": "snack",
+              "title": "شیک پروتئین + موز",
+              "description": "۱ اسکوپ وی",
+              "calories": 280,
+              "protein": 28,
+              "carbs": 30,
+              "fat": 4
+            },
+            {
+              "id": "d29m3",
+              "type": "lunch",
+              "title": "برنج + خورشت + گوشت",
+              "description": "پرس کامل",
+              "calories": 650,
+              "protein": 38,
+              "carbs": 70,
+              "fat": 22
+            },
+            {
+              "id": "d29m4",
+              "type": "dinner",
+              "title": "سینه مرغ + سیب‌زمینی",
+              "description": "۲۰۰گ مرغ",
+              "calories": 520,
+              "protein": 45,
+              "carbs": 45,
+              "fat": 12
+            }
+          ],
+          "dailyCaloriesTarget": 2340
+        },
+        {
+          "dayNumber": 30,
+          "title": "بالاتنه کشش",
+          "focus": "پشت و بازو",
+          "isRestDay": false,
+          "estimatedMinutes": 35,
+          "exercises": [
+            {
+              "exerciseId": "10",
+              "name": "بارفیکس منفی",
+              "muscle": "پشت",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "11",
+              "name": "قایقی با کش",
+              "muscle": "پشت",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "12",
+              "name": "لت پول‌داون",
+              "muscle": "پشت",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "13",
+              "name": "فیس‌پول با کش",
+              "muscle": "شانه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            },
+            {
+              "exerciseId": "3",
+              "name": "پلانک",
+              "muscle": "میان‌تنه",
+              "sets": 3,
+              "reps": "۱۲-۱۵",
+              "restSeconds": 60
+            }
+          ],
+          "meals": [
+            {
+              "id": "d30m1",
+              "type": "breakfast",
+              "title": "جو دوسر + شیر + کره بادام + موز",
+              "description": "۵۰گ جو، ۲۰۰میل شیر",
+              "calories": 480,
+              "protein": 22,
+              "carbs": 55,
+              "fat": 18
+            },
+            {
+              "id": "d30m2",
+              "type": "snack",
+              "title": "شیک پروتئین + موز",
+              "description": "۱ اسکوپ وی",
+              "calories": 280,
+              "protein": 28,
+              "carbs": 30,
+              "fat": 4
+            },
+            {
+              "id": "d30m3",
+              "type": "lunch",
+              "title": "برنج + خورشت + گوشت",
+              "description": "پرس کامل",
+              "calories": 650,
+              "protein": 38,
+              "carbs": 70,
+              "fat": 22
+            },
+            {
+              "id": "d30m4",
+              "type": "dinner",
+              "title": "سینه مرغ + سیب‌زمینی",
+              "description": "۲۰۰گ مرغ",
+              "calories": 520,
+              "protein": 45,
+              "carbs": 45,
+              "fat": 12
+            }
+          ],
+          "dailyCaloriesTarget": 2340
+        }
+      ],
+      "createdAt": "2026-08-19T11:32:00.913Z",
+      "source": "ai",
+      "coachId": null
+    }
+  ],
+  "coaches": [
+    {
+      "id": "coach_1",
+      "userId": "coach_user_1",
+      "name": "مهدی احمدی",
+      "bio": "مربی بدنسازی با ۸ سال تجربه. تخصص کاهش وزن و بدنسازی طبیعی.",
+      "specialties": [
+        "کاهش وزن",
+        "عضله‌سازی",
+        "بدنسازی طبیعی"
+      ],
+      "experienceYears": 8,
+      "rating": 4.8,
+      "reviewCount": 124,
+      "pricePerPlan": 2500000,
+      "pricePerConsultation": 350000,
+      "avatarUrl": "/images/athlete-1.jpg",
+      "verified": true,
+      "isActive": true,
+      "samplePlans": [
+        "کاهش وزن ۸ هفته"
+      ],
+      "createdAt": "2026-07-15T08:00:00.000Z"
+    },
+    {
+      "id": "coach_2",
+      "userId": "coach_user_1",
+      "name": "نرگس کاظمی",
+      "bio": "مربی فیتنس و تغذیه. تمرکز روی خانم‌ها و تناسب پایدار.",
+      "specialties": [
+        "تناسب بانوان",
+        "تغذیه ورزشی"
+      ],
+      "experienceYears": 6,
+      "rating": 4.9,
+      "reviewCount": 89,
+      "pricePerPlan": 2200000,
+      "pricePerConsultation": 300000,
+      "avatarUrl": "/images/athlete-3.jpg",
+      "verified": true,
+      "isActive": true,
+      "samplePlans": [
+        "تناسب ۱۲ هفته"
+      ],
+      "createdAt": "2026-07-20T09:00:00.000Z"
+    }
+  ],
+  "workoutLogs": [
+    {
+      "userId": "user_demo_1",
+      "planId": "plan_demo_1",
+      "dayNumber": 15,
+      "date": "2026-08-15",
+      "exercises": [
+        {
+          "exerciseId": "1",
+          "completed": true,
+          "completedSets": 4
+        },
+        {
+          "exerciseId": "4",
+          "completed": true,
+          "completedSets": 3
+        },
+        {
+          "exerciseId": "5",
+          "completed": true,
+          "completedSets": 3
+        },
+        {
+          "exerciseId": "14",
+          "completed": true,
+          "completedSets": 3
+        }
+      ],
+      "durationMinutes": 50,
+      "completedAt": "2026-08-15T17:30:12.237Z",
+      "id": "8u0j7qdGRA8"
+    },
+    {
+      "userId": "user_demo_1",
+      "planId": "plan_demo_1",
+      "dayNumber": 17,
+      "date": "2026-08-17",
+      "exercises": [
+        {
+          "exerciseId": "2",
+          "completed": true,
+          "completedSets": 4
+        },
+        {
+          "exerciseId": "9",
+          "completed": true,
+          "completedSets": 3
+        },
+        {
+          "exerciseId": "8",
+          "completed": true,
+          "completedSets": 3
+        },
+        {
+          "exerciseId": "3",
+          "completed": true,
+          "completedSets": 3
+        }
+      ],
+      "durationMinutes": 45,
+      "completedAt": "2026-08-17T14:50:47.461Z",
+      "id": "ZFuefJjE2UI"
+    },
+    {
+      "userId": "64Iv3Cydizw",
+      "planId": "oE3RKXgsdTY",
+      "dayNumber": 1,
+      "date": "2026-08-19",
+      "exercises": [
+        {
+          "exerciseId": "1",
+          "completed": true,
+          "completedSets": 4
+        },
+        {
+          "exerciseId": "4",
+          "completed": true,
+          "completedSets": 3
+        },
+        {
+          "exerciseId": "5",
+          "completed": true,
+          "completedSets": 3
+        },
+        {
+          "exerciseId": "14",
+          "completed": true,
+          "completedSets": 3
+        }
+      ],
+      "durationMinutes": 35,
+      "completedAt": "2026-08-19T11:39:28.536Z",
+      "id": "8_-faFZ9F2Y"
+    },
+    {
+      "userId": "64Iv3Cydizw",
+      "planId": "oE3RKXgsdTY",
+      "dayNumber": 1,
+      "date": "2026-08-19",
+      "exercises": [
+        {
+          "exerciseId": "1",
+          "completed": true,
+          "completedSets": 4
+        },
+        {
+          "exerciseId": "4",
+          "completed": true,
+          "completedSets": 3
+        },
+        {
+          "exerciseId": "5",
+          "completed": true,
+          "completedSets": 3
+        },
+        {
+          "exerciseId": "14",
+          "completed": true,
+          "completedSets": 3
+        }
+      ],
+      "durationMinutes": 35,
+      "completedAt": "2026-08-19T11:40:05.868Z",
+      "id": "vkBo0VKby9E"
+    },
+    {
+      "userId": "64Iv3Cydizw",
+      "planId": "oE3RKXgsdTY",
+      "dayNumber": 1,
+      "date": "2026-08-19",
+      "exercises": [
+        {
+          "exerciseId": "1",
+          "completed": true,
+          "completedSets": 4
+        },
+        {
+          "exerciseId": "4",
+          "completed": true,
+          "completedSets": 3
+        },
+        {
+          "exerciseId": "5",
+          "completed": true,
+          "completedSets": 3
+        },
+        {
+          "exerciseId": "14",
+          "completed": true,
+          "completedSets": 3
+        }
+      ],
+      "durationMinutes": 35,
+      "completedAt": "2026-08-19T11:40:17.289Z",
+      "id": "ZCH95GIBj80"
+    },
+    {
+      "userId": "64Iv3Cydizw",
+      "planId": "oE3RKXgsdTY",
+      "dayNumber": 1,
+      "date": "2026-08-19",
+      "exercises": [
+        {
+          "exerciseId": "1",
+          "completed": true,
+          "completedSets": 4
+        },
+        {
+          "exerciseId": "4",
+          "completed": true,
+          "completedSets": 3
+        },
+        {
+          "exerciseId": "5",
+          "completed": true,
+          "completedSets": 3
+        },
+        {
+          "exerciseId": "14",
+          "completed": true,
+          "completedSets": 3
+        }
+      ],
+      "durationMinutes": 35,
+      "completedAt": "2026-08-19T11:41:20.773Z",
+      "id": "KHN7lSI5rgc"
+    },
+    {
+      "userId": "64Iv3Cydizw",
+      "planId": "oE3RKXgsdTY",
+      "dayNumber": 1,
+      "date": "2026-08-19",
+      "exercises": [
+        {
+          "exerciseId": "1",
+          "completed": true,
+          "completedSets": 4
+        },
+        {
+          "exerciseId": "4",
+          "completed": true,
+          "completedSets": 3
+        },
+        {
+          "exerciseId": "5",
+          "completed": true,
+          "completedSets": 3
+        },
+        {
+          "exerciseId": "14",
+          "completed": true,
+          "completedSets": 3
+        }
+      ],
+      "durationMinutes": 35,
+      "completedAt": "2026-08-19T11:41:32.532Z",
+      "id": "XYeEfltwGyE"
+    },
+    {
+      "userId": "64Iv3Cydizw",
+      "planId": "oE3RKXgsdTY",
+      "dayNumber": 1,
+      "date": "2026-08-19",
+      "exercises": [
+        {
+          "exerciseId": "1",
+          "completed": true,
+          "completedSets": 4
+        },
+        {
+          "exerciseId": "4",
+          "completed": true,
+          "completedSets": 3
+        },
+        {
+          "exerciseId": "5",
+          "completed": true,
+          "completedSets": 3
+        },
+        {
+          "exerciseId": "14",
+          "completed": true,
+          "completedSets": 3
+        }
+      ],
+      "durationMinutes": 35,
+      "completedAt": "2026-08-19T11:41:46.304Z",
+      "id": "Bd0a43UjIlI"
+    },
+    {
+      "userId": "64Iv3Cydizw",
+      "planId": "oE3RKXgsdTY",
+      "dayNumber": 1,
+      "date": "2026-08-19",
+      "exercises": [
+        {
+          "exerciseId": "2",
+          "completed": true,
+          "completedSets": 3
+        },
+        {
+          "exerciseId": "7",
+          "completed": true,
+          "completedSets": 3
+        },
+        {
+          "exerciseId": "8",
+          "completed": true,
+          "completedSets": 3
+        },
+        {
+          "exerciseId": "9",
+          "completed": true,
+          "completedSets": 3
+        },
+        {
+          "exerciseId": "3",
+          "completed": true,
+          "completedSets": 3
+        }
+      ],
+      "durationMinutes": 35,
+      "completedAt": "2026-08-19T12:02:45.652Z",
+      "id": "JkZ8HwTISQI"
+    }
+  ],
+  "nutritionLogs": [
+    {
+      "userId": "user_demo_1",
+      "planId": "plan_demo_1",
+      "date": "2026-08-15",
+      "meals": [
+        {
+          "mealId": "d1m1",
+          "status": "eaten"
+        },
+        {
+          "mealId": "d1m2",
+          "status": "pending"
+        },
+        {
+          "mealId": "d1m3",
+          "status": "pending"
+        },
+        {
+          "mealId": "d1m4",
+          "status": "pending"
+        }
+      ],
+      "id": "-ojS4xJwTX0"
+    },
+    {
+      "userId": "user_demo_1",
+      "planId": "plan_demo_1",
+      "date": "2026-08-17",
+      "meals": [
+        {
+          "mealId": "d1m1",
+          "status": "eaten"
+        },
+        {
+          "mealId": "d1m2",
+          "status": "eaten"
+        },
+        {
+          "mealId": "d1m3",
+          "status": "eaten"
+        },
+        {
+          "mealId": "d1m4",
+          "status": "eaten"
+        }
+      ],
+      "id": "7kZz_w_87_c"
+    },
+    {
+      "userId": "64Iv3Cydizw",
+      "planId": "oE3RKXgsdTY",
+      "date": "2026-08-19",
+      "meals": [
+        {
+          "mealId": "d1m1",
+          "status": "eaten"
+        },
+        {
+          "mealId": "d1m2",
+          "status": "eaten"
+        },
+        {
+          "mealId": "d1m3",
+          "status": "pending"
+        },
+        {
+          "mealId": "d1m4",
+          "status": "pending"
+        }
+      ],
+      "id": "EgdzovTMjkY"
+    }
+  ],
+  "weightLogs": [
+    {
+      "id": "w1",
+      "userId": "user_demo_1",
+      "weight": 82,
+      "date": "2026-08-01",
+      "note": "شروع برنامه"
+    },
+    {
+      "id": "w2",
+      "userId": "user_demo_1",
+      "weight": 81.4,
+      "date": "2026-08-05"
+    },
+    {
+      "id": "w3",
+      "userId": "user_demo_1",
+      "weight": 80.8,
+      "date": "2026-08-10"
+    },
+    {
+      "id": "w4",
+      "userId": "user_demo_1",
+      "weight": 80.2,
+      "date": "2026-08-14"
+    },
+    {
+      "userId": "user_demo_1",
+      "weight": 83,
+      "date": "2026-08-15",
+      "id": "rjxlIKlejRQ"
+    },
+    {
+      "userId": "user_demo_1",
+      "weight": 84,
+      "date": "2026-08-15",
+      "id": "HkJvgNqhAc8"
+    },
+    {
+      "userId": "user_demo_1",
+      "weight": 87,
+      "date": "2026-08-17",
+      "id": "Zhsj2QC5SFw"
+    },
+    {
+      "userId": "user_demo_1",
+      "weight": 87,
+      "date": "2026-08-17",
+      "id": "W8SmHvfb0BM"
+    },
+    {
+      "userId": "user_demo_1",
+      "weight": 85,
+      "date": "2026-08-17",
+      "id": "380K2H5jBAk"
+    },
+    {
+      "userId": "user_demo_1",
+      "weight": 88,
+      "date": "2026-08-17",
+      "note": "",
+      "id": "bYIiNiOd-Ek"
+    },
+    {
+      "userId": "user_demo_1",
+      "weight": 78,
+      "date": "2026-08-17",
+      "note": "",
+      "id": "7WisbAxMn6w"
+    },
+    {
+      "userId": "64Iv3Cydizw",
+      "weight": 72,
+      "date": "2026-08-19",
+      "note": "",
+      "id": "_Zuu4zJD9ig"
+    },
+    {
+      "userId": "64Iv3Cydizw",
+      "weight": 74,
+      "date": "2026-08-19",
+      "note": "",
+      "id": "1M7uuvgMEXg"
+    },
+    {
+      "userId": "64Iv3Cydizw",
+      "weight": 89,
+      "date": "2026-08-19",
+      "note": "",
+      "id": "KLayUVT8JKc"
+    },
+    {
+      "userId": "64Iv3Cydizw",
+      "weight": 60,
+      "date": "2026-08-19",
+      "note": "",
+      "id": "2B8mmTiMiOI"
+    },
+    {
+      "userId": "64Iv3Cydizw",
+      "weight": 70,
+      "date": "2026-08-19",
+      "note": "",
+      "id": "5cd-g-2WefI"
+    },
+    {
+      "userId": "64Iv3Cydizw",
+      "weight": 78,
+      "date": "2026-08-19",
+      "note": "",
+      "id": "HZIe-OQZv_0"
+    },
+    {
+      "userId": "64Iv3Cydizw",
+      "weight": 75,
+      "date": "2026-08-19",
+      "note": "",
+      "id": "zz8UXWWO2W0"
+    },
+    {
+      "userId": "64Iv3Cydizw",
+      "weight": 79,
+      "date": "2026-08-19",
+      "note": "",
+      "id": "frs3V86QR3U"
+    },
+    {
+      "userId": "64Iv3Cydizw",
+      "weight": 70,
+      "date": "2026-08-19",
+      "note": "",
+      "id": "EW1aakJ5mek"
+    },
+    {
+      "userId": "user_demo_1",
+      "weight": 75,
+      "date": "2026-08-19",
+      "note": "",
+      "id": "BNiltaZTUZM"
+    }
+  ],
+  "products": [
+    {
+      "id": "1",
+      "category": "apparel",
+      "name": "تی‌شرت ورزشی آبی",
+      "description": "تی‌شرت تنفسی",
+      "price": 150000,
+      "image": "/images/store/product-1.webp",
+      "inStock": true,
+      "rating": 4.5,
+      "reviews": 128
+    },
+    {
+      "id": "2",
+      "category": "supplement",
+      "name": "پروتئین وی ۱ کیلو",
+      "description": "وی ایزوله",
+      "price": 1850000,
+      "image": "/images/store/product-1.webp",
+      "inStock": true,
+      "rating": 4.7,
+      "reviews": 312
+    }
+  ],
+  "$schema": "./node_modules/json-server/schema.json"
+}

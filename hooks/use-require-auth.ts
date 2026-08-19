@@ -1,55 +1,68 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useAuthReady } from "@/lib/store/user-store";
+import { useUserStore } from "@/lib/store/user-store";
 
 type Options = {
-  /** اگر true باشد، onboarding هم باید کامل شده باشد */
   requireOnboarding?: boolean;
-  /** مسیر جایگزین وقتی لاگین نیست */
-  loginPath?: string;
-  /** مسیر جایگزین وقتی onboarding کامل نیست */
-  onboardingPath?: string;
+  redirectToLogin?: string;
+  redirectToOnboarding?: string;
 };
 
 export function useRequireAuth(options: Options = {}) {
   const {
-    requireOnboarding = true,
-    loginPath = "/login",
-    onboardingPath = "/onboarding",
+    requireOnboarding = false,
+    redirectToLogin = "/login",
+    redirectToOnboarding = "/onboarding",
   } = options;
 
   const router = useRouter();
-  const { ready, isAuthenticated, user } = useAuthReady();
+  const hasHydrated = useUserStore((s) => s._hasHydrated);
+  const isAuthenticated = useUserStore((s) => s.isAuthenticated);
+  const user = useUserStore((s) => s.user);
+
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    // هنوز از localStorage نخوانده → هیچ ریدایرکتی نکن
-    if (!ready) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setMounted(true);
+  }, []);
 
-    if (!isAuthenticated || !user) {
-      router.replace(loginPath);
-      return;
-    }
+  useEffect(() => {
+    // تا client mount + hydrate تمام نشده، هیچ redirectی نزن
+    if (!mounted || !hasHydrated) return;
 
-    if (requireOnboarding && !user.onboardingCompleted) {
-      router.replace(onboardingPath);
-    }
+    // کمی تأخیر خیلی کوتاه تا router initialize شود
+    const t = window.setTimeout(() => {
+      if (!isAuthenticated || !user) {
+        router.replace(redirectToLogin);
+        return;
+      }
+
+      if (requireOnboarding && !user.onboardingCompleted) {
+        router.replace(redirectToOnboarding);
+      }
+    }, 0);
+
+    return () => window.clearTimeout(t);
   }, [
-    ready,
+    mounted,
+    hasHydrated,
     isAuthenticated,
     user,
     requireOnboarding,
-    loginPath,
-    onboardingPath,
+    redirectToLogin,
+    redirectToOnboarding,
     router,
   ]);
 
+  const isLoading = !mounted || !hasHydrated;
+
   return {
-    ready,
-    isAuthenticated: ready && isAuthenticated && !!user,
-    user: ready ? user : null,
-    /** true یعنی هنوز در حال بررسی auth هستیم */
-    isLoading: !ready,
+    isLoading,
+    isAuthenticated: !!isAuthenticated && !!user,
+    user,
+    ready: mounted && hasHydrated,
   };
 }

@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useUserStore } from "@/lib/store/user-store";
+import { loginWithEmail, loginWithPhone } from "@/lib/api/users";
 
 const loginSchema = z.object({
   contact: z.string().min(1, "این فیلد الزامی است"),
@@ -55,45 +56,43 @@ export default function LoginPage() {
     clearErrors("contact");
   };
 
-  const onSubmit = async (data: LoginForm) => {
+  const onSubmit = async (data: { contact: string; password: string }) => {
     setIsLoading(true);
 
-    // ==================== MOCK ====================
-    // وقتی بک‌اند آماده شد:
-    // const res = await fetch("/api/auth/login", {
-    //   method: "POST",
-    //   body: JSON.stringify({
-    //     email: contactType === "email" ? data.contact : undefined,
-    //     phone: contactType === "phone" ? data.contact : undefined,
-    //     password: data.password,
-    //   }),
-    // });
-    // const result = await res.json();
-    // سپس setUser(result.user) و بر اساس result.user.onboardingCompleted ریدایرکت کن
-    // ==============================================
+    try {
+      const user =
+        contactType === "email"
+          ? await loginWithEmail(data.contact.trim(), data.password)
+          : await loginWithPhone(data.contact.trim(), data.password);
 
-    await new Promise((resolve) => setTimeout(resolve, 900));
+      // رمز را در کلاینت نگه ندار
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { password: _pw, ...safeUser } = user as typeof user & {
+        password?: string;
+      };
 
-    const mockUser = {
-      id: crypto.randomUUID(),
-      name: "کاربر",
-      lastName: "سپندتن",
-      email: contactType === "email" ? data.contact : undefined,
-      phone: contactType === "phone" ? data.contact : undefined,
-      onboardingCompleted: true, // در حالت واقعی از سرور می‌آید
-      createdAt: new Date().toISOString(),
-    };
+      setUser({
+        ...safeUser,
+        role: safeUser.role || "user",
+        onboardingCompleted: !!safeUser.onboardingCompleted,
+        subscriptionStatus: safeUser.subscriptionStatus || "free",
+        createdAt: safeUser.createdAt || new Date().toISOString(),
+      });
 
-    setUser(mockUser);
-    toast.success("خوش آمدی!");
+      toast.success(`خوش آمدی ${safeUser.name}!`);
 
-    if (mockUser.onboardingCompleted) {
-      router.push("/dashboard");
-    } else {
-      router.push("/onboarding");
+      if (safeUser.onboardingCompleted) {
+        router.replace("/dashboard");
+      } else {
+        router.replace("/onboarding");
+      }
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "ورود ناموفق بود. دوباره تلاش کن.";
+      toast.error(message);
+    } finally {
+      setIsLoading(false);
     }
-
-    setIsLoading(false);
   };
 
   return (

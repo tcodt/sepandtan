@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useUserStore } from "@/lib/store/user-store";
+import { createUser, findUserByEmail, findUserByPhone } from "@/lib/api/users";
 
 const registerSchema = z
   .object({
@@ -64,39 +65,67 @@ export default function RegisterPage() {
     clearErrors("contact");
   };
 
-  const onSubmit = async (data: RegisterForm) => {
+  const onSubmit = async (data: {
+    name: string;
+    lastName?: string;
+    contact: string;
+    password: string;
+  }) => {
     setIsLoading(true);
 
-    // ==================== MOCK ====================
-    // وقتی بک‌اند آماده شد، این بخش را با API واقعی جایگزین کن:
-    // const res = await fetch("/api/auth/register", {
-    //   method: "POST",
-    //   body: JSON.stringify({
-    //     name: data.name,
-    //     email: contactType === "email" ? data.contact : undefined,
-    //     phone: contactType === "phone" ? data.contact : undefined,
-    //     password: data.password,
-    //   }),
-    // });
-    // const result = await res.json();
-    // ==============================================
+    try {
+      const contact = data.contact.trim();
 
-    await new Promise((resolve) => setTimeout(resolve, 1100));
+      // جلوگیری از کاربر تکراری
+      if (contactType === "email") {
+        const existing = await findUserByEmail(contact);
+        if (existing) {
+          toast.error("این ایمیل قبلاً ثبت شده است");
+          return;
+        }
+      } else {
+        const existing = await findUserByPhone(contact);
+        if (existing) {
+          toast.error("این شماره قبلاً ثبت شده است");
+          return;
+        }
+      }
 
-    const newUser = {
-      id: crypto.randomUUID(),
-      name: data.name,
-      lastName: data.lastName,
-      email: contactType === "email" ? data.contact : undefined,
-      phone: contactType === "phone" ? data.contact : undefined,
-      onboardingCompleted: false,
-      createdAt: new Date().toISOString(),
-    };
+      const fullName = data.lastName
+        ? `${data.name.trim()} ${data.lastName.trim()}`.trim()
+        : data.name.trim();
 
-    setUser(newUser);
-    toast.success("حساب کاربری با موفقیت ساخته شد!");
-    router.push("/onboarding");
-    setIsLoading(false);
+      const newUser = await createUser({
+        name: fullName,
+        email: contactType === "email" ? contact : undefined,
+        phone: contactType === "phone" ? contact : undefined,
+        password: data.password,
+      });
+
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { password: _pw, ...safeUser } = newUser as typeof newUser & {
+        password?: string;
+      };
+
+      setUser({
+        ...safeUser,
+        role: "user",
+        onboardingCompleted: false,
+        subscriptionStatus: "free",
+        createdAt: safeUser.createdAt || new Date().toISOString(),
+      });
+
+      toast.success("حسابت ساخته شد! حالا برنامه شخصیت را بساز.");
+      router.replace("/onboarding");
+    } catch (err) {
+      const message =
+        err instanceof Error
+          ? err.message
+          : "ثبت‌نام ناموفق بود. دوباره تلاش کن.";
+      toast.error(message);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
