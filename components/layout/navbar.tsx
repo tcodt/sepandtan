@@ -146,14 +146,20 @@ export default function Navbar() {
 
           <ModeToggle />
 
-          <Link href="/cart" className="relative ...">
-            <ShoppingCart className="w-4 h-4" />
-            {hasHydrated && totalItems() > 0 && (
-              <span className="absolute -top-1 -left-1 min-w-4 h-4 px-1 rounded-full bg-primary text-primary-foreground text-[10px] flex items-center justify-center">
-                {totalItems()}
-              </span>
-            )}
-          </Link>
+          {loggedIn && (
+            <Link
+              href="/cart"
+              className="relative inline-flex items-center justify-center rounded-full p-2 hover:bg-muted transition-colors"
+              aria-label="سبد خرید"
+            >
+              <ShoppingCart className="w-4 h-4" />
+              {hasHydrated && totalItems() > 0 && (
+                <span className="absolute -top-1 -left-1 min-w-4 h-4 px-1 rounded-full bg-primary text-primary-foreground text-[10px] flex items-center justify-center">
+                  {totalItems()}
+                </span>
+              )}
+            </Link>
+          )}
 
           {/* Auth UI — بعد از hydrate */}
           {!hasHydrated ? (
@@ -198,6 +204,11 @@ export default function Navbar() {
                   <Link href="/cart" className="flex items-center gap-2">
                     <ShoppingCart className="w-4 h-4" />
                     سبد خرید
+                    {totalItems() > 0 && (
+                      <span className="mr-auto text-xs text-muted-foreground">
+                        {totalItems().toLocaleString("fa-IR")}
+                      </span>
+                    )}
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>

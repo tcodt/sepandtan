@@ -5,6 +5,8 @@ import { ArrowRight, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ProfileHeader } from "./profile-header";
 import { ProfileForm } from "./profile-form";
+import { AccountSubscriptionSection } from "./account-subscription-section";
+import { AccountSummaryCards } from "./account-summary-cards";
 
 export function AccountScreen() {
   return (
@@ -28,6 +30,10 @@ export function AccountScreen() {
         <div className="rounded-2xl border border-border bg-card/80 dark:bg-card/60 p-5">
           <ProfileHeader />
         </div>
+
+        <AccountSubscriptionSection />
+
+        <AccountSummaryCards />
 
         <div className="rounded-2xl border border-border bg-card/80 dark:bg-card/60 p-4 sm:p-5">
           <h2 className="text-sm font-semibold text-foreground mb-4">

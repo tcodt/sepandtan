@@ -10,6 +10,8 @@ import { cn } from "@/lib/utils";
 import { useUserPlan } from "@/hooks/use-user-plan";
 import { getNutritionLogByDate } from "@/lib/api/logs";
 import type { NutritionLog } from "@/lib/types/plan";
+import { motion } from "framer-motion";
+import { EmptyState } from "@/components/common/empty-state";
 
 const MEAL_LABELS: Record<string, string> = {
   breakfast: "صبحانه",
@@ -49,16 +51,20 @@ export function NutritionSummary() {
   if (!hasPlan || !todayDay) {
     return (
       <Card className="border-border bg-card/80 dark:bg-card/60 backdrop-blur-sm">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">تغذیه امروز</CardTitle>
-        </CardHeader>
         <CardContent>
-          <p className="text-sm text-muted-foreground mb-3">
-            برنامه‌ای برای امروز پیدا نشد.
-          </p>
-          <Button asChild variant="outline" size="sm" className="w-full">
-            <Link href="/onboarding">ساخت برنامه</Link>
-          </Button>
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            <EmptyState
+              icon={<Apple className="w-5 h-5" />}
+              title="رژیمی برای امروز نیست"
+              description="بعد از ساخت برنامه، وعده‌های روزانه اینجا می‌آیند."
+              actionLabel="ساخت برنامه"
+              actionHref="/onboarding"
+              className="py-6"
+            />
+          </motion.div>
         </CardContent>
       </Card>
     );

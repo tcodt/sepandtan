@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -43,6 +43,9 @@ type RegisterForm = z.infer<typeof registerSchema>;
 export default function RegisterPage() {
   const router = useRouter();
   const setUser = useUserStore((s) => s.setUser);
+  const searchParams = useSearchParams();
+  const next = searchParams.get("next");
+  const plan = searchParams.get("plan");
 
   const [contactType, setContactType] = useState<"email" | "phone">("email");
   const [showPassword, setShowPassword] = useState(false);
@@ -116,6 +119,13 @@ export default function RegisterPage() {
       });
 
       toast.success("حسابت ساخته شد! حالا برنامه شخصیت را بساز.");
+
+      if (next === "/checkout") {
+        const planQuery = plan ? `?plan=${encodeURIComponent(plan)}` : "";
+        router.replace(`/checkout${planQuery}`);
+        return;
+      }
+
       router.replace("/onboarding");
     } catch (err) {
       const message =

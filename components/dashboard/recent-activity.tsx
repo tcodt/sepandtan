@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Activity,
   Apple,
@@ -12,12 +13,7 @@ import {
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useUserStore } from "@/lib/store/user-store";
-import {
-  getWeightLogs,
-  getWorkoutLogs,
-  getNutritionLogs,
-} from "@/lib/api/logs";
+import { EmptyState } from "@/components/common/empty-state";
 import type { WeightLog, WorkoutLog, NutritionLog } from "@/lib/types/plan";
 
 type ActivityItem = {
@@ -31,34 +27,20 @@ type ActivityItem = {
 
 const INITIAL_DISPLAY_COUNT = 4;
 
-export function RecentActivity() {
-  const user = useUserStore((s) => s.user);
-  const [loading, setLoading] = useState(false);
+type Props = {
+  weights?: WeightLog[];
+  workouts?: WorkoutLog[];
+  nutritions?: NutritionLog[];
+  isLoading?: boolean;
+};
+
+export function RecentActivity({
+  weights = [],
+  workouts = [],
+  nutritions = [],
+  isLoading = false,
+}: Props) {
   const [showAll, setShowAll] = useState(false);
-  const [weights, setWeights] = useState<WeightLog[]>([]);
-  const [workouts, setWorkouts] = useState<WorkoutLog[]>([]);
-  const [nutritions, setNutritions] = useState<NutritionLog[]>([]);
-
-  useEffect(() => {
-    if (!user?.id) return;
-
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setLoading(true);
-    Promise.all([
-      getWeightLogs(user.id),
-      getWorkoutLogs(user.id),
-      getNutritionLogs(user.id),
-    ])
-      .then(([w, wo, n]) => {
-        setWeights(w || []);
-        setWorkouts(wo || []);
-        setNutritions(n || []);
-      })
-      .catch((err) => {
-        console.error("recent activity failed", err);
-      })
-      .finally(() => setLoading(false));
-  }, [user?.id]);
 
   const allItems = useMemo(() => {
     const list: ActivityItem[] = [];
@@ -103,9 +85,11 @@ export function RecentActivity() {
     return list.sort((a, b) => b.sortKey.localeCompare(a.sortKey));
   }, [weights, workouts, nutritions]);
 
-  const displayItems = useMemo(() => {
-    return showAll ? allItems : allItems.slice(0, INITIAL_DISPLAY_COUNT);
-  }, [allItems, showAll]);
+  const displayItems = showAll
+    ? allItems
+    : allItems.slice(0, INITIAL_DISPLAY_COUNT);
+
+  const hasMore = allItems.length > INITIAL_DISPLAY_COUNT;
 
   const iconFor = (type: ActivityItem["type"]) => {
     if (type === "weight") return Scale;
@@ -113,10 +97,8 @@ export function RecentActivity() {
     return Apple;
   };
 
-  const hasMore = allItems.length > INITIAL_DISPLAY_COUNT;
-
   return (
-    <Card className="border-border bg-card/80 dark:bg-card/60 backdrop-blur-sm flex flex-col h-full">
+    <Card className="border-border bg-card/80 dark:bg-card/60 backdrop-blur-sm h-full flex flex-col">
       <CardHeader className="pb-3">
         <div className="flex items-center gap-2">
           <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
@@ -127,41 +109,58 @@ export function RecentActivity() {
       </CardHeader>
 
       <CardContent className="flex-1 flex flex-col">
-        {loading ? (
+        {isLoading ? (
           <div className="flex justify-center py-8">
             <Loader2 className="w-5 h-5 animate-spin text-primary" />
           </div>
         ) : allItems.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            هنوز فعالیتی ثبت نشده. تمرین، رژیم یا وزن را ثبت کن.
-          </p>
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25 }}
+          >
+            <EmptyState
+              icon={<Activity className="w-5 h-5" />}
+              title="هنوز فعالیتی نداری"
+              description="با اولین تمرین، ثبت وزن یا رژیم، پیشرفت از اینجا شروع می‌شود."
+              actionLabel="شروع تمرین امروز"
+              actionHref="/workout/today"
+              className="py-6"
+            />
+          </motion.div>
         ) : (
           <>
             <div className="flex-1 space-y-3 overflow-y-auto min-h-0">
-              {displayItems.map((item) => {
-                const Icon = iconFor(item.type);
-                return (
-                  <div
-                    key={item.id}
-                    className="flex items-start gap-3 rounded-xl border border-border bg-background p-3"
-                  >
-                    <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                      <Icon className="w-4 h-4 text-primary" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium text-foreground truncate">
-                        {item.title}
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        {item.subtitle}
-                      </p>
-                    </div>
-                    <span className="text-[11px] text-muted-foreground shrink-0">
-                      {item.date}
-                    </span>
-                  </div>
-                );
-              })}
+              <AnimatePresence initial={false}>
+                {displayItems.map((item, index) => {
+                  const Icon = iconFor(item.type);
+                  return (
+                    <motion.div
+                      key={item.id}
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -4 }}
+                      transition={{ duration: 0.2, delay: index * 0.03 }}
+                      className="flex items-start gap-3 rounded-xl border border-border bg-background p-3"
+                    >
+                      <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                        <Icon className="w-4 h-4 text-primary" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium text-foreground truncate">
+                          {item.title}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {item.subtitle}
+                        </p>
+                      </div>
+                      <span className="text-[11px] text-muted-foreground shrink-0">
+                        {item.date}
+                      </span>
+                    </motion.div>
+                  );
+                })}
+              </AnimatePresence>
             </div>
 
             {hasMore && (
@@ -170,7 +169,7 @@ export function RecentActivity() {
                   variant="ghost"
                   size="sm"
                   className="w-full h-8 text-xs text-muted-foreground hover:text-foreground"
-                  onClick={() => setShowAll(!showAll)}
+                  onClick={() => setShowAll((v) => !v)}
                 >
                   {showAll ? (
                     <>
@@ -180,8 +179,10 @@ export function RecentActivity() {
                   ) : (
                     <>
                       <ChevronDown className="w-3.5 h-3.5 ml-1.5" />
-                      نمایش بیشتر ({allItems.length -
-                        INITIAL_DISPLAY_COUNT}{" "}
+                      نمایش بیشتر (
+                      {(allItems.length - INITIAL_DISPLAY_COUNT).toLocaleString(
+                        "fa-IR",
+                      )}{" "}
                       مورد دیگر)
                     </>
                   )}

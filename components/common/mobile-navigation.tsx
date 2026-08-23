@@ -7,7 +7,7 @@ import {
   BotIcon,
   StoreIcon,
   DumbbellIcon,
-  SearchIcon,
+  User2,
 } from "lucide-react";
 import {
   Tooltip,
@@ -26,10 +26,10 @@ const items = [
     href: "/dashboard",
   },
   {
-    id: "explore",
-    icon: SearchIcon,
-    label: "اکسپلور",
-    href: "/explore",
+    id: "workouts",
+    icon: DumbbellIcon,
+    label: "تمرین",
+    href: "/workouts",
   },
   {
     id: "ai",
@@ -45,10 +45,10 @@ const items = [
     href: "/store",
   },
   {
-    id: "workouts",
-    icon: DumbbellIcon,
-    label: "حرکات",
-    href: "/workouts",
+    id: "account",
+    icon: User2,
+    label: "حساب",
+    href: "/account",
   },
 ];
 

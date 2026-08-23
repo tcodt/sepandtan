@@ -18,6 +18,7 @@ import {
 } from "@/lib/store/user-store";
 import { generateAndSavePlan } from "@/lib/api/plans";
 import { usePlanStore } from "@/lib/store/plan-store";
+import { addWeightLog } from "@/lib/api/logs";
 
 export function OnboardingWizard() {
   const router = useRouter();
@@ -76,6 +77,18 @@ export function OnboardingWizard() {
       setPlan(plan);
 
       toast.success("برنامه شخصی‌ات آماده شد!");
+      if (bodyInfo?.weight) {
+        try {
+          await addWeightLog({
+            userId: user.id,
+            weight: bodyInfo.weight,
+            date: plan.startDate, // همان تابع local date
+            note: "وزن شروع برنامه",
+          });
+        } catch (e) {
+          console.error("seed weight log failed", e);
+        }
+      }
       router.push("/dashboard");
     } catch (err) {
       console.error(err);

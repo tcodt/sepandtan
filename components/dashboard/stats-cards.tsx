@@ -1,11 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Activity, Flame, Target, TrendingDown, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useUserPlan } from "@/hooks/use-user-plan";
-import { getWeightLogs, getWorkoutLogs } from "@/lib/api/logs";
 import type { WeightLog, WorkoutLog } from "@/lib/types/plan";
 
 const goalLabels: Record<string, string> = {
@@ -24,38 +23,27 @@ type StatItem = {
   icon: React.ElementType;
 };
 
-export function StatsCards() {
+type Props = {
+  weights?: WeightLog[];
+  workouts?: WorkoutLog[];
+  isLoading?: boolean;
+};
+
+export function StatsCards({
+  weights = [],
+  workouts = [],
+  isLoading = false,
+}: Props) {
   const { user, todayDay, plan, isLoading: planLoading } = useUserPlan();
-  const [weightLogs, setWeightLogs] = useState<WeightLog[]>([]);
-  const [workoutLogs, setWorkoutLogs] = useState<WorkoutLog[]>([]);
-  const [logsLoading, setLogsLoading] = useState(false);
-
-  useEffect(() => {
-    if (!user?.id) return;
-
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setLogsLoading(true);
-    Promise.all([getWeightLogs(user.id), getWorkoutLogs(user.id)])
-      .then(([weights, workouts]) => {
-        setWeightLogs(weights || []);
-        setWorkoutLogs(workouts || []);
-      })
-      .catch(() => {
-        // اگر API بالا نباشد، با داده کاربر ادامه می‌دهیم
-      })
-      .finally(() => setLogsLoading(false));
-  }, [user?.id]);
 
   const stats: StatItem[] = useMemo(() => {
     const latestWeight =
-      weightLogs.length > 0
-        ? weightLogs[weightLogs.length - 1].weight
+      weights.length > 0
+        ? weights[weights.length - 1].weight
         : user?.bodyInfo?.weight;
 
     const prevWeight =
-      weightLogs.length > 1
-        ? weightLogs[weightLogs.length - 2].weight
-        : undefined;
+      weights.length > 1 ? weights[weights.length - 2].weight : undefined;
 
     let weightChange = "ثبت نشده";
     let weightChangeType: StatItem["changeType"] = "neutral";
@@ -78,10 +66,9 @@ export function StatsCards() {
     const calorieTarget = todayDay?.dailyCaloriesTarget;
     const goalLabel = user?.goal ? goalLabels[user.goal] : "تعیین‌نشده";
 
-    // تمرین این هفته (۷ روز اخیر)
     const weekAgo = new Date();
     weekAgo.setDate(weekAgo.getDate() - 7);
-    const weekLogs = workoutLogs.filter((log) => {
+    const weekLogs = workouts.filter((log) => {
       const d = new Date(log.date);
       return d >= weekAgo;
     });
@@ -123,9 +110,9 @@ export function StatsCards() {
         icon: Target,
       },
     ];
-  }, [user, todayDay, plan, weightLogs, workoutLogs]);
+  }, [user, todayDay, plan, weights, workouts]);
 
-  if (planLoading || logsLoading) {
+  if (isLoading || planLoading) {
     return (
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {Array.from({ length: 4 }).map((_, i) => (

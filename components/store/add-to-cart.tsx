@@ -7,6 +7,8 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import type { Product } from "@/lib/products-type";
 import { useCartStore } from "@/lib/store/cart-store";
+import { useUserStore } from "@/lib/store/user-store";
+import { useRouter } from "next/navigation";
 
 type AddToCartProps = {
   product: Product;
@@ -21,9 +23,16 @@ export default function AddToCart({
 }: AddToCartProps) {
   const addItem = useCartStore((s) => s.addItem);
   const [justAdded, setJustAdded] = useState(false);
+  const loggedIn = useUserStore((s) => s.isAuthenticated && !!s.user);
+  const router = useRouter();
 
   const handleAdd = () => {
     if (!product.inStock) return;
+    if (!loggedIn) {
+      toast.error("ابتدا وارد شو");
+      router.push("/login");
+      return;
+    }
 
     // برای لباس، اگر سایز لازم است و انتخاب نشده
     if ("sizes" in product && product.sizes?.length && !size) {

@@ -1,45 +1,45 @@
 "use client";
 
 import Link from "next/link";
-import { Play, Bot, Store, Dumbbell, Home, User } from "lucide-react";
+import { Play, Bot, Apple, Scale, Dumbbell, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const actions = [
   {
     href: "/workout/today",
-    label: "شروع تمرین امروز",
-    description: "اجرای برنامه روزانه",
+    label: "تمرین امروز",
+    description: "شروع برنامه روزانه",
     icon: Play,
     primary: true,
   },
   {
+    href: "/nutrition",
+    label: "رژیم امروز",
+    description: "وعده‌ها و کالری",
+    icon: Apple,
+  },
+  {
+    href: "/dashboard#weight",
+    label: "ثبت وزن",
+    description: "پیگیری پیشرفت",
+    icon: Scale,
+  },
+  {
     href: "/ai",
-    label: "مربی هوش مصنوعی",
-    description: "چت و راهنمایی",
+    label: "مربی AI",
+    description: "راهنمایی هوشمند",
     icon: Bot,
   },
   {
     href: "/workouts",
-    label: "کتابخانه حرکات",
-    description: "همه حرکات",
+    label: "حرکات",
+    description: "کتابخانه تمرین",
     icon: Dumbbell,
   },
   {
-    href: "/store",
-    label: "فروشگاه",
-    description: "مکمل و تجهیزات",
-    icon: Store,
-  },
-  {
-    href: "/",
-    label: "صفحه اصلی",
-    description: "بازگشت به لندینگ",
-    icon: Home,
-  },
-  {
     href: "/account",
-    label: "پروفایل",
-    description: "اطلاعات حساب",
+    label: "حساب من",
+    description: "پروفایل و اشتراک",
     icon: User,
   },
 ];

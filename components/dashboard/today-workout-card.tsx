@@ -10,6 +10,9 @@ import { cn } from "@/lib/utils";
 import { useUserPlan } from "@/hooks/use-user-plan";
 import { getWorkoutLogByDate } from "@/lib/api/logs";
 import type { WorkoutLog } from "@/lib/types/plan";
+import { motion } from "framer-motion";
+import { EmptyState } from "@/components/common/empty-state";
+import { Dumbbell } from "lucide-react";
 
 export function TodayWorkoutCard() {
   const { user, todayDay, currentDayNumber, isLoading, hasPlan, error } =
@@ -62,16 +65,24 @@ export function TodayWorkoutCard() {
   if (error || !hasPlan || !todayDay) {
     return (
       <Card className="border-border bg-card/80 dark:bg-card/60 backdrop-blur-sm">
-        <CardHeader>
-          <CardTitle className="text-base sm:text-lg">برنامه امروز</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <p className="text-sm text-muted-foreground">
-            {error ? "خطا در بارگذاری برنامه." : "هنوز برنامه‌ای فعال نیست."}
-          </p>
-          <Button asChild variant="outline" className="w-full">
-            <Link href="/onboarding">ساخت برنامه</Link>
-          </Button>
+        <CardContent>
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            <EmptyState
+              icon={<Dumbbell className="w-5 h-5" />}
+              title="برنامه امروز آماده نیست"
+              description={
+                error
+                  ? "خطا در بارگذاری برنامه. اتصال یا json-server را چک کن."
+                  : "اول یک برنامه شخصی بساز تا تمرین روزانه فعال شود."
+              }
+              actionLabel="ساخت برنامه"
+              actionHref="/onboarding"
+              className="py-8"
+            />
+          </motion.div>
         </CardContent>
       </Card>
     );

@@ -18,7 +18,11 @@ const withSerwist = withSerwistInit({
 });
 
 const nextConfig: NextConfig = {
-  // تنظیمات خودت را اینجا نگه دار (images و ...)
+  reactStrictMode: true,
+  poweredByHeader: false,
+  images: {
+    formats: ["image/avif", "image/webp"],
+  },
 };
 
 export default withSerwist(nextConfig);

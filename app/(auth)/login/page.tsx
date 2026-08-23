@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -35,6 +35,9 @@ type LoginForm = z.infer<typeof loginSchema>;
 export default function LoginPage() {
   const router = useRouter();
   const setUser = useUserStore((s) => s.setUser);
+  const searchParams = useSearchParams();
+  const next = searchParams.get("next");
+  const plan = searchParams.get("plan");
 
   const [contactType, setContactType] = useState<"email" | "phone">("email");
   const [showPassword, setShowPassword] = useState(false);
@@ -80,6 +83,12 @@ export default function LoginPage() {
       });
 
       toast.success(`خوش آمدی ${safeUser.name}!`);
+
+      if (next === "/checkout") {
+        const planQuery = plan ? `?plan=${encodeURIComponent(plan)}` : "";
+        router.replace(`/checkout${planQuery}`);
+        return;
+      }
 
       if (safeUser.onboardingCompleted) {
         router.replace("/dashboard");
