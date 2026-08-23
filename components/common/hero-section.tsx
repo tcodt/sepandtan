@@ -5,9 +5,20 @@ import { Button } from "../ui/button";
 import { BotIcon, BrainCircuitIcon, HeartPulseIcon } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { motion } from "framer-motion";
+import { useRouter } from "next/navigation";
 // import Threads from "../Threads";
 
 export default function HeroSection() {
+  const router = useRouter();
+
+  const handleOnboarding = () => {
+    router.push("/onboarding");
+  };
+
+  const handlePersonalPlan = () => {
+    router.push("/ai");
+  };
+
   return (
     <section
       className="flex flex-col gap-8 md:gap-20 md:flex-row items-center justify-between relative overflow-hidden bg-muted p-8 md:p-16 z-10"
@@ -64,6 +75,7 @@ export default function HeroSection() {
             variant={"default"}
             className="rounded-full shadow-lg"
             size={"lg"}
+            onClick={handleOnboarding}
           >
             شروع رایگان
           </Button>
@@ -71,6 +83,7 @@ export default function HeroSection() {
             variant={"outline"}
             className="rounded-full shadow-lg"
             size={"lg"}
+            onClick={handlePersonalPlan}
           >
             برنامه شخصی
             <BotIcon />

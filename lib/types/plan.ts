@@ -47,6 +47,7 @@ export type UserProfile = {
   targetWeight?: number;
   createdAt: string;
   updatedAt?: string;
+  selectedPlanId?: string | null;
 };
 
 export type PlanExercise = {
@@ -131,6 +132,19 @@ export type WeightLog = {
   weight: number;
   date: string;
   note?: string;
+};
+
+export type SubscriptionPlan = {
+  id: string;
+  name: string;
+  price: number;
+  periodLabel: string;
+  featured: boolean;
+  badge?: string | null;
+  ctaLabel: string;
+  sortOrder: number;
+  isActive: boolean;
+  features: string[];
 };
 
 export type CoachProfile = {

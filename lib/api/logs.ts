@@ -47,7 +47,9 @@ export async function getNutritionLogByDate(
   date: string,
 ): Promise<NutritionLog | null> {
   const logs = await getNutritionLogs(userId);
-  return logs.find((x) => x.date === date) ?? null;
+  const sameDay = logs.filter((x) => x.date === date);
+  if (!sameDay.length) return null;
+  return sameDay[sameDay.length - 1] ?? null;
 }
 
 export async function saveNutritionLog(

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Target, TrendingDown, TrendingUp, Loader2 } from "lucide-react";
 import {
   Card,
@@ -11,7 +11,6 @@ import {
 } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { useUserStore } from "@/lib/store/user-store";
-import { getWeightLogs } from "@/lib/api/logs";
 import type { WeightLog } from "@/lib/types/plan";
 
 const goalLabels: Record<string, string> = {
@@ -22,33 +21,25 @@ const goalLabels: Record<string, string> = {
   general_fitness: "آمادگی عمومی",
 };
 
-export function GoalProgress() {
+type Props = {
+  weights?: WeightLog[];
+  isLoading?: boolean;
+};
+
+export function GoalProgress({ weights = [], isLoading = false }: Props) {
   const user = useUserStore((s) => s.user);
   const goal = user?.goal ? goalLabels[user.goal] : "تعیین‌نشده";
-
-  const [weightLogs, setWeightLogs] = useState<WeightLog[]>([]);
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    if (!user?.id) return;
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setLoading(true);
-    getWeightLogs(user.id)
-      .then((logs) => setWeightLogs(logs || []))
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, [user?.id]);
 
   const { startWeight, currentWeight, targetWeight, progress, direction } =
     useMemo(() => {
       const start =
-        weightLogs.length > 0
-          ? weightLogs[0].weight
+        weights.length > 0
+          ? weights[0].weight
           : (user?.bodyInfo?.weight ?? null);
 
       const current =
-        weightLogs.length > 0
-          ? weightLogs[weightLogs.length - 1].weight
+        weights.length > 0
+          ? weights[weights.length - 1].weight
           : (user?.bodyInfo?.weight ?? null);
 
       const target =
@@ -67,7 +58,6 @@ export function GoalProgress() {
         };
       }
 
-      // کاهش وزن
       if (user?.goal === "lose_weight") {
         const total = start - target;
         const done = start - current;
@@ -84,7 +74,6 @@ export function GoalProgress() {
         };
       }
 
-      // عضله‌سازی / افزایش
       if (user?.goal === "build_muscle") {
         const total = target - start;
         const done = current - start;
@@ -101,7 +90,6 @@ export function GoalProgress() {
         };
       }
 
-      // حفظ / عمومی
       const diff = Math.abs(current - (target || current));
       const pct = diff <= 1 ? 100 : Math.max(0, 100 - Math.round(diff * 10));
       return {
@@ -111,9 +99,9 @@ export function GoalProgress() {
         progress: pct,
         direction: "neutral" as const,
       };
-    }, [user, weightLogs]);
+    }, [user, weights]);
 
-  if (loading) {
+  if (isLoading) {
     return (
       <Card className="border-border bg-card/80 dark:bg-card/60 backdrop-blur-sm">
         <CardContent className="flex items-center justify-center py-16">

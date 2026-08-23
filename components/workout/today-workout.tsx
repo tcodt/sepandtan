@@ -18,6 +18,7 @@ import {
   saveWorkoutLog,
   updateWorkoutLog,
 } from "@/lib/api/logs";
+import { WorkoutComplete } from "./workout-complete";
 
 function mapPlanExercisesToSession(
   exercises: {
@@ -56,6 +57,7 @@ export function TodayWorkout() {
 
   const [existingLogId, setExistingLogId] = useState<string | null>(null);
   const [bootstrapped, setBootstrapped] = useState(false);
+  const [showComplete, setShowComplete] = useState(false);
 
   // فقط وقتی plan/day عوض شد، پایه را از plan بساز
   const basePlanExercises = useMemo(
@@ -192,6 +194,7 @@ export function TodayWorkout() {
 
       finishSession();
       toast.success("تمرین ثبت شد");
+      setShowComplete(true);
     } catch (e) {
       console.error(e);
       toast.error("ثبت تمرین ناموفق بود. json-server را چک کن.");
@@ -287,6 +290,17 @@ export function TodayWorkout() {
           </Button>
         </div>
       </div>
+
+      {/* نمایش مودال اتمام تمرین - اصلاح شده */}
+      {showComplete && (
+        <WorkoutComplete
+          completedCount={completedCount}
+          totalCount={total}
+          durationMinutes={todayDay.estimatedMinutes}
+          dayNumber={currentDayNumber}
+          onClose={() => setShowComplete(false)}
+        />
+      )}
     </div>
   );
 }
