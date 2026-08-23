@@ -43,5 +43,5 @@ export function useSeedStartWeight(onSeeded?: () => void) {
         console.error("seed start weight failed", e);
       }
     })();
-  }, [user?.id, user?.bodyInfo?.weight, onSeeded]);
+  }, [user?.id, user?.bodyInfo?.weight, onSeeded, user?.bodyInfo]);
 }

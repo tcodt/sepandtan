@@ -1,24 +1,11 @@
-"use client";
-
 import AboutFeature from "@/components/common/about-feature";
+import { HashScroll } from "@/components/common/hash-scroll";
 import HeroSection from "@/components/common/hero-section";
 import Plans from "@/components/common/plans";
 import Services from "@/components/common/services";
 import Usage from "@/components/common/usage";
 import UserResult from "@/components/common/user-result";
 import DomeGallery from "@/components/DomeGallery";
-import { useEffect } from "react";
-
-export function HashScroll() {
-  useEffect(() => {
-    if (window.location.hash === "#plans") {
-      const el = document.getElementById("plans");
-      el?.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
-  }, []);
-
-  return null;
-}
 
 export default function Home() {
   return (
