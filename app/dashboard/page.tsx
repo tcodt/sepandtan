@@ -1,14 +1,29 @@
 "use client";
 
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { useRequireAuth } from "@/hooks/use-require-auth";
 
 export default function DashboardPage() {
+  const router = useRouter();
   const { isLoading, isAuthenticated } = useRequireAuth({
     requireOnboarding: true,
   });
 
-  // تا hydrate و چک auth تمام نشده چیزی نشان نده
+  // اگر اولین ورود بعد از آنبوردینگ باشد → Welcome
+  useEffect(() => {
+    if (isLoading || !isAuthenticated) return;
+    try {
+      const seen = localStorage.getItem("sepandtan-welcome-seen");
+      if (seen === "0") {
+        router.replace("/welcome");
+      }
+    } catch {
+      // ignore
+    }
+  }, [isLoading, isAuthenticated, router]);
+
   if (isLoading || !isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">

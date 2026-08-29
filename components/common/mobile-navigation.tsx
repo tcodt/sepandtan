@@ -5,8 +5,8 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboardIcon,
   BotIcon,
-  StoreIcon,
   DumbbellIcon,
+  Apple,
   User2,
 } from "lucide-react";
 import {
@@ -26,10 +26,10 @@ const items = [
     href: "/dashboard",
   },
   {
-    id: "workouts",
+    id: "workout-today",
     icon: DumbbellIcon,
-    label: "تمرین",
-    href: "/workouts",
+    label: "تمرین امروز",
+    href: "/workout/today",
   },
   {
     id: "ai",
@@ -39,10 +39,10 @@ const items = [
     href: "/ai",
   },
   {
-    id: "store",
-    icon: StoreIcon,
-    label: "فروشگاه",
-    href: "/store",
+    id: "nutrition",
+    icon: Apple,
+    label: "تغذیه امروز",
+    href: "/nutrition",
   },
   {
     id: "account",
@@ -153,6 +153,7 @@ export default function MobileNavigation() {
                           ? "text-primary"
                           : "text-muted-foreground hover:text-foreground",
                       )}
+                      aria-current={active ? "page" : undefined}
                     >
                       <Icon
                         size={22}
@@ -161,7 +162,6 @@ export default function MobileNavigation() {
                       />
                       <span className="sr-only">{item.label}</span>
 
-                      {/* Active indicator */}
                       {active && (
                         <span className="absolute bottom-1.5 h-1 w-1 rounded-full bg-primary" />
                       )}

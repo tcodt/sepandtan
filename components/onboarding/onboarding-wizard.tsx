@@ -85,11 +85,12 @@ export function OnboardingWizard() {
             date: plan.startDate, // همان تابع local date
             note: "وزن شروع برنامه",
           });
+          localStorage.setItem("sepandtan-welcome-seen", "0");
         } catch (e) {
           console.error("seed weight log failed", e);
         }
       }
-      router.push("/dashboard");
+      router.push("/welcome");
     } catch (err) {
       console.error(err);
 
