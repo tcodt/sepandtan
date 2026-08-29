@@ -16,6 +16,7 @@ import {
 } from "@/lib/api/logs";
 import type { PlanMeal } from "@/lib/types/plan";
 import { motion, AnimatePresence } from "framer-motion";
+import { InlineState } from "../common/states/inline-state";
 
 const MEAL_LABELS: Record<PlanMeal["type"], string> = {
   breakfast: "صبحانه",
@@ -138,13 +139,13 @@ export function TodayNutrition() {
 
   if (error || !hasPlan || !todayDay) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-4 p-4">
-        <p className="text-sm text-muted-foreground text-center">
-          {error || "رژیمی برای امروز پیدا نشد."}
-        </p>
-        <Button asChild variant="outline">
-          <Link href="/dashboard">بازگشت به داشبورد</Link>
-        </Button>
+      <div className="min-h-screen bg-background">
+        <div className="max-w-lg mx-auto px-4 py-6">
+          <InlineState
+            type={error ? "error" : "empty-nutrition"}
+            onRetry={error ? () => window.location.reload() : undefined}
+          />
+        </div>
       </div>
     );
   }
