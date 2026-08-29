@@ -16573,19 +16573,22 @@
       "avatarUrl": "/images/athlete-1.jpg",
       "verified": true,
       "isActive": true,
+      "city": "تهران",
       "samplePlans": [
-        "کاهش وزن ۸ هفته"
+        "کاهش وزن ۸ هفته",
+        "عضله‌سازی ۱۲ هفته"
       ],
       "createdAt": "2026-07-15T08:00:00.000Z"
     },
     {
       "id": "coach_2",
-      "userId": "coach_user_1",
+      "userId": "coach_user_2",
       "name": "نرگس کاظمی",
       "bio": "مربی فیتنس و تغذیه. تمرکز روی خانم‌ها و تناسب پایدار.",
       "specialties": [
         "تناسب بانوان",
-        "تغذیه ورزشی"
+        "تغذیه ورزشی",
+        "کاهش وزن"
       ],
       "experienceYears": 6,
       "rating": 4.9,
@@ -16595,10 +16598,246 @@
       "avatarUrl": "/images/athlete-3.jpg",
       "verified": true,
       "isActive": true,
+      "city": "اصفهان",
       "samplePlans": [
         "تناسب ۱۲ هفته"
       ],
       "createdAt": "2026-07-20T09:00:00.000Z"
+    },
+    {
+      "id": "coach_3",
+      "userId": "coach_user_3",
+      "name": "علی رضوی",
+      "bio": "مربی قدرت و کراس‌فیت. برنامه‌های عملکردی برای ورزشکاران.",
+      "specialties": [
+        "قدرت",
+        "کراس‌فیت",
+        "آمادگی جسمانی"
+      ],
+      "experienceYears": 10,
+      "rating": 4.7,
+      "reviewCount": 156,
+      "pricePerPlan": 2800000,
+      "pricePerConsultation": 400000,
+      "avatarUrl": "/images/athlete-2.jpg",
+      "verified": true,
+      "isActive": true,
+      "city": "تهران",
+      "samplePlans": [
+        "قدرت ۸ هفته",
+        "کراس‌فیت ۶ هفته"
+      ],
+      "createdAt": "2026-06-10T10:00:00.000Z"
+    },
+    {
+      "id": "coach_4",
+      "userId": "coach_user_4",
+      "name": "سارا محمدی",
+      "bio": "مربی یوگا و حرکات اصلاحی. کمک به بهبود وضعیت بدن و کاهش درد.",
+      "specialties": [
+        "یوگا",
+        "حرکات اصلاحی",
+        "انعطاف"
+      ],
+      "experienceYears": 7,
+      "rating": 4.9,
+      "reviewCount": 201,
+      "pricePerPlan": 1800000,
+      "pricePerConsultation": 280000,
+      "avatarUrl": "/images/athlete-1.jpg",
+      "verified": true,
+      "isActive": true,
+      "city": "شیراز",
+      "samplePlans": [
+        "یوگا ۸ هفته",
+        "اصلاحی ۶ هفته"
+      ],
+      "createdAt": "2026-05-22T11:00:00.000Z"
+    },
+    {
+      "id": "coach_5",
+      "userId": "coach_user_5",
+      "name": "رضا کریمی",
+      "bio": "مربی دو و استقامت. برنامه‌های دویدن و کاهش وزن با کاردیو.",
+      "specialties": [
+        "استقامت",
+        "دویدن",
+        "کاهش وزن"
+      ],
+      "experienceYears": 5,
+      "rating": 4.6,
+      "reviewCount": 67,
+      "pricePerPlan": 1900000,
+      "pricePerConsultation": 250000,
+      "avatarUrl": "/images/athlete-2.jpg",
+      "verified": false,
+      "isActive": true,
+      "city": "مشهد",
+      "samplePlans": [
+        "دویدن ۱۰ هفته"
+      ],
+      "createdAt": "2026-08-01T08:30:00.000Z"
+    },
+    {
+      "id": "coach_6",
+      "userId": "coach_user_6",
+      "name": "مریم حسینی",
+      "bio": "مربی تغذیه ورزشی و ترکیب بدنی. تمرکز روی بانوان و پس از زایمان.",
+      "specialties": [
+        "تغذیه ورزشی",
+        "تناسب بانوان",
+        "پس از زایمان"
+      ],
+      "experienceYears": 9,
+      "rating": 4.95,
+      "reviewCount": 178,
+      "pricePerPlan": 2400000,
+      "pricePerConsultation": 320000,
+      "avatarUrl": "/images/athlete-3.jpg",
+      "verified": true,
+      "isActive": true,
+      "city": "تهران",
+      "samplePlans": [
+        "تغذیه ۱۲ هفته",
+        "پس از زایمان ۸ هفته"
+      ],
+      "createdAt": "2026-04-18T09:00:00.000Z"
+    },
+    {
+      "id": "coach_7",
+      "userId": "coach_user_7",
+      "name": "امیرحسین نوری",
+      "bio": "مربی بدنسازی طبیعی و پاورلیفتینگ. برنامه‌های قدرتی بدون دارو.",
+      "specialties": [
+        "عضله‌سازی",
+        "پاورلیفتینگ",
+        "بدنسازی طبیعی"
+      ],
+      "experienceYears": 12,
+      "rating": 4.85,
+      "reviewCount": 210,
+      "pricePerPlan": 3000000,
+      "pricePerConsultation": 450000,
+      "avatarUrl": "/images/athlete-1.jpg",
+      "verified": true,
+      "isActive": true,
+      "city": "کرج",
+      "samplePlans": [
+        "پاورلیفتینگ ۱۲ هفته",
+        "عضله‌سازی طبیعی"
+      ],
+      "createdAt": "2026-03-05T14:00:00.000Z"
+    },
+    {
+      "id": "coach_8",
+      "userId": "coach_user_8",
+      "name": "فاطمه اکبری",
+      "bio": "مربی خانه و تمرین بدون تجهیزات. مناسب افراد پرمشغله.",
+      "specialties": [
+        "تمرین خانگی",
+        "کاهش وزن",
+        "آمادگی عمومی"
+      ],
+      "experienceYears": 4,
+      "rating": 4.7,
+      "reviewCount": 95,
+      "pricePerPlan": 1500000,
+      "pricePerConsultation": 200000,
+      "avatarUrl": "/images/athlete-3.jpg",
+      "verified": true,
+      "isActive": true,
+      "city": "تبریز",
+      "samplePlans": [
+        "خانگی ۸ هفته"
+      ],
+      "createdAt": "2026-07-28T16:00:00.000Z"
+    },
+    {
+      "id": "coach_9",
+      "userId": "coach_user_9",
+      "name": "حسین باقری",
+      "bio": "مربی بوکس و ورزش‌های رزمی. تمرکز روی آمادگی و کاهش وزن.",
+      "specialties": [
+        "رزمی",
+        "بوکس",
+        "آمادگی جسمانی"
+      ],
+      "experienceYears": 11,
+      "rating": 4.75,
+      "reviewCount": 132,
+      "pricePerPlan": 2600000,
+      "pricePerConsultation": 380000,
+      "avatarUrl": "/images/athlete-2.jpg",
+      "verified": true,
+      "isActive": true,
+      "city": "تهران",
+      "samplePlans": [
+        "بوکس ۱۰ هفته"
+      ],
+      "createdAt": "2026-06-01T12:00:00.000Z"
+    },
+    {
+      "id": "coach_10",
+      "userId": "coach_user_10",
+      "name": "زهرا موسوی",
+      "bio": "مربی پیلاتس و حرکات اصلاحی. بهبود وضعیت بدن و تقویت میان‌تنه.",
+      "specialties": [
+        "پیلاتس",
+        "حرکات اصلاحی",
+        "انعطاف"
+      ],
+      "experienceYears": 6,
+      "rating": 4.88,
+      "reviewCount": 110,
+      "pricePerPlan": 2000000,
+      "pricePerConsultation": 290000,
+      "avatarUrl": "/images/athlete-1.jpg",
+      "verified": true,
+      "isActive": true,
+      "city": "اصفهان",
+      "samplePlans": [
+        "پیلاتس ۸ هفته"
+      ],
+      "createdAt": "2026-08-05T10:00:00.000Z"
+    }
+  ],
+  "collaborationRequests": [],
+  "coachRequests": [
+    {
+      "id": "req-1",
+      "coachId": "coach_1",
+      "userId": "user-1",
+      "message": "می‌خوام برنامه کاهش وزن بگیرم",
+      "goal": "weight-loss",
+      "status": "pending",
+      "createdAt": "2026-08-28T10:00:00Z"
+    },
+    {
+      "id": "req-2",
+      "coachId": "coach_2",
+      "userId": "user-2",
+      "message": "برای افزایش حجم عضلات به کمک نیاز دارم",
+      "goal": "muscle-gain",
+      "status": "pending",
+      "createdAt": "2026-08-28T10:30:00Z"
+    },
+    {
+      "id": "req-3",
+      "coachId": "coach_5",
+      "userId": "user-3",
+      "message": "برنامه تغذیه شخصی‌سازی‌شده می‌خوام",
+      "goal": "nutrition",
+      "status": "accepted",
+      "createdAt": "2026-08-27T14:20:00Z"
+    },
+    {
+      "id": "req-4",
+      "coachId": "coach_8",
+      "userId": "user-4",
+      "message": "برای دفاع شخصی ثبت‌نام می‌کنم",
+      "goal": "self-defense",
+      "status": "pending",
+      "createdAt": "2026-08-28T08:45:00Z"
     }
   ],
   "workoutLogs": [

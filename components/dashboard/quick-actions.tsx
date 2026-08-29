@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Play, Bot, Apple, Scale, Dumbbell, User } from "lucide-react";
+import { Play, Bot, Apple, Scale, Dumbbell, User, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const actions = [
@@ -29,6 +29,13 @@ const actions = [
     label: "مربی AI",
     description: "راهنمایی هوشمند",
     icon: Bot,
+  },
+  {
+    href: "/coaches",
+    label: "مربیان",
+    description: "درخواست همکاری",
+    icon: Users,
+    primary: false,
   },
   {
     href: "/workouts",
