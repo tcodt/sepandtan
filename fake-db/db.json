@@ -17057,6 +17057,30 @@
         }
       ],
       "id": "yjD0KqD7WDA"
+    },
+    {
+      "userId": "user_demo_1",
+      "planId": "plan_demo_1",
+      "date": "2026-08-29",
+      "meals": [
+        {
+          "mealId": "d1m1",
+          "status": "eaten"
+        },
+        {
+          "mealId": "d1m2",
+          "status": "skipped"
+        },
+        {
+          "mealId": "d1m3",
+          "status": "eaten"
+        },
+        {
+          "mealId": "d1m4",
+          "status": "skipped"
+        }
+      ],
+      "id": "PoNJpDZ8Gao"
     }
   ],
   "weightLogs": [
