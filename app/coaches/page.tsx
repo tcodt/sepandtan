@@ -62,7 +62,7 @@ export default function CoachesPage() {
         <header className="flex items-center gap-2 sm:gap-3">
           <Link
             href="/dashboard"
-            className="p-2 -mr-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors flex-shrink-0"
+            className="p-2 -mr-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors shrink-0"
             aria-label="بازگشت"
           >
             <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6" />

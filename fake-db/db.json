@@ -17198,6 +17198,38 @@
       "difficulty": 3,
       "note": "شروع خوبی بود!",
       "id": "GyIn1lSHsME"
+    },
+    {
+      "userId": "user_demo_1",
+      "planId": "plan_demo_1",
+      "dayNumber": 30,
+      "date": "2026-08-30",
+      "exercises": [
+        {
+          "exerciseId": "10",
+          "completed": true,
+          "completedSets": 4
+        },
+        {
+          "exerciseId": "11",
+          "completed": true,
+          "completedSets": 3
+        },
+        {
+          "exerciseId": "13",
+          "completed": true,
+          "completedSets": 3
+        },
+        {
+          "exerciseId": "3",
+          "completed": true,
+          "completedSets": 3
+        }
+      ],
+      "durationMinutes": 45,
+      "completedAt": "2026-08-30T15:25:41.620Z",
+      "difficulty": 3,
+      "id": "6qFQJdgWnPI"
     }
   ],
   "nutritionLogs": [
@@ -17320,6 +17352,30 @@
         }
       ],
       "id": "PoNJpDZ8Gao"
+    },
+    {
+      "userId": "user_demo_1",
+      "planId": "plan_demo_1",
+      "date": "2026-08-30",
+      "meals": [
+        {
+          "mealId": "d2m1",
+          "status": "eaten"
+        },
+        {
+          "mealId": "d2m2",
+          "status": "eaten"
+        },
+        {
+          "mealId": "d2m3",
+          "status": "pending"
+        },
+        {
+          "mealId": "d2m4",
+          "status": "pending"
+        }
+      ],
+      "id": "-_bIpRFVMIA"
     }
   ],
   "weightLogs": [

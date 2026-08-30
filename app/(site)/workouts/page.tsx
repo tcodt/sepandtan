@@ -49,7 +49,7 @@ export default function WorkoutsPage() {
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
         {/* Intro */}
-        <div className="rounded-2xl border border-border bg-card/80 dark:bg-card/60 p-5 sm:p-6">
+        <div className="rounded-2xl border border-border bg-muted/50 p-5 sm:p-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <p className="text-sm text-muted-foreground">آموزش حرکات</p>

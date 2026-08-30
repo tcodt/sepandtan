@@ -26,9 +26,7 @@ export function MealCard({
     <div
       className={cn(
         "rounded-2xl border p-4 transition-all",
-        eaten
-          ? "border-primary/30 bg-primary/5"
-          : "border-border bg-card/80 dark:bg-card/60",
+        eaten ? "border-primary/30 bg-primary/5" : "border-border bg-muted/50",
       )}
     >
       <div className="flex items-start justify-between gap-3">

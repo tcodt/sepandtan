@@ -27,7 +27,7 @@ export function QuickPrompts({ onSelect, disabled }: QuickPromptsProps) {
             type="button"
             variant="outline"
             size="sm"
-            className="rounded-full gap-1.5 text-xs sm:text-sm h-8"
+            className="rounded-full gap-1.5 text-xs sm:text-sm h-8 hover:border-primary/30 hover:bg-primary/5 transition-all"
             disabled={disabled}
             onClick={() => onSelect(item.label)}
           >

@@ -35,7 +35,7 @@ export function RestTimer({ seconds, onComplete, onSkip }: RestTimerProps) {
   const secs = remaining % 60;
 
   return (
-    <div className="rounded-2xl border border-border bg-card/80 dark:bg-card/60 p-5 text-center space-y-4">
+    <div className="rounded-2xl border border-border bg-muted/50 p-5 text-center space-y-4">
       <p className="text-sm text-muted-foreground">زمان استراحت</p>
       <p className="text-4xl font-bold tabular-nums text-foreground">
         {String(minutes).padStart(2, "0")}:{String(secs).padStart(2, "0")}

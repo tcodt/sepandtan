@@ -70,7 +70,7 @@ export function QuickActions() {
                 "hover:shadow-md hover:-translate-y-0.5",
                 action.primary
                   ? "border-primary/40 bg-primary/10 hover:bg-primary/15"
-                  : "border-border bg-card/80 dark:bg-card/60 hover:bg-muted/60",
+                  : "border-border bg-muted/50 hover:bg-muted/30",
               )}
             >
               <div
@@ -78,7 +78,7 @@ export function QuickActions() {
                   "w-11 h-11 rounded-xl flex items-center justify-center transition-colors",
                   action.primary
                     ? "bg-primary text-primary-foreground"
-                    : "bg-muted text-muted-foreground group-hover:text-foreground",
+                    : "bg-secondary text-muted-foreground group-hover:text-foreground",
                 )}
               >
                 <Icon className="w-5 h-5" />

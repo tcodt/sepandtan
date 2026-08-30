@@ -26,7 +26,7 @@ export function SessionExerciseCard({
           ? "border-primary/30 bg-primary/5"
           : isActive
             ? "border-primary bg-primary/10 shadow-sm"
-            : "border-border bg-card/80 dark:bg-card/60 hover:bg-muted/50",
+            : "border-border bg-muted/50 hover:bg-muted/50",
       )}
     >
       <div className="flex items-center justify-center w-8 h-8 rounded-full bg-muted text-sm font-medium text-muted-foreground shrink-0">

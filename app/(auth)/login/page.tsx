@@ -110,7 +110,7 @@ export default function LoginPage() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, ease: "easeOut" }}
     >
-      <Card className="border-border bg-card/90 dark:bg-card/80 backdrop-blur-md shadow-xl">
+      <Card className="border-border bg-muted/50 backdrop-blur-md shadow-xl">
         <CardHeader className="text-center space-y-3 pb-4">
           <motion.div
             initial={{ scale: 0.8, opacity: 0 }}
@@ -168,7 +168,7 @@ export default function LoginPage() {
                         : "09123456789"
                     }
                     dir={contactType === "email" ? "ltr" : "rtl"}
-                    className={`h-11 ${contactType === "email" ? "text-left" : ""}`}
+                    className={`h-11 bg-background ${contactType === "email" ? "text-left" : ""}`}
                     {...register("contact")}
                     disabled={isLoading}
                   />
@@ -200,7 +200,7 @@ export default function LoginPage() {
                   id="password"
                   type={showPassword ? "text" : "password"}
                   placeholder="رمز عبور خود را وارد کنید"
-                  className="h-11 pl-10"
+                  className="h-11 pl-10 bg-background"
                   {...register("password")}
                   disabled={isLoading}
                 />

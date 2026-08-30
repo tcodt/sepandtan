@@ -21,7 +21,7 @@ export function CartSummary() {
   if (items.length === 0) return null;
 
   return (
-    <div className="rounded-2xl border border-border bg-card/80 dark:bg-card/60 p-4 sm:p-5 space-y-4 sticky bottom-4">
+    <div className="rounded-2xl border border-border bg-muted/50 p-4 sm:p-5 space-y-4 sticky bottom-4">
       <div className="flex items-center justify-between text-sm">
         <span className="text-muted-foreground">تعداد اقلام</span>
         <span className="font-medium tabular-nums">

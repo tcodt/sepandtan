@@ -15,7 +15,7 @@ export function CartItem({ item }: CartItemProps) {
   const removeItem = useCartStore((s) => s.removeItem);
 
   return (
-    <div className="flex gap-3 p-3 sm:p-4 rounded-2xl border border-border bg-card/80 dark:bg-card/60">
+    <div className="flex gap-3 p-3 sm:p-4 rounded-2xl border border-border bg-muted/50">
       <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-xl bg-muted/40 overflow-hidden shrink-0">
         <Image
           src={item.image}

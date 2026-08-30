@@ -21,7 +21,7 @@ type ExerciseCardProps = {
 
 export function ExerciseCard({ exercise }: ExerciseCardProps) {
   return (
-    <Card className="group overflow-hidden border-border bg-card/80 dark:bg-card/60 backdrop-blur-sm rounded-2xl hover:shadow-md transition-all">
+    <Card className="group overflow-hidden border-border bg-muted/50 backdrop-blur-sm rounded-2xl hover:shadow-md transition-all">
       <Link href={`/workouts/${exercise.id}`} className="block">
         <div className="relative aspect-4/3 overflow-hidden">
           <Image

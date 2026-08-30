@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { useUserStore } from "@/lib/store/user-store";
 import { getSubscriptionPlanById } from "@/lib/api/subscription-plans";
 import type { SubscriptionPlan } from "@/lib/types/plan";
+import { cn } from "@/lib/utils";
 
 const goalLabels: Record<string, string> = {
   lose_weight: "کاهش وزن",
@@ -42,18 +43,29 @@ export function AccountSummaryCards() {
           ? "پلن مربی"
           : "رایگان";
 
+  const statusColor =
+    user?.subscriptionStatus === "vip"
+      ? "text-amber-500"
+      : user?.subscriptionStatus === "ai_plan"
+        ? "text-blue-500"
+        : user?.subscriptionStatus === "coach_plan"
+          ? "text-emerald-500"
+          : "text-muted-foreground";
+
   const cards = [
     {
       icon: Crown,
       label: "اشتراک",
       value: statusLabel,
       sub: plan?.name || "پلن رایگان",
+      color: statusColor,
     },
     {
       icon: Target,
       label: "هدف",
       value: user?.goal ? goalLabels[user.goal] : "تعیین‌نشده",
       sub: user?.onboardingCompleted ? "برنامه فعال" : "نیاز به آنبوردینگ",
+      color: "text-primary",
     },
     {
       icon: Scale,
@@ -66,12 +78,13 @@ export function AccountSummaryCards() {
         user?.targetWeight != null
           ? `هدف ${user.targetWeight.toLocaleString("fa-IR")} کیلو`
           : "هدف ثبت نشده",
+      color: "text-orange-500",
     },
   ];
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
         {cards.map((card, index) => {
           const Icon = card.icon;
           return (
@@ -81,13 +94,18 @@ export function AccountSummaryCards() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.06 }}
             >
-              <Card className="border-border bg-card/80 backdrop-blur-sm h-full">
-                <CardContent className="p-4 space-y-2">
+              <Card className="border-border/50 bg-muted/30 backdrop-blur-sm h-full hover:shadow-md transition-shadow">
+                <CardContent className="p-3 sm:p-4 space-y-2">
                   <div className="flex items-center gap-2 text-muted-foreground">
-                    <Icon className="w-4 h-4 text-primary" />
-                    <span className="text-xs">{card.label}</span>
+                    <Icon className={cn("w-4 h-4", card.color)} />
+                    <span className="text-xs font-medium">{card.label}</span>
                   </div>
-                  <p className="text-base font-semibold text-foreground">
+                  <p
+                    className={cn(
+                      "text-base sm:text-lg font-semibold",
+                      card.color,
+                    )}
+                  >
                     {card.value}
                   </p>
                   <p className="text-xs text-muted-foreground">{card.sub}</p>
@@ -102,17 +120,17 @@ export function AccountSummaryCards() {
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
-        className="rounded-2xl border border-primary/20 bg-primary/5 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+        className="rounded-2xl border border-primary/20 bg-linear-to-br from-primary/5 to-transparent p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
       >
         <div className="flex items-start gap-3">
-          <div className="w-10 h-10 rounded-xl bg-primary/15 text-primary flex items-center justify-center shrink-0">
-            <Sparkles className="w-5 h-5" />
+          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-primary/15 text-primary flex items-center justify-center shrink-0">
+            <Sparkles className="w-5 h-5 sm:w-6 sm:h-6" />
           </div>
           <div>
-            <p className="text-sm font-semibold text-foreground">
+            <p className="text-sm sm:text-base font-semibold text-foreground">
               {plan ? "پلن تو فعال است" : "هنوز پلن ویژه نداری"}
             </p>
-            <p className="text-xs text-muted-foreground mt-1">
+            <p className="text-xs text-muted-foreground mt-0.5">
               {plan
                 ? "می‌توانی پلن را مدیریت یا تغییر بدهی."
                 : "با ارتقا، امکانات کامل‌تری آزاد می‌شود."}
@@ -120,7 +138,11 @@ export function AccountSummaryCards() {
           </div>
         </div>
 
-        <Button asChild variant={plan ? "outline" : "default"}>
+        <Button
+          asChild
+          variant={plan ? "outline" : "default"}
+          className={cn("shrink-0", !plan && "shadow-lg shadow-primary/20")}
+        >
           <Link href="/#plans">{plan ? "تغییر پلن" : "مشاهده پلن‌ها"}</Link>
         </Button>
       </motion.div>

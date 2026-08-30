@@ -103,7 +103,7 @@ export function GoalProgress({ weights = [], isLoading = false }: Props) {
 
   if (isLoading) {
     return (
-      <Card className="border-border bg-card/80 dark:bg-card/60 backdrop-blur-sm">
+      <Card className="border-border bg-muted/50 backdrop-blur-sm">
         <CardContent className="flex items-center justify-center py-16">
           <Loader2 className="w-6 h-6 animate-spin text-primary" />
         </CardContent>
@@ -112,7 +112,7 @@ export function GoalProgress({ weights = [], isLoading = false }: Props) {
   }
 
   return (
-    <Card className="border-border bg-card/80 dark:bg-card/60 backdrop-blur-sm">
+    <Card className="border-border bg-muted/50 backdrop-blur-sm">
       <CardHeader className="pb-3">
         <div className="flex items-center gap-2">
           <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">

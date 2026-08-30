@@ -86,7 +86,7 @@ export default async function ExerciseDetailPage({ params }: PageProps) {
               </span>
             </div>
 
-            <Card className="border-border bg-card/80 dark:bg-card/60">
+            <Card className="border-border bg-muted/50">
               <CardHeader className="pb-2">
                 <CardTitle className="text-base">عضلات درگیر</CardTitle>
               </CardHeader>
@@ -107,7 +107,7 @@ export default async function ExerciseDetailPage({ params }: PageProps) {
         </div>
 
         {/* Instructions */}
-        <Card className="border-border bg-card/80 dark:bg-card/60">
+        <Card className="border-border bg-muted/50">
           <CardContent className="p-5 sm:p-6">
             <ExerciseInstructions
               description={exercise.description}

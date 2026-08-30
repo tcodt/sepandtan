@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, startTransition } from "react";
-import { Brain } from "lucide-react";
+import { Brain, Sparkles, Clock } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { ChatMessage, type ChatMessageType } from "./chat-message";
@@ -34,7 +34,7 @@ const welcomeMessage: ChatMessageType = {
   id: "welcome",
   role: "assistant",
   content:
-    "سلام! من مربی هوشمند سپندتن هستم 💪\n\nمی‌تونم کمک کنم برای:\n• برنامه تمرینی\n• تغذیه\n• کاهش وزن\n• تمرین خانگی\n\nاز کجا شروع کنیم؟",
+    "سلام! من مربی هوشمند سپندتن هستم.\n\nمی‌تونم کمک کنم برای:\n• برنامه تمرینی\n• تغذیه\n• کاهش وزن\n• تمرین خانگی\n\nاز کجا شروع کنیم؟",
   time: "الان",
 };
 
@@ -48,9 +48,7 @@ export function AiChat({ chatId }: AiChatProps) {
   const [isTyping, setIsTyping] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  // وقتی چت جدید انتخاب می‌شود، پیام‌ها ریست شوند (Mock)
   useEffect(() => {
-    // Avoid calling setState synchronously inside effect to prevent cascading renders
     startTransition(() => {
       setMessages([welcomeMessage]);
       setInput("");
@@ -95,21 +93,26 @@ export function AiChat({ chatId }: AiChatProps) {
   const showWelcome = messages.length <= 1;
 
   return (
-    <div className="flex h-full min-h-0 flex-col">
+    <div className="flex h-full min-h-0 flex-col bg-background">
       {/* Top bar */}
-      <div className="h-14 shrink-0 border-b border-border bg-card/60 backdrop-blur-sm flex items-center justify-between px-3 sm:px-4">
+      <div className="h-14 shrink-0 border-b border-border bg-linear-to-r from-primary/5 via-card/60 to-transparent backdrop-blur-sm flex items-center justify-between px-3 sm:px-4">
         <div className="flex items-center gap-2 min-w-0">
           <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
             <Brain className="w-4 h-4 text-primary" />
           </div>
           <div className="min-w-0">
-            <p className="text-sm font-semibold text-foreground truncate">
-              مربی هوشمند سپندتن
+            <p className="text-sm font-semibold text-foreground truncate flex items-center gap-1.5">
+              <span>مربی هوشمند سپندتن</span>
+              <Sparkles className="w-3 h-3 text-primary" />
             </p>
-            <p className="text-[11px] text-muted-foreground">آنلاین</p>
+            <p className="text-[11px] text-muted-foreground flex items-center gap-1">
+              <Clock className="w-3 h-3" />
+              آنلاین
+            </p>
           </div>
         </div>
-        <Badge variant="secondary" className="text-[10px] shrink-0">
+        <Badge variant="secondary" className="text-[10px] shrink-0 gap-1">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
           آزمایشی
         </Badge>
       </div>
@@ -119,7 +122,7 @@ export function AiChat({ chatId }: AiChatProps) {
         <div className="mx-auto w-full max-w-3xl px-3 sm:px-4 py-4 sm:py-6 space-y-4">
           {showWelcome && (
             <div className="text-center space-y-4 pb-2">
-              <div className="mx-auto w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center">
+              <div className="mx-auto w-14 h-14 rounded-2xl bg-linear-to-br from-primary/20 to-primary/5 flex items-center justify-center">
                 <Brain className="w-7 h-7 text-primary" />
               </div>
               <div>
@@ -161,7 +164,7 @@ export function AiChat({ chatId }: AiChatProps) {
       </ScrollArea>
 
       {/* Input */}
-      <div className="shrink-0 border-t border-border bg-card/80 backdrop-blur-sm p-3 sm:p-4 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+      <div className="shrink-0 border-t border-border bg-linear-to-t from-card/80 to-transparent backdrop-blur-sm p-3 sm:p-4 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
         <div className="mx-auto w-full max-w-3xl space-y-2.5">
           {!showWelcome && (
             <QuickPrompts

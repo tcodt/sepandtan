@@ -21,7 +21,7 @@ export function SettingsSection({
           <p className="text-xs text-muted-foreground mt-0.5">{description}</p>
         )}
       </div>
-      <div className="rounded-2xl border border-border bg-card/80 dark:bg-card/60 overflow-hidden divide-y divide-border">
+      <div className="rounded-2xl border border-border bg-muted/50 overflow-hidden divide-y divide-border">
         {children}
       </div>
     </section>

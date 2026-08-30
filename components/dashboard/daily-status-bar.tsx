@@ -68,7 +68,7 @@ export function DailyStatusBar({ workouts = [], nutritions = [] }: Props) {
   const dayLabel = hasPlan ? `روز ${currentDayNumber}` : "بدون برنامه";
 
   return (
-    <Card className="border-border bg-card/80 dark:bg-card/60 backdrop-blur-sm overflow-hidden">
+    <Card className="border-border bg-muted/50 backdrop-blur-sm overflow-hidden">
       <CardContent className="p-4 sm:p-5 space-y-4">
         <div className="flex items-start justify-between gap-3">
           <div>

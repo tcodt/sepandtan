@@ -124,7 +124,7 @@ export default function ContactPage() {
             {contactInfo.map((item) => {
               const Icon = item.icon;
               const content = (
-                <Card className="border-border bg-card/80 dark:bg-card/60 backdrop-blur-sm transition-colors hover:border-primary/40">
+                <Card className="border-border bg-muted/50 backdrop-blur-sm transition-colors hover:border-primary/40">
                   <CardContent className="p-4 flex items-center gap-4">
                     <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
                       <Icon className="w-5 h-5 text-primary" />
@@ -168,7 +168,7 @@ export default function ContactPage() {
             transition={{ duration: 0.35 }}
             className="lg:col-span-3"
           >
-            <Card className="border-border bg-card/90 dark:bg-card/80 backdrop-blur-md shadow-lg">
+            <Card className="border-border bg-muted/50 backdrop-blur-md shadow-lg">
               <CardHeader>
                 <CardTitle className="text-xl">ارسال پیام</CardTitle>
                 <CardDescription>
@@ -184,7 +184,7 @@ export default function ContactPage() {
                       <Input
                         id="name"
                         placeholder="علی رضایی"
-                        className="h-11"
+                        className="h-11 bg-background"
                         {...register("name")}
                         disabled={isLoading}
                       />
@@ -202,7 +202,7 @@ export default function ContactPage() {
                         type="email"
                         placeholder="example@email.com"
                         dir="ltr"
-                        className="h-11 text-left"
+                        className="h-11 text-left bg-background"
                         {...register("email")}
                         disabled={isLoading}
                       />
@@ -219,7 +219,7 @@ export default function ContactPage() {
                     <Input
                       id="subject"
                       placeholder="مثلاً سوال درباره اشتراک"
-                      className="h-11"
+                      className="h-11 bg-background"
                       {...register("subject")}
                       disabled={isLoading}
                     />
@@ -236,7 +236,7 @@ export default function ContactPage() {
                       id="message"
                       rows={5}
                       placeholder="پیام خود را بنویس..."
-                      className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:border-ring disabled:cursor-not-allowed disabled:opacity-50 resize-none"
+                      className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-xs placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:border-ring disabled:cursor-not-allowed disabled:opacity-50 resize-none"
                       {...register("message")}
                       disabled={isLoading}
                     />

@@ -15,7 +15,7 @@ export default function ProductInfo({ product }: { product: Product }) {
   const sizes = isApparelProduct(product) ? product.sizes : undefined;
 
   return (
-    <Card className="p-5 sm:p-6 rounded-2xl border-border bg-card/80 dark:bg-card/60 space-y-5">
+    <Card className="p-5 sm:p-6 rounded-2xl border-border bg-muted/50 space-y-5">
       <div>
         <h1 className="text-xl sm:text-2xl font-bold text-foreground">
           {product.name}

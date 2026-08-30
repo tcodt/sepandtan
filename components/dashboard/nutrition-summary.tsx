@@ -40,7 +40,7 @@ export function NutritionSummary() {
 
   if (isLoading) {
     return (
-      <Card className="border-border bg-card/80 dark:bg-card/60 backdrop-blur-sm">
+      <Card className="border-border bg-muted/50 backdrop-blur-sm">
         <CardContent className="flex items-center justify-center py-10">
           <Loader2 className="w-5 h-5 animate-spin text-primary" />
         </CardContent>
@@ -50,7 +50,7 @@ export function NutritionSummary() {
 
   if (!hasPlan || !todayDay) {
     return (
-      <Card className="border-border bg-card/80 dark:bg-card/60 backdrop-blur-sm">
+      <Card className="border-border bg-muted/50 backdrop-blur-sm">
         <CardContent>
           <motion.div
             initial={{ opacity: 0, y: 8 }}
@@ -78,7 +78,7 @@ export function NutritionSummary() {
   const progress = target > 0 ? Math.min((consumed / target) * 100, 100) : 0;
 
   return (
-    <Card className="border-border bg-card/80 dark:bg-card/60 backdrop-blur-sm">
+    <Card className="border-border bg-muted/50 backdrop-blur-sm">
       <CardHeader className="pb-3 flex flex-row items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">

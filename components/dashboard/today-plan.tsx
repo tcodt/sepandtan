@@ -18,7 +18,7 @@ export function TodayPlan() {
   const completedCount = todayExercises.filter((e) => e.done).length;
 
   return (
-    <Card className="border-border bg-card/80 dark:bg-card/60 backdrop-blur-sm">
+    <Card className="border-border bg-muted/50 backdrop-blur-sm">
       <CardHeader className="pb-3 flex flex-row items-center justify-between">
         <div>
           <CardTitle className="text-base sm:text-lg">برنامه امروز</CardTitle>

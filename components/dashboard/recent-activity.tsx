@@ -98,7 +98,7 @@ export function RecentActivity({
   };
 
   return (
-    <Card className="border-border bg-card/80 dark:bg-card/60 backdrop-blur-sm h-full flex flex-col">
+    <Card className="border-border bg-muted/50 backdrop-blur-sm h-full flex flex-col">
       <CardHeader className="pb-3">
         <div className="flex items-center gap-2">
           <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">

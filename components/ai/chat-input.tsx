@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { ArrowUp, Loader2 } from "lucide-react";
+import { ArrowUp, Loader2, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -35,7 +35,7 @@ export function ChatInput({
   };
 
   return (
-    <div className="relative flex items-end gap-2 rounded-2xl border border-border bg-background p-2 shadow-sm">
+    <div className="relative flex items-end gap-2 rounded-2xl border border-border bg-background p-1.5 shadow-sm focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/20 transition-all">
       <textarea
         ref={textareaRef}
         dir="rtl"
@@ -51,19 +51,25 @@ export function ChatInput({
           "disabled:opacity-50",
         )}
       />
-      <Button
-        type="button"
-        size="icon"
-        className="rounded-xl shrink-0 h-10 w-10"
-        disabled={disabled || !value.trim()}
-        onClick={onSubmit}
-      >
-        {disabled ? (
-          <Loader2 className="w-4 h-4 animate-spin" />
-        ) : (
-          <ArrowUp className="w-4 h-4" />
-        )}
-      </Button>
+      <div className="flex items-center gap-1.5">
+        <div className="hidden sm:flex items-center gap-1 text-[10px] text-muted-foreground">
+          <Sparkles className="w-3 h-3 text-primary" />
+          <span>AI</span>
+        </div>
+        <Button
+          type="button"
+          size="icon"
+          className="rounded-xl shrink-0 h-10 w-10"
+          disabled={disabled || !value.trim()}
+          onClick={onSubmit}
+        >
+          {disabled ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <ArrowUp className="w-4 h-4" />
+          )}
+        </Button>
+      </div>
     </div>
   );
 }

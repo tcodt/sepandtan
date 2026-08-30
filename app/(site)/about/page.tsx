@@ -98,7 +98,7 @@ export default function AboutPage() {
             </p>
           </div>
 
-          <Card className="border-border bg-card/80 dark:bg-card/60 backdrop-blur-sm">
+          <Card className="border-border bg-muted/50 backdrop-blur-sm">
             <CardContent className="p-6 sm:p-8 space-y-4">
               <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
                 <Shield className="w-6 h-6 text-primary" />
@@ -134,7 +134,7 @@ export default function AboutPage() {
               return (
                 <Card
                   key={item.title}
-                  className="border-border bg-card/80 dark:bg-card/60 backdrop-blur-sm"
+                  className="border-border bg-muted/50 backdrop-blur-sm"
                 >
                   <CardHeader className="pb-2">
                     <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center mb-3">

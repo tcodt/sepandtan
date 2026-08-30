@@ -85,7 +85,7 @@ export function WeightLogCard({ onLogged }: Props) {
   };
 
   return (
-    <Card className="border-border bg-card/80 dark:bg-card/60 backdrop-blur-sm">
+    <Card className="border-border bg-muted/50 backdrop-blur-sm">
       <CardHeader className="pb-3">
         <div className="flex items-center gap-2">
           <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">

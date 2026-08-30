@@ -20,7 +20,7 @@ export function CalorieSummary({
   const progress = Math.min((consumed / target) * 100, 100);
 
   return (
-    <div className="rounded-2xl border border-border bg-card/80 dark:bg-card/60 p-4 sm:p-5 space-y-4">
+    <div className="rounded-2xl border border-border bg-muted/50 p-4 sm:p-5 space-y-4">
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">

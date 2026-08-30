@@ -40,7 +40,7 @@ const FILTERS = [
 function CoachCardSkeleton() {
   return (
     <div className="rounded-2xl border border-border/50 overflow-hidden bg-card/50">
-      <Skeleton className="aspect-[4/3] w-full rounded-none" />
+      <Skeleton className="aspect-4/3 w-full rounded-none" />
       <div className="p-4 space-y-3">
         <Skeleton className="h-4 w-2/3" />
         <Skeleton className="h-3 w-1/2" />

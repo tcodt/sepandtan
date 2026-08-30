@@ -2,7 +2,19 @@
 
 import { useEffect, useMemo, useState, useRef } from "react";
 import Link from "next/link";
-import { CheckCircle2, Circle, Loader2, Play, RotateCcw } from "lucide-react";
+import {
+  CheckCircle2,
+  Circle,
+  Loader2,
+  Play,
+  RotateCcw,
+  ArrowLeft,
+  Dumbbell,
+  Flame,
+  Clock,
+  TrendingUp,
+  Zap,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -62,27 +74,22 @@ export function TodayWorkout() {
   const [showComplete, setShowComplete] = useState(false);
   const [completionOpen, setCompletionOpen] = useState(false);
 
-  // جلوگیری از bootstrap تکراری
   const bootKeyRef = useRef<string>("");
 
   const basePlanExercises = useMemo(
     () => todayDay?.exercises ?? [],
-    // فقط وقتی day یا plan عوض شد
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [todayDay?.dayNumber, plan?.id],
   );
 
   useEffect(() => {
-    // تا وقتی plan در حال لود است صبر کن
     if (isLoading) return;
 
-    // اگر plan یا روز وجود ندارد → bootstrap را تمام‌شده در نظر بگیر تا به Empty/Error برسیم
     if (!user?.id || !todayDay) {
       setBootstrapped(true);
       return;
     }
 
-    // Rest Day یا بدون حرکت → نیازی به session نیست
     if (todayDay.isRestDay || basePlanExercises.length === 0) {
       setBootstrapped(true);
       return;
@@ -91,7 +98,6 @@ export function TodayWorkout() {
     const today = new Date().toISOString().split("T")[0];
     const bootKey = `${user.id}-${plan?.id}-${todayDay.dayNumber}-${today}`;
 
-    // اگر قبلاً برای همین روز bootstrap شده، دوباره اجرا نکن
     if (bootKeyRef.current === bootKey && bootstrapped) return;
 
     let cancelled = false;
@@ -119,7 +125,6 @@ export function TodayWorkout() {
 
       const seeded = mapPlanExercisesToSession(basePlanExercises, completedMap);
 
-      // فقط وقتی session مربوط به امروز نیست یا خالی است، از نو بساز
       if (
         !session ||
         session.date !== today ||
@@ -137,7 +142,6 @@ export function TodayWorkout() {
     return () => {
       cancelled = true;
     };
-    // عمداً session و startSession/resetSession را dependency نکردیم تا loop نشود
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     isLoading,
@@ -152,10 +156,15 @@ export function TodayWorkout() {
   if (isLoading || !bootstrapped) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2
-          className="w-8 h-8 animate-spin text-primary"
-          aria-label="در حال بارگذاری"
-        />
+        <div className="flex flex-col items-center gap-3">
+          <Loader2
+            className="w-8 h-8 animate-spin text-primary"
+            aria-label="در حال بارگذاری"
+          />
+          <p className="text-sm text-muted-foreground">
+            بارگذاری تمرین امروز...
+          </p>
+        </div>
       </div>
     );
   }
@@ -249,33 +258,122 @@ export function TodayWorkout() {
     toast.message("تمرین از نو شروع شد");
   };
 
+  // Get muscle group color
+  const getMuscleColor = (muscle: string) => {
+    const colors: Record<string, string> = {
+      chest: "bg-red-500/10 text-red-500",
+      back: "bg-blue-500/10 text-blue-500",
+      legs: "bg-green-500/10 text-green-500",
+      shoulders: "bg-purple-500/10 text-purple-500",
+      arms: "bg-orange-500/10 text-orange-500",
+      core: "bg-yellow-500/10 text-yellow-500",
+      full: "bg-indigo-500/10 text-indigo-500",
+    };
+    return colors[muscle.toLowerCase()] || "bg-muted text-muted-foreground";
+  };
+
   return (
-    <div className="min-h-screen bg-background">
-      <div className="max-w-lg mx-auto px-4 py-6 space-y-6">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <h1 className="text-xl font-bold text-foreground">تمرین امروز</h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              روز {currentDayNumber} — {todayDay.title}
-              {todayDay.focus ? ` · ${todayDay.focus}` : ""}
-            </p>
+    <div className="min-h-screen bg-background pb-20 lg:pb-8">
+      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-4 sm:space-y-6">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+          <div className="flex items-start gap-2 sm:gap-3">
+            <Link
+              href="/dashboard"
+              className="p-2 -mr-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors shrink-0 mt-0.5"
+              aria-label="بازگشت"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </Link>
+            <div>
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-foreground flex items-center gap-2 flex-wrap">
+                <Dumbbell className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
+                <span>تمرین امروز</span>
+                <span className="text-sm font-normal text-muted-foreground bg-muted/50 px-2.5 py-0.5 rounded-full">
+                  روز {currentDayNumber}
+                </span>
+              </h1>
+              <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 sm:mt-1">
+                {todayDay.title}
+                {todayDay.focus ? ` · ${todayDay.focus}` : ""}
+              </p>
+            </div>
           </div>
-          <Button asChild variant="ghost" size="sm">
+          <Button asChild variant="outline" size="sm" className="sm:mt-1">
             <Link href="/dashboard">داشبورد</Link>
           </Button>
         </div>
 
-        <Card className="border-border bg-card/80 backdrop-blur-sm">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">
-              {completedCount.toLocaleString("fa-IR")} از{" "}
-              {total.toLocaleString("fa-IR")} حرکت
+        {/* Stats Cards */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+          <Card className="border-border/50 bg-linear-to-br from-primary/5 to-transparent">
+            <CardContent className="p-3 sm:p-4">
+              <div className="flex items-center gap-2">
+                <Zap className="w-4 h-4 text-primary" />
+                <p className="text-[10px] sm:text-xs text-muted-foreground">
+                  پیشرفت
+                </p>
+              </div>
+              <p className="text-lg sm:text-xl font-bold text-foreground mt-1">
+                {Math.round(progress)}%
+              </p>
+            </CardContent>
+          </Card>
+          <Card className="border-border/50 bg-linear-to-br from-emerald-500/5 to-transparent">
+            <CardContent className="p-3 sm:p-4">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                <p className="text-[10px] sm:text-xs text-muted-foreground">
+                  انجام شده
+                </p>
+              </div>
+              <p className="text-lg sm:text-xl font-bold text-foreground mt-1">
+                {completedCount}/{total}
+              </p>
+            </CardContent>
+          </Card>
+          <Card className="border-border/50 bg-linear-to-br from-blue-500/5 to-transparent">
+            <CardContent className="p-3 sm:p-4">
+              <div className="flex items-center gap-2">
+                <Clock className="w-4 h-4 text-blue-500" />
+                <p className="text-[10px] sm:text-xs text-muted-foreground">
+                  زمان
+                </p>
+              </div>
+              <p className="text-lg sm:text-xl font-bold text-foreground mt-1">
+                {durationMinutes} دقیقه
+              </p>
+            </CardContent>
+          </Card>
+          <Card className="border-border/50 bg-linear-to-br from-orange-500/5 to-transparent">
+            <CardContent className="p-3 sm:p-4">
+              <div className="flex items-center gap-2">
+                <Flame className="w-4 h-4 text-orange-500" />
+                <p className="text-[10px] sm:text-xs text-muted-foreground">
+                  کالری
+                </p>
+              </div>
+              <p className="text-lg sm:text-xl font-bold text-foreground mt-1">
+                ~{estimatedCalories}
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Exercises List */}
+        <Card className="border-border/50 bg-muted/30 backdrop-blur-sm">
+          <CardHeader className="pb-2 sm:pb-3">
+            <CardTitle className="text-sm sm:text-base flex items-center justify-between">
+              <span>حرکات تمرینی</span>
+              <span className="text-xs font-normal text-muted-foreground">
+                {completedCount} از {total} انجام شده
+              </span>
             </CardTitle>
-            <Progress value={progress} className="h-2 mt-2" />
+            <Progress value={progress} className="h-2 sm:h-2.5" />
           </CardHeader>
-          <CardContent className="space-y-2">
+          <CardContent className="space-y-2 sm:space-y-2.5">
             {exercises.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-6">
+              <p className="text-sm text-muted-foreground text-center py-8">
                 حرکتی برای امروز تعریف نشده.
               </p>
             ) : (
@@ -287,58 +385,99 @@ export function TodayWorkout() {
                     if (!ex.completed) completeExercise(ex.id);
                   }}
                   className={cn(
-                    "w-full flex items-center gap-3 p-3 rounded-xl border text-right transition-colors",
+                    "w-full flex items-center gap-3 p-3 sm:p-4 rounded-xl border text-right transition-all duration-200",
+                    "hover:shadow-sm",
                     ex.completed
-                      ? "border-primary/30 bg-primary/5"
-                      : "border-border bg-background hover:bg-muted/30",
+                      ? "border-emerald-500/30 bg-emerald-500/5 hover:bg-emerald-500/10"
+                      : "border-border/50 bg-background hover:bg-muted/30 hover:border-primary/20",
                   )}
                 >
-                  {ex.completed ? (
-                    <CheckCircle2 className="w-5 h-5 text-primary shrink-0" />
-                  ) : (
-                    <Circle className="w-5 h-5 text-muted-foreground shrink-0" />
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <p
-                      className={cn(
-                        "text-sm font-medium",
-                        ex.completed ? "text-primary" : "text-foreground",
-                      )}
-                    >
-                      {ex.name}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {ex.sets} × {ex.reps} · {ex.muscle} · استراحت{" "}
-                      {ex.restSeconds}ث
-                    </p>
+                  <div className="shrink-0">
+                    {ex.completed ? (
+                      <CheckCircle2 className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-500" />
+                    ) : (
+                      <Circle className="w-5 h-5 sm:w-6 sm:h-6 text-muted-foreground" />
+                    )}
                   </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p
+                        className={cn(
+                          "text-sm sm:text-base font-medium",
+                          ex.completed
+                            ? "text-emerald-600 dark:text-emerald-400"
+                            : "text-foreground",
+                        )}
+                      >
+                        {ex.name}
+                      </p>
+                      <span
+                        className={cn(
+                          "text-[10px] px-2 py-0.5 rounded-full font-medium",
+                          getMuscleColor(ex.muscle),
+                        )}
+                      >
+                        {ex.muscle}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3 text-xs sm:text-sm text-muted-foreground mt-0.5">
+                      <span>{ex.sets} ست</span>
+                      <span>·</span>
+                      <span>{ex.reps} تکرار</span>
+                      <span>·</span>
+                      <span>استراحت {ex.restSeconds}ث</span>
+                    </div>
+                  </div>
+                  {ex.completed && (
+                    <span className="text-[10px] text-emerald-500 font-medium shrink-0">
+                      ✓ انجام شد
+                    </span>
+                  )}
                 </button>
               ))
             )}
           </CardContent>
         </Card>
 
-        <div className="flex gap-3">
+        {/* Actions */}
+        <div className="flex flex-col sm:flex-row gap-3">
           {allDone ? (
-            <Button className="flex-1 h-11 gap-2" onClick={handleFinishClick}>
-              <CheckCircle2 className="w-4 h-4" />
+            <Button
+              className="flex-1 h-11 sm:h-12 text-base font-semibold gap-2 shadow-lg shadow-primary/20"
+              onClick={handleFinishClick}
+            >
+              <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5" />
               ثبت و اتمام تمرین
             </Button>
           ) : (
-            <Button className="flex-1 h-11 gap-2" disabled>
-              <Play className="w-4 h-4" />
-              حرکات را تیک بزن
+            <Button
+              className="flex-1 h-11 sm:h-12 text-base font-semibold gap-2 opacity-60 cursor-not-allowed"
+              disabled
+            >
+              <Play className="w-4 h-4 sm:w-5 sm:h-5" />
+              {completedCount > 0
+                ? `${completedCount} حرکت انجام شده`
+                : "حرکات را تیک بزن"}
             </Button>
           )}
           <Button
             variant="outline"
-            className="h-11 px-3"
+            className="h-11 sm:h-12 px-4 sm:px-6 gap-2"
             onClick={handleReset}
             aria-label="شروع مجدد"
           >
             <RotateCcw className="w-4 h-4" />
+            <span className="hidden sm:inline">شروع مجدد</span>
           </Button>
         </div>
+
+        {/* Progress Hint */}
+        {!allDone && completedCount > 0 && (
+          <p className="text-xs text-center text-muted-foreground">
+            {completedCount} از {total} حرکت انجام شده — برای تکمیل همه حرکات
+            روی هر کدام کلیک کن
+          </p>
+        )}
       </div>
 
       <CompletionBottomSheet

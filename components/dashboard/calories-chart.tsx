@@ -52,7 +52,7 @@ export function CaloriesChart() {
   );
 
   return (
-    <Card className="border-border bg-card/80 dark:bg-card/60 backdrop-blur-sm">
+    <Card className="border-border bg-muted/50 backdrop-blur-sm">
       <CardHeader className="pb-2">
         <CardTitle className="text-base sm:text-lg">کالری امروز</CardTitle>
         <CardDescription>

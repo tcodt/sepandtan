@@ -5,7 +5,26 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
-import { Loader2, Save } from "lucide-react";
+import {
+  Loader2,
+  Save,
+  User,
+  Activity,
+  Dumbbell,
+  Target,
+  Clock,
+  Ruler,
+  Weight,
+  Calendar,
+  Home,
+  Building2,
+  RefreshCw,
+  Flame,
+  Brain,
+  Heart,
+  Zap,
+  Footprints,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,8 +41,8 @@ const profileSchema = z.object({
   name: z.string().min(2, "نام باید حداقل ۲ کاراکتر باشد"),
   gender: z.enum(["male", "female"]),
   age: z.coerce.number().min(14, "حداقل ۱۴").max(80, "حداکثر ۸۰"),
-  height: z.coerce.number().min(120).max(230),
-  weight: z.coerce.number().min(30).max(250),
+  height: z.coerce.number().min(120, "حداقل ۱۲۰").max(230, "حداکثر ۲۳۰"),
+  weight: z.coerce.number().min(30, "حداقل ۳۰").max(250, "حداکثر ۲۵۰"),
   activityLevel: z.enum([
     "sedentary",
     "light",
@@ -44,25 +63,80 @@ const profileSchema = z.object({
 type ProfileFormValues = z.infer<typeof profileSchema>;
 
 const activityOptions = [
-  { value: "sedentary", label: "کم‌تحرک" },
-  { value: "light", label: "سبک" },
-  { value: "moderate", label: "متوسط" },
-  { value: "active", label: "فعال" },
-  { value: "very_active", label: "بسیار فعال" },
+  {
+    value: "sedentary",
+    label: "کم‌تحرک",
+    icon: Clock,
+    description: "نشسته و بدون فعالیت",
+  },
+  {
+    value: "light",
+    label: "سبک",
+    icon: Footprints,
+    description: "پیاده‌روی روزانه",
+  },
+  {
+    value: "moderate",
+    label: "متوسط",
+    icon: Heart,
+    description: "ورزش ۳-۲ بار در هفته",
+  },
+  {
+    value: "active",
+    label: "فعال",
+    icon: Flame,
+    description: "ورزش ۵-۴ بار در هفته",
+  },
+  {
+    value: "very_active",
+    label: "بسیار فعال",
+    icon: Zap,
+    description: "ورزش روزانه",
+  },
 ] as const;
 
 const equipmentOptions = [
-  { value: "home", label: "خانه" },
-  { value: "gym", label: "باشگاه" },
-  { value: "both", label: "هر دو" },
+  { value: "home", label: "خانه", icon: Home, description: "بدون تجهیزات" },
+  {
+    value: "gym",
+    label: "باشگاه",
+    icon: Building2,
+    description: "تجهیزات کامل",
+  },
+  { value: "both", label: "هر دو", icon: RefreshCw, description: "ترکیبی" },
 ] as const;
 
 const goalOptions = [
-  { value: "lose_weight", label: "کاهش وزن" },
-  { value: "build_muscle", label: "افزایش عضله" },
-  { value: "maintain", label: "حفظ تناسب" },
-  { value: "endurance", label: "استقامت" },
-  { value: "general_fitness", label: "آمادگی عمومی" },
+  {
+    value: "lose_weight",
+    label: "کاهش وزن",
+    icon: Weight,
+    description: "کاهش چربی و وزن",
+  },
+  {
+    value: "build_muscle",
+    label: "افزایش عضله",
+    icon: Dumbbell,
+    description: "حجم و قدرت",
+  },
+  {
+    value: "maintain",
+    label: "حفظ تناسب",
+    icon: Brain,
+    description: "تناسب اندام پایدار",
+  },
+  {
+    value: "endurance",
+    label: "استقامت",
+    icon: Heart,
+    description: "افزایش استقامت",
+  },
+  {
+    value: "general_fitness",
+    label: "آمادگی عمومی",
+    icon: Activity,
+    description: "سلامت عمومی",
+  },
 ] as const;
 
 export function ProfileForm() {
@@ -83,7 +157,6 @@ export function ProfileForm() {
     },
   });
 
-  // همگام‌سازی وقتی user از persist لود شد
   useEffect(() => {
     if (!user) return;
     form.reset({
@@ -117,19 +190,32 @@ export function ProfileForm() {
     toast.success("پروفایل با موفقیت ذخیره شد");
   };
 
-  const selected = {
-    gender: form.watch("gender"),
-    activityLevel: form.watch("activityLevel"),
-    equipment: form.watch("equipment"),
-    goal: form.watch("goal"),
-  };
+  // eslint-disable-next-line react-hooks/incompatible-library
+  const selectedGender = form.watch("gender");
+  const selectedActivityLevel = form.watch("activityLevel");
+  const selectedEquipment = form.watch("equipment");
+  const selectedGoal = form.watch("goal");
 
   return (
-    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+    <form
+      onSubmit={form.handleSubmit(onSubmit)}
+      className="space-y-5 sm:space-y-6"
+    >
       {/* نام */}
       <div className="space-y-2">
-        <Label htmlFor="name">نام و نام خانوادگی</Label>
-        <Input id="name" className="h-11" {...form.register("name")} />
+        <Label
+          htmlFor="name"
+          className="text-sm font-medium flex items-center gap-2"
+        >
+          <User className="w-4 h-4 text-muted-foreground" />
+          نام و نام خانوادگی
+        </Label>
+        <Input
+          id="name"
+          className="h-11 bg-background"
+          {...form.register("name")}
+          placeholder="نام خود را وارد کنید"
+        />
         {form.formState.errors.name && (
           <p className="text-sm text-destructive">
             {form.formState.errors.name.message}
@@ -139,21 +225,24 @@ export function ProfileForm() {
 
       {/* تماس (فقط نمایش) */}
       <div className="space-y-2">
-        <Label>ایمیل / موبایل</Label>
+        <Label>اطلاعات تماس</Label>
         <Input
-          className="h-11 bg-muted/50"
+          className="h-11 bg-muted/50 cursor-not-allowed"
           value={user?.email || user?.phone || ""}
           disabled
           dir={user?.email ? "ltr" : "rtl"}
         />
         <p className="text-[11px] text-muted-foreground">
-          برای تغییر ایمیل یا موبایل فعلاً با پشتیبانی تماس بگیر
+          برای تغییر ایمیل یا موبایل با پشتیبانی تماس بگیرید
         </p>
       </div>
 
       {/* جنسیت */}
       <div className="space-y-2">
-        <Label>جنسیت</Label>
+        <Label className="flex items-center gap-2">
+          <User className="w-4 h-4 text-muted-foreground" />
+          جنسیت
+        </Label>
         <div className="grid grid-cols-2 gap-2">
           {[
             { value: "male", label: "مرد" },
@@ -169,9 +258,9 @@ export function ProfileForm() {
               }
               className={cn(
                 "h-11 rounded-xl border text-sm font-medium transition-all",
-                selected.gender === item.value
-                  ? "border-primary bg-primary/10 text-primary"
-                  : "border-border bg-background hover:bg-muted",
+                selectedGender === item.value
+                  ? "border-primary bg-primary/10 text-primary shadow-sm shadow-primary/10"
+                  : "border-border bg-background hover:bg-muted hover:border-primary/30",
               )}
             >
               {item.label}
@@ -181,118 +270,243 @@ export function ProfileForm() {
       </div>
 
       {/* سن / قد / وزن */}
-      <div className="grid grid-cols-3 gap-3">
-        <div className="space-y-2">
-          <Label htmlFor="age">سن</Label>
-          <Input
-            id="age"
-            type="number"
-            className="h-11"
-            {...form.register("age")}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="height">قد (cm)</Label>
-          <Input
-            id="height"
-            type="number"
-            className="h-11"
-            {...form.register("height")}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="weight">وزن (kg)</Label>
-          <Input
-            id="weight"
-            type="number"
-            className="h-11"
-            {...form.register("weight")}
-          />
+      <div className="space-y-2">
+        <Label className="flex items-center gap-2">
+          <Ruler className="w-4 h-4 text-muted-foreground" />
+          اطلاعات بدنی
+        </Label>
+        <div className="grid grid-cols-3 gap-2 sm:gap-3">
+          <div className="space-y-1.5">
+            <Label
+              htmlFor="age"
+              className="text-xs text-muted-foreground flex items-center gap-1"
+            >
+              <Calendar className="w-3 h-3" />
+              سن
+            </Label>
+            <Input
+              id="age"
+              type="number"
+              className="h-11 bg-background"
+              {...form.register("age")}
+            />
+            {form.formState.errors.age && (
+              <p className="text-xs text-destructive">
+                {form.formState.errors.age.message}
+              </p>
+            )}
+          </div>
+          <div className="space-y-1.5">
+            <Label
+              htmlFor="height"
+              className="text-xs text-muted-foreground flex items-center gap-1"
+            >
+              <Ruler className="w-3 h-3" />
+              قد (cm)
+            </Label>
+            <Input
+              id="height"
+              type="number"
+              className="h-11 bg-background"
+              {...form.register("height")}
+            />
+            {form.formState.errors.height && (
+              <p className="text-xs text-destructive">
+                {form.formState.errors.height.message}
+              </p>
+            )}
+          </div>
+          <div className="space-y-1.5">
+            <Label
+              htmlFor="weight"
+              className="text-xs text-muted-foreground flex items-center gap-1"
+            >
+              <Weight className="w-3 h-3" />
+              وزن (kg)
+            </Label>
+            <Input
+              id="weight"
+              type="number"
+              className="h-11 bg-background"
+              {...form.register("weight")}
+            />
+            {form.formState.errors.weight && (
+              <p className="text-xs text-destructive">
+                {form.formState.errors.weight.message}
+              </p>
+            )}
+          </div>
         </div>
       </div>
-      {(form.formState.errors.age ||
-        form.formState.errors.height ||
-        form.formState.errors.weight) && (
-        <p className="text-sm text-destructive">مقادیر بدنی را درست وارد کن</p>
-      )}
 
       {/* سطح فعالیت */}
       <div className="space-y-2">
-        <Label>سطح فعالیت</Label>
-        <div className="grid grid-cols-1 gap-2">
-          {activityOptions.map((item) => (
-            <button
-              key={item.value}
-              type="button"
-              onClick={() =>
-                form.setValue("activityLevel", item.value, {
-                  shouldValidate: true,
-                })
-              }
-              className={cn(
-                "h-11 rounded-xl border text-sm px-4 text-right transition-all",
-                selected.activityLevel === item.value
-                  ? "border-primary bg-primary/10 text-primary"
-                  : "border-border bg-background hover:bg-muted",
-              )}
-            >
-              {item.label}
-            </button>
-          ))}
+        <Label className="flex items-center gap-2">
+          <Activity className="w-4 h-4 text-muted-foreground" />
+          سطح فعالیت
+        </Label>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          {activityOptions.map((item) => {
+            const Icon = item.icon;
+            const isSelected = selectedActivityLevel === item.value;
+            return (
+              <button
+                key={item.value}
+                type="button"
+                onClick={() =>
+                  form.setValue("activityLevel", item.value, {
+                    shouldValidate: true,
+                  })
+                }
+                className={cn(
+                  "rounded-xl border p-3 text-right transition-all",
+                  isSelected
+                    ? "border-primary bg-primary/10 text-primary shadow-sm shadow-primary/10"
+                    : "border-border bg-background hover:bg-muted hover:border-primary/30",
+                )}
+              >
+                <div className="flex items-start gap-3">
+                  <div
+                    className={cn(
+                      "w-8 h-8 rounded-lg flex items-center justify-center shrink-0",
+                      isSelected
+                        ? "bg-primary/20 text-primary"
+                        : "bg-muted text-muted-foreground",
+                    )}
+                  >
+                    <Icon className="w-4 h-4" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p
+                      className={cn(
+                        "text-sm font-medium",
+                        isSelected ? "text-primary" : "text-foreground",
+                      )}
+                    >
+                      {item.label}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {item.description}
+                    </p>
+                  </div>
+                </div>
+              </button>
+            );
+          })}
         </div>
       </div>
 
       {/* امکانات */}
       <div className="space-y-2">
-        <Label>امکانات تمرینی</Label>
+        <Label className="flex items-center gap-2">
+          <Dumbbell className="w-4 h-4 text-muted-foreground" />
+          امکانات تمرینی
+        </Label>
         <div className="grid grid-cols-3 gap-2">
-          {equipmentOptions.map((item) => (
-            <button
-              key={item.value}
-              type="button"
-              onClick={() =>
-                form.setValue("equipment", item.value, { shouldValidate: true })
-              }
-              className={cn(
-                "h-11 rounded-xl border text-sm font-medium transition-all",
-                selected.equipment === item.value
-                  ? "border-primary bg-primary/10 text-primary"
-                  : "border-border bg-background hover:bg-muted",
-              )}
-            >
-              {item.label}
-            </button>
-          ))}
+          {equipmentOptions.map((item) => {
+            const Icon = item.icon;
+            const isSelected = selectedEquipment === item.value;
+            return (
+              <button
+                key={item.value}
+                type="button"
+                onClick={() =>
+                  form.setValue("equipment", item.value, {
+                    shouldValidate: true,
+                  })
+                }
+                className={cn(
+                  "rounded-xl border p-3 text-center transition-all",
+                  isSelected
+                    ? "border-primary bg-primary/10 text-primary shadow-sm shadow-primary/10"
+                    : "border-border bg-background hover:bg-muted hover:border-primary/30",
+                )}
+              >
+                <div
+                  className={cn(
+                    "w-8 h-8 rounded-lg flex items-center justify-center mx-auto mb-1.5",
+                    isSelected
+                      ? "bg-primary/20 text-primary"
+                      : "bg-muted text-muted-foreground",
+                  )}
+                >
+                  <Icon className="w-4 h-4" />
+                </div>
+                <p
+                  className={cn(
+                    "text-xs font-medium",
+                    isSelected ? "text-primary" : "text-foreground",
+                  )}
+                >
+                  {item.label}
+                </p>
+                <p className="text-[10px] text-muted-foreground">
+                  {item.description}
+                </p>
+              </button>
+            );
+          })}
         </div>
       </div>
 
       {/* هدف */}
       <div className="space-y-2">
-        <Label>هدف اصلی</Label>
-        <div className="grid grid-cols-1 gap-2">
-          {goalOptions.map((item) => (
-            <button
-              key={item.value}
-              type="button"
-              onClick={() =>
-                form.setValue("goal", item.value, { shouldValidate: true })
-              }
-              className={cn(
-                "h-11 rounded-xl border text-sm px-4 text-right transition-all",
-                selected.goal === item.value
-                  ? "border-primary bg-primary/10 text-primary"
-                  : "border-border bg-background hover:bg-muted",
-              )}
-            >
-              {item.label}
-            </button>
-          ))}
+        <Label className="flex items-center gap-2">
+          <Target className="w-4 h-4 text-muted-foreground" />
+          هدف اصلی
+        </Label>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          {goalOptions.map((item) => {
+            const Icon = item.icon;
+            const isSelected = selectedGoal === item.value;
+            return (
+              <button
+                key={item.value}
+                type="button"
+                onClick={() =>
+                  form.setValue("goal", item.value, { shouldValidate: true })
+                }
+                className={cn(
+                  "rounded-xl border p-3 text-right transition-all",
+                  isSelected
+                    ? "border-primary bg-primary/10 text-primary shadow-sm shadow-primary/10"
+                    : "border-border bg-background hover:bg-muted hover:border-primary/30",
+                )}
+              >
+                <div className="flex items-start gap-3">
+                  <div
+                    className={cn(
+                      "w-8 h-8 rounded-lg flex items-center justify-center shrink-0",
+                      isSelected
+                        ? "bg-primary/20 text-primary"
+                        : "bg-muted text-muted-foreground",
+                    )}
+                  >
+                    <Icon className="w-4 h-4" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p
+                      className={cn(
+                        "text-sm font-medium",
+                        isSelected ? "text-primary" : "text-foreground",
+                      )}
+                    >
+                      {item.label}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {item.description}
+                    </p>
+                  </div>
+                </div>
+              </button>
+            );
+          })}
         </div>
       </div>
 
       <Button
         type="submit"
-        className="w-full h-11 gap-2"
+        className="w-full h-11 sm:h-12 gap-2 text-base font-semibold shadow-lg shadow-primary/20"
         disabled={form.formState.isSubmitting}
       >
         {form.formState.isSubmitting ? (

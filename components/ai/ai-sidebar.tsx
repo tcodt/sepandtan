@@ -11,6 +11,8 @@ import {
   User,
   Settings,
   LogOut,
+  MessageSquare,
+  Sparkles,
 } from "lucide-react";
 import {
   Sidebar,
@@ -29,7 +31,6 @@ import { useUserStore } from "@/lib/store/user-store";
 import { cn } from "@/lib/utils";
 import { LogoutDialog } from "../common/logout-dialog";
 
-// ==================== MOCK HISTORY ====================
 const chatHistory = [
   { id: "1", title: "برنامه فیتنس شخصی" },
   { id: "2", title: "تغذیه برای ورزشکاران" },
@@ -37,7 +38,6 @@ const chatHistory = [
   { id: "4", title: "کاهش وزن سالم" },
   { id: "5", title: "تقویت عضلات شکم" },
 ];
-// ======================================================
 
 const navLinks = [
   { href: "/", label: "خانه", icon: House },
@@ -72,7 +72,7 @@ export function AiSidebar({
           <SidebarMenuItem>
             <SidebarMenuButton
               onClick={onNewChat}
-              className="w-full justify-start gap-2 rounded-xl border border-border bg-background hover:bg-muted"
+              className="w-full justify-start gap-2 rounded-xl border border-border bg-background hover:bg-muted hover:border-primary/30 transition-all"
             >
               <SquarePen className="w-4 h-4 text-primary" />
               <span className="font-medium">گفتگوی جدید</span>
@@ -89,7 +89,7 @@ export function AiSidebar({
           [&::-webkit-scrollbar-thumb]:rounded-full
           [&::-webkit-scrollbar-thumb]:bg-slate-100"
       >
-        {/* تاریخچه */}
+        {/* History */}
         <SidebarGroup>
           <SidebarGroupLabel className="flex items-center gap-2 text-xs">
             <History className="w-3.5 h-3.5 text-primary" />
@@ -102,10 +102,13 @@ export function AiSidebar({
                   <SidebarMenuButton
                     onClick={() => onSelectChat(chat.id)}
                     className={cn(
-                      "rounded-lg text-sm",
-                      activeChatId === chat.id && "bg-primary/10 text-primary",
+                      "rounded-lg text-sm transition-all",
+                      activeChatId === chat.id
+                        ? "bg-primary/10 text-primary font-medium"
+                        : "hover:bg-muted/50",
                     )}
                   >
+                    <MessageSquare className="w-3.5 h-3.5" />
                     <span className="truncate">{chat.title}</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -116,7 +119,7 @@ export function AiSidebar({
 
         <SidebarSeparator />
 
-        {/* لینک‌های سریع */}
+        {/* Quick Links */}
         <SidebarGroup>
           <SidebarGroupLabel className="text-xs">دسترسی سریع</SidebarGroupLabel>
           <SidebarGroupContent>
@@ -125,7 +128,10 @@ export function AiSidebar({
                 const Icon = link.icon;
                 return (
                   <SidebarMenuItem key={link.href}>
-                    <SidebarMenuButton asChild className="rounded-lg">
+                    <SidebarMenuButton
+                      asChild
+                      className="rounded-lg hover:bg-muted/50"
+                    >
                       <Link href={link.href}>
                         <Icon className="w-4 h-4" />
                         <span>{link.label}</span>
@@ -140,10 +146,11 @@ export function AiSidebar({
       </SidebarContent>
 
       <SidebarFooter className="p-3">
-        <div className="rounded-xl border border-border bg-background p-3 space-y-2">
+        <div className="rounded-xl border border-border bg-linear-to-br from-primary/5 to-transparent p-3 space-y-2">
           <div className="min-w-0">
-            <p className="text-sm font-medium truncate">
-              {user?.name ?? "کاربر سپندتن"}
+            <p className="text-sm font-medium truncate flex items-center gap-1.5">
+              <span>{user?.name ?? "کاربر سپندتن"}</span>
+              <Sparkles className="w-3 h-3 text-primary" />
             </p>
             <p className="text-xs text-muted-foreground truncate">
               {user?.email ?? user?.phone ?? "مهمان"}
@@ -152,7 +159,7 @@ export function AiSidebar({
           <SidebarMenu>
             <SidebarMenuItem>
               <LogoutDialog>
-                <SidebarMenuButton className="text-destructive hover:text-destructive rounded-lg">
+                <SidebarMenuButton className="text-destructive hover:text-destructive hover:bg-destructive/10 rounded-lg transition-all">
                   <LogOut className="w-4 h-4" />
                   <span>خروج</span>
                 </SidebarMenuButton>

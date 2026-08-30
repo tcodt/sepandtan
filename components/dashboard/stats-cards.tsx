@@ -116,10 +116,7 @@ export function StatsCards({
     return (
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {Array.from({ length: 4 }).map((_, i) => (
-          <Card
-            key={i}
-            className="border-border bg-card/80 dark:bg-card/60 backdrop-blur-sm"
-          >
+          <Card key={i} className="border-border bg-muted/50 backdrop-blur-sm">
             <CardContent className="p-4 sm:p-5 flex items-center justify-center h-24">
               <Loader2 className="w-5 h-5 animate-spin text-primary" />
             </CardContent>
@@ -136,7 +133,7 @@ export function StatsCards({
         return (
           <Card
             key={stat.label}
-            className="border-border bg-card/80 dark:bg-card/60 backdrop-blur-sm"
+            className="border-border bg-muted/50 backdrop-blur-sm"
           >
             <CardContent className="p-4 sm:p-5">
               <div className="flex items-start justify-between gap-2">

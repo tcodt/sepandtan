@@ -23,7 +23,7 @@ export function ProductCard({ product }: ProductCardProps) {
   return (
     <Card
       className={cn(
-        "group overflow-hidden border-border bg-card/80 dark:bg-card/60",
+        "group overflow-hidden border-border bg-muted/50",
         "rounded-2xl transition-all hover:shadow-md hover:-translate-y-0.5",
       )}
     >

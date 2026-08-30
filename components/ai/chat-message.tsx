@@ -2,7 +2,7 @@
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
-import { Bot, User } from "lucide-react";
+import { Bot, User, Clock } from "lucide-react";
 
 export type ChatMessageType = {
   id: string;
@@ -21,7 +21,7 @@ export function ChatMessage({ message }: ChatMessageProps) {
   return (
     <div
       className={cn(
-        "flex gap-2.5 sm:gap-3 w-full",
+        "flex gap-2.5 sm:gap-3 w-full animate-in fade-in-0 slide-in-from-bottom-2 duration-300",
         isUser ? "flex-row-reverse" : "flex-row",
       )}
     >
@@ -40,7 +40,7 @@ export function ChatMessage({ message }: ChatMessageProps) {
       <div
         dir="rtl"
         className={cn(
-          "max-w-[85%] sm:max-w-[75%] rounded-2xl px-3.5 py-2.5 text-sm leading-7",
+          "max-w-[85%] sm:max-w-[75%] rounded-2xl px-3.5 py-2.5 text-sm leading-7 shadow-sm",
           isUser
             ? "bg-primary text-primary-foreground rounded-tr-md"
             : "bg-muted text-foreground rounded-tl-md",
@@ -50,10 +50,11 @@ export function ChatMessage({ message }: ChatMessageProps) {
         {message.time && (
           <p
             className={cn(
-              "text-[10px] mt-1.5 text-left",
+              "text-[10px] mt-1.5 flex items-center gap-1",
               isUser ? "text-primary-foreground/70" : "text-muted-foreground",
             )}
           >
+            <Clock className="w-3 h-3" />
             {message.time}
           </p>
         )}

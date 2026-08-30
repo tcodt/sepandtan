@@ -193,7 +193,7 @@ export function WorkoutChart({ workouts = [], isLoading = false }: Props) {
   }, [values]);
 
   return (
-    <Card className="border-border/50 bg-card/80 dark:bg-card/60 backdrop-blur-sm">
+    <Card className="border-border/50 bg-muted/50 backdrop-blur-sm">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2.5">
