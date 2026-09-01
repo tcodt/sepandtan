@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useRef } from "react";
+import React, { useEffect, useMemo, useState, useRef } from "react";
 import {
   Search,
   Users,
@@ -25,16 +25,26 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
+import {
+  Sparkles,
+  Scale,
+  Armchair,
+  User,
+  Salad,
+  Home,
+  Flower2,
+  Dumbbell,
+} from "lucide-react";
 
 const FILTERS = [
-  { id: "all", label: "همه", icon: "🌟" },
-  { id: "کاهش وزن", label: "کاهش وزن", icon: "⚖️" },
-  { id: "عضله‌سازی", label: "عضله‌سازی", icon: "💪" },
-  { id: "تناسب بانوان", label: "تناسب بانوان", icon: "👩" },
-  { id: "تغذیه ورزشی", label: "تغذیه", icon: "🥗" },
-  { id: "تمرین خانگی", label: "خانگی", icon: "🏠" },
-  { id: "یوگا", label: "یوگا / پیلاتس", icon: "🧘" },
-  { id: "قدرت", label: "قدرت", icon: "🏋️" },
+  { id: "all", label: "همه", icon: Sparkles },
+  { id: "کاهش وزن", label: "کاهش وزن", icon: Scale },
+  { id: "عضله‌سازی", label: "عضله‌سازی", icon: Armchair },
+  { id: "تناسب بانوان", label: "تناسب بانوان", icon: User },
+  { id: "تغذیه ورزشی", label: "تغذیه", icon: Salad },
+  { id: "تمرین خانگی", label: "خانگی", icon: Home },
+  { id: "یوگا", label: "یوگا / پیلاتس", icon: Flower2 },
+  { id: "قدرت", label: "قدرت", icon: Dumbbell },
 ] as const;
 
 function CoachCardSkeleton() {
@@ -188,8 +198,8 @@ export function CoachesList() {
             onChange={(e) => setQuery(e.target.value)}
             placeholder="جستجوی نام، تخصص یا شهر..."
             className={cn(
-              "pr-10 h-10 sm:h-11 rounded-xl bg-card/80 border-border/60",
-              "focus-visible:ring-primary/30 text-sm w-full",
+              "pr-10 h-10 sm:h-11 rounded-xl bg-muted/50 border-border/60",
+              "focus-visible:ring-primary/30 text-sm w-full sm:w-2/4",
               query && "pl-10",
             )}
             aria-label="جستجوی مربی"
@@ -234,6 +244,7 @@ export function CoachesList() {
               <div className="grid grid-cols-2 gap-2">
                 {FILTERS.map((f) => {
                   const active = filter === f.id;
+                  const Icon = f.icon;
                   return (
                     <Button
                       key={f.id}
@@ -247,7 +258,7 @@ export function CoachesList() {
                         setIsFilterSheetOpen(false);
                       }}
                     >
-                      <span className="text-xl">{f.icon}</span>
+                      <Icon className="w-5 h-5" />
                       <span className="text-sm">{f.label}</span>
                       {active && (
                         <span className="mr-auto w-2 h-2 rounded-full bg-primary-foreground/50" />
@@ -315,6 +326,7 @@ export function CoachesList() {
         >
           {FILTERS.map((f) => {
             const active = filter === f.id;
+            const Icon = f.icon;
             return (
               <button
                 key={f.id}
@@ -328,7 +340,9 @@ export function CoachesList() {
                     : "bg-card/60 border border-border/60 hover:bg-muted/80 hover:scale-[0.98] text-foreground/80",
                 )}
               >
-                <span className="text-base sm:text-lg">{f.icon}</span>
+                <span className="text-base sm:text-lg">
+                  <Icon className="w-5 h-5" />
+                </span>
                 <span>{f.label}</span>
                 {active && (
                   <span className="w-1.5 h-1.5 rounded-full bg-white/50 animate-pulse" />
@@ -372,7 +386,15 @@ export function CoachesList() {
         <div className="sm:hidden flex items-center gap-2">
           <span className="text-xs text-muted-foreground">فیلتر فعال:</span>
           <Badge variant="default" className="gap-1.5 px-3 py-1.5">
-            <span>{FILTERS.find((f) => f.id === filter)?.icon}</span>
+            <span>
+              {FILTERS.find((f) => f.id === filter)?.icon &&
+                React.createElement(
+                  FILTERS.find((f) => f.id === filter)!.icon,
+                  {
+                    className: "w-4 h-4",
+                  },
+                )}
+            </span>
             <span>{FILTERS.find((f) => f.id === filter)?.label}</span>
             <button
               onClick={() => setFilter("all")}

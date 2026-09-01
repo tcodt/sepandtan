@@ -82,7 +82,7 @@ export default function CoachesPage() {
             <Button
               variant="outline"
               size="default"
-              className="gap-2 border-border/60 bg-card/50 hover:bg-card hover:border-primary/40 transition-all duration-200 shadow-sm"
+              className="gap-2 border-border/60 bg-muted/50 hover:bg-card hover:border-primary/40 transition-all duration-200 shadow-sm"
             >
               <FileText className="w-4 h-4" />
               <span>درخواست‌های من</span>
@@ -97,7 +97,7 @@ export default function CoachesPage() {
             <Button
               variant="outline"
               size="sm"
-              className="gap-1.5 border-border/60 bg-card/50 hover:bg-card hover:border-primary/40 transition-all text-xs"
+              className="gap-1.5 border-border/60 bg-muted/50 hover:bg-card hover:border-primary/40 transition-all text-xs"
             >
               <FileText className="w-3.5 h-3.5" />
               <span>درخواست‌ها</span>

@@ -72,7 +72,7 @@ export function CoachCard({ coach, className }: Props) {
     >
       <Card
         className={cn(
-          "h-full border-border/50 bg-card/70 dark:bg-card/50 backdrop-blur-md overflow-hidden",
+          "h-full border-border/50 bg-muted/50 backdrop-blur-md overflow-hidden",
           "transition-all duration-300 ease-out",
           "hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5 hover:-translate-y-1",
           "active:scale-[0.98] active:translate-y-0",
@@ -80,7 +80,7 @@ export function CoachCard({ coach, className }: Props) {
         )}
       >
         {/* Image */}
-        <div className="relative aspect-[4/3] sm:aspect-[5/4] w-full bg-muted overflow-hidden">
+        <div className="relative aspect-4/3 sm:aspect-5/4 w-full bg-muted overflow-hidden">
           {coach.avatarUrl && !imageError ? (
             <>
               {imageLoading && (
@@ -109,7 +109,7 @@ export function CoachCard({ coach, className }: Props) {
             <div
               className={cn(
                 "absolute inset-0 flex flex-col items-center justify-center",
-                "bg-gradient-to-br",
+                "bg-linear-to-br",
                 getGradientByName(coach.name),
               )}
             >
