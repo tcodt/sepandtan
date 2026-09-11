@@ -415,21 +415,23 @@ export function MyRequestsList() {
                               </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
-                              <AlertDialogCancel>انصراف</AlertDialogCancel>
-                              <AlertDialogAction
-                                className="bg-destructive hover:bg-destructive/90"
-                                onClick={() => handleDelete(req.id!)}
-                                disabled={deletingId === req.id}
-                              >
-                                {deletingId === req.id ? (
-                                  <>
-                                    <Loader2 className="w-4 h-4 ml-2 animate-spin" />
-                                    در حال حذف...
-                                  </>
-                                ) : (
-                                  "حذف"
-                                )}
-                              </AlertDialogAction>
+                              <div className="flex flex-row-reverse items-center justify-end gap-2 w-full">
+                                <AlertDialogCancel>انصراف</AlertDialogCancel>
+                                <AlertDialogAction
+                                  className="bg-destructive hover:bg-destructive/90"
+                                  onClick={() => handleDelete(req.id!)}
+                                  disabled={deletingId === req.id}
+                                >
+                                  {deletingId === req.id ? (
+                                    <>
+                                      <Loader2 className="w-4 h-4 ml-2 animate-spin" />
+                                      در حال حذف...
+                                    </>
+                                  ) : (
+                                    "حذف"
+                                  )}
+                                </AlertDialogAction>
+                              </div>
                             </AlertDialogFooter>
                           </AlertDialogContent>
                         </AlertDialog>

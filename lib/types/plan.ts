@@ -1,6 +1,7 @@
 /** انواع مشترک برنامه تمرینی و رژیمی */
 
 export type Gender = "male" | "female";
+export type PlanStatus = "active" | "archived";
 
 export type ActivityLevel =
   | "sedentary"
@@ -20,7 +21,12 @@ export type Goal =
 
 export type UserRole = "user" | "coach" | "admin";
 
-export type SubscriptionStatus = "free" | "ai_plan" | "coach_plan" | "vip";
+export type SubscriptionStatus =
+  | "free"
+  | "basic"
+  | "pro"
+  | "premium"
+  | "coach_plan";
 
 export type BodyInfo = {
   gender: Gender;
@@ -96,6 +102,7 @@ export type Plan = {
   createdAt: string;
   source: "ai" | "coach";
   coachId?: string | null;
+  status: "active" | "archived";
 };
 
 export type WorkoutLog = {
@@ -135,12 +142,12 @@ export type WeightLog = {
 };
 
 export type SubscriptionPlan = {
-  id: string;
+  id: "basic" | "pro" | "premium";
   name: string;
   price: number;
   periodLabel: string;
   featured: boolean;
-  badge?: string | null;
+  badge: string | null;
   ctaLabel: string;
   sortOrder: number;
   isActive: boolean;

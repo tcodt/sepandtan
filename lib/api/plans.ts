@@ -18,10 +18,35 @@ export async function getPlansByUser(userId: string): Promise<Plan[]> {
 }
 
 export async function createPlan(plan: Plan): Promise<Plan> {
-  return api.post<Plan>("/plans", plan);
+  // برنامه جدید همیشه active ساخته می‌شود؛ سوییچ مسئول archive قبلی است
+  return api.post<Plan>("/plans", {
+    ...plan,
+    status: plan.status ?? "active",
+  });
 }
 
-/** ساخت برنامه + ذخیره + آپدیت کاربر */
+export async function updatePlanStatus(
+  planId: string,
+  status: "active" | "archived",
+): Promise<Plan> {
+  return api.patch<Plan>(`/plans/${planId}`, { status });
+}
+
+export async function switchActivePlan(input: {
+  userId: string;
+  previousPlanId?: string | null;
+  nextPlanId: string;
+}): Promise<Plan> {
+  const { userId, previousPlanId, nextPlanId } = input;
+
+  if (previousPlanId && previousPlanId !== nextPlanId) {
+    await updatePlanStatus(previousPlanId, "archived");
+  }
+  const next = await updatePlanStatus(nextPlanId, "active");
+  await api.patch(`/users/${userId}`, { currentPlanId: nextPlanId });
+  return next;
+}
+
 export async function generateAndSavePlan(input: {
   userId: string;
   bodyInfo: BodyInfo;
@@ -29,8 +54,22 @@ export async function generateAndSavePlan(input: {
   goal: Goal;
   targetWeight?: number;
 }): Promise<{ plan: Plan; userId: string }> {
+  // قبل از ساخت برنامه جدید، Active قبلی را archive کن
+  try {
+    const existing = await getPlansByUser(input.userId);
+    const currentActive = existing.find((p) => p.status === "active");
+    if (currentActive) {
+      await updatePlanStatus(currentActive.id, "archived");
+    }
+  } catch {
+    // ignore اگر لیست خالی بود
+  }
+
   const plan = generatePlan(input);
-  const saved = await createPlan(plan);
+  const saved = await createPlan({
+    ...plan,
+    status: "active",
+  });
 
   await completeUserOnboarding(input.userId, {
     bodyInfo: input.bodyInfo,
@@ -60,17 +99,13 @@ export function getCurrentDayNumber(plan: Plan, today = new Date()): number {
 }
 
 export function getDayFromPlan(plan: Plan, dayNumber: number): PlanDay | null {
-  const exact = plan.days.find((d) => d.dayNumber === dayNumber);
+  const exact = plan.days?.find((d) => d.dayNumber === dayNumber);
   if (exact) return exact;
 
-  // اگر days کامل ۳۰ روز نبود (مثل دیتای دمو)، از الگوی موجود استفاده کن
-  if (!plan.days.length) return null;
+  if (!plan.days?.length) return null;
   const idx = (dayNumber - 1) % plan.days.length;
   const fallback = plan.days[idx];
-  return {
-    ...fallback,
-    dayNumber, // شماره واقعی روز حفظ شود
-  };
+  return { ...fallback, dayNumber };
 }
 
 export async function getTodayPlanDay(planId: string) {
