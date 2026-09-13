@@ -3,7 +3,7 @@
 import { useUserStore } from "@/lib/store/user-store";
 import { ModeToggle } from "@/components/common/mode-toggle";
 import { Button } from "@/components/ui/button";
-import { LogOut, Settings, Flame } from "lucide-react";
+import { LogOut, Settings, Flame, Home } from "lucide-react";
 import Link from "next/link";
 import { LogoutDialog } from "../common/logout-dialog";
 
@@ -37,6 +37,11 @@ export function DashboardHeader() {
         </div>
 
         <div className="flex items-center gap-2">
+          <Button variant="ghost" size="icon" asChild className="rounded-full">
+            <Link href="/">
+              <Home className="w-4 h-4" />
+            </Link>
+          </Button>
           <ModeToggle />
           <Button variant="ghost" size="icon" asChild className="rounded-full">
             <Link href="/settings">

@@ -7,6 +7,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useUserStore } from "@/lib/store/user-store";
 import { getSubscriptionPlanById } from "@/lib/api/subscription-plans";
+import {
+  getSubscriptionLabel,
+  isPaidSubscription,
+} from "@/lib/subscription/access";
 import type { SubscriptionPlan } from "@/lib/types/plan";
 
 export function ActivePlanCard() {
@@ -28,14 +32,13 @@ export function ActivePlanCard() {
       .finally(() => setLoading(false));
   }, [user?.selectedPlanId]);
 
-  const statusLabel =
-    user?.subscriptionStatus === "ai_plan"
-      ? "فعال"
-      : user?.subscriptionStatus === "vip"
-        ? "VIP"
-        : user?.subscriptionStatus === "coach_plan"
-          ? "پلن مربی"
-          : "رایگان";
+  // برچسب فارسی از helper — بدون مقایسهٔ مستقیم با literalهای قدیمی
+  const statusLabel = getSubscriptionLabel(
+    user?.subscriptionStatus,
+    user?.selectedPlanId,
+  );
+
+  const isPaid = isPaidSubscription(user);
 
   return (
     <Card className="border-border bg-muted/50 backdrop-blur-sm">
@@ -77,8 +80,8 @@ export function ActivePlanCard() {
             )}
 
             <Button asChild variant="outline" size="sm" className="w-full mt-1">
-              <Link href={plan ? "/checkout?plan=" + plan.id : "/#plans"}>
-                {plan ? "مدیریت / تغییر پلن" : "ارتقای اشتراک"}
+              <Link href={plan ? `/checkout?plan=${plan.id}` : "/#plans"}>
+                {isPaid || plan ? "مدیریت / تغییر پلن" : "ارتقای اشتراک"}
               </Link>
             </Button>
           </>

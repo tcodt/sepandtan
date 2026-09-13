@@ -13,8 +13,11 @@ import { RecentActivity } from "./recent-activity";
 import { WeightLogCard } from "./weight-log-card";
 import { useDashboardLogs } from "@/hooks/use-dashboard-logs";
 import { ActivePlanCard } from "./active-plan-card";
+import { ActiveWorkoutPlanCard } from "./active-workout-plan-card";
 import { DailyStatusBar } from "./daily-status-bar";
 import { useSeedStartWeight } from "@/hooks/use-seed-start-weight";
+import { useUserPlan } from "@/hooks/use-user-plan";
+import { PlanAccessState } from "@/components/plans/plan-access-state";
 
 // بارگذاری lazy برای چارت‌ها با حالت‌های بارگذاری بهتر
 const WeightChart = dynamic(
@@ -76,6 +79,7 @@ export function DashboardShell() {
   const [refreshKey, setRefreshKey] = useState(0);
   const [isMounted, setIsMounted] = useState(false);
   const logs = useDashboardLogs(refreshKey);
+  const { user, isLoading: planLoading } = useUserPlan();
 
   useSeedStartWeight(() => setRefreshKey((k) => k + 1));
 
@@ -147,6 +151,15 @@ export function DashboardShell() {
           <QuickActions />
         </motion.div>
 
+        {/* برنامه فعال / Empty State — بالای Today Workout و Nutrition */}
+        <motion.div variants={itemVariants} initial="hidden" animate="visible">
+          {!planLoading && !user?.currentPlanId ? (
+            <PlanAccessState variant="no-plan" className="min-h-0 py-8" />
+          ) : (
+            <ActiveWorkoutPlanCard />
+          )}
+        </motion.div>
+
         {/* بخش اصلی - تمرین امروز و اهداف */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
           <motion.div
@@ -167,6 +180,7 @@ export function DashboardShell() {
             <motion.div variants={itemVariants}>
               <GoalProgress weights={logs.weights} isLoading={logs.isLoading} />
             </motion.div>
+            {/* کارت اشتراک (جدا از برنامه تمرینی) */}
             <motion.div variants={itemVariants}>
               <ActivePlanCard />
             </motion.div>
@@ -176,7 +190,7 @@ export function DashboardShell() {
           </motion.div>
         </div>
 
-        {/* بخش چارت‌ها - بدون باکس اضافی */}
+        {/* بخش چارت‌ها */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
           <motion.div
             className="lg:col-span-2"

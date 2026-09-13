@@ -12,7 +12,6 @@ import {
   Dumbbell,
   Flame,
   Clock,
-  TrendingUp,
   Zap,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -33,6 +32,8 @@ import {
 import { WorkoutComplete } from "./workout-complete";
 import { CompletionBottomSheet } from "./completion-bottom-sheet";
 import { InlineState } from "@/components/common/states/inline-state";
+import { isFreeTrialExpired } from "@/lib/subscription/access";
+import { PlanAccessState } from "../plans/plan-access-state";
 
 function mapPlanExercisesToSession(
   exercises: {
@@ -151,6 +152,10 @@ export function TodayWorkout() {
     todayDay?.isRestDay,
     basePlanExercises.length,
   ]);
+
+  if (isFreeTrialExpired(user)) {
+    return <PlanAccessState variant="free-expired" />;
+  }
 
   // ---------- Loading ----------
   if (isLoading || !bootstrapped) {

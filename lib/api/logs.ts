@@ -1,11 +1,17 @@
-import { api } from "./client";
 import type { WorkoutLog, NutritionLog, WeightLog } from "@/lib/types/plan";
+import { db } from "./db";
+import { createId, delay } from "./client";
 
 // ─── Workout Logs ───────────────────────────────────────
 
 export async function getWorkoutLogs(userId: string): Promise<WorkoutLog[]> {
-  const all = await api.get<WorkoutLog[]>(`/workoutLogs`);
-  return (all || []).filter((x) => x.userId === userId);
+  await delay();
+  return db.workoutLogs
+    .filter((x) => x.userId === userId)
+    .map((l) => ({
+      ...l,
+      exercises: l.exercises.map((e) => ({ ...e })),
+    }));
 }
 
 export async function getWorkoutLogByDate(
@@ -15,22 +21,40 @@ export async function getWorkoutLogByDate(
   const logs = await getWorkoutLogs(userId);
   const sameDay = logs.filter((x) => x.date === date);
   if (!sameDay.length) return null;
-
-  // آخرین ثبت همان روز
   return sameDay[sameDay.length - 1] ?? null;
 }
 
 export async function saveWorkoutLog(
   log: Omit<WorkoutLog, "id">,
 ): Promise<WorkoutLog> {
-  return api.post<WorkoutLog>("/workoutLogs", log);
+  await delay();
+  const saved: WorkoutLog = {
+    ...log,
+    id: createId("wl"),
+    exercises: log.exercises.map((e) => ({ ...e })),
+  };
+  db.workoutLogs.push(saved);
+  return structuredClone(saved);
 }
 
 export async function updateWorkoutLog(
   id: string,
   data: Partial<WorkoutLog>,
 ): Promise<WorkoutLog> {
-  return api.patch<WorkoutLog>(`/workoutLogs/${id}`, data);
+  await delay();
+  const index = db.workoutLogs.findIndex((l) => l.id === id);
+  if (index === -1) throw new Error(`لاگ تمرین پیدا نشد: ${id}`);
+
+  const updated: WorkoutLog = {
+    ...db.workoutLogs[index],
+    ...data,
+    id,
+    exercises: (data.exercises ?? db.workoutLogs[index].exercises).map((e) => ({
+      ...e,
+    })),
+  };
+  db.workoutLogs[index] = updated;
+  return structuredClone(updated);
 }
 
 // ─── Nutrition Logs ─────────────────────────────────────
@@ -38,8 +62,13 @@ export async function updateWorkoutLog(
 export async function getNutritionLogs(
   userId: string,
 ): Promise<NutritionLog[]> {
-  const all = await api.get<NutritionLog[]>(`/nutritionLogs`);
-  return (all || []).filter((x) => x.userId === userId);
+  await delay();
+  return db.nutritionLogs
+    .filter((x) => x.userId === userId)
+    .map((l) => ({
+      ...l,
+      meals: l.meals.map((m) => ({ ...m })),
+    }));
 }
 
 export async function getNutritionLogByDate(
@@ -55,40 +84,57 @@ export async function getNutritionLogByDate(
 export async function saveNutritionLog(
   log: Omit<NutritionLog, "id">,
 ): Promise<NutritionLog> {
-  return api.post<NutritionLog>("/nutritionLogs", log);
+  await delay();
+  const saved: NutritionLog = {
+    ...log,
+    id: createId("nl"),
+    meals: log.meals.map((m) => ({ ...m })),
+  };
+  db.nutritionLogs.push(saved);
+  return structuredClone(saved);
 }
 
 export async function updateNutritionLog(
   id: string,
   data: Partial<NutritionLog>,
 ): Promise<NutritionLog> {
-  return api.patch<NutritionLog>(`/nutritionLogs/${id}`, data);
+  await delay();
+  const index = db.nutritionLogs.findIndex((l) => l.id === id);
+  if (index === -1) throw new Error(`لاگ تغذیه پیدا نشد: ${id}`);
+
+  const updated: NutritionLog = {
+    ...db.nutritionLogs[index],
+    ...data,
+    id,
+    meals: (data.meals ?? db.nutritionLogs[index].meals).map((m) => ({
+      ...m,
+    })),
+  };
+  db.nutritionLogs[index] = updated;
+  return structuredClone(updated);
 }
 
 // ─── Weight Logs ────────────────────────────────────────
 
 export async function getWeightLogs(userId: string): Promise<WeightLog[]> {
-  // برای سازگاری با json-server 0.17 و 1.x:
-  // اول همه را بگیر، بعد فیلتر کن
-  const all = await api.get<WeightLog[]>(`/weightLogs`);
-  const filtered = (all || []).filter((x) => x.userId === userId);
-
-  return filtered.sort((a, b) => a.date.localeCompare(b.date));
+  await delay();
+  return db.weightLogs
+    .filter((x) => x.userId === userId)
+    .map((l) => ({ ...l }))
+    .sort((a, b) => a.date.localeCompare(b.date));
 }
 
 export async function addWeightLog(
   log: Omit<WeightLog, "id">,
 ): Promise<WeightLog> {
-  // اطمینان از شکل داده
-  const payload = {
+  await delay();
+  const saved: WeightLog = {
+    id: createId("w"),
     userId: log.userId,
     weight: Number(log.weight),
     date: log.date,
-    note: log.note ?? "",
+    note: log.note,
   };
-
-  const saved = await api.post<WeightLog>("/weightLogs", payload);
-
-  // اگر سرور id ندهد، باز هم همان داده را برگردان
-  return saved;
+  db.weightLogs.push(saved);
+  return { ...saved };
 }

@@ -4,11 +4,34 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useUserStore } from "@/lib/store/user-store";
 import { getSubscriptionPlanById } from "@/lib/api/subscription-plans";
-import type { SubscriptionPlan } from "@/lib/types/plan";
+import type { SubscriptionPlan, SubscriptionStatus } from "@/lib/types/plan";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Crown, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+const STATUS_LABEL: Record<SubscriptionStatus, string> = {
+  free: "رایگان",
+  basic: "پایه",
+  pro: "حرفه‌ای",
+  premium: "پیشرفته",
+  coach_plan: "پلن مربی",
+};
+
+function statusColorClass(status?: SubscriptionStatus) {
+  switch (status) {
+    case "premium":
+      return "bg-amber-500/10 text-amber-500 border-amber-500/20";
+    case "pro":
+      return "bg-blue-500/10 text-blue-500 border-blue-500/20";
+    case "basic":
+      return "bg-sky-500/10 text-sky-500 border-sky-500/20";
+    case "coach_plan":
+      return "bg-emerald-500/10 text-emerald-500 border-emerald-500/20";
+    default:
+      return "bg-muted text-muted-foreground border-border";
+  }
+}
 
 export function AccountSubscriptionSection() {
   const user = useUserStore((s) => s.user);
@@ -25,26 +48,10 @@ export function AccountSubscriptionSection() {
       .catch(() => setPlan(null));
   }, [user?.selectedPlanId]);
 
-  const statusLabel =
-    user?.subscriptionStatus === "ai_plan"
-      ? "فعال (AI)"
-      : user?.subscriptionStatus === "vip"
-        ? "VIP"
-        : user?.subscriptionStatus === "coach_plan"
-          ? "پلن مربی"
-          : "رایگان";
-
-  const statusColor =
-    user?.subscriptionStatus === "vip"
-      ? "bg-amber-500/10 text-amber-500 border-amber-500/20"
-      : user?.subscriptionStatus === "ai_plan"
-        ? "bg-blue-500/10 text-blue-500 border-blue-500/20"
-        : user?.subscriptionStatus === "coach_plan"
-          ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
-          : "bg-muted text-muted-foreground border-border";
-
-  const isActive =
-    user?.subscriptionStatus && user.subscriptionStatus !== "free";
+  const status = user?.subscriptionStatus ?? "free";
+  const statusLabel = STATUS_LABEL[status] ?? "رایگان";
+  const statusColor = statusColorClass(status);
+  const isActive = status !== "free";
 
   return (
     <Card className="border-border/50 bg-linear-to-br from-primary/5 via-muted/30 to-transparent backdrop-blur-sm">

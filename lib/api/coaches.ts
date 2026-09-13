@@ -1,12 +1,19 @@
-import { api } from "./client";
 import type { Coach, CollaborationRequest } from "@/lib/types/coach";
+import { db } from "./db";
+import { createId, delay } from "./client";
 
 export async function getCoaches(): Promise<Coach[]> {
-  return api.get<Coach[]>("/coaches?isActive=true");
+  await delay();
+  return db.coaches
+    .filter((c) => c.isActive)
+    .map((c) => ({ ...c, specialties: [...c.specialties] }));
 }
 
 export async function getCoachById(id: string): Promise<Coach> {
-  return api.get<Coach>(`/coaches/${id}`);
+  await delay();
+  const coach = db.coaches.find((c) => c.id === id);
+  if (!coach) throw new Error(`مربی پیدا نشد: ${id}`);
+  return { ...coach, specialties: [...coach.specialties] };
 }
 
 export async function createCollaborationRequest(
@@ -14,47 +21,49 @@ export async function createCollaborationRequest(
     status?: CollaborationRequest["status"];
   },
 ): Promise<CollaborationRequest> {
-  return api.post<CollaborationRequest>("/collaborationRequests", {
-    ...payload,
+  await delay();
+
+  const request: CollaborationRequest = {
+    id: createId("req"),
+    userId: payload.userId,
+    coachId: payload.coachId,
+    goal: payload.goal,
+    message: payload.message,
     status: payload.status ?? "pending",
     createdAt: new Date().toISOString(),
-  });
+  };
+
+  db.collaborationRequests.push(request);
+  return { ...request };
 }
 
 export async function getMyCollaborationRequests(
   userId: string,
 ): Promise<CollaborationRequest[]> {
-  return api.get<CollaborationRequest[]>(
-    `/collaborationRequests?userId=${userId}`,
-  );
+  await delay();
+  return db.collaborationRequests
+    .filter((r) => r.userId === userId)
+    .map((r) => ({ ...r }));
 }
 
 export async function cancelCollaborationRequest(
   id: string,
 ): Promise<CollaborationRequest> {
-  return api.patch<CollaborationRequest>(`/collaborationRequests/${id}`, {
+  await delay();
+  const index = db.collaborationRequests.findIndex((r) => r.id === id);
+  if (index === -1) throw new Error(`درخواست پیدا نشد: ${id}`);
+
+  const updated: CollaborationRequest = {
+    ...db.collaborationRequests[index],
     status: "cancelled",
-  });
+  };
+  db.collaborationRequests[index] = updated;
+  return { ...updated };
 }
 
 export async function deleteCollaborationRequest(id: string): Promise<void> {
-  try {
-    const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/collaborationRequests/${id}`,
-      {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      },
-    );
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || "Failed to delete request");
-    }
-  } catch (error) {
-    console.error("Delete request error:", error);
-    throw error;
-  }
+  await delay();
+  const index = db.collaborationRequests.findIndex((r) => r.id === id);
+  if (index === -1) throw new Error(`درخواست پیدا نشد: ${id}`);
+  db.collaborationRequests.splice(index, 1);
 }

@@ -19,8 +19,8 @@ type DashboardLogs = {
 };
 
 /**
- * یک fetch واحد برای کل داشبورد
- * به‌جای اینکه هر کارت جدا API بزند
+ * یک بارگذاری واحد برای کل داشبورد
+ * از دیتای فیک (بدون شبکه)
  */
 export function useDashboardLogs(refreshKey = 0): DashboardLogs {
   const userId = useUserStore((s) => s.user?.id);

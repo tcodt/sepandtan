@@ -2,13 +2,7 @@
 
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
-import type {
-  BodyInfo,
-  Equipment,
-  Goal,
-  UserProfile,
-  SubscriptionStatus,
-} from "@/lib/types/plan";
+import type { BodyInfo, Equipment, Goal, UserProfile } from "@/lib/types/plan";
 
 export type { BodyInfo, Equipment, Goal, UserProfile };
 
@@ -57,6 +51,10 @@ export const useUserStore = create<UserState>()(
           isAuthenticated: false,
         }),
 
+      /**
+       * آنبوردینگ فقط Training Plan را ست می‌کند.
+       * subscriptionStatus را تغییر نمی‌دهد (جداسازی قفل‌شده محصول).
+       */
       completeOnboarding: (data) => {
         const current = get().user;
         if (!current) return;
@@ -70,7 +68,7 @@ export const useUserStore = create<UserState>()(
             currentPlanId: data.currentPlanId,
             targetWeight: data.targetWeight,
             onboardingCompleted: true,
-            subscriptionStatus: "ai_plan" as SubscriptionStatus,
+            // subscriptionStatus عمداً دست نخورده می‌ماند
           },
         });
       },

@@ -1,4 +1,3 @@
-import { api } from "./client";
 import type {
   Plan,
   PlanDay,
@@ -8,17 +7,43 @@ import type {
 } from "@/lib/types/plan";
 import { generatePlan } from "@/lib/plan/generate-plan";
 import { completeUserOnboarding } from "./users";
+import { db } from "./db";
+import { createId, delay } from "./client";
 
 export async function getPlanById(id: string): Promise<Plan> {
-  return api.get<Plan>(`/plans/${id}`);
+  await delay();
+  const plan = db.plans.find((p) => p.id === id);
+  if (!plan) throw new Error(`برنامه پیدا نشد: ${id}`);
+  return structuredClone(plan);
 }
 
 export async function getPlansByUser(userId: string): Promise<Plan[]> {
-  return api.get<Plan[]>(`/plans?userId=${encodeURIComponent(userId)}`);
+  await delay();
+  return db.plans
+    .filter((p) => p.userId === userId)
+    .map((p) => structuredClone(p));
 }
 
 export async function createPlan(plan: Plan): Promise<Plan> {
-  return api.post<Plan>("/plans", plan);
+  await delay();
+
+  // فقط یک active برای هر کاربر
+  if (plan.status === "active") {
+    db.plans.forEach((p, i) => {
+      if (p.userId === plan.userId && p.status === "active") {
+        db.plans[i] = { ...p, status: "archived" };
+      }
+    });
+  }
+
+  const saved: Plan = {
+    ...structuredClone(plan),
+    id: plan.id || createId("plan"),
+    createdAt: plan.createdAt || new Date().toISOString(),
+  };
+
+  db.plans.push(saved);
+  return structuredClone(saved);
 }
 
 /** ساخت برنامه + ذخیره + آپدیت کاربر */
@@ -63,13 +88,12 @@ export function getDayFromPlan(plan: Plan, dayNumber: number): PlanDay | null {
   const exact = plan.days.find((d) => d.dayNumber === dayNumber);
   if (exact) return exact;
 
-  // اگر days کامل ۳۰ روز نبود (مثل دیتای دمو)، از الگوی موجود استفاده کن
   if (!plan.days.length) return null;
   const idx = (dayNumber - 1) % plan.days.length;
   const fallback = plan.days[idx];
   return {
     ...fallback,
-    dayNumber, // شماره واقعی روز حفظ شود
+    dayNumber,
   };
 }
 
@@ -79,4 +103,64 @@ export async function getTodayPlanDay(planId: string) {
   const day = getDayFromPlan(plan, dayNumber);
   if (!day) return null;
   return { plan, day, dayNumber };
+}
+
+/**
+ * سوییچ برنامه فعال کاربر
+ * پشتیبانی از:
+ *   switchActivePlan(userId, planId)
+ *   switchActivePlan({ userId, planId, previousPlanId?, nextPlanId? })
+ *
+ * اگر nextPlanId داده شود، همان به‌عنوان planId استفاده می‌شود.
+ */
+export async function switchActivePlan(
+  userIdOrPayload:
+    | string
+    | {
+        userId: string;
+        planId?: string;
+        nextPlanId?: string;
+        previousPlanId?: string | null;
+      },
+  maybePlanId?: string,
+): Promise<Plan> {
+  await delay();
+
+  let userId: string;
+  let planId: string | undefined;
+
+  if (typeof userIdOrPayload === "string") {
+    userId = userIdOrPayload;
+    planId = maybePlanId;
+  } else {
+    userId = userIdOrPayload.userId;
+    planId = userIdOrPayload.nextPlanId ?? userIdOrPayload.planId;
+  }
+
+  if (!userId || !planId) {
+    throw new Error("userId و planId الزامی هستند");
+  }
+
+  const target = db.plans.find((p) => p.id === planId && p.userId === userId);
+  if (!target) throw new Error("برنامه پیدا نشد");
+
+  db.plans.forEach((p, i) => {
+    if (p.userId !== userId) return;
+    db.plans[i] = {
+      ...p,
+      status: p.id === planId ? "active" : "archived",
+    };
+  });
+
+  const userIndex = db.users.findIndex((u) => u.id === userId);
+  if (userIndex !== -1) {
+    db.users[userIndex] = {
+      ...db.users[userIndex],
+      currentPlanId: planId,
+      updatedAt: new Date().toISOString(),
+    };
+  }
+
+  const updated = db.plans.find((p) => p.id === planId)!;
+  return structuredClone(updated);
 }

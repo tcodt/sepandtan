@@ -14,8 +14,6 @@ import {
   Moon,
   Coffee,
   Pizza,
-  TrendingUp,
-  Flame,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -31,6 +29,8 @@ import {
 import type { PlanMeal } from "@/lib/types/plan";
 import { motion, AnimatePresence } from "framer-motion";
 import { InlineState } from "../common/states/inline-state";
+import { isFreeTrialExpired } from "@/lib/subscription/access";
+import { PlanAccessState } from "../plans/plan-access-state";
 
 const MEAL_LABELS: Record<PlanMeal["type"], string> = {
   breakfast: "صبحانه",
@@ -101,6 +101,10 @@ export function TodayNutrition() {
       return sum;
     }, 0);
   }, [meals, mealStates]);
+
+  if (isFreeTrialExpired(user)) {
+    return <PlanAccessState variant="free-expired" />;
+  }
 
   const eatenCount = mealStates.filter((s) => s.status === "eaten").length;
   const skippedCount = mealStates.filter((s) => s.status === "skipped").length;

@@ -1,4 +1,4 @@
-/** انواع مشترک برنامه تمرینی و رژیمی */
+/** تایپ های مشترک برنامه تمرینی، رژیم، کاربر و اشتراک */
 
 export type Gender = "male" | "female";
 
@@ -20,7 +20,20 @@ export type Goal =
 
 export type UserRole = "user" | "coach" | "admin";
 
-export type SubscriptionStatus = "free" | "ai_plan" | "coach_plan" | "vip";
+/**
+ * سطح اشتراک کاربر (جدا از برنامه تمرینی)
+ * free     → بدون اشتراک پولی
+ * basic    → اشتراک پایه
+ * pro      → اشتراک حرفه‌ای
+ * premium  → اشتراک کامل
+ * coach_plan → برنامه اختصاصی مربی (سطح اشتراک جداگانه)
+ */
+export type SubscriptionStatus =
+  | "free"
+  | "basic"
+  | "pro"
+  | "premium"
+  | "coach_plan";
 
 export type BodyInfo = {
   gender: Gender;
@@ -42,12 +55,23 @@ export type UserProfile = {
   equipment?: Equipment;
   goal?: Goal;
   onboardingCompleted: boolean;
+
+  /**
+   * Source of Truth برای برنامه تمرینی فعال.
+   * فقط یک plan با status="active" باید به این id اشاره کند.
+   */
   currentPlanId?: string | null;
+
+  /**
+   * فقط برای اشتراک خریداری‌شده (draft/انتخاب‌شده در checkout).
+   * مستقل از training plan است.
+   */
+  selectedPlanId?: string | null;
+
   subscriptionStatus: SubscriptionStatus;
   targetWeight?: number;
   createdAt: string;
   updatedAt?: string;
-  selectedPlanId?: string | null;
 };
 
 export type PlanExercise = {
@@ -82,6 +106,10 @@ export type PlanDay = {
   dailyCaloriesTarget: number;
 };
 
+/**
+ * برنامه تمرینی + رژیمی
+ * در هر لحظه فقط یک برنامه با status="active" برای هر کاربر مجاز است.
+ */
 export type Plan = {
   id: string;
   userId: string;
@@ -94,7 +122,13 @@ export type Plan = {
   durationDays: number;
   days: PlanDay[];
   createdAt: string;
+
+  /** منبع ساخت برنامه */
   source: "ai" | "coach";
+
+  /** وضعیت برنامه — فقط یکی active باشد */
+  status: "active" | "archived";
+
   coachId?: string | null;
 };
 
@@ -145,22 +179,4 @@ export type SubscriptionPlan = {
   sortOrder: number;
   isActive: boolean;
   features: string[];
-};
-
-export type CoachProfile = {
-  id: string;
-  userId: string;
-  name: string;
-  bio: string;
-  specialties: string[];
-  experienceYears: number;
-  rating: number;
-  reviewCount: number;
-  pricePerPlan: number;
-  pricePerConsultation: number;
-  avatarUrl?: string;
-  verified: boolean;
-  isActive: boolean;
-  samplePlans?: string[];
-  createdAt: string;
 };

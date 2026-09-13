@@ -30,10 +30,8 @@ export function useRequireAuth(options: Options = {}) {
   }, []);
 
   useEffect(() => {
-    // تا client mount + hydrate تمام نشده، هیچ redirectی نزن
     if (!mounted || !hasHydrated) return;
 
-    // کمی تأخیر خیلی کوتاه تا router initialize شود
     const t = window.setTimeout(() => {
       if (!isAuthenticated || !user) {
         router.replace(redirectToLogin);

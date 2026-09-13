@@ -1,5 +1,5 @@
 export type SelectedPlanDraft = {
-  id: string;
+  id: string; // basic | pro | premium
   name: string;
   price: number;
 };
