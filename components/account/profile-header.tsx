@@ -3,7 +3,34 @@
 import { Calendar, Mail, Phone } from "lucide-react";
 import { useUserStore } from "@/lib/store/user-store";
 import { AvatarUpload } from "./avatar-upload";
+import type { SubscriptionStatus } from "@/lib/types/plan";
 import { cn } from "@/lib/utils";
+
+const STATUS_BADGE: Record<
+  SubscriptionStatus,
+  { label: string; className: string }
+> = {
+  free: {
+    label: "رایگان",
+    className: "bg-muted text-muted-foreground",
+  },
+  basic: {
+    label: "پایه",
+    className: "bg-sky-500/10 text-sky-500",
+  },
+  pro: {
+    label: "حرفه‌ای",
+    className: "bg-blue-500/10 text-blue-500",
+  },
+  premium: {
+    label: "⭐ پیشرفته",
+    className: "bg-amber-500/10 text-amber-500",
+  },
+  coach_plan: {
+    label: "👨‍🏫 پلن مربی",
+    className: "bg-emerald-500/10 text-emerald-500",
+  },
+};
 
 export function ProfileHeader() {
   const user = useUserStore((s) => s.user);
@@ -15,6 +42,9 @@ export function ProfileHeader() {
         day: "numeric",
       })
     : "—";
+
+  const status = user?.subscriptionStatus ?? "free";
+  const badge = STATUS_BADGE[status] ?? STATUS_BADGE.free;
 
   return (
     <div className="flex flex-col items-center text-center gap-3 sm:gap-4 py-2">
@@ -50,22 +80,10 @@ export function ProfileHeader() {
           <span
             className={cn(
               "px-2.5 py-0.5 rounded-full font-medium",
-              user.subscriptionStatus === "vip" &&
-                "bg-amber-500/10 text-amber-500",
-              user.subscriptionStatus === "ai_plan" &&
-                "bg-blue-500/10 text-blue-500",
-              user.subscriptionStatus === "coach_plan" &&
-                "bg-emerald-500/10 text-emerald-500",
-              (!user.subscriptionStatus ||
-                user.subscriptionStatus === "free") &&
-                "bg-muted text-muted-foreground",
+              badge.className,
             )}
           >
-            {user.subscriptionStatus === "vip" && "⭐ VIP"}
-            {user.subscriptionStatus === "ai_plan" && "🤖 پلن هوشمند"}
-            {user.subscriptionStatus === "coach_plan" && "👨‍🏫 پلن مربی"}
-            {(!user.subscriptionStatus || user.subscriptionStatus === "free") &&
-              "رایگان"}
+            {badge.label}
           </span>
         </div>
       )}

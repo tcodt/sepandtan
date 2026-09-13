@@ -8,7 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useUserStore } from "@/lib/store/user-store";
 import { getSubscriptionPlanById } from "@/lib/api/subscription-plans";
-import type { SubscriptionPlan } from "@/lib/types/plan";
+import type { SubscriptionPlan, SubscriptionStatus } from "@/lib/types/plan";
 import { cn } from "@/lib/utils";
 
 const goalLabels: Record<string, string> = {
@@ -18,6 +18,29 @@ const goalLabels: Record<string, string> = {
   endurance: "استقامت",
   general_fitness: "آمادگی عمومی",
 };
+
+const STATUS_LABEL: Record<SubscriptionStatus, string> = {
+  free: "رایگان",
+  basic: "پایه",
+  pro: "حرفه‌ای",
+  premium: "پیشرفته",
+  coach_plan: "پلن مربی",
+};
+
+function statusTextColor(status?: SubscriptionStatus) {
+  switch (status) {
+    case "premium":
+      return "text-amber-500";
+    case "pro":
+      return "text-blue-500";
+    case "basic":
+      return "text-sky-500";
+    case "coach_plan":
+      return "text-emerald-500";
+    default:
+      return "text-muted-foreground";
+  }
+}
 
 export function AccountSummaryCards() {
   const user = useUserStore((s) => s.user);
@@ -34,23 +57,9 @@ export function AccountSummaryCards() {
       .catch(() => setPlan(null));
   }, [user?.selectedPlanId]);
 
-  const statusLabel =
-    user?.subscriptionStatus === "ai_plan"
-      ? "فعال"
-      : user?.subscriptionStatus === "vip"
-        ? "VIP"
-        : user?.subscriptionStatus === "coach_plan"
-          ? "پلن مربی"
-          : "رایگان";
-
-  const statusColor =
-    user?.subscriptionStatus === "vip"
-      ? "text-amber-500"
-      : user?.subscriptionStatus === "ai_plan"
-        ? "text-blue-500"
-        : user?.subscriptionStatus === "coach_plan"
-          ? "text-emerald-500"
-          : "text-muted-foreground";
+  const status = user?.subscriptionStatus ?? "free";
+  const statusLabel = STATUS_LABEL[status] ?? "رایگان";
+  const statusColor = statusTextColor(status);
 
   const cards = [
     {

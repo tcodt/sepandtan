@@ -1,20 +1,19 @@
-import { api } from "./client";
 import type { SubscriptionPlan } from "@/lib/types/plan";
+import { db } from "./db";
+import { delay } from "./client";
 
 export async function getSubscriptionPlans(): Promise<SubscriptionPlan[]> {
-  const plans = await api.get<SubscriptionPlan[]>("/subscriptionPlans");
-  return (plans || [])
+  await delay();
+  return db.subscriptionPlans
     .filter((p) => p.isActive)
-    .sort((a, b) => a.sortOrder - b.sortOrder);
+    .sort((a, b) => a.sortOrder - b.sortOrder)
+    .map((p) => ({ ...p, features: [...p.features] }));
 }
 
 export async function getSubscriptionPlanById(
   id: string,
 ): Promise<SubscriptionPlan | null> {
-  try {
-    return await api.get<SubscriptionPlan>(`/subscriptionPlans/${id}`);
-  } catch {
-    const all = await getSubscriptionPlans();
-    return all.find((p) => p.id === id) ?? null;
-  }
+  await delay();
+  const plan = db.subscriptionPlans.find((p) => p.id === id);
+  return plan ? { ...plan, features: [...plan.features] } : null;
 }

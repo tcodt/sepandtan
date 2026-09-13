@@ -14,7 +14,7 @@ function todayKey() {
 
 /**
  * اگر کاربر وزن اولیه دارد ولی هیچ weightLog ندارد،
- * یک log شروع برایش می‌سازد.
+ * یک log شروع می‌سازد (روی دیتای فیک در حافظه).
  */
 export function useSeedStartWeight(onSeeded?: () => void) {
   const user = useUserStore((s) => s.user);

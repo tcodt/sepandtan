@@ -1063,6 +1063,7 @@ export function generatePlan(input: GenerateInput): Plan {
     days,
     createdAt: new Date().toISOString(),
     source: "ai",
+    status: "active",
     coachId: null,
   };
 }

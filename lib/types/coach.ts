@@ -1,3 +1,5 @@
+/** منبع حقیقت تایپ‌های مربوط به مربی و درخواست همکاری */
+
 export type Coach = {
   id: string;
   userId: string;
