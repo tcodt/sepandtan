@@ -72,7 +72,7 @@ export function CoachCard({ coach, className }: Props) {
     >
       <Card
         className={cn(
-          "h-full border-border/50 bg-muted/50 backdrop-blur-md overflow-hidden",
+          "h-full border-border/50 bg-card/80 dark:bg-card/60 backdrop-blur-md overflow-hidden",
           "transition-all duration-300 ease-out",
           "hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5 hover:-translate-y-1",
           "active:scale-[0.98] active:translate-y-0",

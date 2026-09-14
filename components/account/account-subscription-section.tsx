@@ -54,7 +54,7 @@ export function AccountSubscriptionSection() {
   const isActive = status !== "free";
 
   return (
-    <Card className="border-border/50 bg-linear-to-br from-primary/5 via-muted/30 to-transparent backdrop-blur-sm">
+    <Card className="border-border/50 bg-linear-to-br from-primary/5 via-background/30 to-transparent backdrop-blur-sm">
       <CardContent className="p-4 sm:p-5 space-y-4">
         <div className="flex items-center justify-between">
           <h3 className="text-base sm:text-lg font-semibold text-foreground flex items-center gap-2">

@@ -9,14 +9,14 @@ import {
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import type { MealItem } from "@/lib/data/nutrition";
+import type { PlanMeal } from "@/lib/types/plan";
 import { Check } from "lucide-react";
 
 type ReplaceMealSheetProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   label: string;
-  alternatives: MealItem[];
+  alternatives: PlanMeal[];
   selectedId: string;
   onSelect: (mealId: string) => void;
 };

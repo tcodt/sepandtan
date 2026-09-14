@@ -54,7 +54,7 @@ export function TodayWorkoutCard() {
 
   if (isLoading) {
     return (
-      <Card className="border-border bg-muted/50 backdrop-blur-sm">
+      <Card className="border-border bg-card/80 dark:bg-card/60 backdrop-blur-sm">
         <CardContent className="flex items-center justify-center py-16">
           <Loader2 className="w-6 h-6 animate-spin text-primary" />
         </CardContent>
@@ -64,7 +64,7 @@ export function TodayWorkoutCard() {
 
   if (error || !hasPlan || !todayDay) {
     return (
-      <Card className="border-border bg-muted/50 backdrop-blur-sm">
+      <Card className="border-border bg-card/80 dark:bg-card/60 backdrop-blur-sm">
         <CardContent>
           <motion.div
             initial={{ opacity: 0, y: 8 }}
@@ -75,7 +75,7 @@ export function TodayWorkoutCard() {
               title="برنامه امروز آماده نیست"
               description={
                 error
-                  ? "خطا در بارگذاری برنامه. اتصال یا json-server را چک کن."
+                  ? "خطا در بارگذاری برنامه."
                   : "اول یک برنامه شخصی بساز تا تمرین روزانه فعال شود."
               }
               actionLabel="ساخت برنامه"
@@ -97,7 +97,7 @@ export function TodayWorkoutCard() {
   const allDone = total > 0 && completedCount === total;
 
   return (
-    <Card className="border-border bg-muted/50 backdrop-blur-sm">
+    <Card className="border-border bg-card/80 dark:bg-card/60 backdrop-blur-sm">
       <CardHeader className="pb-3 flex flex-row items-start justify-between gap-3">
         <div>
           <CardTitle className="text-base sm:text-lg">

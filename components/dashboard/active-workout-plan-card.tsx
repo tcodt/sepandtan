@@ -35,7 +35,7 @@ export function ActiveWorkoutPlanCard() {
 
   if (isLoading) {
     return (
-      <Card className="border-border/50 bg-muted/50 backdrop-blur-sm">
+      <Card className="border-border/50 bg-card/80 dark:bg-card/60 backdrop-blur-sm">
         <CardContent className="flex items-center justify-center py-10">
           <Loader2
             className="w-6 h-6 animate-spin text-primary"
@@ -61,7 +61,7 @@ export function ActiveWorkoutPlanCard() {
   return (
     <Card
       className={cn(
-        "border-primary/25 bg-muted/50 backdrop-blur-md",
+        "border-primary/25 bg-card/80 dark:bg-card/60 backdrop-blur-md",
         "shadow-sm shadow-primary/5",
         trialExpired && "border-amber-500/30",
       )}

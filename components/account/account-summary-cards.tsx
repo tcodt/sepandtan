@@ -103,7 +103,7 @@ export function AccountSummaryCards() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.06 }}
             >
-              <Card className="border-border/50 bg-muted/30 backdrop-blur-sm h-full hover:shadow-md transition-shadow">
+              <Card className="border-border/50 bg-card/80 dark:bg-card/60 backdrop-blur-sm h-full hover:shadow-md transition-shadow">
                 <CardContent className="p-3 sm:p-4 space-y-2">
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <Icon className={cn("w-4 h-4", card.color)} />

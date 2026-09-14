@@ -117,7 +117,7 @@ export function DashboardShell() {
   }
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-background via-background to-primary/5">
+    <div className="min-h-screen bg-muted">
       <DashboardHeader />
 
       <main className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6 sm:space-y-8">

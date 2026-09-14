@@ -70,9 +70,9 @@ export function CoachProfile({ coach }: Props) {
 
   return (
     <>
-      <div className="min-h-screen bg-background pb-28">
+      <div className="min-h-screen bg-muted/50 pb-28">
         {/* Hero image */}
-        <div className="relative w-full aspect-[16/10] sm:aspect-[21/9] max-h-[280px] sm:max-h-[320px] bg-muted overflow-hidden">
+        <div className="relative w-full aspect-16/10 sm:aspect-21/9 max-h-70 sm:max-h-80 bg-muted overflow-hidden">
           {coach.avatarUrl && !heroImageError ? (
             <>
               {heroImageLoading && (
@@ -101,7 +101,7 @@ export function CoachProfile({ coach }: Props) {
             <div
               className={cn(
                 "absolute inset-0 flex flex-col items-center justify-center",
-                "bg-gradient-to-br",
+                "bg-linear-to-br",
                 getGradientByName(coach.name),
               )}
             >
@@ -131,7 +131,7 @@ export function CoachProfile({ coach }: Props) {
           )}
 
           {/* Gradient overlay */}
-          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent" />
+          <div className="absolute inset-0 bg-linear-to-t from-background via-background/20 to-transparent" />
 
           {/* Back button */}
           <Link

@@ -61,7 +61,6 @@ export function OnboardingWizard() {
             : undefined,
       });
 
-      // state محلی
       completeOnboarding({
         bodyInfo,
         equipment,
@@ -73,16 +72,16 @@ export function OnboardingWizard() {
             : undefined,
       });
 
-      // برای استفاده فوری در داشبورد
       setPlan(plan);
 
       toast.success("برنامه شخصی‌ات آماده شد!");
+
       if (bodyInfo?.weight) {
         try {
           await addWeightLog({
             userId: user.id,
             weight: bodyInfo.weight,
-            date: plan.startDate, // همان تابع local date
+            date: plan.startDate,
             note: "وزن شروع برنامه",
           });
           localStorage.setItem("sepandtan-welcome-seen", "0");
@@ -90,24 +89,15 @@ export function OnboardingWizard() {
           console.error("seed weight log failed", e);
         }
       }
+
       router.push("/welcome");
     } catch (err) {
       console.error(err);
-
-      // Fallback اگر json-server بالا نباشد
-      const fallbackPlanId = `local_plan_${user.id}_${Date.now()}`;
-      completeOnboarding({
-        bodyInfo,
-        equipment,
-        goal,
-        currentPlanId: fallbackPlanId,
+      // هرگز currentPlanId جعلی ست نشود — کاربر روی step هدف می‌ماند و می‌تواند دوباره تلاش کند
+      setIsGenerating(false);
+      toast.error("ساخت برنامه ناموفق بود", {
+        description: "لطفاً دوباره تلاش کن. برنامه ذخیره نشد.",
       });
-
-      toast.message("برنامه به‌صورت محلی ذخیره شد", {
-        description:
-          "json-server در دسترس نبود. با npm run api سرور را بالا بیاور.",
-      });
-      router.push("/dashboard");
     }
   };
 

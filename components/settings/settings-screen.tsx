@@ -48,7 +48,7 @@ export function SettingsScreen() {
   } = useSettingsStore();
 
   return (
-    <div className="min-h-screen bg-background pb-20 lg:pb-8">
+    <div className="min-h-screen bg-muted pb-20 lg:pb-8">
       <div className="w-full max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-4 sm:space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between gap-3">
@@ -102,7 +102,7 @@ export function SettingsScreen() {
                       "flex items-center gap-1.5 px-3 py-1.5 text-xs transition-all",
                       isActive
                         ? "bg-primary text-primary-foreground"
-                        : "bg-background text-muted-foreground hover:text-foreground hover:bg-muted/50",
+                        : "bg-background text-muted-foreground hover:text-foreground hover:bg-card/80 dark:bg-card/60",
                     )}
                   >
                     <Icon className="w-3.5 h-3.5" />
@@ -177,7 +177,7 @@ export function SettingsScreen() {
                     "px-3 py-1.5 text-xs uppercase transition-colors",
                     weightUnit === u
                       ? "bg-primary text-primary-foreground"
-                      : "bg-background text-muted-foreground hover:text-foreground hover:bg-muted/50",
+                      : "bg-background text-muted-foreground hover:text-foreground hover:bg-card/80 dark:bg-card/60",
                   )}
                 >
                   {u}
@@ -197,7 +197,7 @@ export function SettingsScreen() {
                     "px-3 py-1.5 text-xs uppercase transition-colors",
                     heightUnit === u
                       ? "bg-primary text-primary-foreground"
-                      : "bg-background text-muted-foreground hover:text-foreground hover:bg-muted/50",
+                      : "bg-background text-muted-foreground hover:text-foreground hover:bg-card/80 dark:bg-card/60",
                   )}
                 >
                   {u}
@@ -230,7 +230,7 @@ export function SettingsScreen() {
                     "px-3 py-1.5 text-xs transition-colors",
                     language === item.value
                       ? "bg-primary text-primary-foreground"
-                      : "bg-background text-muted-foreground hover:text-foreground hover:bg-muted/50",
+                      : "bg-background text-muted-foreground hover:text-foreground hover:bg-card/80 dark:bg-card/60",
                   )}
                 >
                   {item.label}

@@ -10,7 +10,7 @@ import { AccountSummaryCards } from "./account-summary-cards";
 
 export function AccountScreen() {
   return (
-    <div className="min-h-screen bg-background pb-20 lg:pb-8">
+    <div className="min-h-screen bg-muted pb-20 lg:pb-8">
       <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-4 sm:space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between gap-3">
@@ -41,7 +41,7 @@ export function AccountScreen() {
         </div>
 
         {/* Profile Header Card */}
-        <div className="rounded-2xl border border-border/50 bg-linear-to-br from-primary/5 via-muted/30 to-transparent backdrop-blur-sm p-4 sm:p-6">
+        <div className="rounded-2xl border border-border/50 bg-linear-to-br from-primary/5 via-background/30 to-transparent backdrop-blur-sm p-4 sm:p-6">
           <ProfileHeader />
         </div>
 
@@ -52,7 +52,7 @@ export function AccountScreen() {
         <AccountSubscriptionSection />
 
         {/* Edit Profile Form */}
-        <div className="rounded-2xl border border-border/50 bg-muted/30 backdrop-blur-sm p-4 sm:p-6">
+        <div className="rounded-2xl border border-border/50 bg-card/80 dark:bg-card/60 backdrop-blur-sm p-4 sm:p-6">
           <h2 className="text-sm sm:text-base font-semibold text-foreground mb-4 flex items-center gap-2">
             <Shield className="w-4 h-4 text-primary" />
             ویرایش اطلاعات

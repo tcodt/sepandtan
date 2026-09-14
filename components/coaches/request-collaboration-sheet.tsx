@@ -97,7 +97,7 @@ export function RequestCollaborationSheet({
 
   return (
     <Drawer open={open} onOpenChange={handleOpenChange}>
-      <DrawerContent className="max-w-lg mx-auto max-h-[92vh]">
+      <DrawerContent className="max-w-lg mx-auto max-h-[92vh] bg-muted">
         <DrawerHeader className="text-right pb-2">
           <DrawerTitle className="text-lg">
             درخواست همکاری با {coach.name}
@@ -133,7 +133,7 @@ export function RequestCollaborationSheet({
                       type="button"
                       onClick={() => setGoal(g.id)}
                       className={cn(
-                        "rounded-full px-3.5 py-2 text-xs sm:text-sm border transition-all min-h-[40px]",
+                        "rounded-full px-3.5 py-2 text-xs sm:text-sm border transition-all min-h-10",
                         active
                           ? "bg-primary text-primary-foreground border-primary shadow-sm"
                           : "bg-card/80 border-border text-foreground hover:bg-muted/80",
@@ -177,7 +177,7 @@ export function RequestCollaborationSheet({
                 className={cn(
                   "w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm",
                   "placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring",
-                  "resize-none min-h-[100px]",
+                  "resize-none min-h-25",
                 )}
                 maxLength={MAX_MESSAGE}
               />
