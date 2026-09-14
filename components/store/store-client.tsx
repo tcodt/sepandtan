@@ -33,10 +33,10 @@ export default function StoreClient({ initialItems }: StoreClientProps) {
   }, [initialItems, selectedCategory, query]);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-muted">
       {/* Header */}
       <div className="sticky top-16 z-20 border-b border-border bg-background/80 backdrop-blur-md">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 space-y-4">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 space-y-4 flex flex-row flex-wrap items-center justify-between gap-4">
           <div className="flex items-center justify-between gap-3">
             <div>
               <h1 className="text-xl sm:text-2xl font-bold text-foreground flex items-center gap-2">
@@ -49,13 +49,13 @@ export default function StoreClient({ initialItems }: StoreClientProps) {
             </div>
           </div>
 
-          <div className="relative">
+          <div className="relative flex-1">
             <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="جستجوی محصول..."
-              className="h-11 pr-10 rounded-xl"
+              className="h-11 pr-10 rounded-xl bg-background"
             />
           </div>
 

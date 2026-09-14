@@ -198,7 +198,7 @@ export function CoachesList() {
             onChange={(e) => setQuery(e.target.value)}
             placeholder="جستجوی نام، تخصص یا شهر..."
             className={cn(
-              "pr-10 h-10 sm:h-11 rounded-xl bg-muted/50 border-border/60",
+              "pr-10 h-10 sm:h-11 rounded-xl bg-card/80 dark:bg-card/60 border-border/60",
               "focus-visible:ring-primary/30 text-sm w-full sm:w-2/4",
               query && "pl-10",
             )}

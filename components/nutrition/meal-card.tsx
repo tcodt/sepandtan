@@ -3,12 +3,12 @@
 import { CheckCircle2, Circle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import type { MealItem } from "@/lib/data/nutrition";
+import type { PlanMeal } from "@/lib/types/plan";
 
 type MealCardProps = {
   label: string;
   timeLabel: string;
-  meal: MealItem;
+  meal: PlanMeal;
   eaten: boolean;
   onToggleEaten: () => void;
   onReplace: () => void;
@@ -26,7 +26,9 @@ export function MealCard({
     <div
       className={cn(
         "rounded-2xl border p-4 transition-all",
-        eaten ? "border-primary/30 bg-primary/5" : "border-border bg-muted/50",
+        eaten
+          ? "border-primary/30 bg-primary/5"
+          : "border-border bg-card/80 dark:bg-card/60",
       )}
     >
       <div className="flex items-start justify-between gap-3">

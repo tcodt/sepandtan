@@ -212,7 +212,7 @@ export function ProfileForm() {
         </Label>
         <Input
           id="name"
-          className="h-11 bg-background"
+          className="h-11"
           {...form.register("name")}
           placeholder="نام خود را وارد کنید"
         />
@@ -287,7 +287,7 @@ export function ProfileForm() {
             <Input
               id="age"
               type="number"
-              className="h-11 bg-background"
+              className="h-11"
               {...form.register("age")}
             />
             {form.formState.errors.age && (
@@ -307,7 +307,7 @@ export function ProfileForm() {
             <Input
               id="height"
               type="number"
-              className="h-11 bg-background"
+              className="h-11"
               {...form.register("height")}
             />
             {form.formState.errors.height && (
@@ -327,7 +327,7 @@ export function ProfileForm() {
             <Input
               id="weight"
               type="number"
-              className="h-11 bg-background"
+              className="h-11"
               {...form.register("weight")}
             />
             {form.formState.errors.weight && (

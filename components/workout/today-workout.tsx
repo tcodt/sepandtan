@@ -278,14 +278,14 @@ export function TodayWorkout() {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-20 lg:pb-8">
+    <div className="min-h-screen bg-muted pb-20 lg:pb-8">
       <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-4 sm:space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
           <div className="flex items-start gap-2 sm:gap-3">
             <Link
               href="/dashboard"
-              className="p-2 -mr-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors shrink-0 mt-0.5"
+              className="p-2 -mr-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-card/80 dark:bg-card/60 transition-colors shrink-0 mt-0.5"
               aria-label="بازگشت"
             >
               <ArrowLeft className="w-5 h-5" />
@@ -294,7 +294,7 @@ export function TodayWorkout() {
               <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-foreground flex items-center gap-2 flex-wrap">
                 <Dumbbell className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
                 <span>تمرین امروز</span>
-                <span className="text-sm font-normal text-muted-foreground bg-muted/50 px-2.5 py-0.5 rounded-full">
+                <span className="text-sm font-normal text-muted-foreground bg-card/80 dark:bg-card/60 px-2.5 py-0.5 rounded-full">
                   روز {currentDayNumber}
                 </span>
               </h1>
@@ -366,7 +366,7 @@ export function TodayWorkout() {
         </div>
 
         {/* Exercises List */}
-        <Card className="border-border/50 bg-muted/30 backdrop-blur-sm">
+        <Card className="border-border/50 bg-card/80 dark:bg-card/60 backdrop-blur-sm">
           <CardHeader className="pb-2 sm:pb-3">
             <CardTitle className="text-sm sm:text-base flex items-center justify-between">
               <span>حرکات تمرینی</span>

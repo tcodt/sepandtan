@@ -57,12 +57,12 @@ export default function CoachesPage() {
     ) : null;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-muted">
       <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-6">
         <header className="flex items-center gap-2 sm:gap-3">
           <Link
             href="/dashboard"
-            className="p-2 -mr-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors shrink-0"
+            className="p-2 -mr-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-card/80 dark:bg-card/60 transition-colors shrink-0"
             aria-label="بازگشت"
           >
             <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6" />
@@ -82,7 +82,7 @@ export default function CoachesPage() {
             <Button
               variant="outline"
               size="default"
-              className="gap-2 border-border/60 bg-muted/50 hover:bg-card hover:border-primary/40 transition-all duration-200 shadow-sm"
+              className="gap-2 border-border/60 bg-card/80 dark:bg-card/60 hover:bg-card hover:border-primary/40 transition-all duration-200 shadow-sm"
             >
               <FileText className="w-4 h-4" />
               <span>درخواست‌های من</span>
@@ -97,7 +97,7 @@ export default function CoachesPage() {
             <Button
               variant="outline"
               size="sm"
-              className="gap-1.5 border-border/60 bg-muted/50 hover:bg-card hover:border-primary/40 transition-all text-xs"
+              className="gap-1.5 border-border/60 bg-card/80 dark:bg-card/60 hover:bg-card hover:border-primary/40 transition-all text-xs"
             >
               <FileText className="w-3.5 h-3.5" />
               <span>درخواست‌ها</span>
