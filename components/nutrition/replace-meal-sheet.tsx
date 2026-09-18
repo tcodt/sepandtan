@@ -69,7 +69,7 @@ export function ReplaceMealSheet({
                       {item.description}
                     </p>
                     <p className="text-xs text-muted-foreground mt-2">
-                      {item.calories.toLocaleString("fa-IR")} کالری
+                      {item?.calories?.toLocaleString("fa-IR")} کالری
                     </p>
                   </div>
                   {active && (

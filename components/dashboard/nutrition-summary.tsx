@@ -71,10 +71,10 @@ export function NutritionSummary() {
   }
 
   const meals = todayDay.meals;
-  const target = todayDay.dailyCaloriesTarget;
+  const target = todayDay.dailyCaloriesTarget ?? 0;
 
   const eatenMeals = meals.filter((m) => statusMap.get(m.id) === "eaten");
-  const consumed = eatenMeals.reduce((sum, m) => sum + m.calories, 0);
+  const consumed = eatenMeals.reduce((sum, m) => sum + (m?.calories || 0), 0);
   const progress = target > 0 ? Math.min((consumed / target) * 100, 100) : 0;
 
   return (
@@ -121,7 +121,7 @@ export function NutritionSummary() {
                   {eaten ? " ✓" : skipped ? " —" : ""}
                 </span>
                 <span className="text-muted-foreground tabular-nums shrink-0">
-                  {meal.calories.toLocaleString("fa-IR")} کالری
+                  {meal?.calories?.toLocaleString("fa-IR")} کالری
                 </span>
               </div>
             );

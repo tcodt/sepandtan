@@ -97,7 +97,7 @@ export function TodayNutrition() {
   const consumed = useMemo(() => {
     return meals.reduce((sum, m) => {
       const st = mealStates.find((s) => s.mealId === m.id);
-      if (st?.status === "eaten") return sum + m.calories;
+      if (st?.status === "eaten") return sum + (m.calories ?? 0);
       return sum;
     }, 0);
   }, [meals, mealStates]);
@@ -338,7 +338,7 @@ export function TodayNutrition() {
                         </div>
                         <div className="text-right shrink-0">
                           <p className="text-xs sm:text-sm font-bold text-foreground tabular-nums">
-                            {meal.calories.toLocaleString("fa-IR")}
+                            {meal?.calories?.toLocaleString("fa-IR")}
                           </p>
                           <p className="text-[10px] text-muted-foreground">
                             کالری

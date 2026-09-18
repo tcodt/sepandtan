@@ -51,7 +51,7 @@ export function MealCard({
             {meal.description}
           </p>
           <p className="text-xs text-muted-foreground mt-2">
-            {meal.calories.toLocaleString("fa-IR")} کالری
+            {meal?.calories?.toLocaleString("fa-IR")} کالری
             {meal.protein != null && ` · پروتئین ${meal.protein}g`}
           </p>
         </div>
