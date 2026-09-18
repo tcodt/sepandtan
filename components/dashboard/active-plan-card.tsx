@@ -19,23 +19,23 @@ export function ActivePlanCard() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (!user?.selectedPlanId) {
+    if (!user?.currentPlanId) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setPlan(null);
       return;
     }
 
     setLoading(true);
-    getSubscriptionPlanById(user.selectedPlanId)
+    getSubscriptionPlanById(user.currentPlanId)
       .then((data) => setPlan(data))
       .catch(() => setPlan(null))
       .finally(() => setLoading(false));
-  }, [user?.selectedPlanId]);
+  }, [user?.currentPlanId]);
 
   // برچسب فارسی از helper — بدون مقایسهٔ مستقیم با literalهای قدیمی
   const statusLabel = getSubscriptionLabel(
     user?.subscriptionStatus,
-    user?.selectedPlanId,
+    user?.currentPlanId,
   );
 
   const isPaid = isPaidSubscription(user);

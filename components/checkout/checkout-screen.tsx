@@ -102,12 +102,12 @@ export function CheckoutScreen() {
       const nextStatus: SubscriptionStatus = subscriptionStatusFromPlan(plan);
 
       const updated = await updateUser(user.id, {
-        selectedPlanId: plan.id,
+        currentPlanId: plan.id,
         subscriptionStatus: nextStatus,
       });
 
       updateProfile({
-        selectedPlanId: plan.id,
+        currentPlanId: plan.id,
         subscriptionStatus: updated.subscriptionStatus ?? nextStatus,
       });
 

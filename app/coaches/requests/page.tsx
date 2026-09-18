@@ -7,7 +7,7 @@ import { useRequireAuth } from "@/hooks/use-require-auth";
 
 export default function MyRequestsPage() {
   const { isLoading, isAuthenticated } = useRequireAuth({
-    requireOnboarding: true,
+    requireOnboarding: false, // مربی ممکن است onboarding کاربر را رد کرده باشد
   });
 
   if (isLoading || !isAuthenticated) {
@@ -19,7 +19,7 @@ export default function MyRequestsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-muted">
       <div className="max-w-lg sm:max-w-2xl lg:max-w-5xl mx-auto px-4 sm:px-6 py-5 sm:py-8 space-y-5">
         <header className="flex items-start gap-2">
           <Link

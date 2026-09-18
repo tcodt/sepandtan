@@ -27,7 +27,7 @@ export const users: UserProfile[] = [
     goal: "lose_weight",
     onboardingCompleted: true,
     currentPlanId: "plan_ali_coach_1",
-    selectedPlanId: null,
+
     subscriptionStatus: "coach_plan",
     targetWeight: 75,
     createdAt: "2026-08-01T10:00:00.000Z",
@@ -46,7 +46,7 @@ export const users: UserProfile[] = [
     goal: undefined,
     onboardingCompleted: false,
     currentPlanId: null,
-    selectedPlanId: null,
+
     subscriptionStatus: "free",
     targetWeight: undefined,
     createdAt: "2026-08-10T12:00:00.000Z",
@@ -71,7 +71,6 @@ export const users: UserProfile[] = [
     goal: "build_muscle",
     onboardingCompleted: true,
     currentPlanId: "plan_reza_ai_1",
-    selectedPlanId: "basic",
     subscriptionStatus: "basic",
     targetWeight: 92,
     createdAt: "2026-08-05T09:00:00.000Z",
@@ -87,7 +86,7 @@ export const users: UserProfile[] = [
     avatarUrl: "/images/athlete-1.jpg",
     onboardingCompleted: true,
     currentPlanId: null,
-    selectedPlanId: null,
+
     subscriptionStatus: "free",
     createdAt: "2026-07-15T08:00:00.000Z",
     updatedAt: "2026-07-15T08:00:00.000Z",
@@ -102,7 +101,7 @@ export const users: UserProfile[] = [
     avatarUrl: "/images/athlete-3.jpg",
     onboardingCompleted: true,
     currentPlanId: null,
-    selectedPlanId: null,
+
     subscriptionStatus: "free",
     createdAt: "2026-07-20T09:00:00.000Z",
     updatedAt: "2026-07-20T09:00:00.000Z",
@@ -117,7 +116,7 @@ export const users: UserProfile[] = [
     avatarUrl: "/images/athlete-4.jpg",
     onboardingCompleted: true,
     currentPlanId: null,
-    selectedPlanId: null,
+
     subscriptionStatus: "free",
     createdAt: "2026-08-01T10:00:00.000Z",
     updatedAt: "2026-08-01T10:00:00.000Z",

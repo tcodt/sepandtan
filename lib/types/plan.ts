@@ -1,33 +1,24 @@
-/** تایپ های مشترک برنامه تمرینی، رژیم، کاربر و اشتراک */
+/** انواع مشترک برنامه تمرینی و رژیمی — منبع حقیقت برای User Flow + Coach Flow */
+
+import { ReactNode } from "react";
 
 export type Gender = "male" | "female";
-
 export type ActivityLevel =
   | "sedentary"
   | "light"
   | "moderate"
   | "active"
   | "very_active";
-
 export type Equipment = "home" | "gym" | "both";
-
 export type Goal =
   | "lose_weight"
   | "build_muscle"
   | "maintain"
   | "endurance"
   | "general_fitness";
-
 export type UserRole = "user" | "coach" | "admin";
 
-/**
- * سطح اشتراک کاربر (جدا از برنامه تمرینی)
- * free     → بدون اشتراک پولی
- * basic    → اشتراک پایه
- * pro      → اشتراک حرفه‌ای
- * premium  → اشتراک کامل
- * coach_plan → برنامه اختصاصی مربی (سطح اشتراک جداگانه)
- */
+/** مدل اشتراک قفل‌شده */
 export type SubscriptionStatus =
   | "free"
   | "basic"
@@ -38,8 +29,8 @@ export type SubscriptionStatus =
 export type BodyInfo = {
   gender: Gender;
   age: number;
-  height: number; // cm
-  weight: number; // kg
+  height: number;
+  weight: number;
   activityLevel: ActivityLevel;
 };
 
@@ -55,19 +46,7 @@ export type UserProfile = {
   equipment?: Equipment;
   goal?: Goal;
   onboardingCompleted: boolean;
-
-  /**
-   * Source of Truth برای برنامه تمرینی فعال.
-   * فقط یک plan با status="active" باید به این id اشاره کند.
-   */
   currentPlanId?: string | null;
-
-  /**
-   * فقط برای اشتراک خریداری‌شده (draft/انتخاب‌شده در checkout).
-   * مستقل از training plan است.
-   */
-  selectedPlanId?: string | null;
-
   subscriptionStatus: SubscriptionStatus;
   targetWeight?: number;
   createdAt: string;
@@ -89,7 +68,8 @@ export type PlanMeal = {
   type: "breakfast" | "snack" | "lunch" | "dinner";
   title: string;
   description: string;
-  calories: number;
+  /** برای برنامه مربی اختیاری است */
+  calories?: number;
   protein?: number;
   carbs?: number;
   fat?: number;
@@ -103,33 +83,47 @@ export type PlanDay = {
   estimatedMinutes: number;
   exercises: PlanExercise[];
   meals: PlanMeal[];
-  dailyCaloriesTarget: number;
+  /** برای برنامه مربی اختیاری است */
+  dailyCaloriesTarget?: number;
 };
 
-/**
- * برنامه تمرینی + رژیمی
- * در هر لحظه فقط یک برنامه با status="active" برای هر کاربر مجاز است.
- */
+/** وضعیت‌های برنامه */
+export type PlanStatus =
+  | "draft"
+  | "published"
+  | "assigned"
+  | "active"
+  | "archived";
+
+/** نوع الگوی برنامه */
+export type PlanPatternType = "full" | "weekly";
+
 export type Plan = {
   id: string;
-  userId: string;
+  /** null تا زمان Assign/Activate برای برنامه مربی */
+  userId: string | null;
   goal: Goal;
   equipment: Equipment;
   level: "beginner" | "intermediate" | "advanced";
   title: string;
   description: string;
-  startDate: string;
+  /** null تا زمان Activate */
+  startDate: string | null;
   durationDays: number;
   days: PlanDay[];
   createdAt: string;
-
-  /** منبع ساخت برنامه */
   source: "ai" | "coach";
-
-  /** وضعیت برنامه — فقط یکی active باشد */
-  status: "active" | "archived";
-
   coachId?: string | null;
+
+  // ——— فیلدهای جدید Coach Flow ———
+  status: PlanStatus;
+  patternType?: PlanPatternType; // پیش‌فرض منطقی برای AI = "full"
+  weeklyTemplate?: PlanDay[]; // دقیقاً ۷ روز — فقط برای weekly
+  durationWeeks?: 4 | 6 | 8;
+  clientRelationId?: string | null;
+  publishedAt?: string | null;
+  assignedAt?: string | null;
+  activatedAt?: string | null;
 };
 
 export type WorkoutLog = {
@@ -168,15 +162,37 @@ export type WeightLog = {
   note?: string;
 };
 
+export type CoachProfile = {
+  id: string;
+  userId: string;
+  name: string;
+  bio: string;
+  specialties: string[];
+  experienceYears: number;
+  rating: number;
+  reviewCount: number;
+  pricePerPlan: number;
+  pricePerConsultation: number;
+  avatarUrl?: string;
+  verified: boolean;
+  isActive: boolean;
+  samplePlans?: string[];
+  createdAt: string;
+  /** نمایش کمیسیون در MVP (۲۰–۲۵٪) */
+  commissionRateDisplay?: string;
+  documentsStatus?: "none" | "pending" | "approved" | "rejected";
+};
+
+/** پلن‌های اشتراک قابل فروش */
 export type SubscriptionPlan = {
+  periodLabel: ReactNode;
   id: string;
   name: string;
-  price: number;
-  periodLabel: string;
-  featured: boolean;
-  badge?: string | null;
-  ctaLabel: string;
-  sortOrder: number;
-  isActive: boolean;
+  status: SubscriptionStatus; // free | basic | pro | premium | coach_plan
+  price: number; // به تومان
+  durationDays: number;
   features: string[];
+  isPopular?: boolean;
+  description?: string;
+  createdAt?: string;
 };

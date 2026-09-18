@@ -69,6 +69,9 @@ export async function generateAndSavePlan(input: {
 }
 
 export function getCurrentDayNumber(plan: Plan, today = new Date()): number {
+  // برنامه‌هایی که هنوز Activate نشده‌اند (startDate = null)
+  if (!plan.startDate) return 1;
+
   const start = new Date(plan.startDate);
   start.setHours(0, 0, 0, 0);
   const current = new Date(today);
@@ -85,16 +88,18 @@ export function getCurrentDayNumber(plan: Plan, today = new Date()): number {
 }
 
 export function getDayFromPlan(plan: Plan, dayNumber: number): PlanDay | null {
-  const exact = plan.days.find((d) => d.dayNumber === dayNumber);
-  if (exact) return exact;
+  // پشتیبانی الگوی هفتگی مربی
+  if (
+    plan.patternType === "weekly" &&
+    Array.isArray(plan.weeklyTemplate) &&
+    plan.weeklyTemplate.length === 7
+  ) {
+    const dayInCycle = ((dayNumber - 1) % 7) + 1;
+    return plan.weeklyTemplate.find((d) => d.dayNumber === dayInCycle) ?? null;
+  }
 
-  if (!plan.days.length) return null;
-  const idx = (dayNumber - 1) % plan.days.length;
-  const fallback = plan.days[idx];
-  return {
-    ...fallback,
-    dayNumber,
-  };
+  // رفتار قبلی برای برنامه‌های AI و برنامه‌های قدیمی مربی
+  return plan.days.find((d) => d.dayNumber === dayNumber) ?? null;
 }
 
 export async function getTodayPlanDay(planId: string) {

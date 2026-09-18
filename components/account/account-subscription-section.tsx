@@ -38,15 +38,15 @@ export function AccountSubscriptionSection() {
   const [plan, setPlan] = useState<SubscriptionPlan | null>(null);
 
   useEffect(() => {
-    if (!user?.selectedPlanId) {
+    if (!user?.currentPlanId) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setPlan(null);
       return;
     }
-    getSubscriptionPlanById(user.selectedPlanId)
+    getSubscriptionPlanById(user.currentPlanId)
       .then(setPlan)
       .catch(() => setPlan(null));
-  }, [user?.selectedPlanId]);
+  }, [user?.currentPlanId]);
 
   const status = user?.subscriptionStatus ?? "free";
   const statusLabel = STATUS_LABEL[status] ?? "رایگان";

@@ -7,6 +7,7 @@ import type {
   SubscriptionPlan,
 } from "@/lib/types/plan";
 import type { Coach, CollaborationRequest } from "@/lib/types/coach";
+import type { ClientRelation } from "@/lib/types/client-relation";
 
 import { users as seedUsers } from "@/lib/data/users";
 import { plans as seedPlans } from "@/lib/data/plans";
@@ -16,6 +17,7 @@ import { subscriptionPlans as seedSubscriptionPlans } from "@/lib/data/subscript
 import { workoutLogs as seedWorkoutLogs } from "@/lib/data/workout-logs";
 import { nutritionLogs as seedNutritionLogs } from "@/lib/data/nutrition-logs";
 import { weightLogs as seedWeightLogs } from "@/lib/data/weight-logs";
+import { clientRelations as seedClientRelations } from "@/lib/data/client-relations";
 
 /**
  * کپی mutable از دیتای فیک
@@ -38,9 +40,12 @@ export const db = {
   collaborationRequests: seedRequests.map((r) => ({
     ...r,
   })) as CollaborationRequest[],
+  clientRelations: seedClientRelations.map((r) => ({
+    ...r,
+  })) as ClientRelation[],
   subscriptionPlans: seedSubscriptionPlans.map((p) => ({
     ...p,
-    features: [...p.features],
+    features: [...(p.features ?? [])],
   })) as SubscriptionPlan[],
   workoutLogs: seedWorkoutLogs.map((l) => ({
     ...l,
