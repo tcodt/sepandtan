@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Loader2, Check, Sparkles, Zap, Crown } from "lucide-react";
+import { Loader2, Check, Sparkles, Zap } from "lucide-react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay } from "swiper/modules";
 import "swiper/css";
@@ -33,7 +33,7 @@ function PlanCard({
   onSelect: (plan: SubscriptionPlan) => void;
   isMobile?: boolean;
 }) {
-  const isFeatured = plan.featured;
+  const isFeatured = !!plan.isPopular;
 
   return (
     <Card
@@ -47,10 +47,10 @@ function PlanCard({
         ${isMobile ? "mx-1" : ""}
       `}
     >
-      {isFeatured && plan.badge && (
+      {isFeatured && (
         <div className="absolute -top-3 right-4 bg-linear-to-r from-primary to-primary/80 text-primary-foreground px-4 py-1.5 rounded-full text-xs font-bold shadow-lg flex items-center gap-1.5">
           <span className="animate-pulse">★</span>
-          {plan.badge}
+          محبوب
         </div>
       )}
 
@@ -66,10 +66,8 @@ function PlanCard({
             }
           `}
           >
-            {isFeatured && plan.badge?.includes("محبوب") ? (
+            {isFeatured ? (
               <Zap className="w-6 h-6" />
-            ) : isFeatured ? (
-              <Crown className="w-6 h-6" />
             ) : (
               <Sparkles className="w-6 h-6" />
             )}
@@ -122,7 +120,7 @@ function PlanCard({
           `}
           onClick={() => onSelect(plan)}
         >
-          {plan.ctaLabel || "انتخاب پلن"}
+          انتخاب پلن
           {isFeatured && <Sparkles className="w-4 h-4 ml-2" />}
         </Button>
       </CardFooter>
@@ -184,10 +182,10 @@ export default function Plans() {
     }, 300);
   };
 
-  // Sort plans: featured first, then by price
+  // Sort plans: popular first, then by price
   const sortedPlans = [...plans].sort((a, b) => {
-    if (a.featured && !b.featured) return -1;
-    if (!a.featured && b.featured) return 1;
+    if (a.isPopular && !b.isPopular) return -1;
+    if (!a.isPopular && b.isPopular) return 1;
     return a.price - b.price;
   });
 

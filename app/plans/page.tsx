@@ -66,10 +66,7 @@ export default function PlansPage() {
       : 0;
     const total = plans.length;
     const archivedCount = Math.max(total - normalizedActive, 0);
-    const planLabel = getSubscriptionLabel(
-      user?.subscriptionStatus,
-      user?.selectedPlanId,
-    );
+    const planLabel = getSubscriptionLabel(user?.subscriptionStatus);
 
     return {
       activeCount: normalizedActive,
@@ -77,12 +74,7 @@ export default function PlansPage() {
       total,
       planLabel,
     };
-  }, [
-    plans,
-    user?.currentPlanId,
-    user?.subscriptionStatus,
-    user?.selectedPlanId,
-  ]);
+  }, [plans, user?.currentPlanId, user?.subscriptionStatus]);
 
   if (isLoading || !isAuthenticated) {
     return (

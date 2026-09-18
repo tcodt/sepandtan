@@ -46,7 +46,6 @@ export async function createUser(data: {
     role: "user",
     onboardingCompleted: false,
     currentPlanId: null,
-    selectedPlanId: null,
     subscriptionStatus: "free",
     createdAt: new Date().toISOString(),
   };

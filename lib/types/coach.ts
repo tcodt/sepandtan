@@ -17,14 +17,27 @@ export type Coach = {
   city?: string;
   samplePlans?: string[];
   createdAt: string;
+  /** نمایش کمیسیون در MVP (مثلاً "۲۰–۲۵٪") */
+  commissionRateDisplay?: string;
+  documentsStatus?: "none" | "pending" | "approved" | "rejected";
 };
 
+export type CollaborationRequestStatus =
+  | "pending"
+  | "accepted"
+  | "rejected"
+  | "cancelled";
+
 export type CollaborationRequest = {
-  id?: string;
+  id: string; // الزامی
   userId: string;
   coachId: string;
   goal: string;
   message: string;
-  status: "pending" | "accepted" | "rejected" | "cancelled";
+  status: CollaborationRequestStatus;
   createdAt: string;
+  /** بعد از Accept یا Reject پر می‌شود */
+  respondedAt?: string | null;
+  acceptedAt?: string | null;
+  rejectionReason?: string | null;
 };

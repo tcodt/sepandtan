@@ -90,6 +90,12 @@ export default function LoginPage() {
         return;
       }
 
+      // اولویت ۲: مربی‌ها مستقیم به پنل مربی
+      if (safeUser.role === "coach") {
+        router.replace("/coach");
+        return;
+      }
+
       if (safeUser.onboardingCompleted) {
         router.replace("/dashboard");
       } else {

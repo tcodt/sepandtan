@@ -19,6 +19,7 @@ import {
   isFreeTrialExpired,
 } from "@/lib/subscription/access";
 import { cn } from "@/lib/utils";
+import { CoachPlanBadge } from "@/components/common/coach-plan-badge";
 
 const LEVEL_FA = {
   beginner: "مبتدی",
@@ -29,6 +30,8 @@ const LEVEL_FA = {
 export function ActiveWorkoutPlanCard() {
   const { user, plan, currentDayNumber, isLoading, hasPlan, error } =
     useUserPlan();
+
+  const isCoachPlan = plan?.source === "coach";
 
   // بدون currentPlanId → کارت را نشان نده (Empty State جایگزین می‌شود)
   if (!user?.currentPlanId) return null;
@@ -50,7 +53,7 @@ export function ActiveWorkoutPlanCard() {
 
   const subLabel = getSubscriptionLabel(
     user.subscriptionStatus,
-    user.selectedPlanId,
+    user.currentPlanId,
   );
   const trialLeft = getFreeTrialDaysLeft(user);
   const trialExpired = isFreeTrialExpired(user);
@@ -72,6 +75,19 @@ export function ActiveWorkoutPlanCard() {
             <Sparkles className="w-3 h-3" />
             برنامه فعال
           </Badge>
+
+          {isCoachPlan ? (
+            <CoachPlanBadge coachName={plan.coachId ?? null} />
+          ) : (
+            <Badge
+              variant="outline"
+              className="rounded-full text-[10px] sm:text-xs font-normal gap-1"
+            >
+              <Bot className="w-3 h-3" />
+              ساخته‌شده با هوش مصنوعی
+            </Badge>
+          )}
+
           <Badge
             variant="outline"
             className="rounded-full text-[10px] sm:text-xs font-normal"

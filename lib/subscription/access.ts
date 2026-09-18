@@ -25,7 +25,7 @@ export function subscriptionStatusFromPlan(
 export function getSubscriptionLabel(
   status: SubscriptionStatus | string | undefined | null,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  _selectedPlanId?: string | null,
+  _currentPlanId?: string | null,
 ): string {
   switch (status) {
     case "basic":
