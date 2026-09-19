@@ -19,6 +19,7 @@ import type { Plan } from "@/lib/types/plan";
 export default function PlansPage() {
   const { isLoading, isAuthenticated } = useRequireAuth({
     requireOnboarding: true,
+    blockCoach: true, // ← مربی اینجا نیاید
   });
 
   const user = useUserStore((s) => s.user);
@@ -76,7 +77,7 @@ export default function PlansPage() {
     };
   }, [plans, user?.currentPlanId, user?.subscriptionStatus]);
 
-  if (isLoading || !isAuthenticated) {
+  if (isLoading || !isAuthenticated || user?.role === "coach") {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-linear-to-b from-background to-muted/30">
         <div className="relative">

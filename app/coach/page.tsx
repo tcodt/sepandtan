@@ -46,7 +46,7 @@ export default function CoachDashboardPage() {
       ]);
 
       const pending = db.collaborationRequests.filter(
-        (r) => r.coachId === coach.id && r.status === "pending"
+        (r) => r.coachId === coach.id && r.status === "pending",
       );
 
       // اضافه کردن نام کاربر به درخواست‌ها
@@ -84,14 +84,14 @@ export default function CoachDashboardPage() {
       {/* Header */}
       <div className="flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold">سلام، {user?.name?.split(" ")[0]}</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            پنل مربی سپندتن
-          </p>
+          <h1 className="text-2xl font-bold">
+            سلام، {user?.name?.split(" ")[0]}
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1">پنل مربی سپندتن</p>
         </div>
 
         <Button asChild className="gap-2">
-          <Link href="/coach/plans">
+          <Link href="/coach/plans/new">
             <Plus className="w-4 h-4" />
             ساخت برنامه جدید
           </Link>

@@ -7,17 +7,25 @@ import { ProfileHeader } from "./profile-header";
 import { ProfileForm } from "./profile-form";
 import { AccountSubscriptionSection } from "./account-subscription-section";
 import { AccountSummaryCards } from "./account-summary-cards";
+import { BecomeCoachCard } from "./become-coach-card";
+import { CoachAccountSection } from "./coach-account-section";
+import { useUserStore } from "@/lib/store/user-store";
 
 export function AccountScreen() {
+  const user = useUserStore((s) => s.user);
+  const isCoach = user?.role === "coach";
+
   return (
     <div className="min-h-screen bg-muted pb-20 lg:pb-8">
       <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-4 sm:space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between gap-3">
           <Button variant="ghost" size="sm" asChild className="gap-1.5 -ml-2">
-            <Link href="/dashboard">
+            <Link href={isCoach ? "/coach" : "/dashboard"}>
               <ArrowRight className="w-4 h-4" />
-              <span className="hidden sm:inline">داشبورد</span>
+              <span className="hidden sm:inline">
+                {isCoach ? "پنل مربی" : "داشبورد"}
+              </span>
             </Link>
           </Button>
 
@@ -40,18 +48,23 @@ export function AccountScreen() {
           </div>
         </div>
 
-        {/* Profile Header Card */}
+        {/* Profile Header */}
         <div className="rounded-2xl border border-border/50 bg-linear-to-br from-primary/5 via-background/30 to-transparent backdrop-blur-sm p-4 sm:p-6">
           <ProfileHeader />
         </div>
 
-        {/* Summary Cards */}
-        <AccountSummaryCards />
+        {/* محتوای شرطی بر اساس نقش */}
+        {isCoach ? (
+          <CoachAccountSection />
+        ) : (
+          <>
+            <AccountSummaryCards />
+            <AccountSubscriptionSection />
+            <BecomeCoachCard />
+          </>
+        )}
 
-        {/* Subscription Section */}
-        <AccountSubscriptionSection />
-
-        {/* Edit Profile Form */}
+        {/* فرم ویرایش – مشترک */}
         <div className="rounded-2xl border border-border/50 bg-card/80 dark:bg-card/60 backdrop-blur-sm p-4 sm:p-6">
           <h2 className="text-sm sm:text-base font-semibold text-foreground mb-4 flex items-center gap-2">
             <Shield className="w-4 h-4 text-primary" />
@@ -60,9 +73,10 @@ export function AccountScreen() {
           <ProfileForm />
         </div>
 
-        {/* Footer Note */}
         <p className="text-center text-[11px] sm:text-xs text-muted-foreground pb-2">
-          تغییرات بدنی و هدف روی پیشنهادهای برنامه و داشبورد اثر می‌گذارند
+          {isCoach
+            ? "اطلاعات پروفایل مربی در پنل و صفحه عمومی مربیان نمایش داده می‌شود"
+            : "تغییرات بدنی و هدف روی پیشنهادهای برنامه و داشبورد اثر می‌گذارند"}
         </p>
       </div>
     </div>
