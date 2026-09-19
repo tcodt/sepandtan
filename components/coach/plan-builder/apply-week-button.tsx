@@ -2,28 +2,59 @@
 
 import { Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 type Props = {
-  onApply: () => void;
+  onApply: () => void | Promise<void>;
   disabled?: boolean;
+  durationWeeks: number;
 };
 
-export function ApplyWeekButton({ onApply, disabled }: Props) {
+export function ApplyWeekButton({ onApply, disabled, durationWeeks }: Props) {
   return (
-    <Button
-      variant="outline"
-      size="sm"
-      className="gap-1.5"
-      onClick={() => {
-        onApply();
-        toast.success("این هفته روی کل برنامه اعمال شد");
-      }}
-      disabled={disabled}
-    >
-      <Copy className="w-4 h-4" />
-      <span className="hidden sm:inline">اعمال این هفته روی کل برنامه</span>
-      <span className="sm:hidden">اعمال هفته</span>
-    </Button>
+    <AlertDialog>
+      <AlertDialogTrigger asChild>
+        <Button
+          variant="outline"
+          size="sm"
+          className="gap-1.5"
+          disabled={disabled}
+        >
+          <Copy className="w-4 h-4" />
+          <span className="hidden sm:inline">اعمال این هفته روی کل برنامه</span>
+          <span className="sm:hidden">اعمال هفته</span>
+        </Button>
+      </AlertDialogTrigger>
+
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>اعمال الگوی هفته؟</AlertDialogTitle>
+          <AlertDialogDescription>
+            همین ۷ روز روی کل {durationWeeks.toLocaleString("fa-IR")} هفته
+            برنامه تکرار می‌شود و سپس ذخیره خواهد شد.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>انصراف</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={() => {
+              void onApply();
+            }}
+          >
+            اعمال کن
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }

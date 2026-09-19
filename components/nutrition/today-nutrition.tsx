@@ -8,12 +8,12 @@ import {
   Circle,
   Loader2,
   RotateCcw,
-  ArrowLeft,
   Utensils,
   Sun,
   Moon,
   Coffee,
   Pizza,
+  ArrowRight,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -31,6 +31,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { InlineState } from "../common/states/inline-state";
 import { isFreeTrialExpired } from "@/lib/subscription/access";
 import { PlanAccessState } from "../plans/plan-access-state";
+import { getCoachNameByIdSync } from "@/lib/api/coaches";
+import { CoachPlanBadge } from "../common/coach-plan-badge";
 
 const MEAL_LABELS: Record<PlanMeal["type"], string> = {
   breakfast: "صبحانه",
@@ -64,6 +66,8 @@ export function TodayNutrition() {
 
   const meals = useMemo(() => todayDay?.meals ?? [], [todayDay]);
   const targetCalories = todayDay?.dailyCaloriesTarget ?? 0;
+  const isCoachPlan = plan?.source === "coach";
+  const coachName = isCoachPlan ? getCoachNameByIdSync(plan.coachId) : null;
 
   useEffect(() => {
     if (!todayDay || !user?.id) return;
@@ -204,7 +208,7 @@ export function TodayNutrition() {
                 className="p-2 -mr-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-card/80 dark:bg-card/60 transition-colors shrink-0 mt-0.5"
                 aria-label="بازگشت"
               >
-                <ArrowLeft className="w-5 h-5" />
+                <ArrowRight className="w-5 h-5" />
               </Link>
               <div>
                 <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-foreground flex items-center gap-2 flex-wrap">
@@ -213,6 +217,9 @@ export function TodayNutrition() {
                   <span className="text-sm font-normal text-muted-foreground bg-card/80 dark:bg-card/60 px-2.5 py-0.5 rounded-full">
                     روز {currentDayNumber}
                   </span>
+                  {isCoachPlan && (
+                    <CoachPlanBadge coachName={coachName} size="sm" />
+                  )}
                 </h1>
                 <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 sm:mt-1">
                   {targetCalories.toLocaleString("fa-IR")} کالری هدف ·{" "}

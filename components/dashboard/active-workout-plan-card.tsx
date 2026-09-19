@@ -137,18 +137,19 @@ export function ActiveWorkoutPlanCard() {
         <div className="flex flex-col sm:flex-row gap-2 pt-0.5">
           {trialExpired ? (
             <Button asChild className="h-11 flex-1 font-semibold">
-              <Link href="/#plans">ارتقا برای ادامه</Link>
+              <Link href="/#plans">ارتقا دسترسی</Link>
             </Button>
           ) : (
             <Button asChild className="h-11 flex-1 font-semibold gap-1">
-              <Link href="/workout/today">
-                مشاهده امروز
+              <Link href="/plans">
+                برنامه ها
                 <ChevronLeft className="w-4 h-4" />
               </Link>
             </Button>
           )}
+
           <Button asChild variant="outline" className="h-11 flex-1">
-            <Link href="/plans">برنامه‌های من</Link>
+            <Link href={`/plans/${plan.id}`}>مشاهده کامل برنامه</Link>
           </Button>
         </div>
       </CardContent>

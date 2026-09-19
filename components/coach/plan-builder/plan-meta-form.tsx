@@ -2,8 +2,15 @@
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import type { Goal, Equipment } from "@/lib/types/plan";
-import { cn } from "@/lib/utils";
 
 type Props = {
   title: string;
@@ -11,127 +18,139 @@ type Props = {
   equipment: Equipment;
   level: "beginner" | "intermediate" | "advanced";
   durationWeeks: 4 | 6 | 8;
+  priceToman: number | null;
   onChange: {
     setTitle: (v: string) => void;
     setGoal: (v: Goal) => void;
     setEquipment: (v: Equipment) => void;
     setLevel: (v: "beginner" | "intermediate" | "advanced") => void;
     setDurationWeeks: (v: 4 | 6 | 8) => void;
+    setPriceToman: (v: number | null) => void;
   };
   onContinue: () => void;
 };
 
-const goals: { value: Goal; label: string }[] = [
-  { value: "lose_weight", label: "کاهش وزن" },
-  { value: "build_muscle", label: "عضله‌سازی" },
-  { value: "maintain", label: "حفظ تناسب" },
-  { value: "endurance", label: "استقامت" },
-  { value: "general_fitness", label: "آمادگی عمومی" },
-];
-
-const levels = [
-  { value: "beginner" as const, label: "مبتدی" },
-  { value: "intermediate" as const, label: "متوسط" },
-  { value: "advanced" as const, label: "پیشرفته" },
-];
-
-const durations = [
-  { value: 4 as const, label: "۴ هفته" },
-  { value: 6 as const, label: "۶ هفته" },
-  { value: 8 as const, label: "۸ هفته" },
-];
-
 export function PlanMetaForm({
   title,
   goal,
+  equipment,
   level,
   durationWeeks,
+  priceToman,
   onChange,
   onContinue,
 }: Props) {
+  const canContinue = title.trim().length > 0 && (priceToman ?? 0) > 0;
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-xl mx-auto">
       <div className="text-center space-y-2">
         <h1 className="text-2xl font-bold">ساخت برنامه جدید</h1>
         <p className="text-sm text-muted-foreground">
-          فقط چند اطلاعات اولیه، بعد مستقیم می‌ریم سراغ ساخت هفته
+          مشخصات برنامه و قیمت را وارد کن، بعد هفته را می‌سازی
         </p>
       </div>
 
-      {/* نام */}
       <div className="space-y-2">
-        <label className="text-sm font-medium">نام برنامه</label>
+        <Label>نام برنامه</Label>
         <Input
           value={title}
           onChange={(e) => onChange.setTitle(e.target.value)}
           placeholder="مثلاً: فول‌بادی چربی‌سوزی"
-          className="bg-white/5 border-white/10"
         />
       </div>
 
-      {/* هدف */}
       <div className="space-y-2">
-        <label className="text-sm font-medium">هدف</label>
-        <div className="flex flex-wrap gap-2">
-          {goals.map((g) => (
-            <button
-              key={g.value}
-              type="button"
-              onClick={() => onChange.setGoal(g.value)}
-              className={cn(
-                "px-3 py-1.5 rounded-full text-sm transition-colors",
-                goal === g.value
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-white/5 text-muted-foreground hover:bg-white/10",
-              )}
-            >
-              {g.label}
-            </button>
-          ))}
-        </div>
+        <Label>قیمت برنامه (تومان)</Label>
+        <Input
+          type="number"
+          min={0}
+          value={priceToman ?? ""}
+          onChange={(e) =>
+            onChange.setPriceToman(
+              e.target.value === "" ? null : Number(e.target.value),
+            )
+          }
+          placeholder="مثلاً 1500000"
+        />
+        <p className="text-xs text-muted-foreground">
+          این قیمت هنگام اختصاص برنامه به هنرجو نمایش داده می‌شود
+        </p>
       </div>
 
-      {/* سطح */}
-      <div className="space-y-2">
-        <label className="text-sm font-medium">سطح</label>
-        <div className="flex gap-2">
-          {levels.map((l) => (
-            <button
-              key={l.value}
-              type="button"
-              onClick={() => onChange.setLevel(l.value)}
-              className={cn(
-                "flex-1 py-2 rounded-xl text-sm transition-colors",
-                level === l.value
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-white/5 text-muted-foreground hover:bg-white/10",
-              )}
-            >
-              {l.label}
-            </button>
-          ))}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label>هدف</Label>
+          <Select
+            value={goal}
+            onValueChange={(v) => onChange.setGoal(v as Goal)}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="انتخاب هدف" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="lose_weight">کاهش وزن</SelectItem>
+              <SelectItem value="build_muscle">عضله‌سازی</SelectItem>
+              <SelectItem value="maintain">حفظ تناسب</SelectItem>
+              <SelectItem value="endurance">استقامت</SelectItem>
+              <SelectItem value="general_fitness">آمادگی عمومی</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
-      </div>
 
-      {/* مدت */}
-      <div className="space-y-2">
-        <label className="text-sm font-medium">مدت برنامه</label>
-        <div className="flex gap-2">
-          {durations.map((d) => (
-            <button
-              key={d.value}
-              type="button"
-              onClick={() => onChange.setDurationWeeks(d.value)}
-              className={cn(
-                "flex-1 py-2 rounded-xl text-sm transition-colors",
-                durationWeeks === d.value
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-white/5 text-muted-foreground hover:bg-white/10",
-              )}
-            >
-              {d.label}
-            </button>
-          ))}
+        <div className="space-y-2">
+          <Label>سطح</Label>
+          <Select
+            value={level}
+            onValueChange={(v) =>
+              onChange.setLevel(v as "beginner" | "intermediate" | "advanced")
+            }
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="انتخاب سطح" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="beginner">مبتدی</SelectItem>
+              <SelectItem value="intermediate">متوسط</SelectItem>
+              <SelectItem value="advanced">پیشرفته</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-2">
+          <Label>تجهیزات</Label>
+          <Select
+            value={equipment}
+            onValueChange={(v) => onChange.setEquipment(v as Equipment)}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="تجهیزات" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="home">خانگی</SelectItem>
+              <SelectItem value="gym">باشگاه</SelectItem>
+              <SelectItem value="both">هر دو</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-2">
+          <Label>مدت</Label>
+          <Select
+            value={String(durationWeeks)}
+            onValueChange={(v) =>
+              onChange.setDurationWeeks(Number(v) as 4 | 6 | 8)
+            }
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="مدت" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="4">۴ هفته</SelectItem>
+              <SelectItem value="6">۶ هفته</SelectItem>
+              <SelectItem value="8">۸ هفته</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
@@ -139,7 +158,7 @@ export function PlanMetaForm({
         className="w-full"
         size="lg"
         onClick={onContinue}
-        disabled={!title.trim()}
+        disabled={!canContinue}
       >
         شروع ساخت هفته
       </Button>
