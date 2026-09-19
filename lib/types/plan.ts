@@ -1,7 +1,5 @@
 /** انواع مشترک برنامه تمرینی و رژیمی — منبع حقیقت برای User Flow + Coach Flow */
 
-import { ReactNode } from "react";
-
 export type Gender = "male" | "female";
 export type ActivityLevel =
   | "sedentary"
@@ -185,13 +183,19 @@ export type CoachProfile = {
 
 /** پلن‌های اشتراک قابل فروش */
 export type SubscriptionPlan = {
-  periodLabel: ReactNode;
   id: string;
   name: string;
-  status: SubscriptionStatus; // free | basic | pro | premium | coach_plan
-  price: number; // به تومان
-  durationDays: number;
+  price: number;
+  periodLabel: string;
+  featured: boolean;
+  badge?: string | null;
+  ctaLabel: string;
+  sortOrder: number;
+  isActive: boolean;
   features: string[];
+  // فیلدهای اختیاری قدیمی که ممکن است جایی استفاده شده باشند
+  status?: SubscriptionStatus;
+  durationDays?: number;
   isPopular?: boolean;
   description?: string;
   createdAt?: string;

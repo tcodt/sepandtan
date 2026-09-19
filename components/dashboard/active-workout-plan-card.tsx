@@ -20,6 +20,7 @@ import {
 } from "@/lib/subscription/access";
 import { cn } from "@/lib/utils";
 import { CoachPlanBadge } from "@/components/common/coach-plan-badge";
+import { getCoachNameByIdSync } from "@/lib/api/coaches";
 
 const LEVEL_FA = {
   beginner: "مبتدی",
@@ -31,9 +32,6 @@ export function ActiveWorkoutPlanCard() {
   const { user, plan, currentDayNumber, isLoading, hasPlan, error } =
     useUserPlan();
 
-  const isCoachPlan = plan?.source === "coach";
-
-  // بدون currentPlanId → کارت را نشان نده (Empty State جایگزین می‌شود)
   if (!user?.currentPlanId) return null;
 
   if (isLoading) {
@@ -51,15 +49,15 @@ export function ActiveWorkoutPlanCard() {
 
   if (error || !hasPlan || !plan) return null;
 
+  const isCoachPlan = plan.source === "coach";
+  const coachName = isCoachPlan ? getCoachNameByIdSync(plan.coachId) : null;
+
   const subLabel = getSubscriptionLabel(
     user.subscriptionStatus,
     user.currentPlanId,
   );
   const trialLeft = getFreeTrialDaysLeft(user);
   const trialExpired = isFreeTrialExpired(user);
-  const SourceIcon = plan.source === "coach" ? UserRound : Bot;
-  const sourceText =
-    plan.source === "coach" ? "مربی تأییدشده" : "ساخته‌شده با هوش مصنوعی";
 
   return (
     <Card
@@ -77,7 +75,7 @@ export function ActiveWorkoutPlanCard() {
           </Badge>
 
           {isCoachPlan ? (
-            <CoachPlanBadge coachName={plan.coachId ?? null} />
+            <CoachPlanBadge coachName={coachName} />
           ) : (
             <Badge
               variant="outline"
@@ -100,10 +98,20 @@ export function ActiveWorkoutPlanCard() {
           <h3 className="text-base sm:text-lg font-bold text-foreground leading-snug">
             {plan.title}
           </h3>
+
           <p className="text-xs text-muted-foreground inline-flex items-center gap-1.5">
-            <SourceIcon className="w-3.5 h-3.5 shrink-0" />
-            {sourceText}
+            {isCoachPlan ? (
+              <UserRound className="w-3.5 h-3.5 shrink-0" />
+            ) : (
+              <Bot className="w-3.5 h-3.5 shrink-0" />
+            )}
+            {isCoachPlan
+              ? coachName
+                ? `مربی: ${coachName}`
+                : "برنامه مربی"
+              : "ساخته‌شده با هوش مصنوعی"}
           </p>
+
           <p className="text-xs text-muted-foreground inline-flex items-center gap-1.5">
             <CalendarDays className="w-3.5 h-3.5 shrink-0" />
             {LEVEL_FA[plan.level]} · روز{" "}
@@ -112,7 +120,6 @@ export function ActiveWorkoutPlanCard() {
           </p>
         </div>
 
-        {/* Free trial hint */}
         {user.subscriptionStatus === "free" &&
           trialLeft !== null &&
           !trialExpired && (
@@ -129,28 +136,18 @@ export function ActiveWorkoutPlanCard() {
 
         <div className="flex flex-col sm:flex-row gap-2 pt-0.5">
           {trialExpired ? (
-            <Button
-              asChild
-              className="h-11 flex-1 font-semibold" // Removed size="sm"
-            >
+            <Button asChild className="h-11 flex-1 font-semibold">
               <Link href="/#plans">ارتقا برای ادامه</Link>
             </Button>
           ) : (
-            <Button
-              asChild
-              className="h-11 flex-1 font-semibold gap-1" // Removed size="sm"
-            >
+            <Button asChild className="h-11 flex-1 font-semibold gap-1">
               <Link href="/workout/today">
                 مشاهده امروز
                 <ChevronLeft className="w-4 h-4" />
               </Link>
             </Button>
           )}
-          <Button
-            asChild
-            variant="outline"
-            className="h-11 flex-1" // Removed size="sm"
-          >
+          <Button asChild variant="outline" className="h-11 flex-1">
             <Link href="/plans">برنامه‌های من</Link>
           </Button>
         </div>
