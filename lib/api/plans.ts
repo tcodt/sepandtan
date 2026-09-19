@@ -88,18 +88,36 @@ export function getCurrentDayNumber(plan: Plan, today = new Date()): number {
 }
 
 export function getDayFromPlan(plan: Plan, dayNumber: number): PlanDay | null {
-  // پشتیبانی الگوی هفتگی مربی
+  // الگوی هفتگی مربی
   if (
     plan.patternType === "weekly" &&
     Array.isArray(plan.weeklyTemplate) &&
     plan.weeklyTemplate.length === 7
   ) {
     const dayInCycle = ((dayNumber - 1) % 7) + 1;
-    return plan.weeklyTemplate.find((d) => d.dayNumber === dayInCycle) ?? null;
+    return (
+      plan.weeklyTemplate.find((d) => d.dayNumber === dayInCycle) ??
+      plan.weeklyTemplate[0] ??
+      null
+    );
   }
 
-  // رفتار قبلی برای برنامه‌های AI و برنامه‌های قدیمی مربی
-  return plan.days.find((d) => d.dayNumber === dayNumber) ?? null;
+  // رفتار عادی
+  const exact = plan.days.find((d) => d.dayNumber === dayNumber);
+  if (exact) return exact;
+
+  // Fallback: اگر روز دقیق نبود، نگذار صفحه خالی بماند
+  if (!plan.days.length) return null;
+
+  // اگر از بازه گذشته، آخرین روز موجود
+  const sorted = [...plan.days].sort((a, b) => a.dayNumber - b.dayNumber);
+  if (dayNumber > sorted[sorted.length - 1].dayNumber) {
+    return sorted[sorted.length - 1];
+  }
+
+  // اگر قبل از شروع یا گپ داشت، نزدیک‌ترین روز کوچک‌تر یا اولین روز
+  const previous = [...sorted].reverse().find((d) => d.dayNumber <= dayNumber);
+  return previous ?? sorted[0] ?? null;
 }
 
 export async function getTodayPlanDay(planId: string) {

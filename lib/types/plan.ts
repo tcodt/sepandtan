@@ -112,6 +112,7 @@ export type Plan = {
   createdAt: string;
   source: "ai" | "coach";
   coachId?: string | null;
+  priceToman?: number | null;
 
   // ——— فیلدهای جدید Coach Flow ———
   status: PlanStatus;

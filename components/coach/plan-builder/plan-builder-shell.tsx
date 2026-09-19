@@ -1,14 +1,26 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { ArrowRight, Eye, Save } from "lucide-react";
+import { toast } from "sonner";
+
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { WeekStrip } from "./week-strip";
 import { PlanMetaForm } from "./plan-meta-form";
 import { DayEditor } from "./day-editor";
 import { ApplyWeekButton } from "./apply-week-button";
 import type { Plan, PlanDay, Goal, Equipment } from "@/lib/types/plan";
-import { toast } from "sonner";
 
 type Props = {
   initialPlan?: Partial<Plan>;
@@ -27,6 +39,18 @@ function createEmptyWeek(): PlanDay[] {
     exercises: [],
     meals: [],
   }));
+}
+
+function cloneDay(day: PlanDay, dayNumber: number): PlanDay {
+  return {
+    ...day,
+    dayNumber,
+    title: day.isRestDay
+      ? "روز استراحت"
+      : day.title || `روز ${((dayNumber - 1) % 7) + 1}`,
+    exercises: day.exercises.map((e) => ({ ...e })),
+    meals: day.meals.map((m) => ({ ...m })),
+  };
 }
 
 export function PlanBuilderShell({
@@ -48,19 +72,24 @@ export function PlanBuilderShell({
   const [durationWeeks, setDurationWeeks] = useState<4 | 6 | 8>(
     initialPlan?.durationWeeks ?? 4,
   );
+  const [priceToman, setPriceToman] = useState<number | null>(
+    initialPlan?.priceToman ?? null,
+  );
 
   const [week, setWeek] = useState<PlanDay[]>(
     initialPlan?.weeklyTemplate?.length === 7
-      ? initialPlan.weeklyTemplate
+      ? initialPlan.weeklyTemplate.map((d) => cloneDay(d, d.dayNumber))
       : createEmptyWeek(),
   );
 
   const [expandedDays, setExpandedDays] = useState<PlanDay[]>(
-    initialPlan?.days ?? [],
+    initialPlan?.days?.map((d) => cloneDay(d, d.dayNumber)) ?? [],
   );
 
   const [selectedDay, setSelectedDay] = useState(1);
   const [showMeta, setShowMeta] = useState(!initialPlan?.title);
+  const [publishDialogOpen, setPublishDialogOpen] = useState(false);
+  const [weakDaysCount, setWeakDaysCount] = useState(0);
 
   const currentDay = week.find((d) => d.dayNumber === selectedDay) ?? week[0];
 
@@ -70,69 +99,145 @@ export function PlanBuilderShell({
     );
   };
 
-  const applyWeekToWholePlan = () => {
+  const buildPayload = (daysOverride?: PlanDay[]): Partial<Plan> => ({
+    title,
+    goal,
+    equipment,
+    level,
+    durationWeeks,
+    durationDays: durationWeeks * 7,
+    priceToman,
+    weeklyTemplate: week,
+    days: daysOverride ?? (expandedDays.length > 0 ? expandedDays : week),
+    patternType: "weekly",
+  });
+
+  const handleSave = async (daysOverride?: PlanDay[]) => {
+    if ((priceToman ?? 0) <= 0) {
+      toast.error("قیمت برنامه را وارد کن");
+      return false;
+    }
+    if (!title.trim()) {
+      toast.error("نام برنامه را وارد کن");
+      return false;
+    }
+
+    try {
+      await onSaveDraft(buildPayload(daysOverride));
+      toast.success("ذخیره شد");
+      return true;
+    } catch {
+      toast.error("ذخیره ناموفق بود");
+      return false;
+    }
+  };
+
+  const applyWeekToWholePlan = async () => {
+    // اطمینان از ۷ روز کامل
+    const safeWeek = Array.from({ length: 7 }, (_, i) => {
+      const dayNumber = i + 1;
+      const existing = week.find((d) => d.dayNumber === dayNumber);
+      return existing
+        ? cloneDay(existing, dayNumber)
+        : cloneDay(
+            {
+              dayNumber,
+              title: `روز ${dayNumber}`,
+              focus: "",
+              isRestDay: false,
+              estimatedMinutes: 0,
+              exercises: [],
+              meals: [],
+            },
+            dayNumber,
+          );
+    });
+
     const expanded = Array.from({ length: durationWeeks * 7 }, (_, i) => {
       const dayInCycle = (i % 7) + 1;
-      const template = week.find((d) => d.dayNumber === dayInCycle)!;
-      return {
-        ...template,
-        dayNumber: i + 1,
-        title: template.isRestDay
-          ? "روز استراحت"
-          : template.title || `روز ${dayInCycle}`,
-      };
+      const template = safeWeek[dayInCycle - 1];
+      return cloneDay(template, i + 1);
     });
+
+    setWeek(safeWeek);
     setExpandedDays(expanded);
-    toast.success("الگوی هفته روی کل برنامه اعمال شد");
+
+    const ok = await handleSave(expanded);
+    if (ok) {
+      toast.success(
+        `الگوی هفته روی ${durationWeeks.toLocaleString("fa-IR")} هفته اعمال و ذخیره شد`,
+      );
+    }
   };
 
-  const handleSave = async () => {
-    await onSaveDraft({
-      title,
-      goal,
-      equipment,
-      level,
-      durationWeeks,
-      durationDays: durationWeeks * 7,
-      weeklyTemplate: week,
-      days: expandedDays.length > 0 ? expandedDays : week,
-      patternType: "weekly",
-    });
-  };
-
-  const handlePublish = async () => {
+  const requestPublish = () => {
     if (!title.trim()) {
       toast.error("نام برنامه را وارد کنید");
+      return;
+    }
+    if ((priceToman ?? 0) <= 0) {
+      toast.error("قیمت برنامه را وارد کن");
       return;
     }
 
     const trainingDays = week.filter((d) => !d.isRestDay);
     const weakDays = trainingDays.filter((d) => d.exercises.length < 3);
+    setWeakDaysCount(weakDays.length);
+    setPublishDialogOpen(true);
+  };
 
-    if (weakDays.length > 0) {
-      const ok = confirm(
-        `${weakDays.length} روز کمتر از ۳ حرکت دارند. آیا ادامه می‌دهید؟`,
-      );
-      if (!ok) return;
-    }
+  const confirmPublish = async () => {
+    setPublishDialogOpen(false);
 
-    // اول ذخیره، بعد publish
-    await handleSave();
+    // قبل از انتشار، هفته را روی کل برنامه اعمال و ذخیره کن
+    const safeWeek = Array.from({ length: 7 }, (_, i) => {
+      const dayNumber = i + 1;
+      const existing = week.find((d) => d.dayNumber === dayNumber);
+      return existing
+        ? cloneDay(existing, dayNumber)
+        : cloneDay(
+            {
+              dayNumber,
+              title: `روز ${dayNumber}`,
+              focus: "",
+              isRestDay: false,
+              estimatedMinutes: 0,
+              exercises: [],
+              meals: [],
+            },
+            dayNumber,
+          );
+    });
+
+    const expanded = Array.from({ length: durationWeeks * 7 }, (_, i) => {
+      const dayInCycle = (i % 7) + 1;
+      return cloneDay(safeWeek[dayInCycle - 1], i + 1);
+    });
+
+    setWeek(safeWeek);
+    setExpandedDays(expanded);
+
+    const ok = await handleSave(expanded);
+    if (!ok) return;
+
     if (onPublish) {
-      await onPublish();
+      try {
+        await onPublish();
+      } catch {
+        toast.error("انتشار ناموفق بود");
+      }
     }
   };
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      {/* Header */}
       <header className="sticky top-0 z-30 border-b border-white/10 bg-black/40 backdrop-blur-xl">
         <div className="flex items-center justify-between gap-3 px-4 h-14 max-w-6xl mx-auto">
           <div className="flex items-center gap-3 min-w-0">
             <Button variant="ghost" size="icon" asChild>
-              <a href="/coach/plans">
+              <Link href="/coach/plans">
                 <ArrowRight className="w-5 h-5" />
-              </a>
+              </Link>
             </Button>
             <div className="min-w-0">
               <p className="font-semibold truncate">
@@ -142,6 +247,9 @@ export function PlanBuilderShell({
                 {initialPlan?.status === "draft" || !initialPlan
                   ? "پیش‌نویس"
                   : initialPlan.status}
+                {priceToman
+                  ? ` · ${priceToman.toLocaleString("fa-IR")} تومان`
+                  : ""}
               </p>
             </div>
           </div>
@@ -151,7 +259,7 @@ export function PlanBuilderShell({
               variant="outline"
               size="sm"
               className="gap-1.5 hidden sm:flex"
-              onClick={handleSave}
+              onClick={() => void handleSave()}
               disabled={saving}
             >
               <Save className="w-4 h-4" />
@@ -172,7 +280,7 @@ export function PlanBuilderShell({
             {onPublish && (
               <Button
                 size="sm"
-                onClick={handlePublish}
+                onClick={requestPublish}
                 disabled={saving || !title.trim()}
               >
                 انتشار
@@ -191,23 +299,28 @@ export function PlanBuilderShell({
               equipment={equipment}
               level={level}
               durationWeeks={durationWeeks}
+              priceToman={priceToman}
               onChange={{
                 setTitle,
                 setGoal,
                 setEquipment,
                 setLevel,
                 setDurationWeeks,
+                setPriceToman,
               }}
               onContinue={() => {
+                if ((priceToman ?? 0) <= 0) {
+                  toast.error("قیمت برنامه را وارد کن");
+                  return;
+                }
                 setShowMeta(false);
-                handleSave();
+                void handleSave();
               }}
             />
           </div>
         </div>
       ) : (
         <>
-          {/* Week Strip */}
           <div className="sticky top-14 z-20 border-b border-white/10 bg-black/30 backdrop-blur-lg">
             <div className="max-w-6xl mx-auto">
               <WeekStrip
@@ -228,7 +341,6 @@ export function PlanBuilderShell({
             </div>
           </div>
 
-          {/* Day Content */}
           <main className="flex-1 max-w-6xl mx-auto w-full p-4 md:p-6">
             <div className="mb-4 flex items-center justify-between gap-2 flex-wrap">
               <div>
@@ -240,12 +352,22 @@ export function PlanBuilderShell({
                 <p className="text-sm text-muted-foreground">
                   {currentDay.isRestDay
                     ? "این روز برای ریکاوری در نظر گرفته شده"
-                    : `${currentDay.exercises.length} حرکت`}
+                    : `${currentDay.exercises.length.toLocaleString("fa-IR")} حرکت`}
+                  {expandedDays.length > 0 && (
+                    <span className="mr-2 text-primary">
+                      · {expandedDays.length.toLocaleString("fa-IR")} روز
+                      تولیدشده
+                    </span>
+                  )}
                 </p>
               </div>
 
               <div className="flex items-center gap-2">
-                <ApplyWeekButton onApply={applyWeekToWholePlan} />
+                <ApplyWeekButton
+                  durationWeeks={durationWeeks}
+                  onApply={applyWeekToWholePlan}
+                  disabled={saving}
+                />
                 <Button
                   variant="ghost"
                   size="sm"
@@ -263,6 +385,26 @@ export function PlanBuilderShell({
           </main>
         </>
       )}
+
+      {/* Publish confirmation - Shadcn only */}
+      <AlertDialog open={publishDialogOpen} onOpenChange={setPublishDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>انتشار برنامه؟</AlertDialogTitle>
+            <AlertDialogDescription>
+              {weakDaysCount > 0
+                ? `${weakDaysCount.toLocaleString("fa-IR")} روز تمرینی کمتر از ۳ حرکت دارند. بعد از انتشار، برنامه برای اختصاص به هنرجو آماده می‌شود.`
+                : "بعد از انتشار، برنامه برای اختصاص به هنرجو آماده می‌شود."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>انصراف</AlertDialogCancel>
+            <AlertDialogAction onClick={() => void confirmPublish()}>
+              انتشار
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

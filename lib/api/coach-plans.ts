@@ -87,6 +87,7 @@ export async function createCoachPlanDraft(
     description: data.description ?? "",
     startDate: null,
     durationDays: durationWeeks * 7,
+    priceToman: data.priceToman ?? null,
     days: data.days ?? [],
     createdAt: now,
     source: "coach",
@@ -137,6 +138,7 @@ export async function updateCoachPlanDraft(
   if (data.days !== undefined) {
     plan.days = data.days;
   }
+  if (data.priceToman !== undefined) plan.priceToman = data.priceToman;
 
   return { ...plan };
 }
@@ -286,4 +288,23 @@ export async function getClientProgressSummary(
     planStatus: (currentPlan?.status as PlanStatus) ?? null,
     currentPlanTitle: currentPlan?.title,
   };
+}
+
+export async function deleteCoachPlan(planId: string): Promise<void> {
+  await delay();
+
+  const index = db.plans.findIndex((p) => p.id === planId);
+  if (index === -1) throw new Error("برنامه پیدا نشد");
+
+  const plan = db.plans[index];
+  if (plan.source !== "coach") {
+    throw new Error("فقط برنامه مربی قابل حذف است");
+  }
+
+  // فقط draft یا published بدون کاربر
+  if (plan.status === "active" || plan.status === "assigned") {
+    throw new Error("برنامه فعال یا اختصاص‌یافته قابل حذف نیست");
+  }
+
+  db.plans.splice(index, 1);
 }

@@ -8,11 +8,11 @@ import {
   Loader2,
   Play,
   RotateCcw,
-  ArrowLeft,
   Dumbbell,
   Flame,
   Clock,
   Zap,
+  ArrowRight,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -34,6 +34,8 @@ import { CompletionBottomSheet } from "./completion-bottom-sheet";
 import { InlineState } from "@/components/common/states/inline-state";
 import { isFreeTrialExpired } from "@/lib/subscription/access";
 import { PlanAccessState } from "../plans/plan-access-state";
+import { getCoachNameByIdSync } from "@/lib/api/coaches";
+import { CoachPlanBadge } from "../common/coach-plan-badge";
 
 function mapPlanExercisesToSession(
   exercises: {
@@ -74,6 +76,8 @@ export function TodayWorkout() {
   const [bootstrapped, setBootstrapped] = useState(false);
   const [showComplete, setShowComplete] = useState(false);
   const [completionOpen, setCompletionOpen] = useState(false);
+  const isCoachPlan = plan?.source === "coach";
+  const coachName = isCoachPlan ? getCoachNameByIdSync(plan.coachId) : null;
 
   const bootKeyRef = useRef<string>("");
 
@@ -288,7 +292,7 @@ export function TodayWorkout() {
               className="p-2 -mr-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-card/80 dark:bg-card/60 transition-colors shrink-0 mt-0.5"
               aria-label="بازگشت"
             >
-              <ArrowLeft className="w-5 h-5" />
+              <ArrowRight className="w-5 h-5" />
             </Link>
             <div>
               <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-foreground flex items-center gap-2 flex-wrap">
@@ -297,6 +301,9 @@ export function TodayWorkout() {
                 <span className="text-sm font-normal text-muted-foreground bg-card/80 dark:bg-card/60 px-2.5 py-0.5 rounded-full">
                   روز {currentDayNumber}
                 </span>
+                {isCoachPlan && (
+                  <CoachPlanBadge coachName={coachName} size="sm" />
+                )}
               </h1>
               <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 sm:mt-1">
                 {todayDay.title}

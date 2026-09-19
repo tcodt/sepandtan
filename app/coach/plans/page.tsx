@@ -1,13 +1,33 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { Plus, FileText, Clock, CheckCircle2 } from "lucide-react";
+import {
+  Plus,
+  FileText,
+  Clock,
+  CheckCircle2,
+  Pencil,
+  Trash2,
+} from "lucide-react";
+import { toast } from "sonner";
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { useUserStore } from "@/lib/store/user-store";
 import { db } from "@/lib/api/db";
-import { getCoachPlans } from "@/lib/api/coach-plans";
+import { getCoachPlans, deleteCoachPlan } from "@/lib/api/coach-plans";
 import { CoachEmptyState } from "@/components/coach/empty-states";
 import type { Plan, PlanStatus } from "@/lib/types/plan";
 import { cn } from "@/lib/utils";
@@ -48,6 +68,7 @@ export default function CoachPlansPage() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<Filter>("all");
   const [plans, setPlans] = useState<Plan[]>([]);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const loadPlans = useCallback(async () => {
     if (!user?.id) return;
@@ -57,18 +78,15 @@ export default function CoachPlansPage() {
       const coach = db.coaches.find((c) => c.userId === user.id);
       if (!coach) {
         setPlans([]);
-        setLoading(false);
         return;
       }
 
       const allPlans = await getCoachPlans(coach.id);
-
       const filtered =
         filter === "all"
           ? allPlans
           : allPlans.filter((p) => p.status === filter);
 
-      // جدیدترین اول
       filtered.sort(
         (a, b) =>
           new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
@@ -77,6 +95,7 @@ export default function CoachPlansPage() {
       setPlans(filtered);
     } catch (err) {
       console.error(err);
+      toast.error("بارگذاری برنامه‌ها ناموفق بود");
     } finally {
       setLoading(false);
     }
@@ -86,9 +105,21 @@ export default function CoachPlansPage() {
     loadPlans();
   }, [loadPlans]);
 
+  const handleDelete = async (planId: string) => {
+    setDeletingId(planId);
+    try {
+      await deleteCoachPlan(planId);
+      toast.success("برنامه حذف شد");
+      await loadPlans();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "حذف ناموفق بود");
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
   return (
     <div className="space-y-6 max-w-3xl mx-auto">
-      {/* Header */}
       <div className="flex items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold">برنامه‌های من</h1>
@@ -105,11 +136,11 @@ export default function CoachPlansPage() {
         </Button>
       </div>
 
-      {/* Filters */}
       <div className="flex gap-2 overflow-x-auto pb-1">
         {filters.map((f) => (
           <button
             key={f.key}
+            type="button"
             onClick={() => setFilter(f.key)}
             className={cn(
               "px-4 py-2 rounded-full text-sm whitespace-nowrap transition-colors",
@@ -123,7 +154,6 @@ export default function CoachPlansPage() {
         ))}
       </div>
 
-      {/* List */}
       {loading ? (
         <div className="space-y-3">
           {[1, 2, 3].map((i) => (
@@ -140,13 +170,16 @@ export default function CoachPlansPage() {
           {plans.map((plan) => {
             const status = statusConfig[plan.status] ?? statusConfig.draft;
             const StatusIcon = status.icon;
+            const canEdit = plan.status === "draft";
+            const canDelete =
+              plan.status === "draft" || plan.status === "published";
 
             return (
               <Card
                 key={plan.id}
                 className="bg-white/5 border-white/10 backdrop-blur-md"
               >
-                <CardContent className="p-4">
+                <CardContent className="p-4 space-y-3">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0 flex-1">
                       <p className="font-medium truncate">{plan.title}</p>
@@ -154,21 +187,78 @@ export default function CoachPlansPage() {
                         {plan.description || "بدون توضیحات"}
                       </p>
 
-                      <div className="flex items-center gap-3 mt-3 text-xs text-muted-foreground">
+                      <div className="flex flex-wrap items-center gap-3 mt-3 text-xs text-muted-foreground">
                         <span className="flex items-center gap-1">
                           <StatusIcon
                             className={`w-3.5 h-3.5 ${status.color}`}
                           />
                           <span className={status.color}>{status.label}</span>
                         </span>
+
                         {plan.durationWeeks && (
                           <span>{plan.durationWeeks} هفته</span>
                         )}
+
+                        {typeof plan.priceToman === "number" && (
+                          <span className="text-primary">
+                            {plan.priceToman.toLocaleString("fa-IR")} تومان
+                          </span>
+                        )}
+
                         <span>
                           {new Date(plan.createdAt).toLocaleDateString("fa-IR")}
                         </span>
                       </div>
                     </div>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2">
+                    {canEdit && (
+                      <Button
+                        asChild
+                        size="sm"
+                        variant="outline"
+                        className="gap-1.5"
+                      >
+                        <Link href={`/coach/plans/${plan.id}/edit`}>
+                          <Pencil className="w-3.5 h-3.5" />
+                          ویرایش
+                        </Link>
+                      </Button>
+                    )}
+
+                    {canDelete && (
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            className="gap-1.5"
+                            disabled={deletingId === plan.id}
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                            حذف
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>حذف برنامه؟</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              «{plan.title}» حذف می‌شود. این عمل قابل بازگشت
+                              نیست.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>انصراف</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => handleDelete(plan.id)}
+                            >
+                              حذف
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    )}
                   </div>
                 </CardContent>
               </Card>

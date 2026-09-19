@@ -74,3 +74,9 @@ export function canSwitchPlan(user: UserProfile | null | undefined): boolean {
   if (!user) return false;
   return user.subscriptionStatus !== "free";
 }
+
+export function getFreeTrialLabel(daysLeft: number | null): string {
+  if (daysLeft === null) return "";
+  if (daysLeft <= 0) return "دوره دسترسی رایگان تمام شده";
+  return `${daysLeft.toLocaleString("fa-IR")} روز باقی‌مانده از ۷ روز دسترسی رایگان`;
+}

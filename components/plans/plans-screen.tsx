@@ -104,7 +104,7 @@ function PlanCard({
                 : `${plan.durationDays.toLocaleString("fa-IR")} روزه`}
             </p>
             {isActive && (
-              <div className="flex-1 min-w-[60px] max-w-[100px] lg:max-w-[150px]">
+              <div className="flex-1 min-w-15 max-w-25 lg:max-w-37.5">
                 <div className="h-1.5 lg:h-2 w-full bg-muted rounded-full overflow-hidden">
                   <div
                     className="h-full bg-primary rounded-full transition-all duration-500"
@@ -119,10 +119,19 @@ function PlanCard({
         {/* Actions */}
         <div className="flex flex-wrap items-center justify-between gap-2 pt-1 lg:pt-2">
           <div className="flex flex-wrap items-center gap-2">
+            <Button
+              asChild
+              size="sm"
+              variant="outline"
+              className="h-8 lg:h-9 gap-1"
+            >
+              <Link href={`/plans/${plan.id}`}>مشاهده</Link>
+            </Button>
+
             {isActive ? (
               <Button asChild size="sm" className="h-8 lg:h-9 gap-1">
                 <Link href="/workout/today">
-                  <span>مشاهده برنامه</span>
+                  <span>امروز</span>
                   <ArrowRight className="w-3.5 h-3.5 lg:w-4 lg:h-4" />
                 </Link>
               </Button>
@@ -148,6 +157,7 @@ function PlanCard({
               </Button>
             )}
           </div>
+
           {!isActive && plan.createdAt && (
             <span className="text-[10px] lg:text-xs text-muted-foreground">
               {new Date(plan.createdAt).toLocaleDateString("fa-IR")}
