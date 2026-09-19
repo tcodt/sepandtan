@@ -189,7 +189,10 @@ export default function Navbar() {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
                 <DropdownMenuItem asChild>
-                  <Link href="/dashboard" className="flex items-center gap-2">
+                  <Link
+                    href={user?.role === "coach" ? "/coach" : "/dashboard"}
+                    className="flex items-center gap-2"
+                  >
                     <LayoutDashboard className="w-4 h-4" />
                     داشبورد
                   </Link>
@@ -267,7 +270,10 @@ export default function Navbar() {
               {!hasHydrated ? null : loggedIn ? (
                 <>
                   <DropdownMenuItem asChild>
-                    <Link href="/dashboard" className="flex items-center gap-2">
+                    <Link
+                      href={user?.role === "coach" ? "/coach" : "/dashboard"}
+                      className="flex items-center gap-2"
+                    >
                       <LayoutDashboard className="w-4 h-4" />
                       داشبورد
                     </Link>

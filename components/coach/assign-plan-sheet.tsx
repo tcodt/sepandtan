@@ -13,13 +13,14 @@ import { db } from "@/lib/api/db";
 import { toast } from "sonner";
 import type { Plan } from "@/lib/types/plan";
 import { cn } from "@/lib/utils";
+import { useMediaQuery } from "@/hooks/use-media-query";
 
 type Props = {
   open: boolean;
   onClose: () => void;
   clientId: string;
   clientRelationId: string;
-  coachUserId: string; // user.id مربی
+  coachUserId: string;
   onSuccess?: () => void;
 };
 
@@ -30,6 +31,7 @@ export function AssignPlanSheet({
   coachUserId,
   onSuccess,
 }: Props) {
+  const isDesktop = useMediaQuery("(min-width: 768px)"); // md breakpoint
   const [plans, setPlans] = useState<Plan[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -61,7 +63,6 @@ export function AssignPlanSheet({
     setSubmitting(true);
 
     try {
-      // در MVP مستقیماً Activate می‌کنیم (قانون یک Active Plan داخل API است)
       await activateCoachPlanForUser(selectedId, clientId);
       toast.success("برنامه با موفقیت فعال شد");
       onSuccess?.();
@@ -77,8 +78,14 @@ export function AssignPlanSheet({
   return (
     <Sheet open={open} onOpenChange={(v) => !v && onClose()}>
       <SheetContent
-        side="bottom"
-        className="h-[70vh] rounded-t-3xl bg-background border-white/10"
+        side={isDesktop ? "right" : "bottom"}
+        className={cn(
+          "bg-muted border-white/10 p-4 md:p-8",
+          // Mobile: bottom sheet look
+          "h-[70vh] rounded-t-3xl",
+          // Desktop: right-side panel look
+          "md:h-full md:w-120 md:max-w-full md:rounded-none md:rounded-l-3xl",
+        )}
       >
         <SheetHeader>
           <SheetTitle>اختصاص برنامه به هنرجو</SheetTitle>
@@ -101,7 +108,7 @@ export function AssignPlanSheet({
               اول یک برنامه بسازید و منتشر کنید.
             </div>
           ) : (
-            <div className="space-y-2 max-h-[40vh] overflow-y-auto">
+            <div className="space-y-2 max-h-[40vh] md:max-h-[60vh] overflow-y-auto">
               {plans.map((plan) => (
                 <button
                   key={plan.id}

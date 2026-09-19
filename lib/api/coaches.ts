@@ -67,3 +67,20 @@ export async function deleteCollaborationRequest(id: string): Promise<void> {
   if (index === -1) throw new Error(`درخواست پیدا نشد: ${id}`);
   db.collaborationRequests.splice(index, 1);
 }
+
+export async function getCoachNameById(
+  coachId: string | null | undefined,
+): Promise<string | null> {
+  if (!coachId) return null;
+  await delay(50); // اختیاری
+  const coach = db.coaches.find((c) => c.id === coachId);
+  return coach?.name ?? null;
+}
+
+export function getCoachNameByIdSync(
+  coachId: string | null | undefined,
+): string | null {
+  if (!coachId) return null;
+  const coach = db.coaches.find((c) => c.id === coachId);
+  return coach?.name ?? null;
+}

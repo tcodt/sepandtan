@@ -2,11 +2,20 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Inbox, Users, FileText, LogOut } from "lucide-react";
+import {
+  LayoutDashboard,
+  Inbox,
+  Users,
+  FileText,
+  UserRound,
+  Settings,
+  LogOut,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { UserProfile } from "@/lib/types/plan";
+import { LogoutDialog } from "@/components/common/logout-dialog";
 
-const navItems = [
+const mainNavItems = [
   { href: "/coach", label: "داشبورد", icon: LayoutDashboard },
   { href: "/coach/requests", label: "درخواست‌ها", icon: Inbox },
   { href: "/coach/clients", label: "هنرجویان", icon: Users },
@@ -31,7 +40,7 @@ export function CoachShell({ user, children }: Props) {
         </div>
 
         <nav className="flex-1 p-4 space-y-1">
-          {navItems.map((item) => {
+          {mainNavItems.map((item) => {
             const isActive =
               item.href === "/coach"
                 ? pathname === "/coach"
@@ -55,14 +64,43 @@ export function CoachShell({ user, children }: Props) {
           })}
         </nav>
 
-        <div className="p-4 border-t border-white/10">
+        {/* بخش پایین سایدبار */}
+        <div className="p-4 border-t border-white/10 space-y-1">
           <Link
-            href="/dashboard"
-            className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-muted-foreground hover:bg-white/5"
+            href="/account"
+            className={cn(
+              "flex items-center gap-3 px-4 py-3 rounded-xl text-sm transition-colors",
+              pathname.startsWith("/account")
+                ? "bg-primary/20 text-primary font-medium"
+                : "text-muted-foreground hover:bg-white/5 hover:text-foreground",
+            )}
           >
-            <LogOut className="w-5 h-5" />
-            بازگشت به اپ
+            <UserRound className="w-5 h-5" />
+            حساب کاربری
           </Link>
+
+          <Link
+            href="/settings"
+            className={cn(
+              "flex items-center gap-3 px-4 py-3 rounded-xl text-sm transition-colors",
+              pathname.startsWith("/settings")
+                ? "bg-primary/20 text-primary font-medium"
+                : "text-muted-foreground hover:bg-white/5 hover:text-foreground",
+            )}
+          >
+            <Settings className="w-5 h-5" />
+            تنظیمات
+          </Link>
+
+          <LogoutDialog>
+            <button
+              type="button"
+              className="flex w-full items-center gap-3 px-4 py-3 rounded-xl text-sm text-destructive hover:bg-destructive/10 transition-colors"
+            >
+              <LogOut className="w-5 h-5" />
+              خروج
+            </button>
+          </LogoutDialog>
         </div>
       </aside>
 
@@ -74,7 +112,7 @@ export function CoachShell({ user, children }: Props) {
       {/* Bottom Nav - Mobile */}
       <nav className="md:hidden fixed bottom-0 inset-x-0 z-50 border-t border-white/10 bg-black/40 backdrop-blur-xl">
         <div className="flex items-center justify-around h-16">
-          {navItems.map((item) => {
+          {mainNavItems.map((item) => {
             const isActive =
               item.href === "/coach"
                 ? pathname === "/coach"
@@ -85,7 +123,7 @@ export function CoachShell({ user, children }: Props) {
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  "flex flex-col items-center gap-1 px-3 py-2 text-xs",
+                  "flex flex-col items-center gap-1 px-2 py-2 text-[11px]",
                   isActive ? "text-primary" : "text-muted-foreground",
                 )}
               >
@@ -94,6 +132,20 @@ export function CoachShell({ user, children }: Props) {
               </Link>
             );
           })}
+
+          {/* آیتم حساب در موبایل */}
+          <Link
+            href="/account"
+            className={cn(
+              "flex flex-col items-center gap-1 px-2 py-2 text-[11px]",
+              pathname.startsWith("/account")
+                ? "text-primary"
+                : "text-muted-foreground",
+            )}
+          >
+            <UserRound className="w-5 h-5" />
+            حساب
+          </Link>
         </div>
       </nav>
     </div>

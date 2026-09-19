@@ -7,11 +7,11 @@ import { useRequireAuth } from "@/hooks/use-require-auth";
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { isLoading, isAuthenticated } = useRequireAuth({
+  const { isLoading, isAuthenticated, user } = useRequireAuth({
     requireOnboarding: true,
+    blockCoach: true, // ← مربی اینجا نیاید
   });
 
-  // اگر اولین ورود بعد از آنبوردینگ باشد → Welcome
   useEffect(() => {
     if (isLoading || !isAuthenticated) return;
     try {
@@ -24,7 +24,7 @@ export default function DashboardPage() {
     }
   }, [isLoading, isAuthenticated, router]);
 
-  if (isLoading || !isAuthenticated) {
+  if (isLoading || !isAuthenticated || user?.role === "coach") {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />

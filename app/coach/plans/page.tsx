@@ -98,8 +98,7 @@ export default function CoachPlansPage() {
         </div>
 
         <Button asChild className="gap-2">
-          <Link href="/coach/plans">
-            {/* در فاز F3 این لینک به Plan Builder می‌رود */}
+          <Link href="/coach/plans/new">
             <Plus className="w-4 h-4" />
             ساخت برنامه جدید
           </Link>

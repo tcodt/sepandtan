@@ -81,7 +81,7 @@ export function OnboardingWizard() {
           await addWeightLog({
             userId: user.id,
             weight: bodyInfo.weight,
-            date: plan.startDate,
+            date: plan.startDate ?? new Date().toISOString().slice(0, 10),
             note: "وزن شروع برنامه",
           });
           localStorage.setItem("sepandtan-welcome-seen", "0");

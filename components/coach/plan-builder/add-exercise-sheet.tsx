@@ -16,6 +16,8 @@ import {
   muscleLabels,
   type Exercise,
 } from "@/lib/data/exercises";
+import { useMediaQuery } from "@/hooks/use-media-query";
+import { cn } from "@/lib/utils";
 
 type Props = {
   open: boolean;
@@ -34,6 +36,7 @@ export function AddExerciseSheet({ open, onClose, onAdd }: Props) {
   const [sets, setSets] = useState(3);
   const [reps, setReps] = useState("8-12");
   const [restSeconds, setRestSeconds] = useState(90);
+  const isDesktop = useMediaQuery("(min-width: 768px)");
 
   const filtered = useMemo(() => {
     if (!query.trim()) return allExercises.slice(0, 30);
@@ -71,8 +74,14 @@ export function AddExerciseSheet({ open, onClose, onAdd }: Props) {
   return (
     <Sheet open={open} onOpenChange={(v) => !v && onClose()}>
       <SheetContent
-        side="bottom"
-        className="h-[85vh] rounded-t-3xl bg-background border-white/10"
+        side={isDesktop ? "right" : "bottom"}
+        className={cn(
+          "rounded-t-3xl bg-muted border-white/10 p-4 md:p-8",
+          // Mobile: bottom sheet look
+          "h-[70vh] rounded-t-3xl",
+          // Desktop: right-side panel look
+          "md:h-full md:w-120 md:max-w-full md:rounded-none md:rounded-l-3xl",
+        )}
       >
         <SheetHeader>
           <SheetTitle>افزودن حرکت</SheetTitle>
