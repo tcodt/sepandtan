@@ -101,7 +101,8 @@ export function BecomeCoachFormSheet({ open, onOpenChange, onSuccess }: Props) {
 
     setIsSubmitting(true);
     try {
-      await submitCoachRequest({
+      // ارتقای کامل: role در db.users + ساخت رکورد در db.coaches
+      const result = await submitCoachRequest({
         userId: user.id,
         specialties: data.specialties,
         experienceYears: data.experienceYears,
@@ -110,14 +111,11 @@ export function BecomeCoachFormSheet({ open, onOpenChange, onSuccess }: Props) {
         website: data.website || null,
       });
 
-      // approve user to coach without admin permission for now
-      setUser({
-        ...user,
-        role: "coach",
-      });
+      // همگام‌سازی store با داده واقعی از db
+      setUser(result.user);
 
-      toast.success("درخواستت ثبت شد", {
-        description: "بعد از بررسی، پنل مربی برات فعال می‌شه.",
+      toast.success("پنل مربی فعال شد", {
+        description: "حالا می‌تونی برنامه بسازی و هنرجو بگیری.",
       });
 
       reset();

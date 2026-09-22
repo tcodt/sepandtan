@@ -391,13 +391,13 @@ export function PlanBuilderShell({
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>انتشار برنامه؟</AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogDescription className="text-right leading-relaxed">
               {weakDaysCount > 0
                 ? `${weakDaysCount.toLocaleString("fa-IR")} روز تمرینی کمتر از ۳ حرکت دارند. بعد از انتشار، برنامه برای اختصاص به هنرجو آماده می‌شود.`
                 : "بعد از انتشار، برنامه برای اختصاص به هنرجو آماده می‌شود."}
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
+          <AlertDialogFooter className="flex-row-reverse gap-2 sm:gap-2 rtl:flex-row-reverse">
             <AlertDialogCancel>انصراف</AlertDialogCancel>
             <AlertDialogAction onClick={() => void confirmPublish()}>
               انتشار

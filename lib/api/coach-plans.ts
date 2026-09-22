@@ -198,8 +198,26 @@ export async function assignPlanToClient(
 }
 
 /**
+ * Deep clone برای weeklyTemplate / days تا template منتشرشده دست‌نخورده بماند
+ */
+function clonePlanDays(
+  days: Plan["days"] | Plan["weeklyTemplate"],
+): NonNullable<Plan["days"]> {
+  if (!days) return [];
+  return days.map((d) => ({
+    ...d,
+    exercises: d.exercises.map((e) => ({ ...e })),
+    meals: d.meals.map((m) => ({ ...m })),
+  }));
+}
+
+/**
  * Activate برنامه مربی برای کاربر
  * قانون «فقط یک Active Plan» اینجا متمرکز و غیرقابل‌نقض است
+ *
+ * - اگر status = published → از روی template یک کپی می‌سازد و همان کپی را active می‌کند
+ *   (template منتشرشده برای هنرجوهای بعدی باقی می‌ماند)
+ * - اگر status = assigned → همان instance را active می‌کند
  */
 export async function activateCoachPlanForUser(
   planId: string,
@@ -207,12 +225,12 @@ export async function activateCoachPlanForUser(
 ): Promise<Plan> {
   await delay();
 
-  const plan = db.plans.find((p) => p.id === planId);
-  if (!plan) throw new Error(`برنامه پیدا نشد: ${planId}`);
-  if (plan.source !== "coach") {
+  const sourcePlan = db.plans.find((p) => p.id === planId);
+  if (!sourcePlan) throw new Error(`برنامه پیدا نشد: ${planId}`);
+  if (sourcePlan.source !== "coach") {
     throw new Error("فقط برنامه مربی قابل فعال‌سازی است");
   }
-  if (plan.status !== "published" && plan.status !== "assigned") {
+  if (sourcePlan.status !== "published" && sourcePlan.status !== "assigned") {
     throw new Error("وضعیت برنامه برای فعال‌سازی مناسب نیست");
   }
 
@@ -221,7 +239,7 @@ export async function activateCoachPlanForUser(
 
   const now = new Date().toISOString();
 
-  // ۱. Archive کردن Active قبلی
+  // ۱. Archive کردن Active قبلی کاربر
   if (user.currentPlanId) {
     const oldPlan = db.plans.find((p) => p.id === user.currentPlanId);
     if (oldPlan && oldPlan.status === "active") {
@@ -229,17 +247,44 @@ export async function activateCoachPlanForUser(
     }
   }
 
-  // ۲. فعال کردن برنامه جدید
-  plan.status = "active";
-  plan.userId = userId;
-  plan.startDate = now;
-  plan.activatedAt = now;
+  let activePlan: Plan;
+
+  if (sourcePlan.status === "published") {
+    // ۲-الف. کپی از template — template published می‌ماند
+    activePlan = {
+      ...sourcePlan,
+      id: createId("plan"),
+      userId,
+      status: "active",
+      startDate: now,
+      activatedAt: now,
+      assignedAt: now,
+      days: clonePlanDays(sourcePlan.days),
+      weeklyTemplate: sourcePlan.weeklyTemplate
+        ? clonePlanDays(sourcePlan.weeklyTemplate)
+        : undefined,
+    };
+    db.plans.push(activePlan);
+  } else {
+    // ۲-ب. assigned → همان را active کن
+    sourcePlan.status = "active";
+    sourcePlan.userId = userId;
+    sourcePlan.startDate = now;
+    sourcePlan.activatedAt = now;
+    activePlan = sourcePlan;
+  }
 
   // ۳. ست کردن currentPlanId
-  user.currentPlanId = plan.id;
+  user.currentPlanId = activePlan.id;
   user.updatedAt = now;
 
-  return { ...plan };
+  return {
+    ...activePlan,
+    days: clonePlanDays(activePlan.days),
+    weeklyTemplate: activePlan.weeklyTemplate
+      ? clonePlanDays(activePlan.weeklyTemplate)
+      : undefined,
+  };
 }
 
 /** خلاصه پیشرفت هنرجو برای پنل مربی (MVP) */

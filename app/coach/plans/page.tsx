@@ -243,12 +243,12 @@ export default function CoachPlansPage() {
                         <AlertDialogContent>
                           <AlertDialogHeader>
                             <AlertDialogTitle>حذف برنامه؟</AlertDialogTitle>
-                            <AlertDialogDescription>
+                            <AlertDialogDescription className="text-right leading-relaxed">
                               «{plan.title}» حذف می‌شود. این عمل قابل بازگشت
                               نیست.
                             </AlertDialogDescription>
                           </AlertDialogHeader>
-                          <AlertDialogFooter>
+                          <AlertDialogFooter className="flex-row-reverse gap-2 sm:gap-2 rtl:flex-row-reverse">
                             <AlertDialogCancel>انصراف</AlertDialogCancel>
                             <AlertDialogAction
                               onClick={() => handleDelete(plan.id)}

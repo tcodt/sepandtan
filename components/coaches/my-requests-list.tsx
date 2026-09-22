@@ -409,12 +409,12 @@ export function MyRequestsList() {
                           <AlertDialogContent dir="rtl">
                             <AlertDialogHeader>
                               <AlertDialogTitle>حذف درخواست</AlertDialogTitle>
-                              <AlertDialogDescription className="text-start">
+                              <AlertDialogDescription className="text-right leading-relaxed">
                                 آیا مطمئنی که می‌خواهی این درخواست را حذف کنی؟
                                 این عمل قابل بازگشت نیست.
                               </AlertDialogDescription>
                             </AlertDialogHeader>
-                            <AlertDialogFooter>
+                            <AlertDialogFooter className="flex-row-reverse gap-2 sm:gap-2 rtl:flex-row-reverse">
                               <div className="flex flex-row-reverse items-center justify-end gap-2 w-full">
                                 <AlertDialogCancel>انصراف</AlertDialogCancel>
                                 <AlertDialogAction

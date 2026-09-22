@@ -8,10 +8,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useUserStore } from "@/lib/store/user-store";
 import { db } from "@/lib/api/db";
 import { getClientProgressSummary } from "@/lib/api/coach-plans";
-import { AssignPlanSheet } from "@/components/coach/assign-plan-sheet";
 import type { ClientRelation } from "@/lib/types/client-relation";
 import type { UserProfile } from "@/lib/types/plan";
 import Image from "next/image";
+import { AssignPlanSheet } from "@/components/coach/assign-plan-sheet";
 
 export default function ClientDetailPage() {
   const params = useParams();
