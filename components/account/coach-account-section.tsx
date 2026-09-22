@@ -9,12 +9,17 @@ import {
   FileText,
   Instagram,
   ExternalLink,
-  Award,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useUserStore } from "@/lib/store/user-store";
+import { getCoachByUserIdSync } from "@/lib/api/coaches";
+import {
+  getClientRelationsForCoach,
+  getCoachPlans,
+} from "@/lib/api/coach-plans";
+import { db } from "@/lib/api/db";
 
 type CoachProfile = {
   specialties: string[];
@@ -29,26 +34,77 @@ type CoachProfile = {
 export function CoachAccountSection() {
   const user = useUserStore((s) => s.user);
   const [profile, setProfile] = useState<CoachProfile | null>(null);
+  const [stats, setStats] = useState({
+    activeClients: "—",
+    requests: "—",
+    plans: "—",
+  });
 
   useEffect(() => {
     if (!user?.id) return;
 
+    // اولویت: db.coaches (منبع حقیقت) → بعد localStorage برای لینک‌های اختیاری
+    const coach = getCoachByUserIdSync(user.id);
+    let fromStorage: Partial<CoachProfile> | null = null;
+
     try {
       const raw = localStorage.getItem(`coach-profile-${user.id}`);
-      if (raw) {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        setProfile(JSON.parse(raw));
-      }
+      if (raw) fromStorage = JSON.parse(raw);
     } catch {
+      fromStorage = null;
+    }
+
+    if (coach) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setProfile({
+        specialties: coach.specialties,
+        experienceYears: coach.experienceYears,
+        bio: coach.bio,
+        instagram: fromStorage?.instagram ?? null,
+        website: fromStorage?.website ?? null,
+        status: "approved",
+        createdAt: coach.createdAt,
+      });
+
+      // آمار واقعی از db
+      void (async () => {
+        try {
+          const [relations, plans] = await Promise.all([
+            getClientRelationsForCoach(coach.id),
+            getCoachPlans(coach.id),
+          ]);
+          const pendingCount = db.collaborationRequests.filter(
+            (r) => r.coachId === coach.id && r.status === "pending",
+          ).length;
+
+          setStats({
+            activeClients: relations.length.toLocaleString("fa-IR"),
+            requests: pendingCount.toLocaleString("fa-IR"),
+            plans: plans.length.toLocaleString("fa-IR"),
+          });
+        } catch {
+          // silent
+        }
+      })();
+    } else if (fromStorage) {
+      setProfile({
+        specialties: fromStorage.specialties ?? [],
+        experienceYears: fromStorage.experienceYears ?? 0,
+        bio: fromStorage.bio ?? "",
+        instagram: fromStorage.instagram,
+        website: fromStorage.website,
+        status: fromStorage.status ?? "approved",
+        createdAt: fromStorage.createdAt ?? new Date().toISOString(),
+      });
+    } else {
       setProfile(null);
     }
   }, [user?.id]);
 
-  // آمار موقتی (بعداً از API واقعی می‌آید)
-  const stats = [
-    { label: "هنرجویان فعال", value: "—", icon: Users },
-    { label: "درخواست‌ها", value: "—", icon: Inbox },
-    { label: "برنامه‌ها", value: "—", icon: FileText },
+  const statsItems = [
+    { label: "هنرجویان فعال", value: stats.activeClients, icon: Users },
+    { label: "درخواست‌ها", value: stats.requests, icon: Inbox },
+    { label: "برنامه‌ها", value: stats.plans, icon: FileText },
   ];
 
   return (
@@ -79,15 +135,14 @@ export function CoachAccountSection() {
 
       {/* آمار مربی */}
       <div className="grid grid-cols-3 gap-3">
-        {stats.map((item) => (
-          <Card
-            key={item.label}
-            className="border-border/50 bg-card/80 dark:bg-card/60"
-          >
+        {statsItems.map((item) => (
+          <Card key={item.label} className="border-border/60 bg-card/50">
             <CardContent className="p-3 text-center space-y-1">
-              <item.icon className="w-4 h-4 mx-auto text-primary" />
-              <p className="text-lg font-bold text-foreground">{item.value}</p>
-              <p className="text-[11px] text-muted-foreground">{item.label}</p>
+              <item.icon className="w-4 h-4 mx-auto text-muted-foreground" />
+              <p className="text-lg font-bold tabular-nums">{item.value}</p>
+              <p className="text-[10px] text-muted-foreground leading-tight">
+                {item.label}
+              </p>
             </CardContent>
           </Card>
         ))}
@@ -95,13 +150,10 @@ export function CoachAccountSection() {
 
       {/* پروفایل مربی */}
       {profile && (
-        <Card className="border-border/50 bg-card/80 dark:bg-card/60">
+        <Card className="border-border/60">
           <CardContent className="p-5 space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="font-semibold text-foreground flex items-center gap-2">
-                <Award className="w-4 h-4 text-primary" />
-                پروفایل مربی
-              </h3>
+              <h3 className="font-semibold text-foreground">پروفایل مربی</h3>
               <Badge
                 variant="outline"
                 className="text-emerald-600 border-emerald-500/30 bg-emerald-500/10"

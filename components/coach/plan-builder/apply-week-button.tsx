@@ -39,12 +39,12 @@ export function ApplyWeekButton({ onApply, disabled, durationWeeks }: Props) {
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>اعمال الگوی هفته؟</AlertDialogTitle>
-          <AlertDialogDescription>
+          <AlertDialogDescription className="text-right leading-relaxed">
             همین ۷ روز روی کل {durationWeeks.toLocaleString("fa-IR")} هفته
             برنامه تکرار می‌شود و سپس ذخیره خواهد شد.
           </AlertDialogDescription>
         </AlertDialogHeader>
-        <AlertDialogFooter>
+        <AlertDialogFooter className="flex-row-reverse gap-2 sm:gap-2 rtl:flex-row-reverse">
           <AlertDialogCancel>انصراف</AlertDialogCancel>
           <AlertDialogAction
             onClick={() => {
