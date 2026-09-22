@@ -39,6 +39,7 @@ export default function NewPlanPage() {
       }
     } catch (err: any) {
       toast.error(err.message || "خطا در ذخیره");
+      throw err;
     } finally {
       setSaving(false);
     }
@@ -56,6 +57,7 @@ export default function NewPlanPage() {
       router.push("/coach/plans");
     } catch (err: any) {
       toast.error(err.message || "خطا در انتشار");
+      throw err;
     } finally {
       setSaving(false);
     }

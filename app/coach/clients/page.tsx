@@ -59,7 +59,6 @@ export default function CoachClientsPage() {
         }),
       );
 
-      // جدیدترین اول
       items.sort(
         (a, b) =>
           new Date(b.relation.startedAt).getTime() -
@@ -80,21 +79,23 @@ export default function CoachClientsPage() {
 
   return (
     <div className="space-y-6 max-w-3xl mx-auto">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold">هنرجویان من</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          {loading ? "..." : `${clients.length} هنرجوی فعال`}
+      <div className="space-y-1">
+        <h1 className="text-2xl font-bold tracking-tight">هنرجویان من</h1>
+        <p className="text-sm text-muted-foreground">
+          {loading
+            ? "در حال بارگذاری..."
+            : clients.length === 0
+              ? "هنرجوی فعالی نداری"
+              : `${clients.length.toLocaleString("fa-IR")} هنرجوی فعال`}
         </p>
       </div>
 
-      {/* List */}
       {loading ? (
         <div className="space-y-3">
           {[1, 2, 3].map((i) => (
             <div
               key={i}
-              className="h-24 rounded-2xl bg-white/5 animate-pulse"
+              className="h-40 rounded-2xl bg-white/5 animate-pulse"
             />
           ))}
         </div>
@@ -105,9 +106,10 @@ export default function CoachClientsPage() {
           {clients.map((item) => (
             <ClientCard
               key={item.relation.id}
-              relation={item.relation}
+              clientId={item.relation.clientId}
               clientName={item.clientName}
               clientAvatar={item.clientAvatar}
+              startedAt={item.relation.startedAt}
               progress={item.progress}
             />
           ))}

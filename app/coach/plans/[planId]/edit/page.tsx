@@ -43,8 +43,8 @@ export default function EditPlanPage() {
         return;
       }
 
-      if (found.status !== "draft") {
-        toast.error("فقط پیش‌نویس قابل ویرایش است");
+      if (found.status !== "draft" && found.status !== "published") {
+        toast.error("این برنامه قابل ویرایش نیست");
         router.replace("/coach/plans");
         return;
       }
@@ -63,6 +63,7 @@ export default function EditPlanPage() {
       toast.success("ذخیره شد");
     } catch (err: any) {
       toast.error(err.message || "خطا در ذخیره");
+      throw err;
     } finally {
       setSaving(false);
     }
@@ -76,6 +77,7 @@ export default function EditPlanPage() {
       router.push("/coach/plans");
     } catch (err: any) {
       toast.error(err.message || "خطا در انتشار");
+      throw err;
     } finally {
       setSaving(false);
     }

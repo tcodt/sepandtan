@@ -7,6 +7,7 @@ import { RequestCard } from "@/components/coach/request-card";
 import { CoachEmptyState } from "@/components/coach/empty-states";
 import type { CollaborationRequest } from "@/lib/types/coach";
 import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
 
 type Filter = "all" | "pending" | "accepted" | "rejected";
 
@@ -24,6 +25,7 @@ export default function CoachRequestsPage() {
   const [requests, setRequests] = useState<
     (CollaborationRequest & { clientName?: string })[]
   >([]);
+  const [pendingCount, setPendingCount] = useState(0);
 
   const loadRequests = useCallback(() => {
     if (!user?.id) return;
@@ -32,17 +34,21 @@ export default function CoachRequestsPage() {
       const coach = db.coaches.find((c) => c.userId === user.id);
       if (!coach) {
         setRequests([]);
+        setPendingCount(0);
         setLoading(false);
         return;
       }
 
-      let list = db.collaborationRequests.filter((r) => r.coachId === coach.id);
+      const allForCoach = db.collaborationRequests.filter(
+        (r) => r.coachId === coach.id,
+      );
+      setPendingCount(allForCoach.filter((r) => r.status === "pending").length);
 
+      let list = [...allForCoach];
       if (filter !== "all") {
         list = list.filter((r) => r.status === filter);
       }
 
-      // مرتب‌سازی: جدیدترین اول
       list.sort(
         (a, b) =>
           new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
@@ -67,25 +73,33 @@ export default function CoachRequestsPage() {
 
   return (
     <div className="space-y-6 max-w-3xl mx-auto">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold">درخواست‌های همکاری</h1>
-        <p className="text-sm text-muted-foreground mt-1">
+      <div className="space-y-1">
+        <div className="flex items-center gap-2 flex-wrap">
+          <h1 className="text-2xl font-bold tracking-tight">
+            درخواست‌های همکاری
+          </h1>
+          {pendingCount > 0 && (
+            <Badge className="bg-amber-500/15 text-amber-400 border-0 text-[10px]">
+              {pendingCount.toLocaleString("fa-IR")} در انتظار
+            </Badge>
+          )}
+        </div>
+        <p className="text-sm text-muted-foreground">
           درخواست‌های کاربران برای همکاری با شما
         </p>
       </div>
 
-      {/* Filters */}
-      <div className="flex gap-2 overflow-x-auto pb-1">
+      <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
         {filters.map((f) => (
           <button
             key={f.key}
+            type="button"
             onClick={() => setFilter(f.key)}
             className={cn(
-              "px-4 py-2 rounded-full text-sm whitespace-nowrap transition-colors",
+              "px-4 py-2 rounded-full text-sm whitespace-nowrap transition-all border",
               filter === f.key
-                ? "bg-primary text-primary-foreground font-medium"
-                : "bg-white/5 text-muted-foreground hover:bg-white/10",
+                ? "bg-primary text-primary-foreground font-medium border-primary shadow-sm"
+                : "bg-white/5 text-muted-foreground border-white/10 hover:bg-white/10 hover:text-foreground",
             )}
           >
             {f.label}
@@ -93,7 +107,6 @@ export default function CoachRequestsPage() {
         ))}
       </div>
 
-      {/* List */}
       {loading ? (
         <div className="space-y-3">
           {[1, 2, 3].map((i) => (
