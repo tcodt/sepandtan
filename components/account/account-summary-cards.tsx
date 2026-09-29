@@ -25,6 +25,8 @@ const STATUS_LABEL: Record<SubscriptionStatus, string> = {
   pro: "حرفه‌ای",
   premium: "پیشرفته",
   coach_plan: "پلن مربی",
+  ai_plan: "پلن هوش مصنوعی",
+  vip: "ویژه",
 };
 
 function statusTextColor(status?: SubscriptionStatus) {
