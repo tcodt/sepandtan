@@ -1,7 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { Play, Bot, Apple, Scale, Dumbbell, User, Users } from "lucide-react";
+import {
+  Play,
+  Bot,
+  Apple,
+  Scale,
+  Dumbbell,
+  User,
+  Users,
+  ClipboardList,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const actions = [
@@ -48,6 +57,12 @@ const actions = [
     label: "حساب من",
     description: "پروفایل و اشتراک",
     icon: User,
+  },
+  {
+    href: "/plans",
+    label: "برنامه‌های من",
+    description: "برنامه‌های تمرینی",
+    icon: ClipboardList,
   },
 ];
 
