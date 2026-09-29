@@ -30,6 +30,14 @@ const STATUS_BADGE: Record<
     label: "👨‍🏫 پلن مربی",
     className: "bg-emerald-500/10 text-emerald-500",
   },
+  ai_plan: {
+    label: "🤖 پلن هوش مصنوعی",
+    className: "bg-fuchsia-500/10 text-fuchsia-500",
+  },
+  vip: {
+    label: "💎 ویژه",
+    className: "bg-purple-500/10 text-purple-500",
+  },
 };
 
 export function ProfileHeader() {
