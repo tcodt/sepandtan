@@ -215,7 +215,9 @@ export default function CoachPlansPage() {
       </div>
 
       {/* ============ Filter pills ============ */}
-      <div className={cn("flex gap-2 pb-1 -mx-1 px-1", SMOOTH_SCROLL)}>
+      <div
+        className={cn("flex flex-wrap gap-2 pb-1 -mx-1 px-1", SMOOTH_SCROLL)}
+      >
         {filters.map((f) => {
           const active = filter === f.key;
           return (
