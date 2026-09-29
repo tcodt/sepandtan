@@ -1,3 +1,11 @@
+export type {
+  PlanAccess,
+  Payment,
+  CoachSale,
+  CoachEarningsSummary,
+  SubscriptionTier,
+} from "./access";
+
 /** انواع مشترک برنامه تمرینی و رژیمی — منبع حقیقت برای User Flow + Coach Flow */
 
 export type Gender = "male" | "female";
@@ -22,7 +30,9 @@ export type SubscriptionStatus =
   | "basic"
   | "pro"
   | "premium"
-  | "coach_plan";
+  | "coach_plan"
+  | "ai_plan"
+  | "vip";
 
 export type BodyInfo = {
   gender: Gender;
@@ -46,6 +56,7 @@ export type UserProfile = {
   onboardingCompleted: boolean;
   currentPlanId?: string | null;
   subscriptionStatus: SubscriptionStatus;
+  subscriptionExpiresAt?: string | null;
   targetWeight?: number;
   createdAt: string;
   updatedAt?: string;
