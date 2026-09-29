@@ -261,11 +261,11 @@ export function PlanBuilderShell({
       : null;
 
   return (
-    <div className="flex flex-col h-full min-h-0 pb-24 md:pb-0">
+    <div className="flex flex-col h-full min-h-0 pb-24 md:pb-0 px-4">
       {/* ============ Header ============ */}
       <header
         className={cn(
-          "sticky top-0 z-30 border-b shrink-0 rounded-full",
+          "sticky top-4 z-30 border-b shrink-0 rounded-full",
           "bg-card/95 border-border shadow-sm shadow-foreground/3",
           "dark:bg-background/80 dark:backdrop-blur-xl dark:shadow-none",
           "dark:border-white/10",
@@ -372,7 +372,7 @@ export function PlanBuilderShell({
 
             {/* MOBILE: ⋯ dropdown with secondary actions */}
             <div className="md:hidden">
-              <DropdownMenu>
+              <DropdownMenu dir="rtl">
                 <DropdownMenuTrigger asChild>
                   <Button
                     type="button"
@@ -385,7 +385,7 @@ export function PlanBuilderShell({
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
-                  align="start"
+                  align="end"
                   sideOffset={6}
                   className={cn(
                     "w-56 rounded-xl",
@@ -501,7 +501,7 @@ export function PlanBuilderShell({
       </header>
 
       {/* ============ Content ============ */}
-      <div className="flex-1 w-full min-h-0 overflow-y-auto px-4 sm:px-6 lg:px-8 py-5">
+      <div className="flex-1 w-full min-h-0 overflow-y-auto sm:px-6 lg:px-8 py-5">
         {showMeta ? (
           <PlanMetaForm
             title={title}

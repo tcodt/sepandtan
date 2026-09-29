@@ -294,7 +294,7 @@ export function DayEditor({ day, onChange }: Props) {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -6 }}
                 transition={{ duration: 0.18, ease: "easeOut" }}
-                className="space-y-3"
+                className="space-y-3 overflow-x-hidden"
               >
                 {day.exercises.length === 0 ? (
                   <EmptyExercises onAdd={() => setAddOpen(true)} />

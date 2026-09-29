@@ -14,7 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Sparkles, Wallet, Check } from "lucide-react";
+import { Sparkles, Wallet, Check, ArrowLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Goal, Equipment } from "@/lib/types/plan";
 
@@ -131,7 +131,9 @@ export function PlanMetaForm({
           <Badge className="bg-primary text-primary-foreground border-0 gap-1 pr-1.5 shadow-sm shadow-primary/25 dark:shadow-none">
             <Check className="w-3 h-3" />۱ · مشخصات
           </Badge>
-          <span className="text-muted-foreground text-xs">→</span>
+          <span className="text-muted-foreground text-xs">
+            <ArrowLeft />
+          </span>
           <Badge
             variant="outline"
             className={cn(
@@ -248,7 +250,7 @@ export function PlanMetaForm({
           </div>
 
           {/* ---- Selects grid ---- */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label className="text-foreground">هدف</Label>
               <Select
