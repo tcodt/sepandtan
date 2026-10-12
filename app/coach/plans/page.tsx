@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   Plus,
@@ -9,6 +9,9 @@ import {
   CheckCircle2,
   Pencil,
   Trash2,
+  ArrowRight,
+  Loader2,
+  X,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
@@ -34,26 +37,19 @@ import { CoachEmptyState } from "@/components/coach/empty-states";
 import type { Plan, PlanStatus } from "@/lib/types/plan";
 import { cn } from "@/lib/utils";
 
-type Filter =
-  | "all"
-  | "draft"
-  | "published"
-  | "assigned"
-  | "active"
-  | "archived";
+/* ------------------------------ types & config ------------------------------ */
+
+type Filter = "all" | PlanStatus;
 
 const filters: { key: Filter; label: string }[] = [
   { key: "all", label: "همه" },
   { key: "draft", label: "پیش‌نویس" },
   { key: "published", label: "منتشرشده" },
+  { key: "assigned", label: "اختصاص‌یافته" },
   { key: "active", label: "فعال" },
   { key: "archived", label: "آرشیو" },
 ];
 
-/**
- * Status config — every color has a light + dark variant.
- * Light uses `-600` for text + `/10` bg; dark uses `-400` + `/15`.
- */
 const statusConfig: Record<
   PlanStatus,
   { label: string; className: string; icon: React.ElementType }
@@ -111,59 +107,71 @@ function formatPrice(price?: number | null) {
   return `${price.toLocaleString("fa-IR")} تومان`;
 }
 
-/** Hidden/transparent scrollbar for the filter bar (mobile). */
 const SMOOTH_SCROLL = cn(
-  "overflow-x-auto overscroll-x-contain scroll-smooth",
+  "overflow-x-auto overscroll-x-contain scroll-smooth snap-x snap-mandatory",
   "[-webkit-overflow-scrolling:touch]",
   "[scrollbar-width:none]",
   "[&::-webkit-scrollbar]:hidden",
-  "[&::-webkit-scrollbar]:h-0",
-  "[&::-webkit-scrollbar-thumb]:bg-transparent",
-  "[&::-webkit-scrollbar-track]:bg-transparent",
 );
+
+/* ------------------------------ page ------------------------------ */
 
 export default function CoachPlansPage() {
   const user = useUserStore((s) => s.user);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<Filter>("all");
-  const [plans, setPlans] = useState<Plan[]>([]);
+  const [allPlans, setAllPlans] = useState<Plan[]>([]);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
+  /* ---- fetch once, filter client-side ---- */
   const loadPlans = useCallback(async () => {
     if (!user?.id) return;
     setLoading(true);
-
     try {
       const coach = db.coaches.find((c) => c.userId === user.id);
       if (!coach) {
-        setPlans([]);
+        setAllPlans([]);
         return;
       }
-
-      const allPlans = await getCoachPlans(coach.id);
-      const filtered =
-        filter === "all"
-          ? allPlans
-          : allPlans.filter((p) => p.status === filter);
-
-      filtered.sort(
+      const list = await getCoachPlans(coach.id);
+      list.sort(
         (a, b) =>
           new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
       );
-
-      setPlans(filtered);
+      setAllPlans(list);
     } catch (err) {
       console.error(err);
       toast.error("خطا در بارگذاری برنامه‌ها");
     } finally {
       setLoading(false);
     }
-  }, [user?.id, filter]);
+  }, [user?.id]);
 
   useEffect(() => {
     loadPlans();
   }, [loadPlans]);
 
+  /* ---- derived ---- */
+  const counts = useMemo(() => {
+    const c: Record<Filter, number> = {
+      all: allPlans.length,
+      draft: 0,
+      published: 0,
+      assigned: 0,
+      active: 0,
+      archived: 0,
+    };
+    for (const p of allPlans) c[p.status] = (c[p.status] ?? 0) + 1;
+    return c;
+  }, [allPlans]);
+
+  const plans = useMemo(
+    () =>
+      filter === "all" ? allPlans : allPlans.filter((p) => p.status === filter),
+    [allPlans, filter],
+  );
+
+  /* ---- delete ---- */
   const handleDelete = async (planId: string) => {
     setDeletingId(planId);
     try {
@@ -179,79 +187,145 @@ export default function CoachPlansPage() {
   };
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto">
+    <div className="mx-auto max-w-4xl space-y-6">
       {/* ============ Header ============ */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="space-y-1">
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">
-            برنامه‌های من
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            ساخت، انتشار و مدیریت برنامه‌های تمرینی
-          </p>
-        </div>
-        <motion.div
-          whileHover={{ y: -1 }}
-          whileTap={{ scale: 0.98 }}
-          transition={{ type: "spring", stiffness: 400, damping: 22 }}
-          className="shrink-0"
-        >
+      <div className="sticky top-0 z-20 -mx-4 border-b border-border bg-background/85 px-4 py-3 backdrop-blur-md sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:p-0 sm:backdrop-blur-none">
+        <div className="flex items-center gap-2 sm:items-start sm:justify-between sm:gap-4">
+          {/* Back button — mobile only in the sticky row */}
           <Button
             asChild
-            className={cn(
-              "gap-2 h-10 font-semibold w-full sm:w-auto",
-              // LIGHT: warm shadow under orange CTA
-              "shadow-sm shadow-primary/20 hover:shadow-md hover:shadow-primary/25",
-              // DARK: glow on hover
-              "dark:shadow-none dark:hover:shadow-lg dark:hover:shadow-primary/30",
-            )}
+            variant="ghost"
+            size="icon"
+            className="size-10 shrink-0 rounded-xl sm:hidden"
           >
-            <Link href="/coach/plans/new">
-              <Plus className="w-4 h-4" />
-              برنامه جدید
+            <Link href="/coach" aria-label="بازگشت به داشبورد">
+              <ArrowRight className="size-5" />
             </Link>
           </Button>
-        </motion.div>
+
+          <div className="min-w-0 flex-1 space-y-1">
+            <h1 className="truncate text-lg font-bold tracking-tight text-foreground sm:text-2xl">
+              برنامه‌های من
+            </h1>
+            <p className="hidden text-sm text-muted-foreground sm:block">
+              ساخت، انتشار و مدیریت برنامه‌های تمرینی
+            </p>
+          </div>
+
+          {/* Desktop back + new plan */}
+          <div className="flex shrink-0 items-center gap-2">
+            <Button
+              asChild
+              variant="outline"
+              className="hidden h-10 gap-2 rounded-xl sm:inline-flex"
+            >
+              <Link href="/coach">
+                <ArrowRight className="size-4" />
+                داشبورد
+              </Link>
+            </Button>
+
+            <motion.div
+              whileHover={{ y: -1 }}
+              whileTap={{ scale: 0.98 }}
+              transition={{ type: "spring", stiffness: 400, damping: 22 }}
+            >
+              <Button
+                asChild
+                className={cn(
+                  "h-10 gap-2 font-semibold",
+                  "shadow-sm shadow-primary/20 hover:shadow-md hover:shadow-primary/25",
+                  "dark:shadow-none dark:hover:shadow-lg dark:hover:shadow-primary/30",
+                )}
+              >
+                <Link href="/coach/plans/new">
+                  <Plus className="size-4" />
+                  <span className="hidden sm:inline">برنامه جدید</span>
+                  <span className="sm:hidden">جدید</span>
+                </Link>
+              </Button>
+            </motion.div>
+          </div>
+        </div>
       </div>
 
       {/* ============ Filter pills ============ */}
-      <div
-        className={cn("flex flex-wrap gap-2 pb-1 -mx-1 px-1", SMOOTH_SCROLL)}
-      >
-        {filters.map((f) => {
-          const active = filter === f.key;
-          return (
-            <motion.button
-              key={f.key}
+      <div className="space-y-2">
+        <div
+          role="tablist"
+          aria-label="فیلتر برنامه‌ها"
+          className={cn(
+            "-mx-4 flex gap-2 px-4 pb-1 sm:mx-0 flex-wrap sm:px-0",
+            SMOOTH_SCROLL,
+          )}
+        >
+          {filters.map((f) => {
+            const active = filter === f.key;
+            const count = counts[f.key];
+            return (
+              <motion.button
+                key={f.key}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                aria-current={active ? "true" : undefined}
+                onClick={() => setFilter(f.key)}
+                whileTap={{ scale: 0.97 }}
+                transition={{ type: "spring", stiffness: 500, damping: 25 }}
+                className={cn(
+                  "flex shrink-0 snap-start items-center gap-1.5 rounded-full border px-3.5 py-2 text-sm whitespace-nowrap transition-colors",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                  active
+                    ? cn(
+                        "border-primary bg-primary font-medium text-primary-foreground",
+                        "shadow-sm shadow-primary/20 dark:shadow-none",
+                      )
+                    : cn(
+                        "border-border bg-card text-muted-foreground",
+                        "hover:border-foreground/20 hover:text-foreground",
+                        "dark:border-white/10 dark:bg-white/5",
+                        "dark:hover:border-white/15 dark:hover:bg-white/10",
+                      ),
+                )}
+              >
+                <span>{f.label}</span>
+                {count > 0 && (
+                  <span
+                    className={cn(
+                      "rounded-full px-1.5 py-px text-[10px] font-semibold leading-tight",
+                      active
+                        ? "bg-primary-foreground/20 text-primary-foreground"
+                        : "bg-muted text-muted-foreground dark:bg-white/10",
+                    )}
+                  >
+                    {count.toLocaleString("fa-IR")}
+                  </span>
+                )}
+              </motion.button>
+            );
+          })}
+        </div>
+
+        {/* Result count + reset (only when filtered) */}
+        {!loading && filter !== "all" && (
+          <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
+            <span>
+              {plans.length.toLocaleString("fa-IR")} برنامه در این دسته
+            </span>
+            <button
               type="button"
-              aria-current={active ? "true" : undefined}
-              onClick={() => setFilter(f.key)}
-              whileTap={{ scale: 0.97 }}
-              transition={{ type: "spring", stiffness: 500, damping: 25 }}
+              onClick={() => setFilter("all")}
               className={cn(
-                "px-4 py-2 rounded-full text-sm whitespace-nowrap border transition-colors",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-                active
-                  ? cn(
-                      "bg-primary text-primary-foreground font-medium border-primary",
-                      // LIGHT: warm shadow
-                      "shadow-sm shadow-primary/20",
-                      "dark:shadow-none",
-                    )
-                  : cn(
-                      // LIGHT: card pill on muted background — visible but quiet
-                      "bg-card text-muted-foreground border-border",
-                      "hover:bg-card hover:text-foreground hover:border-foreground/20",
-                      // DARK
-                      "dark:bg-white/5 dark:border-white/10 dark:text-muted-foreground",
-                      "dark:hover:bg-white/10 dark:hover:border-white/15",
-                    ),
+                "inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs",
+                "hover:bg-accent hover:text-foreground",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
               )}
             >
-              {f.label}
-            </motion.button>
-          );
-        })}
+              <X className="size-3" />
+              نمایش همه
+            </button>
+          </div>
+        )}
       </div>
 
       {/* ============ Content ============ */}
@@ -261,11 +335,9 @@ export default function CoachPlansPage() {
             <div
               key={i}
               className={cn(
-                "h-36 rounded-2xl border animate-pulse",
-                // LIGHT: visible skeleton on muted bg
-                "bg-card/60 border-border",
-                // DARK
-                "dark:bg-white/5 dark:border-white/10",
+                "h-36 animate-pulse rounded-2xl border",
+                "border-border bg-card/60",
+                "dark:border-white/10 dark:bg-white/5",
               )}
             />
           ))}
@@ -274,7 +346,7 @@ export default function CoachPlansPage() {
         <CoachEmptyState type="plans" />
       ) : (
         <div className="space-y-3">
-          <AnimatePresence initial={false}>
+          <AnimatePresence initial={false} mode="popLayout">
             {plans.map((plan, index) => {
               const status = statusConfig[plan.status] ?? statusConfig.draft;
               const StatusIcon = status.icon;
@@ -288,6 +360,7 @@ export default function CoachPlansPage() {
                 : plan.durationDays
                   ? `${plan.durationDays.toLocaleString("fa-IR")} روز`
                   : null;
+              const isDeleting = deletingId === plan.id;
 
               return (
                 <motion.div
@@ -297,7 +370,6 @@ export default function CoachPlansPage() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{
                     opacity: 0,
-                    x: 12,
                     scale: 0.97,
                     transition: { duration: 0.18 },
                   }}
@@ -310,44 +382,40 @@ export default function CoachPlansPage() {
                 >
                   <Card
                     className={cn(
-                      "rounded-2xl overflow-hidden transition-shadow",
-                      // LIGHT: real card + soft elevation (reads as white on muted bg)
-                      "bg-card border-border shadow-sm shadow-foreground/4",
+                      "overflow-hidden rounded-2xl transition-shadow",
+                      "border-border bg-card shadow-sm shadow-foreground/4",
                       "hover:shadow-md hover:shadow-foreground/6",
-                      // DARK: glass
-                      "dark:bg-white/5 dark:border-white/10 dark:shadow-none",
-                      "dark:backdrop-blur-md",
-                      "dark:hover:border-white/20",
+                      "dark:border-white/10 dark:bg-white/5 dark:shadow-none",
+                      "dark:backdrop-blur-md dark:hover:border-white/20",
+                      isDeleting && "opacity-60",
                     )}
                   >
-                    <CardContent className="p-4 sm:p-5 space-y-4">
+                    <CardContent className="space-y-4 p-4 sm:p-5">
                       {/* ---- Top: icon + title + status ---- */}
                       <div className="flex items-start gap-3">
                         <div
                           className={cn(
-                            "w-11 h-11 rounded-xl flex items-center justify-center shrink-0",
-                            // LIGHT: stronger orange presence
+                            "flex size-11 shrink-0 items-center justify-center rounded-xl",
                             "bg-primary/10 ring-1 ring-primary/15",
-                            // DARK
-                            "dark:bg-primary/10 dark:ring-primary/10",
+                            "dark:ring-primary/10",
                           )}
                         >
-                          <FileText className="w-5 h-5 text-primary" />
+                          <FileText className="size-5 text-primary" />
                         </div>
 
                         <div className="min-w-0 flex-1 space-y-2">
-                          <div className="flex items-start justify-between gap-2">
-                            <p className="font-semibold leading-snug text-foreground">
+                          <div className="flex flex-col gap-1.5 sm:flex-row sm:items-start sm:justify-between sm:gap-2">
+                            <p className="min-w-0 font-semibold leading-snug text-foreground">
                               {plan.title}
                             </p>
                             <Badge
                               variant="outline"
                               className={cn(
-                                "text-[10px] h-5 shrink-0 gap-1 border",
+                                "h-5 shrink-0 gap-1 self-start border text-[10px]",
                                 status.className,
                               )}
                             >
-                              <StatusIcon className="w-3 h-3" />
+                              <StatusIcon className="size-3" />
                               {status.label}
                             </Badge>
                           </div>
@@ -355,39 +423,17 @@ export default function CoachPlansPage() {
                           {/* ---- Meta chips ---- */}
                           <div className="flex flex-wrap items-center gap-1.5 text-xs">
                             {duration && (
-                              <span
-                                className={cn(
-                                  "rounded-md px-2 py-0.5",
-                                  // LIGHT: muted chip on card
-                                  "bg-muted text-muted-foreground",
-                                  // DARK
-                                  "dark:bg-white/5 dark:text-muted-foreground",
-                                )}
-                              >
+                              <span className="rounded-md bg-muted px-2 py-0.5 text-muted-foreground dark:bg-white/5">
                                 {duration}
                               </span>
                             )}
                             {plan.level && (
-                              <span
-                                className={cn(
-                                  "rounded-md px-2 py-0.5",
-                                  "bg-muted text-muted-foreground",
-                                  "dark:bg-white/5 dark:text-muted-foreground",
-                                )}
-                              >
+                              <span className="rounded-md bg-muted px-2 py-0.5 text-muted-foreground dark:bg-white/5">
                                 {LEVEL_FA[plan.level] ?? plan.level}
                               </span>
                             )}
                             {price && (
-                              <span
-                                className={cn(
-                                  "rounded-md px-2 py-0.5 font-medium",
-                                  // LIGHT: readable emerald
-                                  "bg-emerald-500/10 text-emerald-700",
-                                  // DARK
-                                  "dark:bg-emerald-500/10 dark:text-emerald-400",
-                                )}
-                              >
+                              <span className="rounded-md bg-emerald-500/10 px-2 py-0.5 font-medium text-emerald-700 dark:text-emerald-400">
                                 {price}
                               </span>
                             )}
@@ -402,96 +448,102 @@ export default function CoachPlansPage() {
                       </div>
 
                       {/* ---- Actions ---- */}
-                      <div className="flex flex-wrap gap-2">
-                        {canEdit && (
-                          <Button
-                            asChild
-                            size="sm"
-                            variant="outline"
-                            className={cn(
-                              "gap-1.5 h-9",
-                              // LIGHT: visible outline
-                              "bg-card border-border hover:bg-accent hover:border-foreground/20",
-                              // DARK
-                              "dark:bg-transparent dark:border-white/15",
-                              "dark:hover:bg-white/5 dark:hover:border-white/25",
-                            )}
-                          >
-                            <Link href={`/coach/plans/${plan.id}/edit`}>
-                              <Pencil className="w-3.5 h-3.5" />
-                              ویرایش
-                            </Link>
-                          </Button>
-                        )}
-
-                        {canDelete && (
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className={cn(
-                                  "gap-1.5 h-9",
-                                  // LIGHT: destructive on hover, quiet by default
-                                  "bg-card border-border text-destructive",
-                                  "hover:bg-destructive/10 hover:border-destructive/30",
-                                  // DARK
-                                  "dark:bg-transparent dark:border-white/15 dark:text-destructive",
-                                  "dark:hover:bg-destructive/15 dark:hover:border-destructive/30",
-                                )}
-                                disabled={deletingId === plan.id}
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                                حذف
-                              </Button>
-                            </AlertDialogTrigger>
-
-                            <AlertDialogContent
+                      {(canEdit || canDelete) && (
+                        <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
+                          {canEdit && (
+                            <Button
+                              asChild
+                              size="sm"
+                              variant="outline"
                               className={cn(
-                                "rounded-2xl max-w-sm",
-                                // LIGHT
-                                "bg-card border-border shadow-xl shadow-foreground/8",
-                                // DARK
-                                "dark:bg-background/95 dark:border-white/10 dark:backdrop-blur-xl",
-                                "dark:shadow-2xl dark:shadow-black/40",
+                                "h-9 gap-1.5",
+                                "border-border bg-card hover:border-foreground/20 hover:bg-accent",
+                                "dark:border-white/15 dark:bg-transparent",
+                                "dark:hover:border-white/25 dark:hover:bg-white/5",
                               )}
                             >
-                              <AlertDialogHeader className="text-right space-y-2">
-                                <AlertDialogTitle className="text-right">
-                                  حذف برنامه؟
-                                </AlertDialogTitle>
-                                <AlertDialogDescription className="text-right leading-relaxed">
-                                  «{plan.title}» حذف می‌شود. این عمل قابل بازگشت
-                                  نیست.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter className="flex-row-reverse gap-2">
-                                <AlertDialogCancel
+                              <Link href={`/coach/plans/${plan.id}/edit`}>
+                                <Pencil className="size-3.5" />
+                                ویرایش
+                              </Link>
+                            </Button>
+                          )}
+
+                          {canDelete && (
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  disabled={isDeleting}
                                   className={cn(
-                                    "border-border bg-card hover:bg-muted/70",
-                                    "dark:border-white/15 dark:bg-transparent dark:hover:bg-white/5",
+                                    "h-9 gap-1.5",
+                                    "border-border bg-card text-destructive",
+                                    "hover:border-destructive/30 hover:bg-destructive/10",
+                                    "dark:border-white/15 dark:bg-transparent dark:text-destructive",
+                                    "dark:hover:border-destructive/30 dark:hover:bg-destructive/15",
                                   )}
                                 >
-                                  انصراف
-                                </AlertDialogCancel>
-                                <AlertDialogAction
-                                  onClick={() => handleDelete(plan.id)}
-                                  className={cn(
-                                    "bg-destructive text-destructive-foreground",
-                                    // LIGHT: warm shadow
-                                    "shadow-sm shadow-destructive/20 hover:shadow-md hover:shadow-destructive/25",
-                                    "hover:bg-destructive/90",
-                                    // DARK
-                                    "dark:shadow-none",
+                                  {isDeleting ? (
+                                    <Loader2 className="size-3.5 animate-spin" />
+                                  ) : (
+                                    <Trash2 className="size-3.5" />
                                   )}
-                                >
                                   حذف
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        )}
-                      </div>
+                                </Button>
+                              </AlertDialogTrigger>
+
+                              <AlertDialogContent
+                                className={cn(
+                                  "max-w-sm rounded-2xl",
+                                  "border-border bg-card shadow-xl shadow-foreground/8",
+                                  "dark:border-white/10 dark:bg-background/95",
+                                  "dark:shadow-2xl dark:shadow-black/40 dark:backdrop-blur-xl",
+                                )}
+                              >
+                                <AlertDialogHeader className="space-y-2 text-right">
+                                  <AlertDialogTitle className="text-right">
+                                    حذف برنامه؟
+                                  </AlertDialogTitle>
+                                  <AlertDialogDescription className="text-right leading-relaxed">
+                                    «{plan.title}» حذف می‌شود. این عمل قابل
+                                    بازگشت نیست.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter className="flex-row-reverse gap-2">
+                                  <AlertDialogCancel
+                                    disabled={isDeleting}
+                                    className={cn(
+                                      "border-border bg-card hover:bg-muted/70",
+                                      "dark:border-white/15 dark:bg-transparent dark:hover:bg-white/5",
+                                    )}
+                                  >
+                                    انصراف
+                                  </AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      handleDelete(plan.id);
+                                    }}
+                                    disabled={isDeleting}
+                                    className={cn(
+                                      "gap-1.5 bg-destructive text-destructive-foreground",
+                                      "shadow-sm shadow-destructive/20 hover:bg-destructive/90",
+                                      "hover:shadow-md hover:shadow-destructive/25",
+                                      "dark:shadow-none",
+                                    )}
+                                  >
+                                    {isDeleting && (
+                                      <Loader2 className="size-3.5 animate-spin" />
+                                    )}
+                                    حذف
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          )}
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
                 </motion.div>
