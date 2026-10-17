@@ -1,31 +1,37 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Download, Play, Sparkles, UserRound } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import type { PlanAccess } from "@/lib/types/access";
 import { formatAccessDates } from "./plan-access-card";
+import { useDownloadPlanPdf } from "@/hooks/use-download-plan-pdf";
+import { usePlanStore } from "@/lib/store/plan-store";
+import { useEffect } from "react";
 
 type Props = {
   access: PlanAccess;
 };
 
 export function ActivePlanCard({ access }: Props) {
-  const [now, setNow] = useState<number | null>(null);
+  const { download, isDownloading } = useDownloadPlanPdf();
+  const { plan, loadPlan } = usePlanStore();
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setNow(Date.now());
-  }, []);
+    if (access.planId && plan?.id !== access.planId) {
+      loadPlan(access.planId);
+    }
+  }, [access.planId, plan?.id, loadPlan]);
 
   const daysLeft =
-    access.endDate != null && now != null
+    access.endDate != null
       ? Math.max(
           0,
           Math.ceil(
-            (new Date(access.endDate).getTime() - now) / (1000 * 60 * 60 * 24),
+            // eslint-disable-next-line react-hooks/purity
+            (new Date(access.endDate).getTime() - Date.now()) /
+              (1000 * 60 * 60 * 24),
           ),
         )
       : null;
@@ -71,11 +77,11 @@ export function ActivePlanCard({ access }: Props) {
         <Button
           variant="outline"
           className="flex-1 gap-2"
-          disabled
-          title="در فاز PDF فعال می‌شود"
+          disabled={isDownloading}
+          onClick={() => download(plan, access)}
         >
           <Download className="size-4" />
-          دانلود PDF
+          {isDownloading ? "در حال ساخت..." : "دانلود PDF"}
         </Button>
         <Button asChild variant="ghost" size="sm" className="sm:px-3">
           <Link href={`/plans/${access.planId}`}>جزئیات</Link>
