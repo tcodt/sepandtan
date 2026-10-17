@@ -9,8 +9,8 @@ import {
   CalendarDays,
   ChevronDown,
   Clock,
+  Download,
   Dumbbell,
-  FileText,
   Flame,
   Loader2,
   Play,
@@ -30,11 +30,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { CoachPlanBadge } from "@/components/common/coach-plan-badge";
 import { useRequireAuth } from "@/hooks/use-require-auth";
 import { useUserPlanAccesses } from "@/hooks/use-user-plan-accesses";
+import { useDownloadPlanPdf } from "@/hooks/use-download-plan-pdf";
 import {
   formatAccessDates,
   statusLabel,
 } from "@/components/plans/plan-access-card";
 import { useUserStore } from "@/lib/store/user-store";
+import { usePlanStore } from "@/lib/store/plan-store";
 import {
   getPlanById,
   getCurrentDayNumber,
@@ -100,11 +102,24 @@ export default function PlanDetailPage() {
 
   const swiperRef = useRef<SwiperClass | null>(null);
 
+  /* ---------- PDF download ---------- */
+  const { download, isDownloading } = useDownloadPlanPdf();
+  const planFromStore = usePlanStore((s) => s.plan);
+  const loadPlan = usePlanStore((s) => s.loadPlan);
+
   const access = useMemo(
     () => accesses.find((a) => a.planId === planId || a.id === planId),
     [accesses, planId],
   );
 
+  // Load plan into store so the PDF hook has access to it.
+  useEffect(() => {
+    if (access?.planId) {
+      loadPlan(access.planId);
+    }
+  }, [access?.planId, loadPlan]);
+
+  /* ---------- Load plan ---------- */
   useEffect(() => {
     if (!planId || !user?.id) return;
 
@@ -173,24 +188,34 @@ export default function PlanDetailPage() {
     swiperRef.current.slideTo(selectedIndex, 300);
   }, [selectedIndex]);
 
+  /* ---------- Derived state ---------- */
+  const isActive = plan?.id === currentPlanId || access?.status === "active";
+
+  const canDownloadPdf =
+    !!access &&
+    !!planFromStore &&
+    (access.status === "active" ||
+      access.status === "pending_activation" ||
+      !!isActive);
+
   const handlePdfDownload = () => {
-    toast.message("خروجی PDF به‌زودی فعال می‌شود", {
-      description: "فعلاً می‌تونی کل برنامه را در همین صفحه مرور کنی.",
-    });
+    if (!canDownloadPdf) return;
+    download(planFromStore, access);
   };
 
+  /* ---------- Loading ---------- */
   if (authLoading || !isAuthenticated || loading || accessesLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-muted">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      <div className="flex min-h-dvh items-center justify-center bg-muted">
+        <Loader2 className="size-8 animate-spin text-primary" />
       </div>
     );
   }
 
   if (!plan) {
     return (
-      <div className="min-h-screen bg-muted px-4 py-8">
-        <div className="max-w-lg mx-auto text-center space-y-4">
+      <div className="min-h-dvh bg-muted px-4 py-8">
+        <div className="mx-auto max-w-lg space-y-4 text-center">
           <p className="text-muted-foreground">برنامه پیدا نشد.</p>
           <Button asChild variant="outline">
             <Link href="/plans">بازگشت به برنامه‌ها</Link>
@@ -200,12 +225,11 @@ export default function PlanDetailPage() {
     );
   }
 
-  const isActive = plan.id === currentPlanId || access?.status === "active";
   const isCoachPlan = plan.source === "coach";
   const coachName = isCoachPlan ? getCoachNameByIdSync(plan.coachId) : null;
 
   return (
-    <div className="min-h-screen bg-muted pb-28 sm:pb-24">
+    <div className="min-h-dvh bg-muted pb-28 sm:pb-24">
       {/* Sticky top bar */}
       <header className="sticky top-0 z-30 border-b border-border/60 bg-background/85 backdrop-blur-md">
         <div className="mx-auto flex h-14 max-w-3xl items-center justify-between gap-2 px-4 sm:px-6">
@@ -221,22 +245,32 @@ export default function PlanDetailPage() {
             </Link>
           </Button>
 
-          <Button
-            variant="outline"
-            size="sm"
-            className="gap-1.5"
-            onClick={handlePdfDownload}
-          >
-            <FileText className="size-4" />
-            <span className="hidden sm:inline">دانلود PDF</span>
-            <span className="sm:hidden">PDF</span>
-          </Button>
+          {canDownloadPdf && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5"
+              onClick={handlePdfDownload}
+              disabled={isDownloading}
+              aria-busy={isDownloading}
+            >
+              {isDownloading ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <Download className="size-4" />
+              )}
+              <span className="hidden sm:inline">
+                {isDownloading ? "در حال ساخت..." : "دانلود PDF"}
+              </span>
+              <span className="sm:hidden">{isDownloading ? "..." : "PDF"}</span>
+            </Button>
+          )}
         </div>
       </header>
 
       <div className="mx-auto max-w-3xl space-y-5 px-4 py-5 sm:px-6 sm:py-8">
         {/* Header card */}
-        <Card className="overflow-hidden border-border/50 bg-card/80 dark:bg-card/60 backdrop-blur-sm">
+        <Card className="overflow-hidden border-border/50 bg-card/80 backdrop-blur-sm dark:bg-card/60">
           <CardContent className="space-y-4 p-4 sm:p-5">
             {/* Badges row */}
             <div className="flex flex-wrap items-center gap-2">
@@ -591,6 +625,7 @@ export default function PlanDetailPage() {
                   شروع تمرین امروز
                 </Link>
               </Button>
+
               <Button
                 asChild
                 variant="outline"
@@ -598,15 +633,59 @@ export default function PlanDetailPage() {
               >
                 <Link href="/nutrition">تغذیه امروز</Link>
               </Button>
+
+              {canDownloadPdf && (
+                <Button
+                  variant="outline"
+                  className="h-11 shrink-0 gap-2 sm:flex-1"
+                  onClick={handlePdfDownload}
+                  disabled={isDownloading}
+                  aria-busy={isDownloading}
+                  aria-label={isDownloading ? "در حال ساخت PDF" : "دانلود PDF"}
+                >
+                  {isDownloading ? (
+                    <Loader2 className="size-4 animate-spin" />
+                  ) : (
+                    <Download className="size-4" />
+                  )}
+                  <span className="hidden sm:inline">
+                    {isDownloading ? "در حال ساخت..." : "دانلود PDF"}
+                  </span>
+                  <span className="sm:hidden">PDF</span>
+                </Button>
+              )}
             </>
           ) : (
-            <Button
-              asChild
-              variant="outline"
-              className="h-11 flex-1 font-medium"
-            >
-              <Link href="/plans">بازگشت به برنامه‌ها</Link>
-            </Button>
+            <div className="flex w-full items-center gap-2">
+              <Button
+                asChild
+                variant="outline"
+                className="h-11 flex-1 font-medium"
+              >
+                <Link href="/plans">بازگشت به برنامه‌ها</Link>
+              </Button>
+
+              {canDownloadPdf && (
+                <Button
+                  variant="outline"
+                  className="h-11 shrink-0 gap-2"
+                  onClick={handlePdfDownload}
+                  disabled={isDownloading}
+                  aria-busy={isDownloading}
+                  aria-label={isDownloading ? "در حال ساخت PDF" : "دانلود PDF"}
+                >
+                  {isDownloading ? (
+                    <Loader2 className="size-4 animate-spin" />
+                  ) : (
+                    <Download className="size-4" />
+                  )}
+                  <span className="hidden sm:inline">
+                    {isDownloading ? "در حال ساخت..." : "دانلود PDF"}
+                  </span>
+                  <span className="sm:hidden">PDF</span>
+                </Button>
+              )}
+            </div>
           )}
         </div>
       </div>
