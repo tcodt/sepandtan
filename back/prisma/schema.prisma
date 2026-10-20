@@ -1,0 +1,1477 @@
+// update with migration ==>
+// npx prisma format
+// npx prisma migrate dev --name add_wallet_returns_shipping
+// npx prisma generate
+// npx prisma migrate reset 
+// npx prisma db push --force-reset
+// in product ==> npx prisma migrate deploy
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// اطلاعات کاربر و احراز هویتش
+
+model User {
+  id              String     @id @default(uuid()) @db.Uuid
+  email           String?    @unique
+  name            String
+  googleId        String?
+  password        String?
+  phone           String?    @unique
+  role            RolePerson @default(USER)
+  status          UserStatus @default(ACTIVE)
+  isPhoneVerified Boolean    @default(false)
+  isEmailVerified Boolean    @default(false)
+
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+  token                Token[]
+  profile              Profile?
+  addresses            Address[]
+  store                Store?
+  reviews              Review[]            @relation("ReviewUser")
+  reviewAnswers        Review[]            @relation("ReviewAnswer")
+  storeReviews         StoreReview[]
+  orders               Order[]
+  cartItems            CartItem[]
+  checkouts            Checkout[]
+  returnRequests       ReturnRequest[]
+  wishlistItems        WishlistItem[]
+  wallet               Wallet?
+  walletTransactions   WalletTransaction[]
+  bankAccounts         BankAccount[]
+  tickets              Ticket[]
+  ticketMessages       TicketMessage[]
+  discountCodesCreated DiscountCode[]      @relation("DiscountCodeCreator")
+  coach                Coach?
+  coachReviews         CoachReview[]
+  planRequests         PlanRequest[]
+  workoutPlans         WorkoutPlan[]
+  dietPlans            DietPlan[]
+
+  @@index([name])
+  @@index([phone])
+  @@index([role])
+  @@map("users")
+}
+
+model Profile {
+  id     String @id @default(uuid())
+  userId String @unique
+
+  // اطلاعات شخصی
+  firstName String?
+  lastName  String?
+  avatar    String?
+  birthDate DateTime? @db.Date
+  gender    Gender?
+
+  // بدن
+  heightCm        Float?
+  currentWeightKg Float?
+  targetWeightKg  Float?
+
+  // هدف و سطح
+  goal                Goal?
+  activityLevel       ActivityLevel?
+  experienceLevel     ExperienceLevel?
+  trainingLocation    TrainingLocation?
+  trainingDaysPerWeek Int?
+  availableEquipment  String[] // مثلا: ["dumbbell", "resistance_band"]
+
+  // سلامت و تغذیه
+  injuries            String?
+  medicalConditions   String?
+  allergies           String[]
+  dietaryRestrictions String[]
+
+  onboardingCompleted Boolean  @default(false)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Address {
+  id         String     @id @default(uuid())
+  title      String?
+  fullName   String     @map("full_name")
+  phone      String
+  provinceId String
+  cityId     String
+  address    String
+  postalCode String?    @map("postal_code")
+  isDefault  Boolean    @default(false) @map("is_default")
+  createdAt  DateTime   @default(now()) @map("created_at")
+  updatedAt  DateTime   @updatedAt @map("updated_at")
+  userId     String     @map("user_id")
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  province   Province   @relation(fields: [provinceId], references: [id], onDelete: Cascade)
+  city       City       @relation(fields: [cityId], references: [id], onDelete: Cascade)
+  checkouts  Checkout[]
+
+  @@index([userId])
+  @@map("addresses")
+}
+
+model Token {
+  id        Int      @id @default(autoincrement())
+  tokenHash String   @unique
+  userId    String   @db.Uuid
+  User      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  device    String?
+  ipAddress String?
+
+  @@index([userId])
+  @@map("tokens")
+}
+
+model OtpCode {
+  id         String     @id @default(uuid())
+  target     String // شماره موبایل یا ایمیل
+  codeHash   String
+  purpose    OtpPurpose
+  attempts   Int        @default(0)
+  expiresAt  DateTime
+  consumedAt DateTime?
+  createdAt  DateTime   @default(now())
+
+  @@index([target, purpose])
+}
+
+// دیتایی که توسط ادمین پر میشه
+model MuscleGroup {
+  id        String     @id @default(uuid())
+  slug      String     @unique
+  title     String
+  exercises Exercise[]
+}
+
+model Equipment {
+  id        String     @id @default(uuid())
+  slug      String     @unique
+  title     String
+  exercises Exercise[]
+}
+
+model Exercise {
+  id          String          @id @default(uuid())
+  slug        String          @unique
+  title       String
+  description String?
+  category    String?
+  level       ExperienceLevel @default(BEGINNER)
+  durationMin Int?
+  caloriesMin Int?
+  caloriesMax Int?
+  gifUrl      String?
+  videoUrl    String?
+  isActive    Boolean         @default(true) // هیچ‌وقت حذف فیزیکی نکن، فقط غیرفعال کن
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  muscles      MuscleGroup[]
+  equipment    Equipment[]
+  workoutItems WorkoutDayExercise[]
+
+  @@index([category, level])
+}
+
+model Food {
+  id              String  @id @default(uuid())
+  name            String
+  category        String?
+  caloriesPer100g Float
+  proteinPer100g  Float   @default(0)
+  carbsPer100g    Float   @default(0)
+  fatPer100g      Float   @default(0)
+  isActive        Boolean @default(true)
+
+  createdAt DateTime @default(now())
+
+  mealItems DietMealItem[]
+
+  @@index([name])
+}
+
+model Specialty {
+  id    String @id @default(uuid())
+  slug  String @unique // weight-loss, bodybuilding, yoga, rehab, nutrition ...
+  title String
+
+  coaches Coach[]
+}
+
+// مربی
+model Coach {
+  id     String @id @default(uuid())
+  userId String @unique
+
+  headline        String? // مثلا: «مربی بدنسازی و تغذیه»
+  bio             String?
+  experienceYears Int     @default(0)
+  instagramUrl    String?
+  websiteUrl      String?
+  addressUrl      String?
+
+  // ظرفیت
+  maxClients         Int     @default(20)
+  isAcceptingClients Boolean @default(true)
+
+  // تایید توسط ادمین
+  status          CoachStatus @default(PENDING)
+  approvedAt      DateTime?
+  rejectionReason String?
+
+  // آمار (denormalized؛ با هر نظر جدید آپدیت بشه)
+  ratingAvg   Float @default(0)
+  ratingCount Int   @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user           User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  specialties    Specialty[]
+  certifications Certification[]
+  availabilities CoachAvailability[]
+  reviews        CoachReview[]
+  planRequests   PlanRequest[]
+  workoutPlans   WorkoutPlan[]
+  dietPlans      DietPlan[]
+
+  @@index([status])
+  @@index([ratingAvg])
+}
+
+model Certification {
+  id          String    @id @default(uuid())
+  coachId     String
+  title       String
+  issuer      String? // مثلا: فدراسیون بدنسازی
+  issuedAt    DateTime? @db.Date
+  expiresAt   DateTime? @db.Date
+  documentUrl String? // عکس یا اسکن مدرک
+  isVerified  Boolean   @default(false)
+  verifiedAt  DateTime?
+
+  createdAt DateTime @default(now())
+
+  coach Coach @relation(fields: [coachId], references: [id], onDelete: Cascade)
+
+  @@index([coachId])
+}
+
+model CoachAvailability {
+  id        String @id @default(uuid())
+  coachId   String
+  weekday   Int // ۰ = شنبه ... ۶ = جمعه
+  startTime String // "09:00"
+  endTime   String // "13:00"
+
+  coach Coach @relation(fields: [coachId], references: [id], onDelete: Cascade)
+
+  @@index([coachId, weekday])
+}
+
+model PlanRequest {
+  id                String            @id @default(uuid())
+  userId            String
+  coachId           String
+  workoutTemplateId String?
+  dietTemplateId    String?
+  note              String?
+  status            PlanRequestStatus @default(PENDING)
+  rejectionReason   String?
+  respondedAt       DateTime?
+
+  createdAt DateTime @default(now())
+
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  coach           Coach         @relation(fields: [coachId], references: [id], onDelete: Cascade)
+  workoutTemplate WorkoutPlan?  @relation("RequestedWorkoutTemplate", fields: [workoutTemplateId], references: [id], onDelete: SetNull)
+  dietTemplate    DietPlan?     @relation("RequestedDietTemplate", fields: [dietTemplateId], references: [id], onDelete: SetNull)
+  workoutPlans    WorkoutPlan[] @relation("WorkoutPlanFromRequest")
+  dietPlans       DietPlan[]    @relation("DietPlanFromRequest")
+
+  @@index([coachId, status])
+  @@index([userId, status])
+}
+
+model WorkoutPlan {
+  id            String           @id @default(uuid())
+  title         String
+  description   String?
+  goal          Goal?
+  level         ExperienceLevel?
+  daysPerWeek   Int?
+  durationWeeks Int?
+
+  isTemplate  Boolean    @default(false)
+  isPublished Boolean    @default(false) // قالب‌های منتشرشده رو کاربر می‌تونه ببینه و انتخاب کنه
+  source      PlanSource @default(COACH)
+  status      PlanStatus @default(DRAFT) // فقط برای برنامه‌های کاربر معنی داره
+
+  coachId          String? // مربی سازنده یا مسئول
+  userId           String? // کاربری که برنامه بهش اختصاص داده شده
+  sourceTemplateId String? // قالب اصلی که ازش کپی شده
+  requestId        String? // درخواستی که این برنامه ازش به وجود اومده
+
+  startDate   DateTime? @db.Date
+  endDate     DateTime? @db.Date
+  activatedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  coach          Coach?        @relation(fields: [coachId], references: [id], onDelete: SetNull)
+  user           User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sourceTemplate WorkoutPlan?  @relation("WorkoutTemplateCopies", fields: [sourceTemplateId], references: [id], onDelete: SetNull)
+  copies         WorkoutPlan[] @relation("WorkoutTemplateCopies")
+  request        PlanRequest?  @relation("WorkoutPlanFromRequest", fields: [requestId], references: [id], onDelete: SetNull)
+  requestedIn    PlanRequest[] @relation("RequestedWorkoutTemplate")
+  days           WorkoutDay[]
+
+  @@index([coachId, isTemplate])
+  @@index([userId, status])
+  @@index([isTemplate, isPublished])
+}
+
+// ورزش و برنامه ها
+model WorkoutDay {
+  id        String  @id @default(uuid())
+  planId    String
+  dayIndex  Int // روز ۱، ۲، ۳ ... داخل برنامه
+  title     String?
+  isRestDay Boolean @default(false)
+  notes     String?
+
+  plan      WorkoutPlan          @relation(fields: [planId], references: [id], onDelete: Cascade)
+  exercises WorkoutDayExercise[]
+
+  @@unique([planId, dayIndex])
+}
+
+model WorkoutDayExercise {
+  id          String  @id @default(uuid())
+  dayId       String
+  exerciseId  String
+  order       Int
+  sets        Int?
+  reps        String? // "10" یا "8-12" یا "تا ناتوانی"
+  durationSec Int?
+  restSec     Int?
+  notes       String?
+
+  day      WorkoutDay @relation(fields: [dayId], references: [id], onDelete: Cascade)
+  exercise Exercise   @relation(fields: [exerciseId], references: [id], onDelete: Restrict)
+
+  @@index([dayId, order])
+}
+
+// برنامه غذایی
+model DietPlan {
+  id             String  @id @default(uuid())
+  title          String
+  description    String?
+  goal           Goal?
+  targetCalories Int?
+  targetProteinG Int?
+  targetCarbsG   Int?
+  targetFatG     Int?
+  durationWeeks  Int?
+
+  isTemplate  Boolean    @default(false)
+  isPublished Boolean    @default(false)
+  source      PlanSource @default(COACH)
+  status      PlanStatus @default(DRAFT)
+
+  coachId          String?
+  userId           String?
+  sourceTemplateId String?
+  requestId        String?
+
+  startDate   DateTime? @db.Date
+  endDate     DateTime? @db.Date
+  activatedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  coach          Coach?        @relation(fields: [coachId], references: [id], onDelete: SetNull)
+  user           User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sourceTemplate DietPlan?     @relation("DietTemplateCopies", fields: [sourceTemplateId], references: [id], onDelete: SetNull)
+  copies         DietPlan[]    @relation("DietTemplateCopies")
+  request        PlanRequest?  @relation("DietPlanFromRequest", fields: [requestId], references: [id], onDelete: SetNull)
+  requestedIn    PlanRequest[] @relation("RequestedDietTemplate")
+  days           DietDay[]
+
+  @@index([coachId, isTemplate])
+  @@index([userId, status])
+  @@index([isTemplate, isPublished])
+}
+
+model DietDay {
+  id       String  @id @default(uuid())
+  planId   String
+  dayIndex Int
+  title    String?
+  notes    String?
+
+  plan  DietPlan   @relation(fields: [planId], references: [id], onDelete: Cascade)
+  meals DietMeal[]
+
+  @@unique([planId, dayIndex])
+}
+
+model DietMeal {
+  id    String   @id @default(uuid())
+  dayId String
+  type  MealType
+  order Int
+  notes String?
+
+  day   DietDay        @relation(fields: [dayId], references: [id], onDelete: Cascade)
+  items DietMealItem[]
+
+  @@index([dayId, order])
+}
+
+model DietMealItem {
+  id            String  @id @default(uuid())
+  mealId        String
+  foodId        String
+  quantityGrams Float
+  notes         String?
+
+  meal DietMeal @relation(fields: [mealId], references: [id], onDelete: Cascade)
+  food Food     @relation(fields: [foodId], references: [id], onDelete: Restrict)
+
+  @@index([mealId])
+}
+
+// فروشنده
+model Store {
+  id               String        @id @default(uuid())
+  userId          String        @unique @map("owner_id") // اگه بعداً خواستی multi-store بشه، unique رو بردار
+  name             String        @map("name")
+  slug             String        @unique @map("slug")
+  logo             String?       @map("logo")
+  banner           String?       @map("banner")
+  description      String?       @map("description")
+  businessType     String?       @map("business_type") // حقیقی / حقوقی
+  nationalId       String?       @map("national_id") // کد ملی یا شناسه ملی
+  economicCode     String?       @map("economic_code")
+  commissionRate   Decimal       @default(0) @map("commission_rate") @db.Decimal(12, 2)
+  status           DefualtStatus @default(PENDING) @map("status")
+  statusReason     String?       @map("status_reason")
+  isActive         Boolean       @default(false) @map("is_active")
+  isVerified       Boolean       @default(false) @map("is_verified")
+  address          String?       @map("address")
+  phone            String?       @map("phone")
+  email            String?       @map("email")
+  instagram        String?       @map("instagram")
+  telegram         String?       @map("telegram")
+  whatsApp         String?       @map("whats_app")
+  bale             String?       @map("bale")
+  robika           String?       @map("robika")
+  shippingTime     String?       @map("shipping_time")
+  taxRate          Decimal       @default(9) @map("tax_rate") @db.Decimal(5, 2)
+  workingHours     String?       @map("working_hours")
+  hasPhysicalStore Boolean       @default(false) @map("has_physical_store")
+
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+  provinceId String?  @map("province_id")
+  cityId     String?  @map("city_id")
+
+  province             Province?             @relation(fields: [provinceId], references: [id])
+  city                 City?                 @relation(fields: [cityId], references: [id])
+  owner                User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  products             Product[]
+  rating               StoreRating?
+  storeReview          StoreReview[]
+  orders               Order[]
+  orderItems           OrderItem[]
+  discountCodeStores   DiscountCodeStore[]
+  storeShippingMethods StoreShippingMethod[]
+
+  @@index([isActive, isVerified])
+  @@index([isActive, isVerified, name])
+  @@map("stores")
+}
+
+model StoreRating {
+  id           String @id @default(uuid())
+  avgRating    Float  @default(0) @map("avg_rating")
+  ratingTotal  Float  @default(0) @map("rating_total")
+  totalReviews Int    @default(0) @map("total_reviews")
+
+  productCount        Int   @default(0) @map("product_count")
+  productQuality      Float @default(5) @map("product_quality")
+  productQualityTotal Float @default(0) @map("product_quality_total")
+  productQualityCount Int   @default(0) @map("product_quality_count")
+
+  totalResponseRequests Int   @default(0) @map("total_response_requests")
+  answeredResponses     Int   @default(0) @map("answered_responses")
+  totalResponseTime     Float @default(0) @map("total_response_time")
+  responseRate          Float @default(100) @map("response_rate")
+  responseTime          Float @default(0) @map("response_time")
+
+  saleCount   Int      @default(0) @map("sale_count")
+  returnCount Int      @default(0) @map("return_count")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  storeId String @unique @map("seller_id")
+  store   Store  @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@index([avgRating])
+  @@index([totalReviews])
+  @@index([productQuality])
+  @@index([answeredResponses])
+  @@index([responseRate])
+  @@index([responseTime])
+  @@index([saleCount])
+  @@map("store_ratings")
+}
+
+// محصولات
+model Product {
+  id              String        @id @default(uuid())
+  title           String        @map("title")
+  slug            String        @unique @map("slug")
+  metaTitle       String?       @map("meta_title")
+  content         Json?         @map("content")
+  description     String        @map("description")
+  originalPrice   Decimal?      @map("original_price") @db.Decimal(12, 2)
+  minPrice        Decimal?      @map("min_Price") @db.Decimal(12, 2)
+  discountPercent String?       @map("discount_percent")
+  status          DefualtStatus @default(PENDING)
+  isFeatured      Boolean       @default(false) @map("is_featured")
+  viewCount       Int           @default(0) @map("view_count")
+  saleCount       Int           @default(0) @map("sale_count")
+  rating          Float         @default(0)
+  reviewCount     Int           @default(0) @map("review_count")
+  productTable    Json?         @map("product_table")
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+  categoryId      String        @map("category_id")
+  brandId         String?       @map("brand_id")
+  storeId         String?       @map("store_id")
+
+  cartItems     CartItem[]
+  orderItems    OrderItem[]
+  images        Media[]
+  variants      ProductVariant[]
+  brand         Brand?           @relation(fields: [brandId], references: [id])
+  category      Category         @relation(fields: [categoryId], references: [id])
+  reviews       Review[]
+  wishlistItems WishlistItem[]
+  store         Store?           @relation(fields: [storeId], references: [id])
+
+  @@index([storeId])
+  @@index([categoryId])
+  @@index([status])
+  @@index([isFeatured])
+  @@index([slug])
+  @@index([minPrice])
+  @@index([saleCount])
+  @@index([rating])
+  @@index([updatedAt])
+  @@map("products")
+}
+
+model ProductVariant {
+  id         String   @id @default(uuid())
+  name       String   @map("name")
+  sku        String?  @unique @map("sku")
+  price      Decimal? @map("price") @db.Decimal(12, 2)
+  quantity   Int      @default(0) @map("quantity")
+  colorId    String?  @map("color_id")
+  image      String?  @map("image")
+  saleCount  Int      @default(0) @map("sale_count")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+  discountId String?  @map("discount_id")
+  productId  String   @map("product_id")
+
+  cartItems  CartItem[]
+  orderItems OrderItem[]
+  attributes VariantAttributeValue[]
+  discount   DiscountCode?           @relation(fields: [discountId], references: [id], onDelete: SetNull)
+  color      Color?                  @relation(fields: [colorId], references: [id], onDelete: SetNull)
+  product    Product                 @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+  @@map("product_variants")
+}
+
+model AttributeDefinition {
+  id       String                  @id @default(cuid())
+  key      String                  @unique @map("key")
+  label    String                  @map("label")
+  category Category[]
+  values   VariantAttributeValue[]
+
+  @@map("attribute_definition")
+}
+
+model VariantAttributeValue {
+  id          String              @id @default(cuid())
+  value       String              @map("value")
+  variantId   String              @map("variant_id")
+  variant     ProductVariant      @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  attributeId String              @map("attribute_id")
+  attribute   AttributeDefinition @relation(fields: [attributeId], references: [id])
+
+  @@unique([variantId, attributeId])
+  @@index([attributeId, value])
+  @@map("variant_attribute_value")
+}
+
+// نظرات
+model Review {
+  id               String   @id @default(uuid())
+  rating           Int
+  title            String?
+  body             String
+  answerReview     String?  @map("answer_review")
+  answerId         String?  @map("answer_id")
+  isApproved       Boolean  @default(false) @map("is_approved")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+  verifiedPurchase Boolean  @default(false)
+  variantInfo      Json?    @map("variant_info")
+  userId           String   @map("user_id")
+  productId        String   @map("product_id")
+  orderId          String?  @map("order_id")
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user    User    @relation("ReviewUser", fields: [userId], references: [id])
+  answer  User?   @relation("ReviewAnswer", fields: [answerId], references: [id])
+
+  @@unique([userId, productId])
+  @@index([productId])
+  @@index([userId])
+  @@index([isApproved])
+  @@index([answerId])
+  @@map("reviews")
+}
+
+model StoreReview {
+  id               String        @id @default(uuid())
+  userId           String        @map("user_id")
+  verifiedPurchase Boolean       @default(false)
+  rating           Int           @map("rating")
+  body             String?       @map("body")
+  productQuality   Int?          @map("product_quality")
+  productName      String?       @map("product_name")
+  status           DefualtStatus @default(PENDING) @map("status")
+  answerReview     String?       @map("answer_review")
+  answerAt         DateTime?     @map("answer_at")
+  responseAt       DateTime?     @map("response_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  storeId String @map("store_id")
+
+  user  User  @relation(fields: [userId], references: [id])
+  store Store @relation(fields: [storeId], references: [id])
+
+  @@unique([userId, storeId])
+  @@index([storeId])
+  @@index([userId])
+  @@index([status])
+  @@map("store_reviews")
+}
+
+model CoachReview {
+  id           String        @id @default(uuid())
+  coachId      String
+  authorId     String
+  comment      String?
+  rating       Int           @map("rating")
+  status       DefualtStatus @default(PENDING) @map("status")
+  answerReview String?       @map("answer_review")
+  updatedAt    DateTime      @updatedAt @map("updated_at")
+  createdAt    DateTime      @default(now())
+
+  coach  Coach @relation(fields: [coachId], references: [id], onDelete: Cascade)
+  author User  @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@unique([coachId, authorId])
+  @@index([coachId])
+  @@map("coach_reviews")
+}
+
+// مدل های مربوطه به سفارش
+model Order {
+  id               String      @id @default(uuid())
+  orderNumber      String      @unique @map("order_number")
+  status           OrderStatus @default(PENDING) @map("status")
+  shippingCost     Decimal     @default(0) @map("shipping_cost") @db.Decimal(12, 2)
+  shippingName     String?     @map("shipping_name")
+  storeName        String      @map("store_name")
+  storeNameEn      String      @map("store_name_en")
+  commission       Decimal     @map("commission") @db.Decimal(12, 2)
+  commissionAmount Decimal     @default(0) @map("commission_amount") @db.Decimal(12, 2)
+  subtotal         Decimal     @map("subtotal") @db.Decimal(13, 2)
+  totalPrice       Decimal     @map("total_price") @db.Decimal(13, 2)
+  discountAmount   Decimal     @default(0) @map("discount_amount") @db.Decimal(12, 2)
+  note             String?     @map("note")
+  trackingCode     String?     @map("tracking_code")
+  taxAmount        Decimal     @default(0) @map("tax_amount") @db.Decimal(12, 2)
+
+  checkoutId            String    @map("checkout_id")
+  storeId               String    @map("store_id")
+  userId                String    @map("user_id")
+  storeShippingMethodId String?   @map("shipping_method_id")
+  discountCodeId        String?   @map("discount_code_id")
+  deliveredAt           DateTime? @map("delivered_at")
+  cancelledAt           DateTime? @map("cancelled_at")
+  returnDeadline        DateTime? @map("return_deadline")
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @updatedAt @map("updated_at")
+
+  checkout            Checkout             @relation(fields: [checkoutId], references: [id])
+  store               Store                @relation(fields: [storeId], references: [id])
+  user                User                 @relation(fields: [userId], references: [id]) // نگه دار برای کوئری سریع‌تر
+  items               OrderItem[]
+  returnRequests      ReturnRequest[]
+  ticket              Ticket?
+  storeShippingMethod StoreShippingMethod? @relation(fields: [storeShippingMethodId], references: [id])
+  discountCode        DiscountCode?        @relation(fields: [discountCodeId], references: [id])
+  walletTransactions  WalletTransaction[]
+
+  @@index([userId])
+  @@index([storeId])
+  @@index([status])
+  @@index([checkoutId])
+  @@map("orders")
+}
+
+model CartItem {
+  id       String @id @default(uuid())
+  quantity Int    @default(1)
+
+  userId    String         @map("user_id")
+  productId String         @map("product_id")
+  variantId String         @map("variant_id")
+  createdAt DateTime       @default(now()) @map("created_at")
+  updatedAt DateTime       @updatedAt @map("updated_at")
+  product   Product        @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  variant   ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, variantId])
+  @@index([userId])
+  @@map("cart_items")
+}
+
+model OrderItem {
+  id            String   @id @default(uuid())
+  sku           String   @map("sku")
+  name          String   @map("name")
+  price         Decimal  @map("price") @db.Decimal(12, 2)
+  originalPrice Decimal? @map("original_price") @db.Decimal(12, 2)
+  total         Decimal  @map("total") @db.Decimal(13, 2)
+  quantity      Int      @map("quantity")
+  returnedQty   Int?     @default(0) @map("returned_qty")
+  attributes    Json?    @map("attributes")
+  colorName     String?  @map("color_name")
+  colorHex      String?  @map("color_hex")
+
+  orderId     String         @map("order_id")
+  productId   String         @map("product_id")
+  storeId     String         @map("store_id")
+  variantId   String         @map("variant_id")
+  createdAt   DateTime       @default(now()) @map("created_at")
+  order       Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product     Product        @relation(fields: [productId], references: [id])
+  store       Store          @relation(fields: [storeId], references: [id])
+  variant     ProductVariant @relation(fields: [variantId], references: [id])
+  returnItems ReturnItem[]
+
+  @@index([orderId])
+  @@index([storeId])
+  @@map("order_items")
+}
+
+model Checkout {
+  id               String          @id @default(uuid())
+  checkoutNumber   String          @unique @map("checkout_number")
+  commissionAmount Decimal         @default(0) @map("commission_amount") @db.Decimal(13, 2)
+  salesProfit      Decimal         @default(0) @map("sales_profit") @db.Decimal(13, 2)
+  totalAmount      Decimal         @map("total_amount") @db.Decimal(13, 2)
+  discountAmount   Decimal         @default(0) @map("discount_amount") @db.Decimal(13, 2)
+  taxAmount        Decimal         @default(0) @map("tax_amount") @db.Decimal(13, 2)
+  discountStatus   StatusDiscount? @map("discount_status")
+  status           OrderStatus     @default(PENDING) @map("status")
+  paymentStatus    PaymentStatus   @default(PENDING) @map("payment_status")
+  paymentMethod    PaymentMethod?  @map("payment_method")
+  paymentRef       String?         @map("payment_ref")
+  shippingName     String          @map("shipping_name")
+  shippingPhone    String          @map("shipping_phone")
+  shippingCity     String          @map("shipping_city")
+  shippingProvince String          @map("shipping_province")
+  shippingAddress  String          @map("shipping_address")
+  shippingPostal   String          @map("shipping_postal")
+
+  discountId String?       @map("discount_id")
+  userId     String        @map("user_id")
+  addressId  String?       @map("address_id")
+  createdAt  DateTime      @default(now()) @map("created_at")
+  updatedAt  DateTime      @updatedAt @map("updated_at")
+  user       User          @relation(fields: [userId], references: [id])
+  address    Address?      @relation(fields: [addressId], references: [id])
+  discount   DiscountCode? @relation(fields: [discountId], references: [id])
+  orders     Order[]
+  payments   Payment[]
+
+  @@index([userId])
+  @@map("checkouts")
+}
+
+model Payment {
+  id           String        @id @default(uuid())
+  amount       Decimal       @db.Decimal(12, 2)
+  method       PaymentMethod
+  status       PaymentStatus @default(PENDING)
+  gatewayRef   String?       @map("gateway_ref")
+  authority    String?
+  errorMessage String?       @map("error_message")
+  paidAt       DateTime?     @map("paid_at")
+  createdAt    DateTime      @default(now()) @map("created_at")
+  checkoutId   String        @map("checkout_id")
+  checkout     Checkout      @relation(fields: [checkoutId], references: [id], onDelete: Cascade)
+
+  @@index([checkoutId])
+  @@map("payments")
+}
+
+model ReturnRequest {
+  id                 String        @id @default(uuid())
+  requestNumber      String        @unique @map("request_number")
+  orderId            String        @map("order_id")
+  userId             String        @map("user_id")
+  status             ReturnStatus  @default(REQUESTED)
+  reason             String        @map("reason")
+  reasonDetail       String?       @map("reason_detail")
+  refundMethod       RefundMethod? @map("refund_method")
+  refundAmount       Decimal?      @map("refund_amount") @db.Decimal(12, 2)
+  returnShippingCost Decimal?      @map("return_shipping_cost") @db.Decimal(12, 2)
+  adminNote          String?       @map("admin_note")
+  createdAt          DateTime      @default(now()) @map("created_at")
+  updatedAt          DateTime      @updatedAt @map("updated_at")
+  resolvedAt         DateTime?     @map("resolved_at")
+
+  order              Order               @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  user               User                @relation(fields: [userId], references: [id])
+  items              ReturnItem[]
+  images             Media[]
+  walletTransactions WalletTransaction[]
+
+  @@index([orderId])
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("return_requests")
+}
+
+model ReturnItem {
+  id              String   @id @default(uuid())
+  returnRequestId String   @map("return_request_id")
+  orderItemId     String   @map("order_item_id")
+  quantity        Int
+  reason          String?
+  condition       String? // سالم / آسیب‌دیده / بازکرده و... برای بررسی انبار فروشنده
+  unitRefund      Decimal? @map("unit_refund") @db.Decimal(12, 2)
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  returnRequest ReturnRequest @relation(fields: [returnRequestId], references: [id], onDelete: Cascade)
+  orderItem     OrderItem     @relation(fields: [orderItemId], references: [id])
+
+  @@index([returnRequestId])
+  @@index([orderItemId])
+  @@map("return_items")
+}
+
+// عکس و برند و دسته و علاقه مندی و رنگ
+
+model Media {
+  id              String         @id @default(uuid())
+  url             String         @unique
+  alt             String?
+  useCase         MediaUseCase   @default(PRODUCT) @map("use_case")
+  sortOrder       Int            @default(0) @map("sort_order")
+  type            TypeMedia
+  isMain          Boolean        @default(false) @map("is_main")
+  createdAt       DateTime       @default(now()) @map("created_at")
+  productId       String?        @map("product_id")
+  reportsId       String?
+  ticketMessageId String?
+  returnRequestId String?
+  product         Product?       @relation(fields: [productId], references: [id], onDelete: Cascade)
+  reports         Reports?       @relation(fields: [reportsId], references: [id])
+  ticketMessage   TicketMessage? @relation(fields: [ticketMessageId], references: [id])
+  returnRequest   ReturnRequest? @relation(fields: [returnRequestId], references: [id])
+
+  @@index([productId])
+  @@map("product_images")
+}
+
+model Brand {
+  id          String    @id @default(uuid())
+  name        String
+  sortOrder   Int?      @default(0)
+  slug        String    @unique
+  logo        String?
+  description String?
+  products    Product[]
+
+  @@map("brands")
+}
+
+model Category {
+  id                   String                @id @default(uuid())
+  name                 String
+  slug                 String                @unique
+  parentId             String?               @map("parent_id")
+  icon                 String?
+  image                String?
+  ancestorIds          String[]              @default([])
+  sortOrder            Int                   @default(0) @map("sort_order")
+  isActive             Boolean               @default(true) @map("is_active")
+  metaTitle            String?               @map("meta_title")
+  metaDescription      String?               @map("meta_description")
+  createdAt            DateTime              @default(now()) @map("created_at")
+  updatedAt            DateTime              @updatedAt @map("updated_at")
+  parent               Category?             @relation("CategoryTree", fields: [parentId], references: [id])
+  children             Category[]            @relation("CategoryTree")
+  products             Product[]
+  attributeDefinitions AttributeDefinition[]
+
+  @@index([parentId])
+  @@index([isActive, sortOrder])
+  @@map("categories")
+}
+
+model Color {
+  id              String           @id @default(uuid())
+  name            String           @map("name")
+  hexCode         String           @map("hex_code")
+  slug            String           @unique @map("slug")
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @updatedAt @map("updated_at")
+  productVariants ProductVariant[]
+
+  @@map("color")
+}
+
+model WishlistItem {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  userId    String   @map("user_id")
+  productId String   @map("product_id")
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
+  @@map("wishlist_items")
+}
+
+// کیف پول و تراکنش و بانک
+model Wallet {
+  id              String  @id @default(uuid())
+  userId          String  @unique @map("user_id")
+  balance         Decimal @default(0) @db.Decimal(18, 2)
+  pendingBalance  Decimal @default(0) @map("pending_balance") @db.Decimal(18, 2)
+  withdrawBalance Decimal @default(0) @map("withdraw_balance") @db.Decimal(18, 2)
+  frozenBalance   Decimal @default(0) @map("frozen_balance") @db.Decimal(18, 2)
+  isPlatform      Boolean @default(false) @map("is_platform")
+
+  bankAccountId String?             @map("bank_account_id")
+  updatedAt     DateTime            @updatedAt @map("updated_at")
+  createdAt     DateTime            @default(now()) @map("created_at")
+  user          User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions  WalletTransaction[]
+  bankAccounts  BankAccount[]
+
+  @@map("wallets")
+}
+
+model WalletTransaction {
+  id           String                  @id @default(uuid())
+  type         WalletTransactionType   @map("type")
+  status       WalletTransactionStatus @default(COMPLETED)
+  amount       Decimal                 @map("amount") @db.Decimal(18, 2)
+  trackingCode String                  @unique @map("tracking_code")
+  description  String?                 @map("description")
+
+  userId          String    @map("user_id")
+  walletId        String    @map("wallet_id")
+  orderId         String?   @map("order_id")
+  returnRequestId String?   @map("return_request_id")
+  settlementDate  DateTime? @map("settlement_date")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  wallet        Wallet         @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  user          User           @relation(fields: [userId], references: [id])
+  order         Order?         @relation(fields: [orderId], references: [id])
+  returnRequest ReturnRequest? @relation(fields: [returnRequestId], references: [id])
+
+  @@index([userId])
+  @@index([walletId])
+  @@index([type, status])
+  @@index([orderId])
+  @@index([userId, createdAt])
+  @@map("wallet_transactions")
+}
+
+model BankAccount {
+  id            String  @id @default(uuid())
+  bankName      String? @map("bank_name")
+  accountHolder String  @map("account_holder")
+  iban          String  @map("iban")
+  cardNumber    String? @map("card_number")
+  isDefault     Boolean @default(false) @map("is_default")
+  isVerified    Boolean @default(false) @map("is_verified")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  userId    String   @map("user_id")
+  walletId  String?  @map("wallet_id")
+
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  wallet Wallet? @relation(fields: [walletId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("bank_accounts")
+}
+
+// تخفیف
+model DiscountCode {
+  id             String         @id @default(uuid())
+  code           String         @unique @map("code")
+  description    String?
+  maxDiscount    Decimal?       @map("max_discount") @db.Decimal(12, 2)
+  value          Decimal        @map("value") @db.Decimal(12, 2)
+  minOrderAmount Decimal        @default(0) @map("min_order_amount") @db.Decimal(12, 2)
+  usageLimit     Int            @default(0) @map("usage_limit")
+  usedCount      Int            @default(0) @map("used_count")
+  perUserLimit   Int            @default(0) @map("per_user_limit")
+  isActive       Boolean        @default(true) @map("is_active")
+  status         StatusDiscount @default(PRODUCT)
+  type           DiscountType   @default(PERCENTAGE) @map("type")
+
+  userId    String?  @map("user_id")
+  startsAt  DateTime @map("starts_at")
+  endsAt    DateTime @map("ends_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  usages             DiscountCodeUsage[]
+  user               User?               @relation("DiscountCodeCreator", fields: [userId], references: [id])
+  orders             Order[]
+  productVariants    ProductVariant[]
+  checkouts          Checkout[]
+  discountCodeStores DiscountCodeStore[]
+
+  @@index([userId])
+  @@map("discount_codes")
+}
+
+model DiscountCodeStore {
+  discountCodeId String
+  storeId        String
+
+  discountCode DiscountCode @relation(fields: [discountCodeId], references: [id], onDelete: Cascade)
+  store        Store        @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@id([discountCodeId, storeId])
+  @@index([storeId])
+  @@map("discount_code_stores")
+}
+
+model DiscountCodeUsage {
+  id             String       @id @default(uuid())
+  createdAt      DateTime     @default(now()) @map("created_at")
+  discountCodeId String       @map("discount_code_id")
+  userId         String       @map("user_id")
+  discountCode   DiscountCode @relation(fields: [discountCodeId], references: [id], onDelete: Cascade)
+  amount         Decimal      @db.Decimal(12, 2)
+
+  @@index([discountCodeId])
+  @@index([userId])
+  @@map("discount_code_usages")
+}
+
+// شهر و استان
+model Province {
+  id     String  @id @default(uuid())
+  name   String  @unique @map("name")
+  nameEn String? @map("name_en")
+
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  cityes             City[]
+  store              Store[]
+  storeShippingRates StoreShippingRate[]
+  addresses          Address[]
+
+  @@map("provinces")
+}
+
+model City {
+  id     String  @id @default(uuid())
+  name   String  @map("name")
+  nameEn String? @map("name_en")
+
+  provinceId String
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  province   Province  @relation(fields: [provinceId], references: [id])
+  store      Store[]
+  addresses  Address[]
+
+  @@unique([provinceId, name])
+  @@index([provinceId])
+  @@map("cities")
+}
+
+// پشتیبانی و گزارش ها
+model Ticket {
+  id             String          @id @default(uuid())
+  status         TicketStatus    @default(PENDING)
+  priority       TicketPriority
+  title          String
+  trackingCode   String
+  isUserRead     Boolean         @default(false)
+  createdAt      DateTime        @default(now()) @map("created_at")
+  updatedAt      DateTime        @updatedAt @map("updated_at")
+  userId         String          @map("user_id")
+  orderId        String?         @unique @map("order_id") // ✅ unique می‌ماند
+  ticketMessages TicketMessage[]
+  order          Order?          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+  @@index([priority])
+  @@map("tickets")
+}
+
+model TicketMessage {
+  id        String   @id @default(cuid())
+  content   String
+  ticketId  String
+  senderId  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  images    Media[]
+  sender    User     @relation(fields: [senderId], references: [id])
+  ticket    Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  @@index([ticketId])
+  @@index([senderId])
+  @@index([createdAt])
+  @@map("ticket_messages")
+}
+
+model Reports {
+  id           String        @id @default(uuid())
+  nameSeller   String?
+  content      String
+  title        String
+  orderCode    String?
+  trackingCode String?
+  status       ReportsStatus @default(PENDING)
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime      @updatedAt @map("updated_at")
+  images       Media[]
+
+  @@index([status])
+  @@map("reports")
+}
+
+// ارسال
+model ShippingMethod {
+  id           String  @id @default(uuid())
+  name         String  @map("name")
+  nameEn       String? @map("name_en")
+  isFreeMethod Boolean @default(false) @map("is_free_method")
+  isActive     Boolean @default(true) @map("is_active")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  storeShippingMethods StoreShippingMethod[]
+
+  @@index([isActive])
+  @@map("shipping_methods")
+}
+
+model StoreShippingMethod {
+  id            String   @id @default(uuid())
+  isActive      Boolean  @default(true) @map("is_active")
+  description   String?  @map("description")
+  descriptionEn String?  @map("description_en")
+  phrase        String?  @map("phrase")
+  minDays       Int      @map("min_days")
+  maxDays       Int      @map("max_days")
+  defaultPrice  Decimal? @map("default_price") @db.Decimal(12, 2)
+
+  storeId          String
+  shippingMethodId String
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  store          Store               @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  shippingMethod ShippingMethod      @relation(fields: [shippingMethodId], references: [id], onDelete: Cascade)
+  rates          StoreShippingRate[]
+  orders         Order[]
+
+  @@unique([storeId, shippingMethodId])
+  @@index([storeId])
+  @@index([shippingMethodId])
+  @@map("store_shipping_methods")
+}
+
+model StoreShippingRate {
+  id              String  @id @default(uuid())
+  price           Decimal @map("price") @db.Decimal(12, 2)
+  deliveryMaxDays Int     @map("return_days")
+
+  storeShippingMethodId String
+  provinceId            String
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  storeShippingMethod StoreShippingMethod @relation(fields: [storeShippingMethodId], references: [id], onDelete: Cascade)
+  province            Province            @relation(fields: [provinceId], references: [id], onDelete: Cascade)
+
+  @@unique([storeShippingMethodId, provinceId])
+  @@index([provinceId])
+  @@map("store_shipping_rates")
+}
+
+// تمام مقادیر ثابت
+enum RolePerson {
+  USER
+  ADMIN
+  SUPERADMIN
+  AUTHOR
+  COACH
+  STORE
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  DELETED
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+enum Goal {
+  WEIGHT_LOSS
+  MUSCLE_GAIN
+  FITNESS
+}
+
+enum ActivityLevel {
+  SEDENTARY // بی‌تحرک
+  LIGHT // کم‌تحرک
+  MODERATE // متوسط
+  ACTIVE // فعال
+  VERY_ACTIVE // خیلی فعال
+}
+
+enum ExperienceLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+}
+
+enum TrainingLocation {
+  HOME
+  GYM
+  BOTH
+}
+
+enum OtpPurpose {
+  REGISTER
+  LOGIN
+  RESET_PASSWORD
+}
+
+enum DefualtStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  RETURNED
+}
+
+enum StatusDiscount {
+  PLATFORM
+  STORE
+  COMMISSION
+  PRODUCT
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  REFUNDED
+}
+
+enum PaymentMethod {
+  CARD
+  WALLET
+  COD
+  ZARINPAL
+}
+
+enum ReturnStatus {
+  REQUESTED
+  APPROVED
+  REJECTED
+  ITEM_RECEIVED
+  REFUNDED
+  CLOSED
+}
+
+enum RefundMethod {
+  WALLET
+  ORIGINAL_PAYMENT
+}
+
+enum WalletTransactionType {
+  DEPOSIT // واریز
+  WITHDRAW // برداشت
+  COMMISSION // کمیسیون
+  TAX // مالیات
+  REFUND // بازگشت وجه
+  PURCHASE // خرید
+  // واریز خودکار به فروشنده بابت تسویه‌ی یک سفارش
+  SALE_SETTLEMENT
+  // کسر از کیف‌پول فروشنده بابت مرجوعی کالا
+  RETURN_DEDUCTION
+}
+
+enum WalletTransactionStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
+
+enum DiscountType {
+  PERCENTAGE
+  FIXED
+}
+
+enum TicketStatus {
+  PENDING
+  WAITING
+  RESOLVED
+  CLOSED
+}
+
+enum TicketPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+  CRITICAL
+}
+
+enum MediaUseCase {
+  AVATAR
+  PRODUCT
+  POST
+  ATTACHMENT
+  THUMBNAIL
+  WATERMARK
+  REPORTS
+  MAINS
+}
+
+enum TypeMedia {
+  VIDEO
+  IMAGE
+  VOICE
+  FILE
+  BANNER
+  AVATAR
+}
+
+enum ReportsStatus {
+  PENDING
+  RESOLVED
+  CLOSED
+}
+
+enum CoachStatus {
+  PENDING // درخواست ثبت‌نام داده، منتظر تایید ادمین
+  APPROVED
+  REJECTED
+  SUSPENDED
+}
+
+enum CoachClientStatus {
+  PENDING // درخواست همکاری ارسال شده
+  ACTIVE
+  PAUSED
+  ENDED
+  REJECTED
+}
+
+enum PlanStatus {
+  DRAFT // مربی در حال ویرایشه، کاربر نمی‌بینه
+  ACTIVE // فعال و قفل‌شده (snapshot)
+  COMPLETED // تموم شده یا با برنامه جدید جایگزین شده
+  CANCELLED
+}
+
+enum PlanRequestStatus {
+  PENDING
+  ACCEPTED
+  PAID
+  DELIVERED
+  REJECTED
+  CANCELLED
+}
+
+enum PlanSource {
+  COACH
+  AI
+}
+
+enum MealType {
+  BREAKFAST
+  LUNCH
+  DINNER
+  SNACK
+}

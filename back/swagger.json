@@ -1,0 +1,554 @@
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/user": {
+      "get": {
+        "description": "دسترسی : ادمین",
+        "operationId": "UserController_getUser",
+        "parameters": [
+          {
+            "name": "order",
+            "required": false,
+            "in": "query",
+            "description": "ترتیب داده‌ها",
+            "schema": {
+              "nullable": true,
+              "example": "desc",
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ]
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "شماره صفحه",
+            "schema": {
+              "example": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "تعداد آیتم در هر صفحه",
+            "schema": {
+              "example": 10,
+              "type": "number"
+            }
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "description": "جستجو در بخش اسم و شماره تلفن",
+            "schema": {
+              "example": "ali",
+              "type": "string"
+            }
+          },
+          {
+            "name": "role",
+            "required": false,
+            "in": "query",
+            "description": "نقش های کاربر",
+            "schema": {
+              "example": "USER",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Get all user with query",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedResponse"
+                }
+              }
+            }
+          }
+        },
+        "summary": "get all users",
+        "tags": [
+          "User"
+        ]
+      },
+      "post": {
+        "description": "دسترسی : ادمین",
+        "operationId": "UserController_PostUser",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateUserDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "success": true
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "create users",
+        "tags": [
+          "User"
+        ]
+      }
+    },
+    "/user/profile": {
+      "get": {
+        "description": "دسترسی : تمام نقش های احراز هویت شده",
+        "operationId": "UserController_getProfile",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserEntity"
+                }
+              }
+            }
+          }
+        },
+        "summary": "get Profile",
+        "tags": [
+          "User"
+        ]
+      }
+    },
+    "/user/{id}": {
+      "delete": {
+        "description": "دسترسی : ادمین",
+        "operationId": "UserController_deleteUser",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "شناسه کاربر که باید حذف شود",
+            "schema": {
+              "example": "cf91f6d4-ba85-4dd4-b870-37dbf1702ca4",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "success": true
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "delete user with ID",
+        "tags": [
+          "User"
+        ]
+      },
+      "put": {
+        "description": "دسترسی : تمام نقش های احراز هویت شده",
+        "operationId": "UserController_updateUser",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "ارسال آیدی به صورت اختیاری هستش کاربر برای آپدیت پروفایل خودش نیاز به ارسال آیدی ندارد و زمانی که ادمین پروفایل شخص دیگری را آپدیت بکند نیاز به ارسال آیدی آن شخص است",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateUserDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "success": true
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "update user",
+        "tags": [
+          "User"
+        ]
+      }
+    },
+    "/user/getcontractor": {
+      "get": {
+        "description": "تمام کاربرانی که مجری هستند ولی اطلاعات بخش مجری خود را ثبت نکرده اند",
+        "operationId": "UserController_getContractor",
+        "parameters": [
+          {
+            "name": "order",
+            "required": false,
+            "in": "query",
+            "description": "ترتیب داده‌ها",
+            "schema": {
+              "nullable": true,
+              "example": "desc",
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ]
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "شماره صفحه",
+            "schema": {
+              "example": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "تعداد آیتم در هر صفحه",
+            "schema": {
+              "example": 10,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserEntity"
+                }
+              }
+            }
+          }
+        },
+        "summary": "get contractor",
+        "tags": [
+          "User"
+        ]
+      }
+    },
+    "/auth": {
+      "delete": {
+        "operationId": "AuthController_authLogOut",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Log-Out User",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "operationId": "AuthController_authLogin",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "Send either \"password\" or \"googleId\". One of these fields is required for login.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthEntities"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Sign-In User",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/auth/register": {
+      "post": {
+        "operationId": "AuthController_authRegister",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "Send either \"password\" or \"googleId\". One of these fields is required for registration.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthEntities"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Sign-Up User",
+        "tags": [
+          "Auth"
+        ]
+      }
+    }
+  },
+  "info": {
+    "title": "Marketino API",
+    "description": "Marketino Website API ",
+    "version": "1.0",
+    "contact": {
+      "name": "Reza & Amir",
+      "url": "https://github.com",
+      "email": "r.dkhani1385.66@gmail.com"
+    },
+    "license": {
+      "name": "MIT",
+      "url": "https://opensource.org/licenses/MIT"
+    }
+  },
+  "tags": [],
+  "servers": [
+    {
+      "url": "http://localhost:3000",
+      "description": "Local Server"
+    },
+    {
+      "url": "https://domaintest.com",
+      "description": "Test Server..."
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearer": {
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "type": "http"
+      }
+    },
+    "schemas": {
+      "PaginatedResponse": {
+        "type": "object",
+        "properties": {}
+      },
+      "UserEntity": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "name": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "object"
+          },
+          "role": {
+            "type": "object"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "email",
+          "phone",
+          "role",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "UpdateUserDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "ali 123"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "USER",
+              "ADMIN",
+              "CONTRACTOR",
+              "AUTHOR"
+            ],
+            "example": "USER"
+          },
+          "password": {
+            "type": "string",
+            "example": "123"
+          },
+          "phone": {
+            "type": "string",
+            "example": "09390199977"
+          },
+          "email": {
+            "type": "string",
+            "example": "r.khani1385@gmail.com"
+          },
+          "id": {
+            "type": "string",
+            "example": "e3e9586b-9680-477e-86af-5f10f8c17433",
+            "description": "شناسه اختیاری برای آپدیت پروفایل دیگران"
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "LoginDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "ali"
+          },
+          "email": {
+            "type": "string",
+            "example": "ali@example.com"
+          },
+          "password": {
+            "type": "string",
+            "example": "123",
+            "description": "There is no need for a password when the user logs in with a Google account."
+          },
+          "phone": {
+            "type": "string",
+            "example": "09390199977",
+            "description": "There is no need for a password when the user logs in with a Google account."
+          },
+          "googleId": {
+            "type": "string",
+            "example": "710927351",
+            "description": "There is no need for a googleId when the user logs in with a Password."
+          },
+          "remember": {
+            "type": "boolean",
+            "example": false,
+            "description": "this for remember me."
+          }
+        },
+        "required": [
+          "name",
+          "email"
+        ]
+      },
+      "AuthEntities": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "googleId": {
+            "type": "string",
+            "nullable": true,
+            "example": "google-uid-123"
+          },
+          "phone": {
+            "type": "string",
+            "nullable": true,
+            "example": "09390199977"
+          },
+          "role": {
+            "type": "string",
+            "example": "USER",
+            "enum": [
+              "USER",
+              "ADMIN",
+              "CONTRACTOR",
+              "AUTHOR",
+              "COACH"
+            ]
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "createdAt"
+        ]
+      }
+    }
+  }
+}
