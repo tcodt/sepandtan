@@ -1,7 +1,8 @@
 // update with migration ==>
-// npx prisma format
 // npx prisma migrate dev --name add_wallet_returns_shipping
 // npx prisma generate
+// npx prisma format
+// در شرایط اضطراری 
 // npx prisma migrate reset 
 // npx prisma db push --force-reset
 // in product ==> npx prisma migrate deploy
@@ -21,7 +22,7 @@ model User {
   id              String     @id @default(uuid()) @db.Uuid
   email           String?    @unique
   name            String
-  googleId        String?
+  googleId        String?    @unique
   password        String?
   phone           String?    @unique
   role            RolePerson @default(USER)
@@ -52,50 +53,52 @@ model User {
   coach                Coach?
   coachReviews         CoachReview[]
   planRequests         PlanRequest[]
-  workoutPlans         WorkoutPlan[]
-  dietPlans            DietPlan[]
+  subscriptions        Subscription[]
+  userPlans            UserPlan[]
+  userLogs             UserLog[]
 
   @@index([name])
-  @@index([phone])
   @@index([role])
   @@map("users")
 }
 
 model Profile {
   id     String @id @default(uuid())
-  userId String @unique
+  userId String @unique @map("user_id") @db.Uuid
 
   // اطلاعات شخصی
-  firstName String?
-  lastName  String?
-  avatar    String?
-  birthDate DateTime? @db.Date
-  gender    Gender?
+  avatar    String? @map("avatar")
+  firstName String? @map("first_name")
+  lastName  String? @map("last_name")
 
   // بدن
-  heightCm        Float?
-  currentWeightKg Float?
-  targetWeightKg  Float?
+  heightCm        Float? @map("height_cm")
+  currentWeightKg Float? @map("current_weight_kg")
+  targetWeightKg  Float? @map("target_weight_kg")
 
-  // هدف و سطح
-  goal                Goal?
-  activityLevel       ActivityLevel?
-  experienceLevel     ExperienceLevel?
-  trainingLocation    TrainingLocation?
-  trainingDaysPerWeek Int?
-  availableEquipment  String[] // مثلا: ["dumbbell", "resistance_band"]
+  // سرچ بر اساس پروفایل
+  goal                Goal?             @map("goal") // هدف 
+  activityLevel       ActivityLevel?    @map("activity_level")
+  experienceLevel     ExperienceLevel?  @map("experience_level")
+  gender              Gender?           @map("gender")
+  trainingLocation    TrainingLocation? @map("training_location")
+  age                 DateTime?         @map("age") @db.Date
+  trainingDaysPerWeek Int?              @map("training_days_per_week")
+  availableEquipment  String[]          @map("available_equipment")
 
   // سلامت و تغذیه
-  injuries            String?
-  medicalConditions   String?
-  allergies           String[]
-  dietaryRestrictions String[]
+  injuries            String?  @map("injuries")
+  medicalConditions   String?  @map("medical_conditions")
+  allergies           String[] @map("allergies")
+  dietaryRestrictions String[] @map("dietary_restrictions")
+  trainingGoalId      String?  @map("training_goal_id")
 
-  onboardingCompleted Boolean  @default(false)
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  onboardingCompleted Boolean  @default(false) @map("onboarding_completed")
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  trainingGoal TrainingGoal? @relation(fields: [trainingGoalId], references: [id])
 }
 
 model Address {
@@ -110,7 +113,7 @@ model Address {
   isDefault  Boolean    @default(false) @map("is_default")
   createdAt  DateTime   @default(now()) @map("created_at")
   updatedAt  DateTime   @updatedAt @map("updated_at")
-  userId     String     @map("user_id")
+  userId     String     @map("user_id") @db.Uuid
   user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   province   Province   @relation(fields: [provinceId], references: [id], onDelete: Cascade)
   city       City       @relation(fields: [cityId], references: [id], onDelete: Cascade)
@@ -122,12 +125,13 @@ model Address {
 
 model Token {
   id        Int      @id @default(autoincrement())
-  tokenHash String   @unique
-  userId    String   @db.Uuid
-  User      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
-  device    String?
-  ipAddress String?
+  tokenHash String   @unique @map("token_hash")
+  userId    String   @map("user_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at")
+  device    String?  @map("device")
+  ipAddress String?  @map("ip_address")
+
+  User User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@map("tokens")
@@ -135,109 +139,193 @@ model Token {
 
 model OtpCode {
   id         String     @id @default(uuid())
-  target     String // شماره موبایل یا ایمیل
-  codeHash   String
-  purpose    OtpPurpose
-  attempts   Int        @default(0)
-  expiresAt  DateTime
-  consumedAt DateTime?
-  createdAt  DateTime   @default(now())
+  target     String     @map("target") // شماره موبایل یا ایمیل
+  codeHash   String     @map("code_hash")
+  purpose    OtpPurpose @map("purpose")
+  attempts   Int        @default(0) @map("attempts")
+  expiresAt  DateTime   @map("expires_at")
+  consumedAt DateTime?  @map("consumed_at")
+  createdAt  DateTime   @default(now()) @map("created_at")
 
   @@index([target, purpose])
+  @@map("otp_codes")
 }
 
-// دیتایی که توسط ادمین پر میشه
+// سرویس ها
+model SubscriptionPlan {
+  id          String  @id @default(uuid())
+  slug        String  @unique @map("slug") // basic, pro, premium
+  title       String  @map("title")
+  description String? @map("description")
+
+  // قیمت و مدت
+  price         Decimal  @map("price") @db.Decimal(12, 2)
+  originalPrice Decimal? @map("original_price") @db.Decimal(12, 2) // قیمت خط‌خورده برای نمایش تخفیف
+  durationDays  Int      @map("duration_days") // ۳۰، ۹۰، ۳۶۵
+  trialDays     Int      @default(0) @map("trial_days")
+
+  // امکاناتی که خود برنامه چک می‌کنه (null = نامحدود)
+  aiPlanLimitPerMonth Int?    @map("ai_plan_limit_per_month")
+  aiChatLimitPerDay   Int?    @map("ai_chat_limit_per_day")
+  canRequestCoach     Boolean @default(false) @map("can_request_coach")
+  canTrackProgress    Boolean @default(true) @map("can_track_progress")
+
+  // نمایش در صفحه قیمت‌ها
+  features  String[] @map("features") // لیست متنی ویژگی‌ها برای نمایش
+  isPopular Boolean  @default(false) @map("is_popular") // نشان «محبوب‌ترین»
+  isActive  Boolean  @default(true) @map("is_active")
+  sortOrder Int      @default(0) @map("sort_order")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  subscriptions Subscription[]
+
+  @@index([isActive, sortOrder])
+}
+
+model Subscription {
+  id     String             @id @default(uuid())
+  userId String             @map("user_id") @db.Uuid
+  planId String             @map("plan_id")
+  status SubscriptionStatus @default(PENDING) @map("status")
+
+  // snapshot قیمت در لحظه‌ی خرید (اگه بعداً قیمت پلن عوض شد، این تغییر نکنه)
+  pricePaid Decimal @map("pricePaid") @db.Decimal(12, 2)
+
+  startsAt    DateTime? @map("starts_at")
+  endsAt      DateTime? @map("ends_at")
+  cancelledAt DateTime? @map("cancelled_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user     User             @relation(fields: [userId], references: [id], onDelete: Restrict)
+  plan     SubscriptionPlan @relation(fields: [planId], references: [id], onDelete: Restrict)
+  payments Payment[]
+
+  @@index([userId, status])
+  @@index([status, endsAt]) // برای cron job منقضی کردن اشتراک‌ها
+}
+
+//////////////// دیتایی که توسط ادمین پر میشه ///////////////////
+// گروه عضلانی
 model MuscleGroup {
   id        String     @id @default(uuid())
-  slug      String     @unique
-  title     String
+  slug      String     @unique @map("slug")
+  title     String     @map("title")
   exercises Exercise[]
+
+  @@map("muscle_groups")
 }
 
+// تجهیزات
 model Equipment {
-  id        String     @id @default(uuid())
-  slug      String     @unique
-  title     String
-  exercises Exercise[]
+  id          String     @id @default(uuid())
+  slug        String     @unique @map("slug")
+  title       String     @map("title")
+  image       String     @map("image")
+  description String?    @map("description")
+  exercises   Exercise[]
+
+  @@map("equipments")
 }
 
 model Exercise {
   id          String          @id @default(uuid())
-  slug        String          @unique
-  title       String
-  description String?
-  category    String?
-  level       ExperienceLevel @default(BEGINNER)
-  durationMin Int?
-  caloriesMin Int?
-  caloriesMax Int?
-  gifUrl      String?
-  videoUrl    String?
-  isActive    Boolean         @default(true) // هیچ‌وقت حذف فیزیکی نکن، فقط غیرفعال کن
+  slug        String          @unique @map("slug")
+  title       String          @map("title")
+  description String?         @map("description")
+  notic       String[]        @map("notic")
+  stepAction  String[]        @map("step_action")
+  category    String?         @map("category")
+  level       ExperienceLevel @default(BEGINNER) @map("level")
+  durationMin Int?            @map("duration_min")
+  caloriesMin Int?            @map("calories_min")
+  caloriesMax Int?            @map("calories_max")
+  gif         String?         @map("gif_url")
+  video       String?         @map("video_url")
+  isActive    Boolean         @default(true) @map("is_active") // هیچ‌وقت حذف فیزیکی نکن، فقط غیرفعال کن
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   muscles      MuscleGroup[]
   equipment    Equipment[]
   workoutItems WorkoutDayExercise[]
 
   @@index([category, level])
+  @@map("exercises")
 }
 
 model Food {
   id              String  @id @default(uuid())
-  name            String
-  category        String?
-  caloriesPer100g Float
-  proteinPer100g  Float   @default(0)
-  carbsPer100g    Float   @default(0)
-  fatPer100g      Float   @default(0)
-  isActive        Boolean @default(true)
+  name            String  @map("name")
+  category        String? @map("category")
+  caloriesPer100g Float   @map("calories_per_100g")
+  proteinPer100g  Float   @default(0) @map("protein_per_100g")
+  carbsPer100g    Float   @default(0) @map("carbs_per_100g")
+  fatPer100g      Float   @default(0) @map("fat_per_100g")
+  isActive        Boolean @default(true) @map("is_active")
 
-  createdAt DateTime @default(now())
+  createdAt DateTime @default(now()) @map("created_at")
 
   mealItems DietMealItem[]
 
   @@index([name])
+  @@map("foods")
 }
 
+// تخصص
 model Specialty {
   id    String @id @default(uuid())
-  slug  String @unique // weight-loss, bodybuilding, yoga, rehab, nutrition ...
-  title String
+  slug  String @unique @map("slug") // weight-loss, bodybuilding, yoga, rehab, nutrition ...
+  title String @map("title")
 
   coaches Coach[]
+
+  @@map("specialties")
 }
+
+model TrainingGoal {
+  id          String    @id @default(uuid())
+  title       String    @map("title")
+  logo        String    @map("logo")
+  description String    @map("description")
+  profile     Profile[]
+
+  @@map("training_goal")
+}
+
+//////////////// دیتایی که توسط ادمین پر میشه ///////////////////
 
 // مربی
 model Coach {
-  id     String @id @default(uuid())
-  userId String @unique
-
-  headline        String? // مثلا: «مربی بدنسازی و تغذیه»
-  bio             String?
-  experienceYears Int     @default(0)
-  instagramUrl    String?
-  websiteUrl      String?
-  addressUrl      String?
-
+  id                 String      @id @default(uuid())
+  userId             String      @unique @map("user_id") @db.Uuid
+  headline           String?     @map("headline") // مثلا: «مربی بدنسازی و تغذیه»
+  bio                String?     @map("bio")
+  experienceYears    Int         @default(0) @map("experience_years")
+  nationalId         String?     @map("national_id") // کد ملی یا شناسه ملی
+  instagram          String?     @map("instagram")
+  address            String?     @map("address")
+  commissionRate     Decimal     @default(0) @map("commission_rate") @db.Decimal(12, 2)
+  provinceId         String?     @map("province_id")
+  cityId             String?     @map("city_id")
   // ظرفیت
-  maxClients         Int     @default(20)
-  isAcceptingClients Boolean @default(true)
-
+  maxClients         Int         @default(20) @map("max_clients")
+  isAcceptingClients Boolean     @default(true) @map("is_accepting_clients")
   // تایید توسط ادمین
-  status          CoachStatus @default(PENDING)
-  approvedAt      DateTime?
-  rejectionReason String?
+  status             CoachStatus @default(PENDING) @map("status")
+  rejectionReason    String?     @map("rejection_reason")
+  ratingAvg          Float       @default(0) @map("rating_avg")
+  ratingCount        Int         @default(0) @map("rating_count")
 
-  // آمار (denormalized؛ با هر نظر جدید آپدیت بشه)
-  ratingAvg   Float @default(0)
-  ratingCount Int   @default(0)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
+  province       Province?           @relation(fields: [provinceId], references: [id])
+  city           City?               @relation(fields: [cityId], references: [id])
   user           User                @relation(fields: [userId], references: [id], onDelete: Cascade)
   specialties    Specialty[]
   certifications Certification[]
@@ -246,221 +334,310 @@ model Coach {
   planRequests   PlanRequest[]
   workoutPlans   WorkoutPlan[]
   dietPlans      DietPlan[]
+  userPlans      UserPlan[]
 
   @@index([status])
   @@index([ratingAvg])
+  @@map("coaches")
 }
 
 model Certification {
   id          String    @id @default(uuid())
-  coachId     String
-  title       String
-  issuer      String? // مثلا: فدراسیون بدنسازی
-  issuedAt    DateTime? @db.Date
-  expiresAt   DateTime? @db.Date
-  documentUrl String? // عکس یا اسکن مدرک
-  isVerified  Boolean   @default(false)
-  verifiedAt  DateTime?
+  coachId     String    @map("coach_id")
+  title       String    @map("title")
+  issuer      String?   @map("issuer") // مثلا: فدراسیون بدنسازی
+  issuedAt    DateTime? @map("issued_at") @db.Date
+  expiresAt   DateTime? @map("expires_at") @db.Date
+  documentUrl String?   @map("document_url") // عکس یا اسکن مدرک
+  isVerified  Boolean   @default(false) @map("is_verified")
+  verifiedAt  DateTime? @map("verified_at")
 
-  createdAt DateTime @default(now())
+  createdAt DateTime @default(now()) @map("created_at")
 
   coach Coach @relation(fields: [coachId], references: [id], onDelete: Cascade)
 
   @@index([coachId])
+  @@map("certifications")
 }
 
 model CoachAvailability {
   id        String @id @default(uuid())
-  coachId   String
-  weekday   Int // ۰ = شنبه ... ۶ = جمعه
-  startTime String // "09:00"
-  endTime   String // "13:00"
+  coachId   String @map("coach_id")
+  weekday   Int    @map("weekday") // ۰ = شنبه ... ۶ = جمعه
+  startTime String @map("start_time") // "09:00"
+  endTime   String @map("end_time") // "13:00"
 
   coach Coach @relation(fields: [coachId], references: [id], onDelete: Cascade)
 
   @@index([coachId, weekday])
+  @@map("coach_availabilities")
 }
 
 model PlanRequest {
-  id                String            @id @default(uuid())
-  userId            String
-  coachId           String
-  workoutTemplateId String?
-  dietTemplateId    String?
-  note              String?
-  status            PlanRequestStatus @default(PENDING)
-  rejectionReason   String?
-  respondedAt       DateTime?
+  id                String  @id @default(uuid())
+  userId            String  @map("user_id") @db.Uuid
+  coachId           String  @map("coach_id")
+  workoutTemplateId String? @map("workout_template_id")
+  dietTemplateId    String? @map("diet_template_id")
 
-  createdAt DateTime @default(now())
+  note            String?           @map("note")
+  price           Decimal?          @map("price") @db.Decimal(18, 2)
+  originalPrice   Decimal?          @map("original_price") @db.Decimal(18, 2)
+  status          PlanRequestStatus @default(PENDING) @map("status")
+  rejectionReason String?           @map("rejection_reason")
+  respondedAt     DateTime?         @map("responded_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
 
   user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   coach           Coach         @relation(fields: [coachId], references: [id], onDelete: Cascade)
   workoutTemplate WorkoutPlan?  @relation("RequestedWorkoutTemplate", fields: [workoutTemplateId], references: [id], onDelete: SetNull)
   dietTemplate    DietPlan?     @relation("RequestedDietTemplate", fields: [dietTemplateId], references: [id], onDelete: SetNull)
-  workoutPlans    WorkoutPlan[] @relation("WorkoutPlanFromRequest")
-  dietPlans       DietPlan[]    @relation("DietPlanFromRequest")
+  payments        Payment[]
+  coachReviews    CoachReview[]
+  userPlans       UserPlan[]
 
   @@index([coachId, status])
   @@index([userId, status])
+  @@map("plan_requests")
 }
 
-model WorkoutPlan {
-  id            String           @id @default(uuid())
-  title         String
-  description   String?
-  goal          Goal?
-  level         ExperienceLevel?
-  daysPerWeek   Int?
-  durationWeeks Int?
+// لاگ به صورت روزانه توانایی اضافه کردن وزن به صورت روزانه
+model UserLog {
+  id         String   @id @default(uuid())
+  userId     String   @map("user_id") @db.Uuid
+  userPlanId String?  @map("user_plan_id") // اختیاری: بین دو برنامه هم کاربر می‌تونه وزن ثبت کنه
+  date       DateTime @db.Date // روز به وقت Asia/Tehran، نه UTC
+  weightKg Decimal? @map("weight_kg") @db.Decimal(5, 2) 
 
-  isTemplate  Boolean    @default(false)
-  isPublished Boolean    @default(false) // قالب‌های منتشرشده رو کاربر می‌تونه ببینه و انتخاب کنه
-  source      PlanSource @default(COACH)
-  status      PlanStatus @default(DRAFT) // فقط برای برنامه‌های کاربر معنی داره
+  // ورزش
+  plannedExerciseIds String[] @default([]) @map("planned_exercise_ids") // سرور موقع ساخت ردیف پر می‌کنه
+  doneExerciseIds    String[] @default([]) @map("done_exercise_ids")
+  plannedExercises   Int      @default(0) @map("planned_exercises") // = طول آرایه (برای جمع‌زدن)
+  doneExercises      Int      @default(0) @map("done_exercises")
+  extraExercises     Json     @default("[]") @map("extra_exercises") // [{name, durationMin, caloriesBurned, note}]
+  caloriesBurned     Int?     @map("calories_burned") // تخمینی، اختیاری
 
-  coachId          String? // مربی سازنده یا مسئول
-  userId           String? // کاربری که برنامه بهش اختصاص داده شده
-  sourceTemplateId String? // قالب اصلی که ازش کپی شده
-  requestId        String? // درخواستی که این برنامه ازش به وجود اومده
+  // تغذیه
+  plannedMealIds   String[] @default([]) @map("planned_meal_ids")
+  doneMealIds      String[] @default([]) @map("done_meal_ids")
+  plannedMeals     Int      @default(0) @map("planned_meals")
+  doneMeals        Int      @default(0) @map("done_meals")
+  extraMeals       Json     @default("[]") @map("extra_meals") // [{name, calories, proteinG, carbsG, fatG}]
+  caloriesPlanned  Int?     @map("calories_planned")
+  caloriesConsumed Int?     @map("calories_consumed") // وعده‌های انجام‌شده + اضافی‌ها
+  proteinG         Int?     @map("protein_g")
+  carbsG           Int?     @map("carbs_g")
+  fatG             Int?     @map("fat_g")
 
-  startDate   DateTime? @db.Date
-  endDate     DateTime? @db.Date
-  activatedAt DateTime?
+  userNote  String? @map("user_note")
+  coachNote String? @map("coach_note")
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
-  coach          Coach?        @relation(fields: [coachId], references: [id], onDelete: SetNull)
-  user           User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  sourceTemplate WorkoutPlan?  @relation("WorkoutTemplateCopies", fields: [sourceTemplateId], references: [id], onDelete: SetNull)
-  copies         WorkoutPlan[] @relation("WorkoutTemplateCopies")
-  request        PlanRequest?  @relation("WorkoutPlanFromRequest", fields: [requestId], references: [id], onDelete: SetNull)
-  requestedIn    PlanRequest[] @relation("RequestedWorkoutTemplate")
-  days           WorkoutDay[]
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userPlan UserPlan? @relation(fields: [userPlanId], references: [id], onDelete: SetNull)
 
-  @@index([coachId, isTemplate])
+  @@unique([userId, date])
+  @@index([userPlanId])
+  @@map("user_logs")
+}
+
+model UserPlan {
+  id     String     @id @default(uuid())
+  userId String     @map("user_id") @db.Uuid
+  title  String     @map("title")
+  status PlanStatus @default(DRAFT) @map("status")
+  source PlanSource @default(COACH) @map("source")
+  type   PlanType   @default(WORKOUT) @map("type") //WORKOUT | DIET |ALL
+
+  workoutPlanId String? @map("workout_plan_id") // قالب اصلی (فقط برای آمار)
+  requestId     String? @map("request_id")
+  dietPlanId    String? @map("diet_plan_id")
+  coachId       String? @map("coach_id")
+
+  snapshotVersion  Int?  @map("snapshot_version")
+  snapshotExercise Json? @map("snapshot_exercise") // زمانی که مربی بخواد به صورت دستی تغییری بده
+  snapshotDiet     Json? @map("snapshot_diet") // زمانی که مربی بخواد به صورت دستی تغییری بده
+
+  startDate   DateTime? @map("start_date") @db.Date
+  endDate     DateTime? @map("end_date") @db.Date
+  activatedAt DateTime? @map("activated_at")
+
+  customizedAt DateTime @map("customized_at")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workoutPlan WorkoutPlan? @relation(fields: [workoutPlanId], references: [id], onDelete: Restrict)
+  dietPlan    DietPlan?    @relation(fields: [dietPlanId], references: [id], onDelete: Restrict)
+  request     PlanRequest? @relation(fields: [requestId], references: [id], onDelete: SetNull)
+  coach       Coach?       @relation(fields: [coachId], references: [id], onDelete: SetNull)
+  userLogs    UserLog[]
+
   @@index([userId, status])
-  @@index([isTemplate, isPublished])
+  @@index([requestId])
+  @@map("user_plans")
 }
 
 // ورزش و برنامه ها
+model WorkoutPlan {
+  id                  String            @id @default(uuid())
+  title               String            @map("title")
+  description         String?           @map("description")
+  price               Decimal           @default(0) @map("price") @db.Decimal(18, 2)
+  discountPrice       Decimal?          @map("discount_price") @db.Decimal(18, 2)
+  dietPlanId          String?           @map("diet_plan_id")
+  // سرچ بر اساس پروفایل
+  goal                Goal?             @map("goal")
+  activityLevel       ActivityLevel?    @map("activity_level")
+  experienceLevel     ExperienceLevel?  @map("level")
+  gender              Gender?           @map("gender")
+  trainingLocation    TrainingLocation? @map("training_location")
+  trainingDaysPerWeek Int?              @map("days_per_week")
+  requiredEquipment   String[]          @map("required_equipment")
+  isPublished         Boolean           @default(false) @map("is_published") // قالب‌های منتشرشده رو کاربر می‌تونه ببینه و انتخاب کنه
+  minAge              Int?              @map("min_age")
+  maxAge              Int?              @map("max_age")
+  note                String?           @map("note")
+
+  durationWeeks Int?       @map("duration_weeks")
+  source        PlanSource @default(COACH) @map("source")
+
+  coachId String? @map("coach_id") // مربی سازنده یا مسئول
+
+  discountExpired DateTime? @map("discount_expired")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  coach       Coach?        @relation(fields: [coachId], references: [id], onDelete: SetNull)
+  dietPlan    DietPlan?     @relation(fields: [dietPlanId], references: [id])
+  requestedIn PlanRequest[] @relation("RequestedWorkoutTemplate")
+  days        WorkoutDay[]
+  userPlans   UserPlan[]
+
+  @@index([coachId])
+  @@index([isPublished])
+  @@map("workout_plans")
+}
+
 model WorkoutDay {
   id        String  @id @default(uuid())
-  planId    String
-  dayIndex  Int // روز ۱، ۲، ۳ ... داخل برنامه
-  title     String?
-  isRestDay Boolean @default(false)
-  notes     String?
+  planId    String  @map("plan_id")
+  dayIndex  Int     @map("day_index") // روز ۱، ۲، ۳ ... داخل برنامه
+  title     String? @map("title")
+  isRestDay Boolean @default(false) @map("is_rest_day")
+  notes     String? @map("notes")
 
   plan      WorkoutPlan          @relation(fields: [planId], references: [id], onDelete: Cascade)
   exercises WorkoutDayExercise[]
 
   @@unique([planId, dayIndex])
+  @@map("workout_days")
 }
 
 model WorkoutDayExercise {
   id          String  @id @default(uuid())
-  dayId       String
-  exerciseId  String
-  order       Int
-  sets        Int?
-  reps        String? // "10" یا "8-12" یا "تا ناتوانی"
-  durationSec Int?
-  restSec     Int?
-  notes       String?
+  dayId       String  @map("day_id")
+  exerciseId  String  @map("exercise_id")
+  order       Int     @map("order")
+  sets        Int?    @map("sets")
+  reps        String? @map("reps") // "10" یا "8-12" یا "تا ناتوانی"
+  durationSec Int?    @map("duration_sec")
+  restSec     Int?    @map("rest_sec")
+  notes       String? @map("notes")
 
   day      WorkoutDay @relation(fields: [dayId], references: [id], onDelete: Cascade)
   exercise Exercise   @relation(fields: [exerciseId], references: [id], onDelete: Restrict)
 
   @@index([dayId, order])
+  @@map("workout_day_exercises")
 }
 
 // برنامه غذایی
 model DietPlan {
-  id             String  @id @default(uuid())
-  title          String
-  description    String?
-  goal           Goal?
-  targetCalories Int?
-  targetProteinG Int?
-  targetCarbsG   Int?
-  targetFatG     Int?
-  durationWeeks  Int?
+  id            String   @id @default(uuid())
+  title         String   @map("title")
+  description   String?  @map("description")
+  price         Decimal  @default(0) @map("price") @db.Decimal(18, 2)
+  discountPrice Decimal? @map("discount_price") @db.Decimal(18, 2)
 
-  isTemplate  Boolean    @default(false)
-  isPublished Boolean    @default(false)
-  source      PlanSource @default(COACH)
-  status      PlanStatus @default(DRAFT)
+  // سرچ بر اساس پروفایل
+  goal           Goal? @map("goal")
+  targetCalories Int?  @map("target_calories")
+  targetProteinG Int?  @map("target_protein_g")
+  targetCarbsG   Int?  @map("target_carbs_g")
+  targetFatG     Int?  @map("target_fat_g")
+  durationWeeks  Int?  @map("duration_weeks")
 
-  coachId          String?
-  userId           String?
-  sourceTemplateId String?
-  requestId        String?
+  isPublished Boolean    @default(false) @map("is_published")
+  source      PlanSource @default(COACH) @map("source")
 
-  startDate   DateTime? @db.Date
-  endDate     DateTime? @db.Date
-  activatedAt DateTime?
+  coachId String? @map("coach_id")
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  discountExpired DateTime? @map("discount_expired")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
 
-  coach          Coach?        @relation(fields: [coachId], references: [id], onDelete: SetNull)
-  user           User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  sourceTemplate DietPlan?     @relation("DietTemplateCopies", fields: [sourceTemplateId], references: [id], onDelete: SetNull)
-  copies         DietPlan[]    @relation("DietTemplateCopies")
-  request        PlanRequest?  @relation("DietPlanFromRequest", fields: [requestId], references: [id], onDelete: SetNull)
-  requestedIn    PlanRequest[] @relation("RequestedDietTemplate")
-  days           DietDay[]
+  coach        Coach?        @relation(fields: [coachId], references: [id], onDelete: SetNull)
+  requestedIn  PlanRequest[] @relation("RequestedDietTemplate")
+  days         DietDay[]
+  workoutPlans WorkoutPlan[]
+  userPlans    UserPlan[]
 
-  @@index([coachId, isTemplate])
-  @@index([userId, status])
-  @@index([isTemplate, isPublished])
+  @@index([coachId])
+  @@index([isPublished])
+  @@map("diet_plans")
 }
 
 model DietDay {
   id       String  @id @default(uuid())
-  planId   String
-  dayIndex Int
-  title    String?
-  notes    String?
+  planId   String  @map("plan_id")
+  dayIndex Int     @map("day_index")
+  title    String? @map("title")
+  notes    String? @map("notes")
 
   plan  DietPlan   @relation(fields: [planId], references: [id], onDelete: Cascade)
   meals DietMeal[]
 
   @@unique([planId, dayIndex])
+  @@map("diet_days")
 }
 
 model DietMeal {
-  id    String   @id @default(uuid())
-  dayId String
-  type  MealType
-  order Int
-  notes String?
+  id       String       @id @default(uuid())
+  dayId    String       @map("day_id")
+  type     MealType     @map("type")
+  priority Prioritytype @default(PRIMARY) @map("priority")
+  order    Int          @map("order")
+  notes    String?      @map("notes")
 
   day   DietDay        @relation(fields: [dayId], references: [id], onDelete: Cascade)
   items DietMealItem[]
 
   @@index([dayId, order])
+  @@map("diet_meals")
 }
 
 model DietMealItem {
   id            String  @id @default(uuid())
-  mealId        String
-  foodId        String
-  quantityGrams Float
-  notes         String?
+  mealId        String  @map("meal_id")
+  foodId        String  @map("food_id")
+  quantityGrams Float   @map("quantity_grams")
+  notes         String? @map("notes")
 
   meal DietMeal @relation(fields: [mealId], references: [id], onDelete: Cascade)
   food Food     @relation(fields: [foodId], references: [id], onDelete: Restrict)
 
   @@index([mealId])
+  @@map("diet_meal_items")
 }
 
 // فروشنده
 model Store {
   id               String        @id @default(uuid())
-  userId          String        @unique @map("owner_id") // اگه بعداً خواستی multi-store بشه، unique رو بردار
+  userId           String        @unique @map("owner_id") @db.Uuid // اگه بعداً خواستی multi-store بشه، unique رو بردار
   name             String        @map("name")
   slug             String        @unique @map("slug")
   logo             String?       @map("logo")
@@ -470,7 +647,7 @@ model Store {
   nationalId       String?       @map("national_id") // کد ملی یا شناسه ملی
   economicCode     String?       @map("economic_code")
   commissionRate   Decimal       @default(0) @map("commission_rate") @db.Decimal(12, 2)
-  status           DefualtStatus @default(PENDING) @map("status")
+  status           DefaultStatus @default(PENDING) @map("status")
   statusReason     String?       @map("status_reason")
   isActive         Boolean       @default(false) @map("is_active")
   isVerified       Boolean       @default(false) @map("is_verified")
@@ -553,7 +730,7 @@ model Product {
   originalPrice   Decimal?      @map("original_price") @db.Decimal(12, 2)
   minPrice        Decimal?      @map("min_Price") @db.Decimal(12, 2)
   discountPercent String?       @map("discount_percent")
-  status          DefualtStatus @default(PENDING)
+  status          DefaultStatus @default(PENDING)
   isFeatured      Boolean       @default(false) @map("is_featured")
   viewCount       Int           @default(0) @map("view_count")
   saleCount       Int           @default(0) @map("sale_count")
@@ -562,6 +739,7 @@ model Product {
   productTable    Json?         @map("product_table")
   createdAt       DateTime      @default(now()) @map("created_at")
   updatedAt       DateTime      @updatedAt @map("updated_at")
+  countryId       String?       @map("country_id")
   categoryId      String        @map("category_id")
   brandId         String?       @map("brand_id")
   storeId         String?       @map("store_id")
@@ -571,6 +749,7 @@ model Product {
   images        Media[]
   variants      ProductVariant[]
   brand         Brand?           @relation(fields: [brandId], references: [id])
+  country       Countries?       @relation(fields: [countryId], references: [id])
   category      Category         @relation(fields: [categoryId], references: [id])
   reviews       Review[]
   wishlistItems WishlistItem[]
@@ -580,7 +759,6 @@ model Product {
   @@index([categoryId])
   @@index([status])
   @@index([isFeatured])
-  @@index([slug])
   @@index([minPrice])
   @@index([saleCount])
   @@index([rating])
@@ -643,13 +821,13 @@ model Review {
   title            String?
   body             String
   answerReview     String?  @map("answer_review")
-  answerId         String?  @map("answer_id")
+  answerId         String?  @map("answer_id") @db.Uuid
   isApproved       Boolean  @default(false) @map("is_approved")
   createdAt        DateTime @default(now()) @map("created_at")
   updatedAt        DateTime @updatedAt @map("updated_at")
   verifiedPurchase Boolean  @default(false)
   variantInfo      Json?    @map("variant_info")
-  userId           String   @map("user_id")
+  userId           String   @map("user_id") @db.Uuid
   productId        String   @map("product_id")
   orderId          String?  @map("order_id")
 
@@ -667,13 +845,13 @@ model Review {
 
 model StoreReview {
   id               String        @id @default(uuid())
-  userId           String        @map("user_id")
+  userId           String        @map("user_id") @db.Uuid
   verifiedPurchase Boolean       @default(false)
   rating           Int           @map("rating")
   body             String?       @map("body")
   productQuality   Int?          @map("product_quality")
   productName      String?       @map("product_name")
-  status           DefualtStatus @default(PENDING) @map("status")
+  status           DefaultStatus @default(PENDING) @map("status")
   answerReview     String?       @map("answer_review")
   answerAt         DateTime?     @map("answer_at")
   responseAt       DateTime?     @map("response_at")
@@ -694,18 +872,19 @@ model StoreReview {
 }
 
 model CoachReview {
-  id           String        @id @default(uuid())
-  coachId      String
-  authorId     String
-  comment      String?
-  rating       Int           @map("rating")
-  status       DefualtStatus @default(PENDING) @map("status")
-  answerReview String?       @map("answer_review")
-  updatedAt    DateTime      @updatedAt @map("updated_at")
-  createdAt    DateTime      @default(now())
-
-  coach  Coach @relation(fields: [coachId], references: [id], onDelete: Cascade)
-  author User  @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  id            String        @id @default(uuid())
+  planRequestId String
+  status        DefaultStatus @default(PENDING) @map("status")
+  coachId       String
+  authorId      String        @db.Uuid
+  comment       String?
+  rating        Int           @map("rating")
+  answerReview  String?       @map("answer_review")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
+  createdAt     DateTime      @default(now())
+  coach         Coach         @relation(fields: [coachId], references: [id], onDelete: Cascade)
+  author        User          @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  planRequest   PlanRequest   @relation(fields: [planRequestId], references: [id])
 
   @@unique([coachId, authorId])
   @@index([coachId])
@@ -732,7 +911,7 @@ model Order {
 
   checkoutId            String    @map("checkout_id")
   storeId               String    @map("store_id")
-  userId                String    @map("user_id")
+  userId                String    @map("user_id") @db.Uuid
   storeShippingMethodId String?   @map("shipping_method_id")
   discountCodeId        String?   @map("discount_code_id")
   deliveredAt           DateTime? @map("delivered_at")
@@ -762,7 +941,7 @@ model CartItem {
   id       String @id @default(uuid())
   quantity Int    @default(1)
 
-  userId    String         @map("user_id")
+  userId    String         @map("user_id") @db.Uuid
   productId String         @map("product_id")
   variantId String         @map("variant_id")
   createdAt DateTime       @default(now()) @map("created_at")
@@ -826,7 +1005,7 @@ model Checkout {
   shippingPostal   String          @map("shipping_postal")
 
   discountId String?       @map("discount_id")
-  userId     String        @map("user_id")
+  userId     String        @map("user_id") @db.Uuid
   addressId  String?       @map("address_id")
   createdAt  DateTime      @default(now()) @map("created_at")
   updatedAt  DateTime      @updatedAt @map("updated_at")
@@ -841,18 +1020,25 @@ model Checkout {
 }
 
 model Payment {
-  id           String        @id @default(uuid())
-  amount       Decimal       @db.Decimal(12, 2)
-  method       PaymentMethod
-  status       PaymentStatus @default(PENDING)
-  gatewayRef   String?       @map("gateway_ref")
-  authority    String?
-  errorMessage String?       @map("error_message")
-  paidAt       DateTime?     @map("paid_at")
-  createdAt    DateTime      @default(now()) @map("created_at")
-  checkoutId   String        @map("checkout_id")
-  checkout     Checkout      @relation(fields: [checkoutId], references: [id], onDelete: Cascade)
+  id             String        @id @default(uuid())
+  amount         Decimal       @map("amount") @db.Decimal(18, 2)
+  method         PaymentMethod @map("method")
+  status         PaymentStatus @default(PENDING)
+  gatewayRef     String?       @map("gateway_ref")
+  authority      String?       @map("authority")
+  errorMessage   String?       @map("error_message")
+  checkoutId     String?       @map("checkout_id")
+  planRequestId  String?       @map("plan_request_id")
+  subscriptionId String?       @map("subscription_id")
+  paidAt         DateTime?     @map("paid_at")
+  createdAt      DateTime      @default(now()) @map("created_at")
 
+  checkout     Checkout?     @relation(fields: [checkoutId], references: [id], onDelete: Restrict)
+  planRequest  PlanRequest?  @relation(fields: [planRequestId], references: [id], onDelete: Restrict)
+  subscription Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: Restrict)
+
+  @@index([planRequestId])
+  @@index([subscriptionId])
   @@index([checkoutId])
   @@map("payments")
 }
@@ -861,7 +1047,7 @@ model ReturnRequest {
   id                 String        @id @default(uuid())
   requestNumber      String        @unique @map("request_number")
   orderId            String        @map("order_id")
-  userId             String        @map("user_id")
+  userId             String        @map("user_id") @db.Uuid
   status             ReturnStatus  @default(REQUESTED)
   reason             String        @map("reason")
   reasonDetail       String?       @map("reason_detail")
@@ -925,7 +1111,7 @@ model Media {
   returnRequest   ReturnRequest? @relation(fields: [returnRequestId], references: [id])
 
   @@index([productId])
-  @@map("product_images")
+  @@map("media")
 }
 
 model Brand {
@@ -938,6 +1124,16 @@ model Brand {
   products    Product[]
 
   @@map("brands")
+}
+
+model Countries {
+  id       String    @id @default(uuid())
+  name     String
+  slug     String    @unique
+  flag     String?
+  products Product[]
+
+  @@map("countries")
 }
 
 model Category {
@@ -979,7 +1175,7 @@ model Color {
 model WishlistItem {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
-  userId    String   @map("user_id")
+  userId    String   @map("user_id") @db.Uuid
   productId String   @map("product_id")
   product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -991,7 +1187,7 @@ model WishlistItem {
 // کیف پول و تراکنش و بانک
 model Wallet {
   id              String  @id @default(uuid())
-  userId          String  @unique @map("user_id")
+  userId          String  @unique @map("user_id") @db.Uuid
   balance         Decimal @default(0) @db.Decimal(18, 2)
   pendingBalance  Decimal @default(0) @map("pending_balance") @db.Decimal(18, 2)
   withdrawBalance Decimal @default(0) @map("withdraw_balance") @db.Decimal(18, 2)
@@ -1001,7 +1197,7 @@ model Wallet {
   bankAccountId String?             @map("bank_account_id")
   updatedAt     DateTime            @updatedAt @map("updated_at")
   createdAt     DateTime            @default(now()) @map("created_at")
-  user          User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user          User                @relation(fields: [userId], references: [id], onDelete: Restrict)
   transactions  WalletTransaction[]
   bankAccounts  BankAccount[]
 
@@ -1016,7 +1212,7 @@ model WalletTransaction {
   trackingCode String                  @unique @map("tracking_code")
   description  String?                 @map("description")
 
-  userId          String    @map("user_id")
+  userId          String    @map("user_id") @db.Uuid
   walletId        String    @map("wallet_id")
   orderId         String?   @map("order_id")
   returnRequestId String?   @map("return_request_id")
@@ -1024,7 +1220,7 @@ model WalletTransaction {
   createdAt       DateTime  @default(now()) @map("created_at")
   updatedAt       DateTime  @updatedAt @map("updated_at")
 
-  wallet        Wallet         @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  wallet        Wallet         @relation(fields: [walletId], references: [id], onDelete: Restrict)
   user          User           @relation(fields: [userId], references: [id])
   order         Order?         @relation(fields: [orderId], references: [id])
   returnRequest ReturnRequest? @relation(fields: [returnRequestId], references: [id])
@@ -1048,11 +1244,11 @@ model BankAccount {
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-  userId    String   @map("user_id")
+  userId    String   @map("user_id") @db.Uuid
   walletId  String?  @map("wallet_id")
 
-  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  wallet Wallet? @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  user   User    @relation(fields: [userId], references: [id], onDelete: Restrict)
+  wallet Wallet? @relation(fields: [walletId], references: [id], onDelete: Restrict)
 
   @@index([userId])
   @@map("bank_accounts")
@@ -1073,7 +1269,7 @@ model DiscountCode {
   status         StatusDiscount @default(PRODUCT)
   type           DiscountType   @default(PERCENTAGE) @map("type")
 
-  userId    String?  @map("user_id")
+  userId    String?  @map("user_id") @db.Uuid
   startsAt  DateTime @map("starts_at")
   endsAt    DateTime @map("ends_at")
   createdAt DateTime @default(now()) @map("created_at")
@@ -1106,7 +1302,7 @@ model DiscountCodeUsage {
   id             String       @id @default(uuid())
   createdAt      DateTime     @default(now()) @map("created_at")
   discountCodeId String       @map("discount_code_id")
-  userId         String       @map("user_id")
+  userId         String       @map("user_id") @db.Uuid
   discountCode   DiscountCode @relation(fields: [discountCodeId], references: [id], onDelete: Cascade)
   amount         Decimal      @db.Decimal(12, 2)
 
@@ -1123,10 +1319,11 @@ model Province {
 
   createdAt          DateTime            @default(now())
   updatedAt          DateTime            @updatedAt
-  cityes             City[]
+  cities             City[]
   store              Store[]
   storeShippingRates StoreShippingRate[]
   addresses          Address[]
+  coaches            Coach[]
 
   @@map("provinces")
 }
@@ -1142,6 +1339,7 @@ model City {
   province   Province  @relation(fields: [provinceId], references: [id])
   store      Store[]
   addresses  Address[]
+  coaches    Coach[]
 
   @@unique([provinceId, name])
   @@index([provinceId])
@@ -1158,7 +1356,7 @@ model Ticket {
   isUserRead     Boolean         @default(false)
   createdAt      DateTime        @default(now()) @map("created_at")
   updatedAt      DateTime        @updatedAt @map("updated_at")
-  userId         String          @map("user_id")
+  userId         String          @map("user_id") @db.Uuid
   orderId        String?         @unique @map("order_id") // ✅ unique می‌ماند
   ticketMessages TicketMessage[]
   order          Order?          @relation(fields: [orderId], references: [id], onDelete: Cascade)
@@ -1174,7 +1372,7 @@ model TicketMessage {
   id        String   @id @default(cuid())
   content   String
   ticketId  String
-  senderId  String
+  senderId  String   @db.Uuid
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   images    Media[]
@@ -1249,7 +1447,7 @@ model StoreShippingMethod {
 model StoreShippingRate {
   id              String  @id @default(uuid())
   price           Decimal @map("price") @db.Decimal(12, 2)
-  deliveryMaxDays Int     @map("return_days")
+  deliveryMaxDays Int     @map("delivery_max_days")
 
   storeShippingMethodId String
   provinceId            String
@@ -1272,6 +1470,13 @@ enum RolePerson {
   AUTHOR
   COACH
   STORE
+}
+
+enum SubscriptionStatus {
+  PENDING // ساخته شده، منتظر پرداخت
+  ACTIVE
+  EXPIRED // مدتش تموم شده
+  CANCELLED // کاربر لغو کرده یا ادمین باطل کرده
 }
 
 enum UserStatus {
@@ -1318,7 +1523,7 @@ enum OtpPurpose {
   RESET_PASSWORD
 }
 
-enum DefualtStatus {
+enum DefaultStatus {
   PENDING
   APPROVED
   REJECTED
@@ -1345,6 +1550,7 @@ enum PaymentStatus {
   PENDING
   PAID
   REFUNDED
+  FAILED
 }
 
 enum PaymentMethod {
@@ -1352,6 +1558,12 @@ enum PaymentMethod {
   WALLET
   COD
   ZARINPAL
+}
+
+enum Prioritytype {
+  PRIMARY
+  SECONDARY
+  TERTIARY
 }
 
 enum ReturnStatus {
@@ -1379,6 +1591,8 @@ enum WalletTransactionType {
   SALE_SETTLEMENT
   // کسر از کیف‌پول فروشنده بابت مرجوعی کالا
   RETURN_DEDUCTION
+  COACH_SETTLEMENT
+  SERVICE_PACKAGE
 }
 
 enum WalletTransactionStatus {
@@ -1440,19 +1654,17 @@ enum CoachStatus {
   SUSPENDED
 }
 
-enum CoachClientStatus {
-  PENDING // درخواست همکاری ارسال شده
-  ACTIVE
-  PAUSED
-  ENDED
-  REJECTED
-}
-
 enum PlanStatus {
   DRAFT // مربی در حال ویرایشه، کاربر نمی‌بینه
   ACTIVE // فعال و قفل‌شده (snapshot)
   COMPLETED // تموم شده یا با برنامه جدید جایگزین شده
   CANCELLED
+}
+
+enum PlanType {
+  WORKOUT
+  DIET
+  ALL
 }
 
 enum PlanRequestStatus {
@@ -1466,6 +1678,7 @@ enum PlanRequestStatus {
 
 enum PlanSource {
   COACH
+  SITE
   AI
 }
 
