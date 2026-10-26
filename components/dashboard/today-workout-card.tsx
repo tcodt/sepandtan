@@ -15,8 +15,15 @@ import { EmptyState } from "@/components/common/empty-state";
 import { Dumbbell } from "lucide-react";
 
 export function TodayWorkoutCard() {
-  const { user, todayDay, currentDayNumber, isLoading, hasPlan, error } =
-    useUserPlan();
+  const {
+    user,
+    todayDay,
+    currentDayNumber,
+    isLoading,
+    hasPlan,
+    noPlan,
+    error,
+  } = useUserPlan();
   const [todayLog, setTodayLog] = useState<WorkoutLog | null>(null);
 
   useEffect(() => {
@@ -62,7 +69,7 @@ export function TodayWorkoutCard() {
     );
   }
 
-  if (error || !hasPlan || !todayDay) {
+  if (noPlan || error || !hasPlan || !todayDay) {
     return (
       <Card className="border-border bg-card/80 dark:bg-card/60 backdrop-blur-sm">
         <CardContent>
@@ -72,14 +79,16 @@ export function TodayWorkoutCard() {
           >
             <EmptyState
               icon={<Dumbbell className="w-5 h-5" />}
-              title="برنامه امروز آماده نیست"
+              title={
+                noPlan ? "هنوز برنامه فعالی نداری" : "برنامه امروز آماده نیست"
+              }
               description={
                 error
                   ? "خطا در بارگذاری برنامه."
-                  : "اول یک برنامه شخصی بساز تا تمرین روزانه فعال شود."
+                  : "اول یک برنامه فعال داشته باش تا تمرین روزانه نمایش داده شود."
               }
-              actionLabel="ساخت برنامه"
-              actionHref="/onboarding"
+              actionLabel={noPlan ? "مشاهده برنامه‌ها" : "ساخت برنامه"}
+              actionHref={noPlan ? "/plans" : "/onboarding"}
               className="py-8"
             />
           </motion.div>

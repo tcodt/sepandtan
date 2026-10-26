@@ -9,12 +9,11 @@ export default function DashboardPage() {
   const router = useRouter();
 
   const { isLoading, isAuthenticated, user } = useRequireAuth({
-    requireOnboarding: true, // trainee باید آنبوردینگ را تمام کرده باشد
-    blockCoach: true, // مربی اینجا نیاید
-    blockPending: true, // pending هم اینجا نیاید
+    requireOnboarding: true,
+    blockCoach: true,
+    blockPending: true,
   });
 
-  // هدایت به Welcome اگر هنوز ندیده
   useEffect(() => {
     if (isLoading || !isAuthenticated) return;
 
@@ -28,7 +27,6 @@ export default function DashboardPage() {
     }
   }, [isLoading, isAuthenticated, router]);
 
-  // تا وقتی وضعیت مشخص نشده، لودینگ
   if (
     isLoading ||
     !isAuthenticated ||

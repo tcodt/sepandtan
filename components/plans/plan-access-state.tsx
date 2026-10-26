@@ -25,11 +25,11 @@ const CONFIG: Record<
 > = {
   "no-plan": {
     icon: Sparkles,
-    title: "هنوز برنامه‌ای نداری",
+    title: "هنوز برنامه فعالی نداری",
     description: () =>
-      "اول یک برنامه بساز تا بتونی تمرین و تغذیه امروز رو ببینی.",
-    primaryLabel: "ساخت برنامه",
-    primaryHref: "/onboarding",
+      "اول یک برنامه تمرینی فعال داشته باش تا بتونی تمرین و تغذیه امروز رو ببینی.",
+    primaryLabel: "مشاهده برنامه‌ها",
+    primaryHref: "/plans",
   },
   "free-expired": {
     icon: Hourglass,

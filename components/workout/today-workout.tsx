@@ -61,8 +61,16 @@ function mapPlanExercisesToSession(
 }
 
 export function TodayWorkout() {
-  const { plan, todayDay, currentDayNumber, isLoading, hasPlan, error, user } =
-    useUserPlan();
+  const {
+    plan,
+    todayDay,
+    currentDayNumber,
+    isLoading,
+    hasPlan,
+    noPlan,
+    error,
+    user,
+  } = useUserPlan();
 
   const {
     session,
@@ -178,7 +186,16 @@ export function TodayWorkout() {
     );
   }
 
-  // ---------- Error / Empty ----------
+  // ---------- No Active Plan ----------
+  if (noPlan) {
+    return (
+      <div className="min-h-screen bg-background">
+        <PlanAccessState variant="no-plan" />
+      </div>
+    );
+  }
+
+  // ---------- Error / Plan missing ----------
   if (error || !hasPlan || !todayDay) {
     return (
       <div className="min-h-screen bg-background">

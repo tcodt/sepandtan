@@ -56,8 +56,16 @@ type LocalMealState = {
 };
 
 export function TodayNutrition() {
-  const { plan, todayDay, currentDayNumber, isLoading, hasPlan, error, user } =
-    useUserPlan();
+  const {
+    plan,
+    todayDay,
+    currentDayNumber,
+    isLoading,
+    hasPlan,
+    noPlan,
+    error,
+    user,
+  } = useUserPlan();
 
   const [mealStates, setMealStates] = useState<LocalMealState[]>([]);
   const [logId, setLogId] = useState<string | null>(null);
@@ -109,11 +117,6 @@ export function TodayNutrition() {
   if (isFreeTrialExpired(user)) {
     return <PlanAccessState variant="free-expired" />;
   }
-
-  const eatenCount = mealStates.filter((s) => s.status === "eaten").length;
-  const skippedCount = mealStates.filter((s) => s.status === "skipped").length;
-  const progress =
-    targetCalories > 0 ? Math.min((consumed / targetCalories) * 100, 100) : 0;
 
   const setStatus = (mealId: string, status: MealStatus) => {
     setMealStates((prev) =>
@@ -170,6 +173,11 @@ export function TodayNutrition() {
     }
   };
 
+  if (isFreeTrialExpired(user)) {
+    return <PlanAccessState variant="free-expired" />;
+  }
+
+  // ---------- Loading ----------
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -183,6 +191,16 @@ export function TodayNutrition() {
     );
   }
 
+  // ---------- No Active Plan ----------
+  if (noPlan) {
+    return (
+      <div className="min-h-screen bg-background">
+        <PlanAccessState variant="no-plan" />
+      </div>
+    );
+  }
+
+  // ---------- Error / Plan missing ----------
   if (error || !hasPlan || !todayDay) {
     return (
       <div className="min-h-screen bg-background">
@@ -195,6 +213,11 @@ export function TodayNutrition() {
       </div>
     );
   }
+
+  const eatenCount = mealStates.filter((s) => s.status === "eaten").length;
+  const skippedCount = mealStates.filter((s) => s.status === "skipped").length;
+  const progress =
+    targetCalories > 0 ? Math.min((consumed / targetCalories) * 100, 100) : 0;
 
   return (
     <>

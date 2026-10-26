@@ -16,8 +16,6 @@ import { ActivePlanCard } from "./active-plan-card";
 import { ActiveWorkoutPlanCard } from "./active-workout-plan-card";
 import { DailyStatusBar } from "./daily-status-bar";
 import { useSeedStartWeight } from "@/hooks/use-seed-start-weight";
-import { useUserPlan } from "@/hooks/use-user-plan";
-import { PlanAccessState } from "@/components/plans/plan-access-state";
 
 // بارگذاری lazy برای چارت‌ها با حالت‌های بارگذاری بهتر
 const WeightChart = dynamic(
@@ -79,7 +77,6 @@ export function DashboardShell() {
   const [refreshKey, setRefreshKey] = useState(0);
   const [isMounted, setIsMounted] = useState(false);
   const logs = useDashboardLogs(refreshKey);
-  const { user, isLoading: planLoading } = useUserPlan();
 
   useSeedStartWeight(() => setRefreshKey((k) => k + 1));
 
@@ -152,12 +149,9 @@ export function DashboardShell() {
         </motion.div>
 
         {/* برنامه فعال / Empty State — بالای Today Workout و Nutrition */}
+        {/* برنامه تمرینی فعال */}
         <motion.div variants={itemVariants} initial="hidden" animate="visible">
-          {!planLoading && !user?.currentPlanId ? (
-            <PlanAccessState variant="no-plan" className="min-h-0 py-8" />
-          ) : (
-            <ActiveWorkoutPlanCard />
-          )}
+          <ActiveWorkoutPlanCard />
         </motion.div>
 
         {/* بخش اصلی - تمرین امروز و اهداف */}

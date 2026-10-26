@@ -21,6 +21,7 @@ import {
 import { cn } from "@/lib/utils";
 import { CoachPlanBadge } from "@/components/common/coach-plan-badge";
 import { getCoachNameByIdSync } from "@/lib/api/coaches";
+import { PlanAccessState } from "@/components/plans/plan-access-state";
 
 const LEVEL_FA = {
   beginner: "مبتدی",
@@ -29,11 +30,15 @@ const LEVEL_FA = {
 } as const;
 
 export function ActiveWorkoutPlanCard() {
-  const { user, plan, currentDayNumber, isLoading, hasPlan, error } =
+  const { user, plan, currentDayNumber, isLoading, hasPlan, noPlan, error } =
     useUserPlan();
 
-  if (!user?.currentPlanId) return null;
+  // بدون برنامه فعال → Empty State
+  if (noPlan) {
+    return <PlanAccessState variant="no-plan" className="min-h-0 py-8" />;
+  }
 
+  // هنوز planId دارد ولی در حال لود است
   if (isLoading) {
     return (
       <Card className="border-border/50 bg-card/80 dark:bg-card/60 backdrop-blur-sm">
@@ -47,17 +52,20 @@ export function ActiveWorkoutPlanCard() {
     );
   }
 
-  if (error || !hasPlan || !plan) return null;
+  // خطا یا نبودن plan بعد از لود
+  if (error || !hasPlan || !plan) {
+    return <PlanAccessState variant="no-plan" className="min-h-0 py-8" />;
+  }
 
   const isCoachPlan = plan.source === "coach";
   const coachName = isCoachPlan ? getCoachNameByIdSync(plan.coachId) : null;
 
   const subLabel = getSubscriptionLabel(
-    user.subscriptionStatus,
-    user.currentPlanId,
+    user?.subscriptionStatus,
+    user?.currentPlanId,
   );
-  const trialLeft = getFreeTrialDaysLeft(user);
-  const trialExpired = isFreeTrialExpired(user);
+  const trialLeft = user ? getFreeTrialDaysLeft(user) : null;
+  const trialExpired = user ? isFreeTrialExpired(user) : false;
 
   return (
     <Card
@@ -120,7 +128,7 @@ export function ActiveWorkoutPlanCard() {
           </p>
         </div>
 
-        {user.subscriptionStatus === "free" &&
+        {user?.subscriptionStatus === "free" &&
           trialLeft !== null &&
           !trialExpired && (
             <p className="text-[11px] sm:text-xs text-amber-600 dark:text-amber-400">
@@ -142,7 +150,7 @@ export function ActiveWorkoutPlanCard() {
           ) : (
             <Button asChild className="h-11 flex-1 font-semibold gap-1">
               <Link href="/plans">
-                برنامه ها
+                برنامه‌های من
                 <ChevronLeft className="w-4 h-4" />
               </Link>
             </Button>
