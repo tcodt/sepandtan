@@ -12,6 +12,11 @@ type Options = {
   onlyTrainee?: boolean;
   /** آیا کاربر pending را بلاک کند؟ */
   blockPending?: boolean;
+  /**
+   * سازگاری با کدهای قدیمی:
+   * اگر true باشد، مربی‌ها را به /coach هدایت می‌کند
+   */
+  blockCoach?: boolean;
   /** فقط این نقش‌ها اجازه ورود دارند */
   allowedRoles?: UserRole[];
   redirectToLogin?: string;
@@ -26,6 +31,7 @@ export function useRequireAuth(options: Options = {}) {
     requireOnboarding = false,
     onlyTrainee = false,
     blockPending = true,
+    blockCoach = false,
     allowedRoles,
     redirectToLogin = "/login",
     redirectToOnboarding = "/onboarding",
@@ -57,12 +63,18 @@ export function useRequireAuth(options: Options = {}) {
       }
 
       // ۲. نقش در حالت pending / rejected / suspended
-      if (blockPending && user.roleStatus !== "approved") {
+      if (blockPending && user.roleStatus && user.roleStatus !== "approved") {
         router.replace(redirectToRolePending);
         return;
       }
 
-      // ۳. محدودیت نقش
+      // ۳. سازگاری با blockCoach قدیمی
+      if (blockCoach && user.role === "coach") {
+        router.replace(redirectToCoach);
+        return;
+      }
+
+      // ۴. محدودیت نقش
       if (allowedRoles && !allowedRoles.includes(user.role)) {
         if (user.role === "coach") {
           router.replace(redirectToCoach);
@@ -72,7 +84,7 @@ export function useRequireAuth(options: Options = {}) {
         return;
       }
 
-      // ۴. فقط trainee
+      // ۵. فقط trainee
       if (onlyTrainee && user.role !== "trainee") {
         if (user.role === "coach") {
           router.replace(redirectToCoach);
@@ -82,11 +94,12 @@ export function useRequireAuth(options: Options = {}) {
         return;
       }
 
-      // ۵. آنبوردینگ اجباری (فقط برای trainee)
+      // ۶. آنبوردینگ اجباری (فقط برای trainee)
       if (
         requireOnboarding &&
         user.role === "trainee" &&
-        user.onboardingStatus !== "completed"
+        user.onboardingStatus !== "completed" &&
+        !user.onboardingCompleted
       ) {
         router.replace(redirectToOnboarding);
         return;
@@ -102,6 +115,7 @@ export function useRequireAuth(options: Options = {}) {
     requireOnboarding,
     onlyTrainee,
     blockPending,
+    blockCoach,
     allowedRoles,
     redirectToLogin,
     redirectToOnboarding,
