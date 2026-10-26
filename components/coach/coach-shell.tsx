@@ -14,6 +14,7 @@ import {
   LogOut,
   ChevronRight,
   Home,
+  Wallet,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { UserProfile } from "@/lib/types/plan";
@@ -30,6 +31,7 @@ const mainNavItems = [
   { href: "/coach/requests", label: "درخواست‌ها", icon: Inbox },
   { href: "/coach/clients", label: "هنرجویان", icon: Users },
   { href: "/coach/plans", label: "برنامه‌ها", icon: FileText },
+  { href: "/coach/financial", label: "مالی", icon: Wallet },
 ] as const;
 
 const secondaryNavItems = [

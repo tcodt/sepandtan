@@ -15,6 +15,7 @@ import {
   Settings,
   LogOut,
   X,
+  Wallet,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { UserProfile } from "@/lib/types/plan";
@@ -44,6 +45,7 @@ const mobileRightTabs = [
 const secondaryNavItems = [
   { href: "/", label: "خانه", icon: LayoutDashboard },
   { href: "/coach/plans", label: "برنامه‌ها", icon: FileText },
+  { href: "/coach/financial", label: "مالی", icon: Wallet },
   { href: "/account", label: "حساب کاربری", icon: UserRound },
   { href: "/settings", label: "تنظیمات", icon: Settings },
 ] as const;
