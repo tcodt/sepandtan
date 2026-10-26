@@ -8,7 +8,7 @@ import { registerPdfFonts } from "./register-fonts";
 registerPdfFonts();
 
 /** لوگوی رسمی سپندتن از public */
-const LOGO_SRC = "/images/main-logo.png";
+const LOGO_SRC = "/images/logo-light.jpg";
 
 const MEAL_TYPE_FA: Record<string, string> = {
   breakfast: "صبحانه",

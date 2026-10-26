@@ -1,10 +1,11 @@
-![SepandTan Logo](public/images/main-logo.png)
+![SepandTan Logo](public/images/logo-light.jpg)
 
 # سپندتن | SepandTan
 
 <div align="center">
 
 ### مربی شخصی هوشمند تو
+
 ### Your AI Personal Fitness Coach
 
 <br/>
@@ -33,13 +34,13 @@
 
 ### چرا سپندتن؟
 
-| ویژگی | توضیح |
-|-------|--------|
-| **شخصی‌سازی واقعی** | بر اساس قد، وزن، سن، سطح فعالیت، امکانات و هدف شما |
-| **خانه یا باشگاه** | برنامه متناسب با وسایلی که واقعاً در اختیار دارید |
-| **هوش مصنوعی فارسی** | مربی هوشمند که به زبان شما حرف می‌زند و راهنمایی می‌کند |
-| **پیگیری پیشرفت** | داشبورد تعاملی با نمودار وزن، کالری و تمرین‌ها |
-| **فروشگاه مکمل و تجهیزات** | محصولات مرتبط با مسیر تناسب اندام شما |
+| ویژگی                      | توضیح                                                   |
+| -------------------------- | ------------------------------------------------------- |
+| **شخصی‌سازی واقعی**        | بر اساس قد، وزن، سن، سطح فعالیت، امکانات و هدف شما      |
+| **خانه یا باشگاه**         | برنامه متناسب با وسایلی که واقعاً در اختیار دارید       |
+| **هوش مصنوعی فارسی**       | مربی هوشمند که به زبان شما حرف می‌زند و راهنمایی می‌کند |
+| **پیگیری پیشرفت**          | داشبورد تعاملی با نمودار وزن، کالری و تمرین‌ها          |
+| **فروشگاه مکمل و تجهیزات** | محصولات مرتبط با مسیر تناسب اندام شما                   |
 
 ---
 
@@ -48,9 +49,9 @@
 1. **ثبت‌نام سریع**  
    با ایمیل یا شماره موبایل حساب بسازید.
 
-2. **آنبوردینگ ۳ مرحله‌ای**  
-   - اطلاعات بدنی (قد، وزن، سن، سطح فعالیت)  
-   - امکانات تمرینی (خانه / باشگاه / هر دو)  
+2. **آنبوردینگ ۳ مرحله‌ای**
+   - اطلاعات بدنی (قد، وزن، سن، سطح فعالیت)
+   - امکانات تمرینی (خانه / باشگاه / هر دو)
    - هدف اصلی (کاهش وزن، افزایش عضله، استقامت و ...)
 
 3. **ساخت برنامه شخصی**  
@@ -63,30 +64,30 @@
 
 ### امکانات اصلی
 
-- برنامه تمرینی روزانه با حرکات مناسب سطح شما  
-- رژیم غذایی بر اساس هدف و شرایط واقعی  
-- چت هوشمند با مربی AI  
-- کتابخانه حرکات با دسته‌بندی  
-- فروشگاه محصولات و مکمل‌ها  
-- داشبورد تعاملی با نمودارهای پیشرفت  
-- پشتیبانی از حالت روشن و تاریک  
+- برنامه تمرینی روزانه با حرکات مناسب سطح شما
+- رژیم غذایی بر اساس هدف و شرایط واقعی
+- چت هوشمند با مربی AI
+- کتابخانه حرکات با دسته‌بندی
+- فروشگاه محصولات و مکمل‌ها
+- داشبورد تعاملی با نمودارهای پیشرفت
+- پشتیبانی از حالت روشن و تاریک
 
 ---
 
 ### برای چه کسانی مناسب است؟
 
-- کسانی که می‌خواهند در خانه تمرین کنند  
-- کسانی که به باشگاه می‌روند اما برنامه اصولی ندارند  
-- افراد تازه‌کار که نمی‌دانند از کجا شروع کنند  
-- ورزشکارانی که می‌خواهند برنامه شخصی و به‌روز داشته باشند  
+- کسانی که می‌خواهند در خانه تمرین کنند
+- کسانی که به باشگاه می‌روند اما برنامه اصولی ندارند
+- افراد تازه‌کار که نمی‌دانند از کجا شروع کنند
+- ورزشکارانی که می‌خواهند برنامه شخصی و به‌روز داشته باشند
 
 ---
 
 ### تماس با ما
 
-- تلفن: **۰۹۹۸۲۵۰۹۳۹۳**  
-- ایمیل: **sepandtan@gmail.com**  
-- آدرس: گیلان، بندر کیاشهر  
+- تلفن: **۰۹۹۸۲۵۰۹۳۹۳**
+- ایمیل: **sepandtan@gmail.com**
+- آدرس: گیلان، بندر کیاشهر
 - اینستاگرام: [@sepandtan](https://instagram.com/sepandtan)
 
 ---
@@ -104,13 +105,13 @@ SepandTan understands your real situation — whether you train at home or in th
 
 ### Why SepandTan?
 
-| Feature | Description |
-|---------|-------------|
+| Feature                  | Description                                                            |
+| ------------------------ | ---------------------------------------------------------------------- |
 | **Real Personalization** | Based on your height, weight, age, activity level, equipment, and goal |
-| **Home or Gym** | Plans adapt to the equipment you actually have |
-| **Persian AI Coach** | An intelligent coach that guides you in your language |
-| **Progress Tracking** | Interactive dashboard with weight, calorie, and workout charts |
-| **Fitness Store** | Supplements and equipment related to your journey |
+| **Home or Gym**          | Plans adapt to the equipment you actually have                         |
+| **Persian AI Coach**     | An intelligent coach that guides you in your language                  |
+| **Progress Tracking**    | Interactive dashboard with weight, calorie, and workout charts         |
+| **Fitness Store**        | Supplements and equipment related to your journey                      |
 
 ---
 
@@ -119,9 +120,9 @@ SepandTan understands your real situation — whether you train at home or in th
 1. **Quick Sign Up**  
    Create an account with email or phone number.
 
-2. **3-Step Onboarding**  
-   - Body information (height, weight, age, activity level)  
-   - Training equipment (home / gym / both)  
+2. **3-Step Onboarding**
+   - Body information (height, weight, age, activity level)
+   - Training equipment (home / gym / both)
    - Main goal (lose weight, build muscle, endurance, etc.)
 
 3. **Personalized Plan Generation**  
@@ -134,30 +135,30 @@ SepandTan understands your real situation — whether you train at home or in th
 
 ### Core Features
 
-- Daily personalized workout plans  
-- Goal-based nutrition guidance  
-- AI chat coach  
-- Exercise library with categories  
-- Fitness products & supplements store  
-- Interactive progress dashboard with charts  
-- Light & Dark mode support  
+- Daily personalized workout plans
+- Goal-based nutrition guidance
+- AI chat coach
+- Exercise library with categories
+- Fitness products & supplements store
+- Interactive progress dashboard with charts
+- Light & Dark mode support
 
 ---
 
 ### Who Is It For?
 
-- People who train at home  
-- Gym-goers looking for a proper structured plan  
-- Beginners who don’t know where to start  
-- Athletes who want adaptive, personalized programming  
+- People who train at home
+- Gym-goers looking for a proper structured plan
+- Beginners who don’t know where to start
+- Athletes who want adaptive, personalized programming
 
 ---
 
 ### Contact
 
-- Phone: **09982509393**  
-- Email: **sepandtan@gmail.com**  
-- Location: Gilan, Bandar Kiashahr, Iran  
+- Phone: **09982509393**
+- Email: **sepandtan@gmail.com**
+- Location: Gilan, Bandar Kiashahr, Iran
 - Instagram: [@sepandtan](https://instagram.com/sepandtan)
 
 ---
@@ -165,6 +166,7 @@ SepandTan understands your real situation — whether you train at home or in th
 <div align="center">
 
 ### سپندتن — مربی شخصی هوشمند تو
+
 ### SepandTan — Your AI Personal Fitness Coach
 
 <br/>

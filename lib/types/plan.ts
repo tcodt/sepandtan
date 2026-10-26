@@ -6,6 +6,14 @@ export type {
   SubscriptionTier,
 } from "./access";
 
+// ====================== Role & Onboarding Types ======================
+
+export type UserRole = "trainee" | "coach" | "seller" | "admin";
+
+export type RoleStatus = "pending" | "approved" | "rejected" | "suspended";
+
+export type OnboardingStatus = "not_started" | "in_progress" | "completed";
+
 /** انواع مشترک برنامه تمرینی و رژیمی — منبع حقیقت برای User Flow + Coach Flow */
 
 export type Gender = "male" | "female";
@@ -22,7 +30,6 @@ export type Goal =
   | "maintain"
   | "endurance"
   | "general_fitness";
-export type UserRole = "user" | "coach" | "admin";
 
 /** مدل اشتراک قفل‌شده */
 export type SubscriptionStatus =
@@ -49,15 +56,28 @@ export type UserProfile = {
   phone?: string;
   password?: string;
   avatarUrl?: string;
-  role: UserRole;
+
+  // نقش‌ها
+  role: UserRole; // نقش اصلی فعلی
+  roles?: UserRole[]; // آماده multi-role آینده
+  roleStatus: RoleStatus; // وضعیت نقش اصلی
+
+  // آنبوردینگ (فقط برای trainee معنی دارد)
+  onboardingStatus: OnboardingStatus;
+  currentOnboardingStep: number;
+  onboardingCompleted: boolean;
+
+  // اطلاعات بدنی و برنامه
   bodyInfo?: BodyInfo;
   equipment?: Equipment;
   goal?: Goal;
-  onboardingCompleted: boolean;
   currentPlanId?: string | null;
+  targetWeight?: number;
+
+  // اشتراک (کاملاً جدا)
   subscriptionStatus: SubscriptionStatus;
   subscriptionExpiresAt?: string | null;
-  targetWeight?: number;
+
   createdAt: string;
   updatedAt?: string;
 };

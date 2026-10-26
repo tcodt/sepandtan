@@ -1,4 +1,11 @@
-import type { UserProfile, BodyInfo, Equipment, Goal } from "@/lib/types/plan";
+import type {
+  UserProfile,
+  BodyInfo,
+  Equipment,
+  Goal,
+  UserRole,
+  RoleStatus,
+} from "@/lib/types/plan";
 import { db } from "./db";
 import { createId, delay } from "./client";
 
@@ -43,7 +50,11 @@ export async function createUser(data: {
     phone: data.phone,
     password: data.password,
     avatarUrl: data.avatarUrl,
-    role: "user",
+    role: "trainee", // پیش‌فرض
+    roleStatus: "approved",
+    roles: ["trainee"],
+    onboardingStatus: "not_started",
+    currentOnboardingStep: 1,
     onboardingCompleted: false,
     currentPlanId: null,
     subscriptionStatus: "free",
@@ -74,6 +85,39 @@ export async function updateUser(
   return { ...updated };
 }
 
+export async function setUserRole(
+  userId: string,
+  role: UserRole,
+  status: RoleStatus = "approved",
+): Promise<UserProfile> {
+  return updateUser(userId, {
+    role,
+    roleStatus: status,
+    roles: [role],
+  });
+}
+
+export async function requestRoleUpgrade(
+  userId: string,
+  role: "coach" | "seller",
+): Promise<UserProfile> {
+  return updateUser(userId, {
+    role,
+    roleStatus: "pending",
+    roles: [role],
+  });
+}
+
+export async function updateOnboardingProgress(
+  userId: string,
+  step: number,
+): Promise<UserProfile> {
+  return updateUser(userId, {
+    currentOnboardingStep: step,
+    onboardingStatus: "in_progress",
+  });
+}
+
 /**
  * آنبوردینگ فقط Training Plan را ست می‌کند.
  * اشتراک را عوض نمی‌کند (جداسازی قفل‌شده محصول).
@@ -95,7 +139,8 @@ export async function completeUserOnboarding(
     currentPlanId: payload.currentPlanId,
     targetWeight: payload.targetWeight,
     onboardingCompleted: true,
-    // subscriptionStatus دست نخورده می‌ماند (معمولاً free)
+    onboardingStatus: "completed",
+    currentOnboardingStep: 0,
   });
 }
 

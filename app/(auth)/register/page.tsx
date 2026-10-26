@@ -112,21 +112,27 @@ export default function RegisterPage() {
 
       setUser({
         ...safeUser,
-        role: "user",
+        role: "trainee", // موقت — در role-selection قطعی می‌شود
+        roleStatus: "approved",
+        roles: ["trainee"],
+        onboardingStatus: "not_started",
+        currentOnboardingStep: 1,
         onboardingCompleted: false,
         subscriptionStatus: "free",
         createdAt: safeUser.createdAt || new Date().toISOString(),
       });
 
-      toast.success("حسابت ساخته شد! حالا برنامه شخصیت را بساز.");
+      toast.success("حسابت ساخته شد!");
 
+      // اگر از checkout آمده، مستقیم بره (بدون role selection)
       if (next === "/checkout") {
         const planQuery = plan ? `?plan=${encodeURIComponent(plan)}` : "";
         router.replace(`/checkout${planQuery}`);
         return;
       }
 
-      router.replace("/onboarding");
+      // مسیر اصلی: Role Selection اجباری
+      router.replace("/role-selection");
     } catch (err) {
       const message =
         err instanceof Error
