@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
@@ -19,17 +19,41 @@ import {
 import { generateAndSavePlan } from "@/lib/api/plans";
 import { usePlanStore } from "@/lib/store/plan-store";
 import { addWeightLog } from "@/lib/api/logs";
+import { updateOnboardingProgress } from "@/lib/api/users";
 
 export function OnboardingWizard() {
   const router = useRouter();
   const user = useUserStore((s) => s.user);
   const completeOnboarding = useUserStore((s) => s.completeOnboarding);
+  const updateOnboardingStep = useUserStore((s) => s.updateOnboardingStep);
   const setPlan = usePlanStore((s) => s.setPlan);
 
-  const [step, setStep] = useState(1);
+  // شروع از مرحله ذخیره‌شده کاربر
+  const initialStep = Math.min(
+    Math.max(user?.currentOnboardingStep ?? 1, 1),
+    3,
+  );
+
+  const [step, setStep] = useState(initialStep);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [bodyInfo, setBodyInfo] = useState<BodyInfo | null>(null);
-  const [equipment, setEquipment] = useState<Equipment | null>(null);
+  const [bodyInfo, setBodyInfo] = useState<BodyInfo | null>(
+    user?.bodyInfo ?? null,
+  );
+  const [equipment, setEquipment] = useState<Equipment | null>(
+    user?.equipment ?? null,
+  );
+
+  // همگام‌سازی step با store و API هر بار که تغییر می‌کند
+  useEffect(() => {
+    if (!user?.id) return;
+
+    // فقط اگر step واقعاً تغییر کرده باشد
+    if (user.currentOnboardingStep !== step) {
+      updateOnboardingStep(step);
+      // ذخیره در Fake API (برای آمادگی بک‌اند واقعی)
+      updateOnboardingProgress(user.id, step).catch(console.error);
+    }
+  }, [step, user?.id, user?.currentOnboardingStep, updateOnboardingStep]);
 
   const handleBodyNext = (data: BodyInfo) => {
     setBodyInfo(data);
@@ -93,7 +117,7 @@ export function OnboardingWizard() {
       router.push("/welcome");
     } catch (err) {
       console.error(err);
-      // هرگز currentPlanId جعلی ست نشود — کاربر روی step هدف می‌ماند و می‌تواند دوباره تلاش کند
+      // هرگز currentPlanId جعلی ست نشود
       setIsGenerating(false);
       toast.error("ساخت برنامه ناموفق بود", {
         description: "لطفاً دوباره تلاش کن. برنامه ذخیره نشد.",

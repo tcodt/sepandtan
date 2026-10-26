@@ -76,35 +76,66 @@ export default function LoginPage() {
 
       setUser({
         ...safeUser,
-        role: safeUser.role || "user",
+        role: safeUser.role || "trainee",
+        roleStatus: safeUser.roleStatus || "approved",
+        roles: safeUser.roles || [safeUser.role || "trainee"],
+        onboardingStatus:
+          safeUser.onboardingStatus ||
+          (safeUser.onboardingCompleted ? "completed" : "not_started"),
+        currentOnboardingStep:
+          safeUser.currentOnboardingStep ??
+          (safeUser.onboardingCompleted ? 0 : 1),
         onboardingCompleted: !!safeUser.onboardingCompleted,
         subscriptionStatus: safeUser.subscriptionStatus || "free",
         createdAt: safeUser.createdAt || new Date().toISOString(),
       });
 
+      // بعد از setUser(...) این بخش را جایگزین کن:
+
       toast.success(`خوش آمدی ${safeUser.name}!`);
 
+      // اولویت ۱: از checkout آمده
       if (next === "/checkout") {
         const planQuery = plan ? `?plan=${encodeURIComponent(plan)}` : "";
         router.replace(`/checkout${planQuery}`);
         return;
       }
 
-      // اولویت ۲: مربی‌ها مستقیم به پنل مربی
+      // اولویت ۲: نقش در حالت pending / rejected / suspended
+      if (safeUser.roleStatus && safeUser.roleStatus !== "approved") {
+        router.replace(`/role-pending?type=${safeUser.role}`);
+        return;
+      }
+
+      // اولویت ۳: مربی تأییدشده
       if (safeUser.role === "coach") {
         router.replace("/coach");
         return;
       }
 
-      if (safeUser.onboardingCompleted) {
-        router.replace("/dashboard");
-      } else {
-        router.replace("/onboarding");
+      // اولویت ۴: فروشنده تأییدشده (آینده)
+      if (safeUser.role === "seller") {
+        router.replace("/dashboard"); // فعلاً
+        return;
       }
-    } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "ورود ناموفق بود. دوباره تلاش کن.";
-      toast.error(message);
+
+      // اولویت ۵: trainee
+      if (safeUser.role === "trainee") {
+        if (
+          safeUser.onboardingStatus === "completed" ||
+          safeUser.onboardingCompleted
+        ) {
+          router.replace("/dashboard");
+        } else {
+          router.replace("/onboarding");
+        }
+        return;
+      }
+
+      // پیش‌فرض
+      router.replace("/dashboard");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "ورود ناموفق بود");
     } finally {
       setIsLoading(false);
     }

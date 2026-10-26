@@ -36,7 +36,7 @@ export default function Footer() {
                 <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full"></div>
                 {/* <Dumbbell className="h-8 w-8 text-primary relative z-10" /> */}
                 <Image
-                  src="/images/main-logo-removebg-preview.png"
+                  src="/images/logo-light.jpg"
                   alt="Logo Footer"
                   width={80}
                   height={80}

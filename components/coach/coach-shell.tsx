@@ -93,7 +93,7 @@ export function CoachShell({ user, children }: Props) {
           >
             <div className="flex size-10 shrink-0 items-center justify-center rounded-2xl bg-primary/15">
               <Image
-                src="/images/main-logo.png"
+                src="/images/logo-light.jpg"
                 alt="سپندتن"
                 width={40}
                 height={40}

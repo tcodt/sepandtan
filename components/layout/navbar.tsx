@@ -52,7 +52,7 @@ export default function Navbar() {
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2 shrink-0">
           <Image
-            src="/images/main-logo.png"
+            src="/images/logo-light.jpg"
             alt="سپندتن"
             width={44}
             height={44}

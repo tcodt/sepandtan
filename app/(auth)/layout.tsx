@@ -13,7 +13,7 @@ export default function AuthLayout({
       <header className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-border">
         <Link href="/" className="flex items-center gap-2">
           <Image
-            src="/images/main-logo.png"
+            src="/images/logo-light.jpg"
             alt="سپندتن"
             width={48}
             height={48}

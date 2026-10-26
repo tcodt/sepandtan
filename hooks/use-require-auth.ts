@@ -6,24 +6,32 @@ import { useUserStore } from "@/lib/store/user-store";
 import type { UserRole } from "@/lib/types/plan";
 
 type Options = {
+  /** آیا آنبوردینگ کامل لازم است؟ */
   requireOnboarding?: boolean;
-  /** اگر true باشد، مربی‌ها را به /coach هدایت می‌کند */
-  blockCoach?: boolean;
+  /** آیا فقط trainee اجازه دارد؟ */
+  onlyTrainee?: boolean;
+  /** آیا کاربر pending را بلاک کند؟ */
+  blockPending?: boolean;
   /** فقط این نقش‌ها اجازه ورود دارند */
   allowedRoles?: UserRole[];
   redirectToLogin?: string;
   redirectToOnboarding?: string;
+  redirectToRolePending?: string;
   redirectToCoach?: string;
+  redirectToDashboard?: string;
 };
 
 export function useRequireAuth(options: Options = {}) {
   const {
     requireOnboarding = false,
-    blockCoach = false,
+    onlyTrainee = false,
+    blockPending = true,
     allowedRoles,
     redirectToLogin = "/login",
     redirectToOnboarding = "/onboarding",
+    redirectToRolePending = "/role-pending",
     redirectToCoach = "/coach",
+    redirectToDashboard = "/dashboard",
   } = options;
 
   const router = useRouter();
@@ -42,29 +50,46 @@ export function useRequireAuth(options: Options = {}) {
     if (!mounted || !hasHydrated) return;
 
     const t = window.setTimeout(() => {
+      // ۱. لاگین نکرده
       if (!isAuthenticated || !user) {
         router.replace(redirectToLogin);
         return;
       }
 
-      // مربی نباید صفحات کاربر را ببیند
-      if (blockCoach && user.role === "coach") {
-        router.replace(redirectToCoach);
+      // ۲. نقش در حالت pending / rejected / suspended
+      if (blockPending && user.roleStatus !== "approved") {
+        router.replace(redirectToRolePending);
         return;
       }
 
-      // محدودیت نقش
+      // ۳. محدودیت نقش
       if (allowedRoles && !allowedRoles.includes(user.role)) {
         if (user.role === "coach") {
           router.replace(redirectToCoach);
         } else {
-          router.replace("/dashboard");
+          router.replace(redirectToDashboard);
         }
         return;
       }
 
-      if (requireOnboarding && !user.onboardingCompleted) {
+      // ۴. فقط trainee
+      if (onlyTrainee && user.role !== "trainee") {
+        if (user.role === "coach") {
+          router.replace(redirectToCoach);
+        } else {
+          router.replace(redirectToDashboard);
+        }
+        return;
+      }
+
+      // ۵. آنبوردینگ اجباری (فقط برای trainee)
+      if (
+        requireOnboarding &&
+        user.role === "trainee" &&
+        user.onboardingStatus !== "completed"
+      ) {
         router.replace(redirectToOnboarding);
+        return;
       }
     }, 0);
 
@@ -75,11 +100,14 @@ export function useRequireAuth(options: Options = {}) {
     isAuthenticated,
     user,
     requireOnboarding,
-    blockCoach,
+    onlyTrainee,
+    blockPending,
     allowedRoles,
     redirectToLogin,
     redirectToOnboarding,
+    redirectToRolePending,
     redirectToCoach,
+    redirectToDashboard,
     router,
   ]);
 
