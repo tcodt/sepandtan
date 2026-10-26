@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { useUserStore } from "@/lib/store/user-store";
 import type { UserRole } from "@/lib/types/plan";
 
+// گزینه‌های تنظیم برای اعتبارسنجی احراز هویت
+
 type Options = {
   /** آیا آنبوردینگ کامل لازم است؟ */
   requireOnboarding?: boolean;
