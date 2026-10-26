@@ -250,9 +250,9 @@ export default function RolePendingPage() {
             <div className="space-y-2 pt-1">
               <Button
                 className="group w-full"
-                onClick={() => router.replace("/dashboard")}
+                onClick={() => router.replace("/")}
               >
-                بازگشت به داشبورد
+                بازگشت به خانه
                 <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" />
               </Button>
 
