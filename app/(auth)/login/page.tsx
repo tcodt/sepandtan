@@ -68,13 +68,13 @@ export default function LoginPage() {
           ? await loginWithEmail(data.contact.trim(), data.password)
           : await loginWithPhone(data.contact.trim(), data.password);
 
-      // رمز را در کلاینت نگه ندار
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { password: _pw, ...safeUser } = user as typeof user & {
         password?: string;
       };
 
-      setUser({
+      // نرمال‌سازی فیلدهای جدید
+      const normalizedUser = {
         ...safeUser,
         role: safeUser.role || "trainee",
         roleStatus: safeUser.roleStatus || "approved",
@@ -88,42 +88,42 @@ export default function LoginPage() {
         onboardingCompleted: !!safeUser.onboardingCompleted,
         subscriptionStatus: safeUser.subscriptionStatus || "free",
         createdAt: safeUser.createdAt || new Date().toISOString(),
-      });
+      };
 
-      // بعد از setUser(...) این بخش را جایگزین کن:
+      setUser(normalizedUser);
+      toast.success(`خوش آمدی ${normalizedUser.name}!`);
 
-      toast.success(`خوش آمدی ${safeUser.name}!`);
-
-      // اولویت ۱: از checkout آمده
+      // ——— منطق هدایت ———
+      // ۱. از checkout آمده
       if (next === "/checkout") {
         const planQuery = plan ? `?plan=${encodeURIComponent(plan)}` : "";
         router.replace(`/checkout${planQuery}`);
         return;
       }
 
-      // اولویت ۲: نقش در حالت pending / rejected / suspended
-      if (safeUser.roleStatus && safeUser.roleStatus !== "approved") {
-        router.replace(`/role-pending?type=${safeUser.role}`);
+      // ۲. نقش هنوز تأیید نشده
+      if (normalizedUser.roleStatus !== "approved") {
+        router.replace(`/role-pending?type=${normalizedUser.role}`);
         return;
       }
 
-      // اولویت ۳: مربی تأییدشده
-      if (safeUser.role === "coach") {
+      // ۳. مربی تأییدشده
+      if (normalizedUser.role === "coach") {
         router.replace("/coach");
         return;
       }
 
-      // اولویت ۴: فروشنده تأییدشده (آینده)
-      if (safeUser.role === "seller") {
-        router.replace("/dashboard"); // فعلاً
+      // ۴. فروشنده تأییدشده (فعلاً داشبورد)
+      if (normalizedUser.role === "seller") {
+        router.replace("/dashboard");
         return;
       }
 
-      // اولویت ۵: trainee
-      if (safeUser.role === "trainee") {
+      // ۵. Trainee
+      if (normalizedUser.role === "trainee") {
         if (
-          safeUser.onboardingStatus === "completed" ||
-          safeUser.onboardingCompleted
+          normalizedUser.onboardingStatus === "completed" ||
+          normalizedUser.onboardingCompleted
         ) {
           router.replace("/dashboard");
         } else {
