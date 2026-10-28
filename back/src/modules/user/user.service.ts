@@ -1,18 +1,25 @@
-import { BadRequestException, ForbiddenException, Injectable, InternalServerErrorException, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { Request } from 'express';
-import { QueryUserDto } from './dtos/query.user.js';
-import { UpdateUserDto } from './dtos/update.user.dto.js';
+import { GetPendingCoach, GetPendingStore, QueryUserDto } from './dtos/query.user.js';
+import { UpdateCoachByAdminDto, UpdateProfileDto, UpdateStoreByAdminDto, UpdateUserDto } from './dtos/update.user.dto.js';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import pagination from '../../common/utils/pagination.js';
 import { hashPassword } from '../../common/utils/hash.util.js';
 import { QueryDefaultDto } from '../../common/dtos/query.defualt.dto.js';
+import { ConfigService } from '@nestjs/config';
+import { CreateStoreDto } from '../store/dto/store.dto.js';
+import { CreateCoachDto } from '../coach/dto/coach.dto.js';
 @Injectable()
 export class UserService {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly configService: ConfigService
+  ) { }
 
   async getAllUser(query: QueryUserDto) {
-    const { search, role, page = 1, order = 'desc', limit = 10 } = query;
+    const { search, role, page = 1, order = 'desc', limit, status, isEmailVerified, isPhoneVerified } = query;
     const searchFilter = {} as any;
+    const limitPage = Number(limit) || Number(this.configService.get('limit.user'))
     if (search) {
       searchFilter.OR = [
         {
@@ -21,8 +28,12 @@ export class UserService {
         {
           phone: { contains: search.toString(), mode: 'insensitive' }
         },
+        { email: { contains: search.toString(), mode: 'insensitive' } }
       ];
     }
+    if (status && status !== 'ALL') searchFilter.status = status
+    if (isEmailVerified || isEmailVerified === false) searchFilter.isEmailVerified = isEmailVerified;
+    if (isPhoneVerified || isPhoneVerified === false) searchFilter.isPhoneVerified = isPhoneVerified;
     if (role && role !== "ALL") searchFilter.role = role;
     const [data, count] = await this.prisma.$transaction([
       this.prisma.user.findMany({
@@ -33,32 +44,48 @@ export class UserService {
           name: true,
           id: true,
           createdAt: true,
+          status: true,
+          isEmailVerified: true,
+          isPhoneVerified: true,
           phone: true,
         },
         orderBy: { createdAt: order || 'desc' },
-        skip: (Number(page) - 1) * Number(limit),
-        take: Number(limit),
+        skip: (Number(page) - 1) * Number(limitPage),
+        take: Number(limitPage),
       }),
       this.prisma.user.count({ where: searchFilter }),
     ]);
-    const paginations = pagination(count, Number(page), Number(limit));
-    return { data, ...paginations };
+    return { data, pagination: pagination(count, Number(page), Number(limitPage)) };
   }
 
-  async updateUser(body: UpdateUserDto, req: Request) {
-    if ((body?.id || body.role) && req.user?.role !== "ADMIN") {
-      throw new ForbiddenException('مجوز لازم را ندارید')
-    }
-    const data = await this.prisma.user.update({
+  async updateUserAdmin(body: UpdateUserDto, id: string) {
+    await this.prisma.user.update({
       where: {
-        id: body?.id ? body.id : req.user?.id
+        id: id
       },
       data: {
-        email: body.email || undefined,
-        name: body.name || undefined,
+        email: body.email ?? undefined,
+        name: body.name ?? undefined,
         password: body.password ? await hashPassword(body.password) : undefined,
-        role: body.role || undefined,
-        phone: body.phone || undefined,
+        role: body.role ?? undefined,
+        phone: body.phone ?? undefined,
+        status: body.status ?? undefined,
+      }
+    })
+    return { success: true }
+  }
+
+  async updateUser(body: UpdateUserDto, id: string) {
+    const data = await this.prisma.user.update({
+      where: {
+        id,
+        status: { not: 'DELETED' }
+      },
+      data: {
+        email: body.email ?? undefined,
+        name: body.name ?? undefined,
+        password: body.password ? await hashPassword(body.password) : undefined,
+        phone: body.phone ?? undefined
       }
     })
     if (!data) {
@@ -68,11 +95,30 @@ export class UserService {
   }
 
   async deleteUser(id: string) {
-    await this.prisma.user.delete({
-      where: {
-        id
+    const data = await this.prisma.user.update({
+      where: { id },
+      data: { status: 'DELETED' },
+      select: {
+        coach: {
+          select: { id: true }
+        },
+        store: {
+          select: { id: true }
+        }
       }
     })
+    if (data.coach?.id) {
+      await this.prisma.coach.update({
+        where: { id: data.coach?.id },
+        data: { status: 'REJECTED' },
+      })
+    }
+    if (data.store?.id) {
+      await this.prisma.store.update({
+        where: { id: data.store?.id },
+        data: { status: 'REJECTED' },
+      })
+    }
     return { success: true }
   }
 
@@ -80,82 +126,237 @@ export class UserService {
     if (!body.name || !body.email || !body.password) {
       throw new BadRequestException('تمام فیلدهای لازم را پر کنید')
     }
-    await this.prisma.user.create({
-      data: {
-        name: body.name,
-        email: body.email,
-        password: await hashPassword(body.password),
-        role: body.role,
-        phone: body.phone
-      },
-    });
-    return { success: true }
+    try {
+      await this.prisma.user.create({
+        data: {
+          name: body.name,
+          email: body.email,
+          password: await hashPassword(body.password),
+          role: body.role,
+          phone: body.phone
+        },
+      });
+      return { success: true }
+    } catch (e: any) {
+      if (e.code === 'P2002') throw new ConflictException('ایمیل یا شماره تکراری است')
+      throw e
+    }
+
   }
 
-  async getProfile(req: Request, id?: string, rolesd?: string) {
-    console.log(rolesd);
-    const role = req.user?.role === "ADMIN"
-    console.log(role,'kir');
-    if (id && role) {
-      const profile = await this.prisma.user.findUnique({
-        where: { id: id || req.user?.id },
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          phone: true,
-          role: true,
+  async getProfile(id?: string) {
+    if (!id) throw new UnauthorizedException('دوباره وارد حساب کاربری شوید')
+    const profile = await this.prisma.user.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        role: true,
+        status: true,
+        isEmailVerified: true,
+        isPhoneVerified: true,
+        createdAt: true,
+        profile: {
+          include: {
+            trainingGoal: {
+              select: {
+                id: true,
+                title: true,
+                logo: true
+              }
+            }
+          }
+        }
+      }
+    })
+    return profile
+  }
+
+  async getProfileByAdmin(id: string) {
+    const profile = await this.prisma.user.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        role: true,
+        status: true,
+        isEmailVerified: true,
+        isPhoneVerified: true,
+        createdAt: true,
+        profile: {
+          include: {
+            trainingGoal: {
+              select: {
+                id: true,
+                title: true,
+                logo: true
+              }
+            }
+          }
+        }
+      }
+    })
+    if (!profile) throw new NotFoundException('کاربر یافت نشد')
+    return profile
+  }
+
+  async updateOrCreateProfile(body: UpdateProfileDto, id: string) {
+    const data = await this.prisma.user.findUnique({ where: { id }, select: { profile: { select: { id: true } } } })
+    if (!data?.profile?.id) {
+      await this.prisma.profile.create({
+        data: {
+          ...body,
+          userId: id,
         }
       })
-      return profile
+      return { success: true }
     } else {
-      if (!req.user?.id) throw new UnauthorizedException('دوباره وارد حساب کاربری شوید')
-      const profile = await this.prisma.user.findUnique({
-        where: { id: req.user?.id },
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          phone: true,
-          role: true,
-        }
+      await this.prisma.profile.update({
+        where: { id: data?.profile?.id },
+        data: body
       })
-      return profile
+      return { success: true }
     }
   }
 
-  async getUsersWithoutContractorProfile(query: QueryDefaultDto) {
-    const { page = 1, limit = 10 } = query;
-    const [data, count] = await this.prisma.$transaction([
-      this.prisma.user.findMany({
-        where: {
-          role: 'CONTRACTOR',
-          contractors: {
-            is: null
-          }
-        },
-        select: {
-          name: true,
-          id: true,
-          phone: true,
-          role: true,
-          createdAt: true
-        },
-        orderBy: { createdAt: 'desc' },
-        skip: (Number(page) - 1) * Number(limit),
-        take: Number(limit),
-      }),
-      this.prisma.user.count({
-        where: {
-          role: 'CONTRACTOR',
-          contractors: {
-            is: null
-          }
+  // store //
+  async updateStoreStatus(body: UpdateStoreByAdminDto, id: string) {
+    console.log(id);
+    
+    const { status } = body
+    const userData = await this.prisma.store.findUnique({
+      where: { id }, select: {
+        owner: {
+          select: { status: true, id: true }
         }
-      }),
-    ]);
-    const paginations = pagination(count, Number(page), Number(limit));
-    return { data, ...paginations };
+      }
+    })
+
+    if (userData?.owner.status === 'DELETED') {
+      throw new ConflictException('کاربر حذف شده مجاز به تغییر اطلاعات نیست')
+    }
+
+    if (status === 'APPROVED') {
+      await this.prisma.store.update({
+        where: { id },
+        data: {
+          ...body,
+          isActive: true,
+          isVerified: true
+        }
+        , select: {
+          userId: true
+        }
+      })
+      await this.prisma.user.update({
+        where: { id: userData?.owner.id },
+        data: {
+          role: 'STORE'
+        }
+      })
+      return { success: true }
+    } else {
+      await this.prisma.store.update({
+        where: { id },
+        data: body
+      })
+      return { success: true }
+    }
   }
 
+  async requestAddStore(body: CreateStoreDto, id: string) {
+    await this.prisma.store.create({
+      data: {
+        ...body, userId: id, rating: {
+          create: {},
+        }
+      }
+    })
+    return { success: true }
+  }
+
+  async getPendingStore(qury: GetPendingStore) {
+    const { page = 1, limit, order, status } = qury
+    const limitPage = Number(limit) || Number(this.configService.get('limit.user'))
+    const where = {
+      ...(status && status !== 'ALL' && { status })
+    }
+    const [data, count] = await this.prisma.$transaction([
+      this.prisma.store.findMany({
+        where: where,
+        orderBy: { createdAt: order || 'desc' },
+        skip: (Number(page) - 1) * Number(limitPage),
+        take: Number(limitPage),
+      }),
+      this.prisma.store.count({ where }),
+    ]);
+    return { store: data, pagination: pagination(count, page, limitPage) }
+  }
+
+  // coach //
+  async updateCoachStatus(body: UpdateCoachByAdminDto, id: string) {
+    const { rejectionReason, status } = body
+    const userData = await this.prisma.coach.findUnique({
+      where: { id }, select: {
+        user: {
+          select: { status: true, id: true }
+        }
+      }
+    })
+    if (userData?.user.status === 'DELETED') {
+      throw new ConflictException('کاربر حذف شده مجاز به تغییر اطلاعات نیست')
+    }
+    if (status === 'APPROVED') {
+      await this.prisma.coach.update({
+        where: { id },
+        data: {
+          status: status,
+          rejectionReason: rejectionReason
+        }
+      })
+      await this.prisma.user.update({
+        where: { id: userData?.user.id },
+        data: {
+          role: 'COACH'
+        }
+      })
+      return { success: true }
+    } else {
+      await this.prisma.coach.update({
+        where: { id },
+        data: {
+          status: status,
+          rejectionReason: rejectionReason
+        }
+      })
+      return { success: true }
+    }
+  }
+
+  async requestAddCoach(body: CreateCoachDto, id: string) {
+    await this.prisma.coach.create({ data: { ...body, userId: id } })
+    return { success: true }
+  }
+
+  async getPendingCoach(qury: GetPendingCoach) {
+    const { page = 1, limit, order, status } = qury
+    const limitPage = Number(limit) || Number(this.configService.get('limit.user'))
+    const where = {
+      ...(status && status !== 'ALL' && { status })
+    }
+    const [data, count] = await this.prisma.$transaction([
+      this.prisma.coach.findMany({
+        where: where,
+        orderBy: { createdAt: order || 'desc' },
+        skip: (Number(page) - 1) * Number(limitPage),
+        take: Number(limitPage),
+      }),
+      this.prisma.coach.count({ where }),
+    ]);
+    return { coach: data, pagination: pagination(count, page, limitPage) }
+  }
 }

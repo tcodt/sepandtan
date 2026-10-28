@@ -1,57 +1,69 @@
+// src/modules/auth/dto/auth.dto.ts
+import { ApiPropertyOptional } from '@nestjs/swagger';
 import {
-    IsString,
-    IsEmail,
-    MinLength,
-    MaxLength,
-    ValidatorConstraint,
-    Validate,
-    ValidatorConstraintInterface,
-    ValidationArguments,
-    IsBoolean,
+  IsEmail,
+  IsOptional,
+  IsString,
+  Matches,
+  MaxLength,
+  MinLength,
+  ValidateIf,
 } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
 
-interface UserLikeObject {
-    password?: string;
-    googleId?: string;
+/**
+ * ثبت‌نام با یکی از دو روش:
+ *  ۱) name + email + password
+ *  ۲) googleIdToken (ID token ای که گوگل به فرانت می‌ده؛ ایمیل و نام از خود گوگل خونده می‌شه)
+ */
+export class RegisterDto {
+  @ApiPropertyOptional({ description: 'برای ثبت‌نام با گوگل لازم نیست', example: 'ali' })
+  @ValidateIf((o: RegisterDto) => !o.googleIdToken)
+  @IsString()
+  @MinLength(2)
+  @MaxLength(100)
+  name?: string;
+
+
+  @ApiPropertyOptional({ description: 'برای ثبت‌نام با گوگل لازم نیست', example: 'ali@gmail.com' })
+  @ValidateIf((o: RegisterDto) => !o.googleIdToken)
+  @IsEmail()
+  email?: string;
+
+  @ApiPropertyOptional({ example: '09123456789' })
+  @IsOptional()
+  @Matches(/^09\d{9}$/, { message: 'شماره موبایل معتبر نیست' })
+  phone?: string;
+
+  @ApiPropertyOptional({ description: 'حداقل ۸ و حداکثر ۷۲ کاراکتر', example: '123' })
+  @ValidateIf((o: RegisterDto) => !o.googleIdToken)
+  @IsString()
+  // @MinLength(8)
+  // @MaxLength(72)
+  password?: string;
+
+  @ApiPropertyOptional({ description: 'ID token گوگل؛ به‌جای name / email / password', example: '' })
+  @ValidateIf((o: RegisterDto) => !o.password)
+  @IsString()
+  googleIdToken?: string;
 }
 
-@ValidatorConstraint({ name: 'eitherPasswordOrGoogleId', async: false })
-class EitherPasswordOrGoogleIdConstraint implements ValidatorConstraintInterface {
-    validate(_: any, args: ValidationArguments) {
-        const obj = args.object as UserLikeObject;
-        return !!(obj.password || obj.googleId);
-
-    }
-    defaultMessage(_args: ValidationArguments) {
-        return 'حداقل رمز عبور یا گوگل ایدی الزامی است';
-    }
-}
-
+/** ورود با email + password یا با googleIdToken */
 export class LoginDto {
-    @ApiProperty({ example: 'ali', required: true })
-    @IsString()
-    @MinLength(3, { message: 'نام باید حداقل 3 کاراکتر باشد' })
-    @MaxLength(30, { message: 'نام باید حداکثر 30 کاراکتر باشد' })
-    name!: string;
+  @ApiPropertyOptional({
+    example: 'ali@gmail.com'
+  })
+  @ValidateIf((o: LoginDto) => !o.googleIdToken)
+  @IsEmail()
+  email?: string;
 
-    @ApiProperty({ example: 'ali@example.com', required: true })
-    @IsEmail({}, { message: 'ایمیل معتبر نیست' })
-    email!: string;
+  @ApiPropertyOptional({ example: '123' })
+  @ValidateIf((o: LoginDto) => !o.googleIdToken)
+  @IsString()
+  // @MaxLength(72)
+  password?: string;
 
-    @ApiProperty({ example: '123', required: false, description: 'There is no need for a password when the user logs in with a Google account.' })
-    @IsString()
-    password?: string;
-
-    @IsString()
-    @ApiProperty({ example: '09390199977', required: false, description: 'There is no need for a password when the user logs in with a Google account.' })
-    phone?: string;
-
-    @ApiProperty({ example: '710927351', required: false, description: 'There is no need for a googleId when the user logs in with a Password.' })
-    @IsString()
-    googleId?: string;
-
-    @ApiProperty({ example: false, required: false, description: 'this for remember me.' })
-    @IsBoolean()
-    remember?: boolean;
+  @ApiPropertyOptional({ description: 'ID token گوگل؛ به‌جای email و password', example: '' })
+  @ValidateIf((o: LoginDto) => !o.email && !o.password)
+  @IsString()
+  googleIdToken?: string;
 }

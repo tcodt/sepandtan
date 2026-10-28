@@ -200,7 +200,7 @@ describe('Auth flow (login/register/logout/refresh) (e2e)', () => {
       // (This is test-only: we sign a valid access token with role ADMIN.)
       const jwt = require('jsonwebtoken');
       const secret = process.env.JWT_SECRET;
-      const token = jwt.sign({ email: 'admin-e2e@test.com', id: '00000000-0000-0000-0000-000000000000', name: 'Admin', role: 'ADMIN' }, secret, { expiresIn: '1h' });
+      const token = jwt.sign({ email: 'admin-e2e@test.com', id: '00000000-0000-0000-0000-000000000000', name: 'ADMIN', role: 'ADMIN' }, secret, { expiresIn: '1h' });
       return { access: `access_token=${token}` };
     };
 

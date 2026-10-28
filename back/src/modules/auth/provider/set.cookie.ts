@@ -1,62 +1,56 @@
 import { Injectable } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
-import { Request, Response } from 'express';
-import { v4 as uuidv4 } from 'uuid';
 import { ConfigService } from '@nestjs/config';
+import { JwtService } from '@nestjs/jwt';
+import type { Request, Response } from 'express';
+import type { RolePerson } from '../../../generated/prisma/enums.js';
 import { PrismaService } from '../../../prisma/prisma.service.js';
+
 import { AuthEntities } from '../entities/auth.entities.js';
-import { hashRefreshToken } from '../../../common/utils/hash.util.js';
+import { baseCookieOptions, generateRefreshToken, hashToken, JwtPayload } from '../../../common/utils/token.utils.js';
 
 @Injectable()
 export class SetCookie {
-    constructor(
-        private readonly jwtService: JwtService,
-        private readonly prisma: PrismaService,
-        private readonly configService: ConfigService
-    ) { }
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly jwtService: JwtService,
+    private readonly configService: ConfigService,
+  ) {}
 
-    async setData(information: AuthEntities, res: Response, req: Request) {
-        // Clean up old refresh tokens for this user before creating a new one
-        await this.prisma.token.deleteMany({
-            where: { userId: information.id }
-        });
+  /**
+   * بعد از ورود/ثبت‌نام موفق صدا زده می‌شه:
+   *  - access token (JWT) می‌سازه
+   *  - refresh token تصادفی می‌سازه و «هشِ» اون رو با تاریخ انقضا توی دیتابیس می‌ذاره
+   *  - هر دو رو داخل کوکی httpOnly می‌ذاره
+   */
+  async setData(user: AuthEntities, res: Response, req: Request): Promise<AuthEntities> {
+    const secret = this.configService.getOrThrow<string>('jwt.secret');
+    const accessName = this.configService.getOrThrow<string>('jwt.accessCookieName');
+    const refreshName = this.configService.getOrThrow<string>('jwt.refreshCookieName');
+    const accessTtlMs = this.configService.getOrThrow<number>('jwt.accessTtlMs');
+    const refreshTtlMs = this.configService.getOrThrow<number>('jwt.refreshTtlMs');
+    const isProd = this.configService.get<string>('nodeEnv') === 'production';
 
-        const hashToken = hashRefreshToken(uuidv4());
-        const ip = (req.headers['x-forwarded-for'] as string || '').split(',')[0].trim() || req.socket.remoteAddress || '';
-        const nameRefresh: string = this.configService.get<string>('jwt.refreshToken') || 'refresh_token';
-        const nameAccess: string = this.configService.get<string>('jwt.accessToken') || 'access_token';
-        const userAgent = req.headers['user-agent'] || 'unknown';
-        const deviceInfo = `${userAgent}-${ip}`;
-        const { email, id, name, role } = information;
-        const jwt = this.jwtService.sign({ email, id, name, role });
+    const payload: JwtPayload = { id: user.id, role: user.role as RolePerson };
+    const accessToken = this.jwtService.sign(payload, {
+      secret,
+      expiresIn: Math.floor(accessTtlMs / 1000),
+    });
 
-        await this.prisma.token.create({
-            data: {
-                tokenHash: hashToken,
-                userId: information.id,
-                device: deviceInfo,
-                ipAddress: ip
-            }
-        });
+    const refreshToken = generateRefreshToken();
+    await this.prisma.token.create({
+      data: {
+        tokenHash: hashToken(refreshToken),
+        userId: user.id,
+        device: req.headers['user-agent']?.slice(0, 255) ?? null,
+        ipAddress: req.ip ?? null,
+        expiredDate: new Date(Date.now() + refreshTtlMs),
+      },
+    });
 
-        const isProduction = this.configService.get<string>('NODE_ENV') === 'production';
+    const base = baseCookieOptions(isProd);
+    res.cookie(accessName, accessToken, { ...base, maxAge: accessTtlMs });
+    res.cookie(refreshName, refreshToken, { ...base, maxAge: refreshTtlMs });
 
-        res.cookie(nameRefresh, hashToken, {
-            httpOnly: true,
-            secure: isProduction,
-            sameSite: 'lax',
-            path: '/',
-            maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-        });
-
-        res.cookie(nameAccess, jwt, {
-            httpOnly: true,
-            secure: isProduction,
-            sameSite: 'lax',
-            path: '/',
-            maxAge: 10 * 60 * 60 * 1000, // 10 hours
-        });
-
-        return information;
-    }
+    return user;
+  }
 }

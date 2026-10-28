@@ -5,30 +5,38 @@ import { PrismaExceptionFilter } from './common/filters/prisma.filters.js';
 import { ValidationPipe } from '@nestjs/common';
 import { writeFileSync } from 'fs';
 import { AppModule } from './app.module.js';
+import { join } from 'path';
+import { NestExpressApplication } from '@nestjs/platform-express';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
   // Enable CORS with specific origins in production
   const isProduction = process.env.NODE_ENV === 'production';
 
   // if (isProduction) {
   const origins = (process.env.ALLOWED_ORIGINS || 'http://localhost:3001').split(',').filter(Boolean);
-  app.use(cookieParser());
   app.enableCors({
     origin: origins,
     credentials: true,
     allowedHeaders: ['Content-Type', 'Authorization', 'x-xsrf-token'],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   });
+
   // }
 
+  app.use(cookieParser());
+
   app.useGlobalFilters(new PrismaExceptionFilter());
+
+  app.useStaticAssets(join(__dirname, '..', 'uploads'), {
+    prefix: '/uploads/',
+  });
 
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
-      forbidNonWhitelisted: true,
+      forbidNonWhitelisted: false,
       transform: true,
     }),
   );
@@ -41,7 +49,8 @@ async function bootstrap() {
       .addServer('http://localhost:3000', 'Local Server')
       .addServer('https://domaintest.com', 'Test Server...')
       .addBearerAuth()
-      .setContact('Reza & Amir', 'https://github.com', 'r.dkhani1385.66@gmail.com')
+      .addCookieAuth('token')
+      .setContact('Amir & Reza', 'https://sepandtan.vercel.app/', '')
       .setLicense('MIT', 'https://opensource.org/licenses/MIT')
       .build();
 
@@ -50,6 +59,7 @@ async function bootstrap() {
     SwaggerModule.setup('api', app, document, {
       swaggerOptions: {
         docExpansion: 'none',
+        defaultModelsExpandDepth: -1,
         displayRequestDuration: true,
         filter: true,
         syntaxHighlight: {

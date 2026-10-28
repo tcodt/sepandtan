@@ -1,113 +1,213 @@
-import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
-
-import { AuthEntities } from './entities/auth.entities.js';
-import { LoginDto } from './dto/auth.dto.js';
-import { Request, Response } from 'express';
+// src/modules/auth/auth.service.ts
+import {
+  BadRequestException,
+  ConflictException,
+  ForbiddenException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { OAuth2Client } from 'google-auth-library';
+import { randomBytes } from 'node:crypto';
+import type { Request, Response } from 'express';
+import type { RolePerson } from '../../generated/prisma/enums.js';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { comparePassword, hashPassword } from '../../common/utils/hash.util.js';
+import { AuthEntities } from './entities/auth.entities.js';
+import { LoginDto, RegisterDto } from './dto/auth.dto.js';
+import { baseCookieOptions, hashToken } from '../../common/utils/token.utils.js';
+
+// یک پیام برای هر دو حالت «کاربر نیست» و «رمز غلطه» (جلوگیری از لو رفتن وجود حساب)
+const INVALID_CREDENTIALS = 'ایمیل یا رمز عبور اشتباه است';
+const INACTIVE_ACCOUNT = 'حساب کاربری شما غیرفعال است';
+
+interface GoogleProfile {
+  googleId: string;
+  email: string;
+  name: string;
+}
 
 @Injectable()
 export class AuthService {
+  private readonly googleClient = new OAuth2Client();
+  private dummyHash?: Promise<string>;
+
   constructor(
     private readonly prisma: PrismaService,
+    private readonly configService: ConfigService,
   ) { }
 
-  async register(body: LoginDto): Promise<AuthEntities> {
-    const firstUser = await this.prisma.user.count();
-    if (!await this.findByEmail(body.email)) {
-      const userCreate = await this.prisma.user.create({
+  // ───────────────────────── ثبت‌نام ─────────────────────────
+
+  async register(body: RegisterDto): Promise<AuthEntities> {
+    const firstUser = await this.prisma.user.findFirst({ select: { id: true } })
+    const google = body.googleIdToken ? await this.verifyGoogleToken(body.googleIdToken) : null;
+
+    const email = google?.email ?? this.normalizeEmail(body.email);
+    const name = body.name?.trim() || google?.name;
+
+    if (!email || !name) {
+      throw new BadRequestException('نام و ایمیل الزامی است');
+    }
+    if (!google && !body.password) {
+      throw new BadRequestException('رمز عبور الزامی است');
+    }
+
+    try {
+      const user = await this.prisma.user.create({
         data: {
-          role: firstUser ? 'USER' : 'ADMIN',
-          email: body.email,
-          name: body.name,
-          phone: body.phone,
-          googleId: body?.googleId || null,
-          password: body.password ? await hashPassword(body.password) : null,
+          role: firstUser ? 'USER' : 'SUPERADMIN',
+          email,
+          name,
+          phone: body.phone ?? null,
+          googleId: google?.googleId ?? null,
+          isEmailVerified: Boolean(google), // ایمیلِ تاییدشده‌ی گوگل
+          password: !google && body.password ? await hashPassword(body.password) : null,
         },
       });
-      return {
-        createdAt: userCreate.createdAt,
-        googleId: userCreate.googleId || '',
-        phone: userCreate.phone || '',
-        role: userCreate.role,
-        email: userCreate.email,
-        name: userCreate.name,
-        id: userCreate.id,
-      };
-    } else {
-      throw new ConflictException('کاربر قبلا باایمیل ارسال شده ثبت نام کرده است.');
+      return this.toAuthEntity(user);
+    } catch (error) {
+      // جلوگیری از race: دو ثبت‌نام همزمان با یک ایمیل/موبایل/حساب گوگل
+      if (this.isUniqueViolation(error)) {
+        throw new ConflictException('این ایمیل، شماره موبایل یا حساب گوگل قبلا ثبت شده است.');
+      }
+      throw error;
     }
   }
+
+  // ───────────────────────── ورود ─────────────────────────
 
   async login(body: LoginDto): Promise<AuthEntities> {
-    const findUser = await this.findByEmail(body.email);
+    const user = body.googleIdToken
+      ? await this.findGoogleUser(body.googleIdToken)
+      : await this.findPasswordUser(body);
 
-    if (findUser) {
-      // If user has password set, verify it
-      if (body.password && findUser.password) {
-        const isPasswordValid = await comparePassword(body.password, findUser.password);
-        if (!isPasswordValid) {
-          throw new UnauthorizedException('رمز وارد شده اشتباه است');
-        }
-      } else if (!body.password && findUser.googleId) {
-        // Google login without password
-        // User logged in with Google, no password needed
-      } else {
-        throw new UnauthorizedException('ایمیل یا رمز عبور اشتباه است');
+    // بعد از احراز هویت چک می‌کنیم تا وضعیت حساب برای غریبه‌ها لو نره
+    if (user.status !== 'ACTIVE') {
+      throw new ForbiddenException(INACTIVE_ACCOUNT);
+    }
+
+    return this.toAuthEntity(user);
+  }
+
+  private async findPasswordUser(body: LoginDto) {
+    const email = this.normalizeEmail(body.email);
+    const user = email ? await this.prisma.user.findUnique({ where: { email } }) : null;
+
+    if (!user) {
+      throw new UnauthorizedException('این حساب ثبت‌ نام نکرده است. ابتدا ثبت‌ نام کنید.');
+    }
+    // حتی اگه کاربر نبود یک مقایسه‌ی بی‌نتیجه انجام می‌دیم تا زمان پاسخ فرقی نکنه
+    const isValid = await comparePassword(
+      body.password ?? '',
+      user?.password ?? (await this.getDummyHash()),
+    );
+
+    if (!user || !user.password || !isValid) {
+      throw new UnauthorizedException(INVALID_CREDENTIALS);
+    }
+    return user;
+  }
+
+  private async findGoogleUser(idToken: string) {
+    const google = await this.verifyGoogleToken(idToken);
+    const user = await this.prisma.user.findUnique({ where: { googleId: google.googleId } });
+
+    if (!user) {
+      throw new UnauthorizedException('این حساب گوگل ثبت‌نام نکرده است. ابتدا ثبت‌نام کنید.');
+    }
+    return user;
+  }
+
+  /** ID token گوگل رو سمت سرور تایید می‌کنه (امضا، audience و انقضا) */
+  private async verifyGoogleToken(idToken: string): Promise<GoogleProfile> {
+    const audience = this.configService.get<string>('google.clientId');
+    if (!audience) {
+      throw new UnauthorizedException('ورود با گوگل فعال نیست');
+    }
+
+    try {
+      const ticket = await this.googleClient.verifyIdToken({ idToken, audience });
+      const payload = ticket.getPayload();
+
+      if (!payload?.sub || !payload.email || !payload.email_verified) {
+        throw new Error('invalid google payload');
       }
 
       return {
-        createdAt: findUser.createdAt,
-        googleId: findUser?.googleId || '',
-        phone: findUser.phone || '',
-        role: findUser.role,
-        email: findUser.email,
-        name: findUser.name,
-        id: findUser.id,
+        googleId: payload.sub,
+        email: payload.email.toLowerCase(),
+        name: payload.name ?? payload.email,
       };
-    } else {
-      throw new ConflictException('کاربری با این ایمیل ثبت نام نکرده است.');
+    } catch {
+      throw new UnauthorizedException('ورود با گوگل معتبر نیست');
     }
   }
 
-  async logOut(res: Response, req: Request) {
-    const cookies = req.cookies as Record<string, string>;
+  // ───────────────────────── خروج ─────────────────────────
 
-    // Clean up refresh tokens from database
-    if (cookies?.refresh_token) {
-      try {
-        // Find and delete the token from database
-        const token = await this.prisma.token.findFirst({
-          where: { tokenHash: cookies.refresh_token },
-          select: { userId: true }
-        });
-        if (token?.userId) {
-          await this.prisma.token.deleteMany({
-            where: { userId: token.userId }
-          });
-        }
-      } catch (_err) {
-        // Ignore errors during cleanup
+  /** فقط همین دستگاه خارج می‌شه؛ نشست دستگاه‌های دیگه سر جاشونه */
+  async logOut(res: Response, req: Request): Promise<{ success: boolean }> {
+    const accessName = this.configService.getOrThrow<string>('jwt.accessCookieName');
+    const refreshName = this.configService.getOrThrow<string>('jwt.refreshCookieName');
+    const cookies = (req.cookies ?? {}) as Record<string, string | undefined>;
+    const refreshToken = cookies[refreshName];
+
+    try {
+      if (refreshToken) {
+        await this.prisma.token.deleteMany({ where: { tokenHash: hashToken(refreshToken) } });
       }
+    } finally {
+      // حتی اگه دیتابیس خطا داد، کوکی‌ها پاک بشن؛ با همون گزینه‌هایی که ست شدن
+      const options = baseCookieOptions(this.isProd);
+      res.clearCookie(accessName, options);
+      res.clearCookie(refreshName, options);
     }
 
-    if (!cookies?.access_token && !cookies?.refresh_token) {
-      return { success: true };
-    }
-    try {
-      res.clearCookie('access_token');
-      res.clearCookie('refresh_token');
-      return { success: true };
-    } catch (err) {
-      throw new ConflictException('دوباره تلاش کنید.');
-    }
+    return { success: true };
   }
 
-  async findByEmail(email: string) {
-    try {
-      return await this.prisma.user.findUnique({ where: { email } });
-    } catch (_err) {
-      return null;
-    }
+  // ───────────────────────── کمکی‌ها ─────────────────────────
+
+  findByEmail(email: string) {
+    return this.prisma.user.findUnique({ where: { email: email.trim().toLowerCase() } });
+  }
+
+  private normalizeEmail(email?: string): string | undefined {
+    return email?.trim().toLowerCase() || undefined;
+  }
+
+  private getDummyHash(): Promise<string> {
+    return (this.dummyHash ??= hashPassword(randomBytes(16).toString('hex')));
+  }
+
+  private isUniqueViolation(error: unknown): boolean {
+    return (
+      typeof error === 'object' &&
+      error !== null &&
+      (error as { code?: string }).code === 'P2002'
+    );
+  }
+
+  private get isProd(): boolean {
+    return this.configService.get<string>('nodeEnv') === 'production';
+  }
+
+  private toAuthEntity(user: {
+    id: string;
+    name: string;
+    email: string | null;
+    phone: string | null;
+    googleId: string | null;
+    role: RolePerson;
+  }): AuthEntities {
+    return {
+      id: user.id,
+      name: user.name,
+      email: user.email ?? '',
+      phone: user.phone ?? '',
+      googleId: user.googleId ?? '',
+      role: user.role,
+    };
   }
 }
