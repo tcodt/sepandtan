@@ -110,7 +110,7 @@ export class CartService {
    */
   async addItem(userId: string, dto: AddToCartDto) {
     const product = await this.prisma.product.findUnique({ where: { id: dto.productId } });
-    if (!product || product.status !== 'APPROVED') throw new NotFoundException('محصول یافت نشد');
+    if (!product || product.status !== 'ACTIVE') throw new NotFoundException('محصول یافت نشد');
 
     // Get default variant for stock check
     const variant = await this.prisma.productVariant.findUnique({

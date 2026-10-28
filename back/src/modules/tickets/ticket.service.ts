@@ -19,7 +19,6 @@ export class TicketService {
    * ایجاد تیکت جدید
    */
   async create(userId: string, dto: CreateTicketDto) {
-
     await this.prisma.$transaction(async (tx) => {
       const ticket = await tx.ticket.create({
         data: {
@@ -73,7 +72,7 @@ export class TicketService {
     return this.prisma.ticket.update({
       where: { id },
       data,
-      include: { user: { select: { id: true, username: true } } },
+      include: { user: { select: { id: true, name: true } } },
     });
   }
 
@@ -81,25 +80,26 @@ export class TicketService {
    * GetUser's tickets with pagination
    */
   async getUserTickets(userId: string, query: QueryTicketsDto) {
-    const { page = 1, limit = 10, status, priority } = query;
-    const skip = (page - 1) * limit;
+    const { page = 1, limit, status, priority } = query;
+    const limitPage = Number(limit) || Number(this.configService.get('limit.ticket'))
+    const skip = (page - 1) * limitPage;
     const where: any = { userId };
-    if (status) where.status = status;
-    if (priority) where.priority = priority;
+    if (status && status !== 'ALL') where.status = status;
+    if (priority && priority !== 'ALL') where.priority = priority;
     const [tickets, total] = await Promise.all([
       this.prisma.ticket.findMany({
         where,
         include: {
-          order: { select: { id: true, orderNumber: true, totalPrice: true } },
+          order: { select: { id: true, orderNumber: true, totalPrice: true, storeId: true, status: true } },
         },
-        skip, take: limit, orderBy: { createdAt: 'desc' },
+        skip, take: limitPage, orderBy: { createdAt: 'desc' },
       }),
       this.prisma.ticket.count({ where }),
     ]);
 
     return {
       tickets,
-      pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
+      pagination: pagination(total, page, limitPage),
     };
   }
 
@@ -118,7 +118,7 @@ export class TicketService {
       this.prisma.ticket.findMany({
         where,
         include: {
-          user: { select: { id: true, username: true, firstName: true, lastName: true, store: { select: { name: true } } } },
+          user: { select: { id: true, name: true, store: { select: { name: true } } } },
           order: { select: { id: true, orderNumber: true, totalPrice: true, status: true } },
         },
         skip, take: limitPage, orderBy: { createdAt: order },
@@ -139,13 +139,25 @@ export class TicketService {
   async findOne(id: string, userId: string, role: string) {
     const ticket = await this.prisma.ticket.findUnique({
       where: { id },
-      include: {
-        user: { select: { id: true, username: true, role: true, firstName: true, lastName: true, phone: true } },
+      select: {
+        title: true,
+        trackingCode: true,
+        userId: true,
+        priority: true,
+        status: true,
+        createdAt: true,
+        id: true,
+        orderId: true,
+        isUserRead: true,
+        user: { select: { id: true, name: true, role: true, phone: true } },
         order: { select: { id: true, orderNumber: true, totalPrice: true } },
         ticketMessages: {
-          include: {
+          select: {
+            content: true,
+            updatedAt: true,
+            id: true,
             images: { select: { url: true, id: true } },
-            sender: { select: { id: true, username: true, role: true } }
+            sender: { select: { id: true, name: true, role: true } }
           }, orderBy: { createdAt: 'asc' }
         },
       },

@@ -77,7 +77,19 @@ export class ProductsController {
   @Put(':id')
   @UseGuards(AccessTokenGuard)
   @Roles('STORE', 'ADMIN', 'SUPERADMIN')
-  @ApiOperation({ summary: 'ویرایش محصول (Admin & Store)', description: 'هر چیزی که ارسال نکنی ویرایش نمیشه' })
+  @ApiOperation({ summary: 'ویرایش محصول (Admin & Store)', description: `
+    * هر چیزی که ارسال نکنی ویرایش نمیشه
+    * DRAFT پیش نویس
+    * PENDING در حال انتظار برای تایید شدن
+    * ACTIVE تایید شده توسط ادمین (فعال)
+    * REJECTED رد شده
+    * INACTIVE غیر فعال
+    * OUT_OF_STOCK ناموجود
+    * DELETED حذف شده
+    * BANNED مسدود شده
+    * فروشنده مجازه این ویرایش هارو انجام بده  DRAFT ، PENDING ، INACTIVE ، DELETED
+    * هر بار فروشنده وضعیت محصول رو تغییر بده ادمین باید تایید کنه تا نمایش داده بشه
+    ` })
   async update(@Param('id') id: string, @Body() dto: UpdateProductDto) {
     return this.productsService.update(id, dto);
   }

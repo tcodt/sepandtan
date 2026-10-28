@@ -13,8 +13,8 @@ export class CreateBankAccountDto {
     bankName!: string;
 
     @ApiProperty({
-        description: 'نام بانک (مثلاً ملی، صادرات، ...)',
-        example: 'ملی',
+        description: 'آیدی کیف پول',
+        example: 'eb94e6a8-2b6e-4998-8004-c9827a76ef9a',
         required: true,
     })
     @IsString()
@@ -59,7 +59,7 @@ export class CreateBankAccountDto {
     isDefault!: boolean;
 
     @ApiPropertyOptional({
-        description: 'آیا این حساب به‌عنوان پیش‌فرض انتخاب شود؟',
+        description: 'زمانی که کاربر حساب بانکی خودش رو تایید میکنه و پول میتونه به این حساب واریز بشه',
         default: false,
     })
     @IsOptional()

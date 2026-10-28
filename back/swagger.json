@@ -3300,11 +3300,19 @@
     },
     "/wallet/my": {
       "get": {
+        "description": "\n    * balance حساب مالی اصلی که چقدر توش پول هستش و میتونه برداشت کنه\n    * pendingBalance موجودی در انتظار تایید تا واریز بشه به حساب یعنی این که کاربر یه محصولی رو خرید کرده و تا زمانی که دوره مرجوع شدن کالا تموم نشده این پول به حساب نمیشینه\n    * withdrawBalance موجودی که فروشنده یا مربی درخواست کرده که برداشت بکنه\n    * frozenBalance مبلغی که مسدود شده حالا میتونه برای مرجوعی کالا باشه یا هر چیزی\n    * isPlatform این یعنی حساب پلتفرم و بعدا قراره تغییر بکنه\n    ",
         "operationId": "WalletController_getMyWallet",
         "parameters": [],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WalletEntity"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -3312,12 +3320,13 @@
             "bearer": []
           }
         ],
-        "summary": "دریافت کیف پول کاربر",
+        "summary": "کیف پول من",
         "tags": [
           "Wallet"
         ]
       },
       "post": {
+        "description": "درخواست کیف پول من میزنی اگر بود که هیچی نبود یه دکمه بزار که کاربر کیف پول برای خودش بسازه یا اینکه خودکار خودت درخواست رو بزن به صورت پیشفرض من خودم میسازم ولی برای اطمینان هستش",
         "operationId": "WalletController_createMyWallet",
         "parameters": [],
         "responses": {
@@ -3351,7 +3360,14 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DetailWalletEntity"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -3359,7 +3375,7 @@
             "bearer": []
           }
         ],
-        "summary": "دریافت کیف پول کاربر",
+        "summary": "دریافت کیف پول کاربر با آیدی",
         "tags": [
           "Wallet"
         ]
@@ -3369,6 +3385,16 @@
       "post": {
         "operationId": "WalletController_requestWithdrawal",
         "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WithdrawDto"
+              }
+            }
+          }
+        },
         "responses": {
           "201": {
             "description": ""
@@ -3789,11 +3815,19 @@
     },
     "/bank-accounts": {
       "get": {
+        "description": "همیشه حساب پیشفرض  یا دیفالت رو اول و خوب به کاربر نمایش بده دقت داشته باشی که ادمین مجاز به دیدن حساب های بانکی هیچکس نیست و حتی نمیتونه ویرایش و ثبت بکنه",
         "operationId": "BankAccountController_findMyBankAccounts",
         "parameters": [],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BankAccountEntity"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -3801,12 +3835,13 @@
             "bearer": []
           }
         ],
-        "summary": "دریافت حساب‌های بانکی من",
+        "summary": "دریافت حساب‌های بانکی من (Admin,Store,Coach)",
         "tags": [
           "Bank Accounts"
         ]
       },
       "post": {
+        "description": "بیشتر از سه تا نمیشه حساب بانکی ساخت",
         "operationId": "BankAccountController_create",
         "parameters": [],
         "requestBody": {
@@ -3829,7 +3864,7 @@
             "bearer": []
           }
         ],
-        "summary": "ایجاد حساب بانکی جدید",
+        "summary": "ایجاد حساب بانکی جدید (Admin,Store,Coach)",
         "tags": [
           "Bank Accounts"
         ]
@@ -3837,6 +3872,7 @@
     },
     "/bank-accounts/{id}": {
       "put": {
+        "description": "تمام اطلاعات حساب بانکی قابل ویرایش و ادمین نمیتونه حساب کس دیگه ای رو تغییر بده و فقط خود شخص میتونه حسابشو تغییر بده و ایجاد کنه",
         "operationId": "BankAccountController_update",
         "parameters": [
           {
@@ -3869,12 +3905,13 @@
             "bearer": []
           }
         ],
-        "summary": "ویرایش حساب بانکی",
+        "summary": "ویرایش حساب بانکی (Admin,Store,Coach)",
         "tags": [
           "Bank Accounts"
         ]
       },
       "delete": {
+        "description": "سعی کن موقع حذف حساب پیشفرض بهش اخطار بدی چون فقط ادمین میتونه برای واریزی وجه حساب پیشفرض رو ببینه",
         "operationId": "BankAccountController_delete",
         "parameters": [
           {
@@ -3897,7 +3934,7 @@
             "bearer": []
           }
         ],
-        "summary": "حذف حساب بانکی",
+        "summary": "حذف حساب بانکی (Admin,Store,Coach)",
         "tags": [
           "Bank Accounts"
         ]
@@ -4270,15 +4307,6 @@
             }
           },
           {
-            "name": "status",
-            "required": false,
-            "in": "query",
-            "description": "وضعیت محصول",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
             "name": "minPrice",
             "required": false,
             "in": "query",
@@ -4390,9 +4418,14 @@
               "type": "string",
               "enum": [
                 "all",
+                "DRAFT",
                 "PENDING",
-                "APPROVED",
-                "REJECTED"
+                "ACTIVE",
+                "REJECTED",
+                "INACTIVE",
+                "OUT_OF_STOCK",
+                "DELETED",
+                "BANNED"
               ]
             }
           },
@@ -4609,7 +4642,7 @@
     },
     "/products/{id}": {
       "put": {
-        "description": "هر چیزی که ارسال نکنی ویرایش نمیشه",
+        "description": "\n    * هر چیزی که ارسال نکنی ویرایش نمیشه\n    * DRAFT پیش نویس\n    * PENDING در حال انتظار برای تایید شدن\n    * ACTIVE تایید شده توسط ادمین (فعال)\n    * REJECTED رد شده\n    * INACTIVE غیر فعال\n    * OUT_OF_STOCK ناموجود\n    * DELETED حذف شده\n    * BANNED مسدود شده\n    * فروشنده مجازه این ویرایش هارو انجام بده  DRAFT ، PENDING ، INACTIVE ، DELETED\n    * هر بار فروشنده وضعیت محصول رو تغییر بده ادمین باید تایید کنه تا نمایش داده بشه\n    ",
         "operationId": "ProductsController_update",
         "parameters": [
           {
@@ -5662,6 +5695,7 @@
     },
     "/tickets": {
       "post": {
+        "description": "\n    * ارسال ایدی تسویه سفارش اختیاری هستش \n    * LOW اولویت کم\n    * MEDIUM اولویت متوسط\n    * HIGH اولویت بالا\n    * URGENT اولویت فوری\n    * CRITICAL اولویت اضطراری\n    ",
         "operationId": "TicketController_create",
         "parameters": [],
         "requestBody": {
@@ -5679,17 +5713,13 @@
             "description": ""
           }
         },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "ایجاد تیکت جدید",
+        "summary": "ایجاد تیکت جدید (User)",
         "tags": [
           "Tickets"
         ]
       },
       "get": {
+        "description": "این بخش برای کاربر هستش که تیکت هایی که ثبت کرده رو میتونه ببینه ",
         "operationId": "TicketController_getUserTickets",
         "parameters": [
           {
@@ -5731,7 +5761,7 @@
             "name": "search",
             "required": false,
             "in": "query",
-            "description": "جستجو در کد",
+            "description": "جستجو در کد پیگیری تیکت",
             "schema": {
               "type": "string"
             }
@@ -5772,15 +5802,17 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedTicketEntity"
+                }
+              }
+            }
           }
         },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "لیست تیکت‌های کاربر",
+        "summary": "لیست تیکت‌های من (User)",
         "tags": [
           "Tickets"
         ]
@@ -5788,6 +5820,7 @@
     },
     "/tickets/{id}": {
       "get": {
+        "description": "یه هدر برای تیکت پشتیبانی درست شده و بقیه متن ها داخل تیکت مسیج قرار داره که باید نمایش بدی شبیه به محیط پیامرسان ها یا تلگرام",
         "operationId": "TicketController_findOne",
         "parameters": [
           {
@@ -5801,20 +5834,23 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketDetailEntity"
+                }
+              }
+            }
           }
         },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "جزئیات تیکت",
+        "summary": "جزئیات تیکت (User & Admin)",
         "tags": [
           "Tickets"
         ]
       },
       "patch": {
+        "description": "این بخش برای زمانی هستش که تیکت رو ادمین ببنده یا تغییر وضعیت بده",
         "operationId": "TicketController_update",
         "parameters": [
           {
@@ -5841,17 +5877,13 @@
             "description": ""
           }
         },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "ویرایش تیکت",
+        "summary": "ویرایش تیکت (Admin)",
         "tags": [
           "Tickets"
         ]
       },
       "delete": {
+        "description": "",
         "operationId": "TicketController_deleteTicket",
         "parameters": [
           {
@@ -5868,12 +5900,7 @@
             "description": ""
           }
         },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "حذف تیکت‌ها (ادمین)",
+        "summary": "حذف تیکت‌ها (Admin)",
         "tags": [
           "Tickets"
         ]
@@ -5881,6 +5908,7 @@
     },
     "/tickets/{id}/read": {
       "patch": {
+        "description": "وقتی که کاربر صفحه تیکت رو باز میکنه و به پایین میره و تمام متن هاشو به اصطلاح خونده اون وقت این رو میفرستی که ادمین متوجه میشه کاربر این تیکت رو خونده ",
         "operationId": "TicketController_markAsRead",
         "parameters": [
           {
@@ -5897,12 +5925,7 @@
             "description": ""
           }
         },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "برچسب‌گذاری تیکت به عنوان خوانده شده",
+        "summary": "برچسب گزاری به عنوان خوانده شده توسط کاربر (User)",
         "tags": [
           "Tickets"
         ]
@@ -5910,6 +5933,7 @@
     },
     "/tickets/{id}/messages": {
       "post": {
+        "description": "کاربر و هم ادمین میتونه از این بخش استفاده بکنه",
         "operationId": "TicketController_createMessage",
         "parameters": [
           {
@@ -5936,12 +5960,7 @@
             "description": ""
           }
         },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "افزودن پیام به تیکت",
+        "summary": "افزودن پیام به تیکت (Admin User)",
         "tags": [
           "Tickets"
         ]
@@ -5949,6 +5968,7 @@
     },
     "/tickets/admin/all": {
       "get": {
+        "description": "این بخش برای ادمین هستش و فروشنده یا کس دیگه ای اجازه دسترسی نداره",
         "operationId": "TicketController_getAllTickets",
         "parameters": [
           {
@@ -5990,7 +6010,7 @@
             "name": "search",
             "required": false,
             "in": "query",
-            "description": "جستجو در کد",
+            "description": "جستجو در کد پیگیری تیکت",
             "schema": {
               "type": "string"
             }
@@ -6031,15 +6051,17 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedAdminTicketListResponseEntity"
+                }
+              }
+            }
           }
         },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "تمام تیکت‌ها (ادمین)",
+        "summary": "تمام تیکت‌ها (Admin)",
         "tags": [
           "Tickets"
         ]
@@ -6047,6 +6069,7 @@
     },
     "/tickets/admin/stats": {
       "get": {
+        "description": "یه اطلاعات کلی در رابطه با تیکت هایی که مونده ادمین به دست میاره",
         "operationId": "TicketController_getStats",
         "parameters": [],
         "responses": {
@@ -6054,12 +6077,7 @@
             "description": ""
           }
         },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "آمار تیکت‌ها (ادمین)",
+        "summary": "آمار تیکت‌ها (Admin)",
         "tags": [
           "Tickets"
         ]
@@ -6608,6 +6626,204 @@
         "summary": "آمار گزارش‌ها (ادمین)",
         "tags": [
           "Reports"
+        ]
+      }
+    },
+    "/country": {
+      "get": {
+        "operationId": "CountriesController_findAll",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CountryPublicEntity"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "لیست کشورها برای نمایش به تمام کاربران (Public)",
+        "tags": [
+          "Countries"
+        ]
+      },
+      "post": {
+        "operationId": "CountriesController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCountryDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "ایجاد کشور جدید (Admin)",
+        "tags": [
+          "Countries"
+        ]
+      }
+    },
+    "/country/admin": {
+      "get": {
+        "operationId": "CountriesController_findAllAdmin",
+        "parameters": [
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "description": "جستجو بر اساس نام یا اسلاگ کشور",
+            "schema": {
+              "example": "ایران",
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "تعداد آیتم‌ها در هر صفحه",
+            "schema": {
+              "minimum": 1,
+              "example": 10,
+              "type": "number"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "شماره صفحه",
+            "schema": {
+              "minimum": 1,
+              "example": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "order",
+            "required": false,
+            "in": "query",
+            "description": "ترتیب مرتب‌سازی",
+            "schema": {
+              "example": "asc",
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedCountryEntity"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "لیست کشورها (Admin)",
+        "tags": [
+          "Countries"
+        ]
+      }
+    },
+    "/country/{id}": {
+      "put": {
+        "operationId": "CountriesController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCountryDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "ویرایش کشور (Admin)",
+        "tags": [
+          "Countries"
+        ]
+      },
+      "delete": {
+        "operationId": "CountriesController_delete",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "حذف کشور (Admin)",
+        "tags": [
+          "Countries"
         ]
       }
     }
@@ -10009,6 +10225,253 @@
           "status"
         ]
       },
+      "WalletEntity": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "userId": {
+            "type": "string"
+          },
+          "balance": {
+            "type": "string",
+            "description": "موجودی فعلی (به صورت رشته)"
+          },
+          "pendingBalance": {
+            "type": "string",
+            "description": "موجودی در انتظار تایید (به صورت رشته)"
+          },
+          "withdrawBalance": {
+            "type": "string",
+            "description": "موجودی قابل برداشت (به صورت رشته)"
+          },
+          "frozenBalance": {
+            "type": "string",
+            "description": "موجودی مسدود شده (به صورت رشته)"
+          },
+          "isPlatform": {
+            "type": "boolean"
+          },
+          "bankAccountId": {
+            "type": "object",
+            "nullable": true
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "userId",
+          "balance",
+          "pendingBalance",
+          "withdrawBalance",
+          "frozenBalance",
+          "isPlatform",
+          "bankAccountId",
+          "updatedAt",
+          "createdAt"
+        ]
+      },
+      "BankAccountEntity": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "bankName": {
+            "type": "string"
+          },
+          "accountHolder": {
+            "type": "string"
+          },
+          "iban": {
+            "type": "string",
+            "description": "شماره شبا (IBAN)"
+          },
+          "cardNumber": {
+            "type": "string",
+            "description": "شماره کارت"
+          },
+          "isDefault": {
+            "type": "boolean"
+          },
+          "isVerified": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "userId": {
+            "type": "string"
+          },
+          "walletId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "bankName",
+          "accountHolder",
+          "iban",
+          "cardNumber",
+          "isDefault",
+          "isVerified",
+          "createdAt",
+          "updatedAt",
+          "userId",
+          "walletId"
+        ]
+      },
+      "WalletUserEntity": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "email": {
+            "type": "object",
+            "nullable": true
+          },
+          "name": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string"
+          },
+          "googleId": {
+            "type": "object",
+            "nullable": true
+          },
+          "phone": {
+            "type": "object",
+            "nullable": true
+          },
+          "role": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "isPhoneVerified": {
+            "type": "boolean"
+          },
+          "isEmailVerified": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "email",
+          "name",
+          "password",
+          "googleId",
+          "phone",
+          "role",
+          "status",
+          "isPhoneVerified",
+          "isEmailVerified",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "DetailWalletEntity": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "userId": {
+            "type": "string"
+          },
+          "balance": {
+            "type": "string",
+            "description": "موجودی فعلی (به صورت رشته)"
+          },
+          "pendingBalance": {
+            "type": "string",
+            "description": "موجودی در انتظار تایید (به صورت رشته)"
+          },
+          "withdrawBalance": {
+            "type": "string",
+            "description": "موجودی قابل برداشت (به صورت رشته)"
+          },
+          "frozenBalance": {
+            "type": "string",
+            "description": "موجودی مسدود شده (به صورت رشته)"
+          },
+          "isPlatform": {
+            "type": "boolean"
+          },
+          "bankAccountId": {
+            "type": "object",
+            "nullable": true
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "bankAccounts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BankAccountEntity"
+            }
+          },
+          "user": {
+            "$ref": "#/components/schemas/WalletUserEntity"
+          }
+        },
+        "required": [
+          "id",
+          "userId",
+          "balance",
+          "pendingBalance",
+          "withdrawBalance",
+          "frozenBalance",
+          "isPlatform",
+          "bankAccountId",
+          "updatedAt",
+          "createdAt",
+          "bankAccounts",
+          "user"
+        ]
+      },
+      "WithdrawDto": {
+        "type": "object",
+        "properties": {
+          "amount": {
+            "type": "string",
+            "description": "مبلغ مورد نظر برای برداشت",
+            "example": "50000"
+          }
+        },
+        "required": [
+          "amount"
+        ]
+      },
       "CreateBankAccountDto": {
         "type": "object",
         "properties": {
@@ -10019,8 +10482,8 @@
           },
           "walletId": {
             "type": "string",
-            "description": "نام بانک (مثلاً ملی، صادرات، ...)",
-            "example": "ملی"
+            "description": "آیدی کیف پول",
+            "example": "eb94e6a8-2b6e-4998-8004-c9827a76ef9a"
           },
           "accountHolder": {
             "type": "string",
@@ -10044,7 +10507,7 @@
           },
           "isVerified": {
             "type": "boolean",
-            "description": "آیا این حساب به‌عنوان پیش‌فرض انتخاب شود؟",
+            "description": "زمانی که کاربر حساب بانکی خودش رو تایید میکنه و پول میتونه به این حساب واریز بشه",
             "default": false
           }
         },
@@ -10729,6 +11192,11 @@
             "description": "عنوان فارسی محصول",
             "example": "تیشرت مردانه"
           },
+          "countryId": {
+            "type": "string",
+            "description": "آیدی کشور",
+            "example": "820e47b7-20b3-4fb6-8e29-56d2766efabd"
+          },
           "slug": {
             "type": "string",
             "description": "اسلاگ باید به صورت یونیک باشد",
@@ -10828,6 +11296,11 @@
             "type": "string",
             "description": "عنوان فارسی محصول",
             "example": "تیشرت مردانه"
+          },
+          "countryId": {
+            "type": "string",
+            "description": "آیدی کشور",
+            "example": "820e47b7-20b3-4fb6-8e29-56d2766efabd"
           },
           "slug": {
             "type": "string",
@@ -12296,23 +12769,36 @@
         "properties": {
           "title": {
             "type": "string",
-            "description": "عنوان تیکت"
+            "description": "عنوان تیکت",
+            "example": "آدرس اشتباه"
           },
           "orderId": {
             "type": "string",
-            "description": "پیوست به سفارش (اختیاری)"
+            "description": "پیوست به سفارش (اختیاری)",
+            "example": "bb9fc4f4-b7d8-465b-831d-10b27fe5e6f1"
           },
           "priority": {
             "type": "string",
             "description": "اولویت تیکت",
-            "default": "MEDIUM"
+            "example": "MEDIUM",
+            "enum": [
+              "LOW",
+              "MEDIUM",
+              "HIGH",
+              "URGENT",
+              "CRITICAL"
+            ]
           },
           "content": {
             "type": "string",
-            "description": "محتوای پیام"
+            "description": "محتوای پیام",
+            "example": "آدرس وارد شده توی تسویه حساب مشکل داره و اشتباه هستش ممکنه برام تغییرش بدین ؟"
           },
           "images": {
             "description": "لیست آدرس تصاویر (اختیاری)",
+            "example": [
+              "marketino/image/2026/10/screenshot-2026-06-08-161115-253371-5946.png"
+            ],
             "type": "array",
             "items": {
               "type": "string"
@@ -12326,20 +12812,313 @@
           "content"
         ]
       },
+      "TicketOrderEntity": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "orderNumber": {
+            "type": "string"
+          },
+          "totalPrice": {
+            "type": "string",
+            "description": "مبلغ کل سفارش (به صورت رشته)"
+          }
+        },
+        "required": [
+          "id",
+          "orderNumber",
+          "totalPrice"
+        ]
+      },
+      "TicketEntity": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "priority": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "trackingCode": {
+            "type": "string"
+          },
+          "isUserRead": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "userId": {
+            "type": "string"
+          },
+          "orderId": {
+            "type": "object",
+            "nullable": true
+          },
+          "order": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TicketOrderEntity"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "priority",
+          "title",
+          "trackingCode",
+          "isUserRead",
+          "createdAt",
+          "updatedAt",
+          "userId",
+          "orderId",
+          "order"
+        ]
+      },
+      "PaginatedTicketEntity": {
+        "type": "object",
+        "properties": {
+          "pagination": {
+            "description": "اطلاعات صفحه‌بندی",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMetaDto"
+              }
+            ]
+          },
+          "tickets": {
+            "description": "داده‌ها",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TicketEntity"
+            }
+          }
+        },
+        "required": [
+          "pagination",
+          "tickets"
+        ]
+      },
+      "TicketUserEntity": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "object",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "role",
+          "phone"
+        ]
+      },
+      "TicketMessageImageEntity": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "url"
+        ]
+      },
+      "TicketMessageSenderEntity": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "role"
+        ]
+      },
+      "TicketMessageEntity": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "content": {
+            "type": "string"
+          },
+          "ticketId": {
+            "type": "string"
+          },
+          "senderId": {
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "images": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TicketMessageImageEntity"
+            }
+          },
+          "sender": {
+            "$ref": "#/components/schemas/TicketMessageSenderEntity"
+          }
+        },
+        "required": [
+          "id",
+          "content",
+          "ticketId",
+          "senderId",
+          "createdAt",
+          "updatedAt",
+          "images",
+          "sender"
+        ]
+      },
+      "TicketDetailEntity": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "priority": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "trackingCode": {
+            "type": "string"
+          },
+          "isUserRead": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "userId": {
+            "type": "string"
+          },
+          "orderId": {
+            "type": "object",
+            "nullable": true
+          },
+          "user": {
+            "$ref": "#/components/schemas/TicketUserEntity"
+          },
+          "order": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TicketOrderEntity"
+              }
+            ]
+          },
+          "ticketMessages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TicketMessageEntity"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "priority",
+          "title",
+          "trackingCode",
+          "isUserRead",
+          "createdAt",
+          "updatedAt",
+          "userId",
+          "orderId",
+          "user",
+          "order",
+          "ticketMessages"
+        ]
+      },
       "UpdateTicketDto": {
         "type": "object",
         "properties": {
           "status": {
             "type": "string",
-            "description": "وضعیت جدید تیکت"
+            "description": "وضعیت جدید تیکت",
+            "enum": [
+              "PENDING",
+              "WAITING",
+              "RESOLVED",
+              "CLOSED"
+            ],
+            "example": "RESOLVED"
           },
           "priority": {
             "type": "string",
-            "description": "اولویت جدید تیکت"
+            "description": "اولویت جدید تیکت",
+            "enum": [
+              "LOW",
+              "MEDIUM",
+              "HIGH",
+              "URGENT",
+              "CRITICAL"
+            ],
+            "example": "MEDIUM"
           },
           "isUserRead": {
             "type": "boolean",
-            "description": "خوانده شدن تیکت توسط کاربر"
+            "description": "خوانده شدن تیکت توسط کاربر",
+            "example": false
           }
         },
         "required": [
@@ -12353,10 +13132,14 @@
         "properties": {
           "content": {
             "type": "string",
-            "description": "محتوای پیام"
+            "description": "محتوای پیام",
+            "example": "باشه چک میکنم بهتون اطلاعات میدم"
           },
           "images": {
             "description": "لیست آدرس تصاویر (اختیاری)",
+            "example": [
+              "marketino/image/2026/10/screenshot-2026-06-08-161115-253371-5946.png"
+            ],
             "type": "array",
             "items": {
               "type": "string"
@@ -12365,6 +13148,183 @@
         },
         "required": [
           "content"
+        ]
+      },
+      "AdminTicketUserStoreEntity": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "AdminTicketUserEntity": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "store": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AdminTicketUserStoreEntity"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "store"
+        ]
+      },
+      "AdminTicketOrderEntity": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "orderNumber": {
+            "type": "string"
+          },
+          "totalPrice": {
+            "type": "string",
+            "description": "مبلغ کل سفارش (به صورت رشته)"
+          },
+          "status": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "orderNumber",
+          "totalPrice",
+          "status"
+        ]
+      },
+      "AdminTicketListEntity": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "priority": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "trackingCode": {
+            "type": "string"
+          },
+          "isUserRead": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "userId": {
+            "type": "string"
+          },
+          "orderId": {
+            "type": "object",
+            "nullable": true
+          },
+          "user": {
+            "$ref": "#/components/schemas/AdminTicketUserEntity"
+          },
+          "order": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AdminTicketOrderEntity"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "priority",
+          "title",
+          "trackingCode",
+          "isUserRead",
+          "createdAt",
+          "updatedAt",
+          "userId",
+          "orderId",
+          "user",
+          "order"
+        ]
+      },
+      "PaginationMetaEntity": {
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "total"
+        ]
+      },
+      "AdminTicketListResponseEntity": {
+        "type": "object",
+        "properties": {
+          "tickets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminTicketListEntity"
+            }
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/PaginationMetaEntity"
+          }
+        },
+        "required": [
+          "tickets",
+          "pagination"
+        ]
+      },
+      "PaginatedAdminTicketListResponseEntity": {
+        "type": "object",
+        "properties": {
+          "pagination": {
+            "description": "اطلاعات صفحه‌بندی",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMetaDto"
+              }
+            ]
+          },
+          "tickets": {
+            "description": "داده‌ها",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminTicketListResponseEntity"
+            }
+          }
+        },
+        "required": [
+          "pagination",
+          "tickets"
         ]
       },
       "ProductReviewUserEntity": {
@@ -12663,6 +13623,134 @@
           "title",
           "orderCode"
         ]
+      },
+      "CountryPublicEntity": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "flag": {
+            "type": "object",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "slug",
+          "flag"
+        ]
+      },
+      "CountCountryProducts": {
+        "type": "object",
+        "properties": {
+          "products": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "products"
+        ]
+      },
+      "CountryEntity": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "flag": {
+            "type": "object",
+            "nullable": true
+          },
+          "_count": {
+            "$ref": "#/components/schemas/CountCountryProducts"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "slug",
+          "flag"
+        ]
+      },
+      "PaginatedCountryEntity": {
+        "type": "object",
+        "properties": {
+          "pagination": {
+            "description": "اطلاعات صفحه‌بندی",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMetaDto"
+              }
+            ]
+          },
+          "countries": {
+            "description": "داده‌ها",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CountryEntity"
+            }
+          }
+        },
+        "required": [
+          "pagination",
+          "countries"
+        ]
+      },
+      "CreateCountryDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "نام کشور",
+            "example": "ایران"
+          },
+          "slug": {
+            "type": "string",
+            "description": "اسلاگ کشور",
+            "example": "iran"
+          },
+          "flag": {
+            "type": "string",
+            "description": "آدرس پرچم کشور",
+            "example": "https://example.com/iran-flag.png"
+          }
+        },
+        "required": [
+          "name",
+          "slug"
+        ]
+      },
+      "UpdateCountryDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "نام کشور"
+          },
+          "slug": {
+            "type": "string",
+            "description": "اسلاگ کشور"
+          },
+          "flag": {
+            "type": "string",
+            "description": "آدرس پرچم کشور",
+            "example": "https://example.com/iran-flag.png"
+          }
+        }
       }
     }
   }

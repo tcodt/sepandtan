@@ -1,12 +1,13 @@
 import { Controller, Get, Post, Patch, Delete, Body, Param, Query, UseGuards, BadRequestException, Put } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiOkResponse, ApiBody } from '@nestjs/swagger';
 import { WalletService } from './wallet.service.js';
 
-import { WalletSearchDto, WalletTransactionSearchDto } from './dto/wallet.dto.js';
+import { WalletSearchDto, WalletTransactionSearchDto, WithdrawDto } from './dto/wallet.dto.js';
 import { AccessTokenGuard } from '../auth/guard/access-token.guard.js';
 import { CurrentUser } from '../../common/decorators/current-user.decorator.js';
 import { Roles } from '../auth/decorators/roles.decorator.js';
 import { RolePerson } from '../../generated/prisma/enums.js';
+import { DetailWalletEntity, WalletEntity } from './entities/wallet.entity.js';
 
 @ApiTags('Wallet')
 @Controller('wallet')
@@ -16,27 +17,35 @@ export class WalletController {
   constructor(private readonly walletService: WalletService) { }
 
   @Get('my')
-  @ApiOperation({ summary: 'دریافت کیف پول کاربر' })
-  async getMyWallet(@CurrentUser('id') userId: string) {
-    return this.walletService.getMyWallet(userId);
+  @ApiOperation({ summary: 'کیف پول من' ,description:`
+    * balance حساب مالی اصلی که چقدر توش پول هستش و میتونه برداشت کنه
+    * pendingBalance موجودی در انتظار تایید تا واریز بشه به حساب یعنی این که کاربر یه محصولی رو خرید کرده و تا زمانی که دوره مرجوع شدن کالا تموم نشده این پول به حساب نمیشینه
+    * withdrawBalance موجودی که فروشنده یا مربی درخواست کرده که برداشت بکنه
+    * frozenBalance مبلغی که مسدود شده حالا میتونه برای مرجوعی کالا باشه یا هر چیزی
+    * isPlatform این یعنی حساب پلتفرم و بعدا قراره تغییر بکنه
+    `})
+  @ApiOkResponse({ type: WalletEntity })
+  async getMyWallet(@CurrentUser('id') userId: string, @CurrentUser('role') role: RolePerson) {
+    return this.walletService.getMyWallet(userId, role);
   }
 
   @Get('profile/:id')
   @Roles('SUPERADMIN')
-  @ApiOperation({ summary: 'دریافت کیف پول کاربر' })
+  @ApiOperation({ summary: 'دریافت کیف پول کاربر با آیدی' })
+  @ApiOkResponse({ type: DetailWalletEntity })
   async getWallet(@Param('id') userId: string) {
     return this.walletService.getWallet(userId);
   }
 
   @Post('my')
-  @ApiOperation({ summary: 'ساخت کیف پول' })
+  @ApiOperation({ summary: 'ساخت کیف پول', description: 'درخواست کیف پول من میزنی اگر بود که هیچی نبود یه دکمه بزار که کاربر کیف پول برای خودش بسازه یا اینکه خودکار خودت درخواست رو بزن به صورت پیشفرض من خودم میسازم ولی برای اطمینان هستش' })
   async createMyWallet(@CurrentUser('id') userId: string, @CurrentUser('role') role: RolePerson) {
     return this.walletService.createMyWallet(userId, role);
   }
 
   @Post('withdraw')
   @ApiOperation({ summary: 'درخواست برداشت از کیف پول' })
-  async requestWithdrawal(@CurrentUser('id') userId: string, @Body('amount') amount: string) {
+  async requestWithdrawal(@CurrentUser('id') userId: string, @Body() amount: WithdrawDto) {
     if (!amount) throw new BadRequestException('مبلغ برداشت الزامی است');
     return this.walletService.requestWithdrawal(userId, amount);
   }

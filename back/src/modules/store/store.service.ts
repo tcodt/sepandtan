@@ -1072,7 +1072,7 @@ export class StoreService {
         tx.product.count({
           where: {
             storeId,
-            status: 'APPROVED',
+            status: 'ACTIVE',
           },
         }),
 

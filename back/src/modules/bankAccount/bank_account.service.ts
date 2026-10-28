@@ -10,8 +10,12 @@ export class BankAccountService {
     }
     async create(userId: string, dto: CreateBankAccountDto) {
         const count = await this.prisma.bankAccount.count({ where: { userId } })
+        const wallet = await this.prisma.wallet.findUnique({ where: { userId:userId } })
         if (count >= 3) {
             throw new ConflictException('حداکثر ۳ حساب بانکی مجاز است.');
+        }
+         if (!wallet?.id) {
+            throw new ConflictException('لطفا اول کیف پول برای خود بسازید سپس حساب بانکی بسازید.');
         }
         const data = await this.prisma.bankAccount.create({ data: { ...dto, userId } })
         if (dto.isDefault) {

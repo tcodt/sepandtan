@@ -4,7 +4,7 @@
 import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger';
 import { IsString, IsNumber, IsOptional, Min, MaxLength, IsBoolean, IsDateString, IsArray, IsJSON, IsObject, IsIn } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
-import { DefaultStatus, Prisma } from '../../../generated/prisma/client.js';
+import { DefaultStatus, Prisma, StatusProduct } from '../../../generated/prisma/client.js';
 
 export class CreateProductDto {
   @ApiPropertyOptional({
@@ -20,6 +20,12 @@ export class CreateProductDto {
   @IsString()
   @MaxLength(300)
   title!: string;
+
+  @ApiProperty({ description: 'آیدی کشور', example: '820e47b7-20b3-4fb6-8e29-56d2766efabd', required: false })
+  @IsOptional()
+  @IsString()
+  @MaxLength(300)
+  countryId?: string;
 
   @ApiProperty({ description: 'اسلاگ باید به صورت یونیک باشد', example: 'shirt-man' })
   @IsString()
@@ -85,11 +91,6 @@ export class ProductFilterDto {
   @IsString()
   seller?: string;
 
-  @ApiPropertyOptional({ description: 'وضعیت محصول' })
-  @IsOptional()
-  @IsString()
-  status?: DefaultStatus;
-
   @ApiPropertyOptional({ description: 'حداقل قیمت' })
   @IsOptional()
   @Type(() => Number)
@@ -123,10 +124,10 @@ export class ProductFilterDto {
 }
 
 export class ProductSearchDto {
-  @ApiPropertyOptional({ description: 'وضعیت محصول', enum: ['all', ...Object.values(DefaultStatus)] })
+  @ApiPropertyOptional({ description: 'وضعیت محصول', enum: ['all', ...Object.values(StatusProduct)] })
   @IsOptional()
   @IsString()
-  status?: DefaultStatus | 'all';
+  status?: StatusProduct | 'all';
 
   @IsOptional()
   @Transform(({ value }) => value === 'true' || value === true)

@@ -7,7 +7,7 @@ import { CreateProductDto, UpdateProductDto, ProductFilterDto, ProductSearchDto 
 import slugifyLib = require('slugify');
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../prisma/prisma.service.js';
-import { DefaultStatus, Prisma } from '../../generated/prisma/client.js';
+import { DefaultStatus, Prisma, StatusProduct } from '../../generated/prisma/client.js';
 import pagination from '../../common/utils/pagination.js';
 
 export const productSelector: Prisma.ProductSelect = {
@@ -36,7 +36,7 @@ export class ProductsService {
     const page = Number(filters.page) || 1;
     const limit = Number(filters.limit) || Number(this.configService.get('limit.product'));
     const skip = (page - 1) * limit;
-    const where: Prisma.ProductWhereInput = { status: filters.status || 'APPROVED' };
+    const where: Prisma.ProductWhereInput = { status: 'ACTIVE' };
 
     if (filters.category) where.categoryId = filters.category;
     if (filters.seller) where.storeId = filters.seller;
@@ -81,7 +81,7 @@ export class ProductsService {
       ...(brandId && { brandId }),
       ...(categoryId && { categoryId }),
       ...(sellerId && { storeId: sellerId }),
-      ...((status && status !== 'all') && { status: status as DefaultStatus }),
+      ...((status && status !== 'all') && { status: status as StatusProduct }),
       ...((featured) && { isFeatured: featured }),
       // ✅ شرط درست برای discountId
       ...(discountId && discountId !== 'all' && discountId !== 'undefined' && {
@@ -231,7 +231,7 @@ export class ProductsService {
     const product = await this.prisma.product.findUnique({ where: { id } });
     if (!product) throw new NotFoundException('محصول یافت نشد');
 
-    await this.prisma.product.update({ where: { id }, data: { status: 'APPROVED' } });
+    await this.prisma.product.update({ where: { id }, data: { status: 'ACTIVE' } });
     return { message: 'محصول تأیید شد' };
   }
 
@@ -241,7 +241,7 @@ export class ProductsService {
 
     const updated = await this.prisma.product.update({
       where: { id },
-      data: { isFeatured: !product.isFeatured, status: product.isFeatured ? product.status : 'APPROVED' },
+      data: { isFeatured: !product.isFeatured, status: product.isFeatured ? product.status : 'ACTIVE' },
     });
 
     return { message: updated.isFeatured ? 'محصول ویژه شد' : 'محصول از ویژه خارج شد' };
@@ -254,7 +254,7 @@ export class ProductsService {
     const product = await this.prisma.product.findFirst({
       where: {
         slug,
-        status: 'APPROVED',
+        status: 'ACTIVE',
       },
       select: {
         content: true, description: true, minPrice: true,
@@ -442,7 +442,7 @@ export class ProductsService {
     const product = await this.prisma.product.findUnique({ where: { slug } });
     if (!product) throw new NotFoundException('محصول یافت نشد');
     return this.prisma.product.findMany({
-      where: { categoryId: product.categoryId, id: { not: product.id }, status: 'APPROVED' },
+      where: { categoryId: product.categoryId, id: { not: product.id }, status: 'ACTIVE' },
       select: productSelector,
       take: limit,
       orderBy: { saleCount: 'desc' },

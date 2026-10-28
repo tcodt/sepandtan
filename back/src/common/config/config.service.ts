@@ -28,6 +28,7 @@ const configServices = () => ({
     shipping: process.env.SHIPPING_LIMIT_PAGE || 10,
     store: process.env.STORE_LIMIT_PAGE || 10,
     storeReview: process.env.STORE_REVIEW_LIMIT_PAGE || 10,
+    ticket:process.env.STORE_REVIEW_LIMIT_PAGE || 10,
     coach: process.env.CAOCH_LIMIT_PAGE || 10,
     food: process.env.FOOD_LIMIT_PAGE || 10,
     userPlan: process.env.USERPLAN_LIMIT_PAGE || 10,

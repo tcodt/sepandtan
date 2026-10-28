@@ -4,7 +4,7 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import crypto from 'crypto';
 import { ConfigService } from '@nestjs/config';
-import { WalletSearchDto, WalletTransactionSearchDto } from './dto/wallet.dto.js';
+import { WalletSearchDto, WalletTransactionSearchDto, WithdrawDto } from './dto/wallet.dto.js';
 import { Prisma, RolePerson, WalletTransactionStatus, WalletTransactionType } from '../../generated/prisma/client.js';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import pagination from '../../common/utils/pagination.js';
@@ -168,8 +168,8 @@ export class WalletService {
     });
   }
 
-  async requestWithdrawal(userId: string, amount: WalletAmount) {
-    const value = new Prisma.Decimal(amount);
+  async requestWithdrawal(userId: string, amount: WithdrawDto) {
+    const value = new Prisma.Decimal(amount.amount);
     if (value.lessThanOrEqualTo(0)) { throw new BadRequestException('مبلغ برداشت نامعتبر است') }
     return this.prisma.$transaction(async tx => {
       const wallet = await tx.wallet.findUnique({
@@ -178,6 +178,7 @@ export class WalletService {
       if (!wallet || wallet.isPlatform) {
         throw new BadRequestException('کیف پول فروشنده یافت نشد');
       }
+      
       if (wallet.withdrawBalance) {
         throw new BadRequestException('یک درخواست برداشت در حال بررسی دارید');
       }
@@ -260,8 +261,18 @@ export class WalletService {
     return { succee: true }
   }
 
-  async getMyWallet(userId: string) {
-    return this.prisma.wallet.findUnique({ where: { userId } })
+  async getMyWallet(userId: string, role: RolePerson) {
+    const data = await this.prisma.wallet.findUnique({ where: { userId } })
+    if (!data?.id) {
+      return this.prisma.wallet.create({
+        data: {
+          userId,
+          isPlatform: role === 'SUPERADMIN'
+        }
+      })
+    } else {
+      return data
+    }
   }
 
   async getAdminWallet(query: WalletSearchDto) {

@@ -24,6 +24,7 @@ import { WishlistModule } from './modules/wishlist/wishlist.module.js';
 import { RedisModule } from './modules/redis/redis.module.js';
 import { DiscountQueueModule } from './modules/queues/discount/discount-queue.module.js';
 import { AddressesModule } from './modules/addresse/addresses.module.js';
+import { CountryModule } from './modules/country/country.module.js';
 
 @Module({
   imports: [
@@ -52,6 +53,7 @@ import { AddressesModule } from './modules/addresse/addresses.module.js';
     TicketModule, // ثبت تیکت پشتیبانی
     ReviewsModule, // نظرات
     ReportModule, // گزارشات
+    CountryModule, //  کشور ها
   ],
 })
 export class AppModule { }
