@@ -1,91 +1,129 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Download, Play, Sparkles, UserRound } from "lucide-react";
+import { Crown, Loader2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import type { PlanAccess } from "@/lib/types/access";
-import { formatAccessDates } from "./plan-access-card";
-import { useDownloadPlanPdf } from "@/hooks/use-download-plan-pdf";
-import { usePlanStore } from "@/lib/store/plan-store";
-import { useEffect } from "react";
+import { useUserStore } from "@/lib/store/user-store";
+import { getSubscriptionPlanById } from "@/lib/api/subscription-plans";
+import {
+  getSubscriptionLabel,
+  isPaidSubscription,
+} from "@/lib/subscription/access";
+import type { SubscriptionPlan } from "@/lib/types/plan";
+import type { SubscriptionStatus } from "@/lib/types/plan";
 
-type Props = {
-  access: PlanAccess;
+/**
+ * مپ وضعیت اشتراک → id پلن اشتراک در Fake API
+ * (جدا از currentPlanId که مربوط به برنامه تمرینی است)
+ */
+const STATUS_TO_SUBSCRIPTION_PLAN_ID: Partial<
+  Record<SubscriptionStatus, string>
+> = {
+  free: undefined,
+  basic: "sub_basic",
+  pro: "sub_pro",
+  premium: "sub_premium",
+  coach_plan: undefined,
+  ai_plan: undefined,
+  vip: "sub_premium",
 };
 
-export function ActivePlanCard({ access }: Props) {
-  const { download, isDownloading } = useDownloadPlanPdf();
-  const { plan, loadPlan } = usePlanStore();
+export function ActivePlanCard() {
+  const user = useUserStore((s) => s.user);
+  const [plan, setPlan] = useState<SubscriptionPlan | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  const status = user?.subscriptionStatus ?? "free";
+  const subscriptionPlanId = STATUS_TO_SUBSCRIPTION_PLAN_ID[status];
 
   useEffect(() => {
-    if (access.planId && plan?.id !== access.planId) {
-      loadPlan(access.planId);
+    if (!subscriptionPlanId) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setPlan(null);
+      return;
     }
-  }, [access.planId, plan?.id, loadPlan]);
 
-  const daysLeft =
-    access.endDate != null
-      ? Math.max(
-          0,
-          Math.ceil(
-            // eslint-disable-next-line react-hooks/purity
-            (new Date(access.endDate).getTime() - Date.now()) /
-              (1000 * 60 * 60 * 24),
-          ),
-        )
-      : null;
+    let cancelled = false;
+    setLoading(true);
+
+    getSubscriptionPlanById(subscriptionPlanId)
+      .then((data) => {
+        if (!cancelled) setPlan(data);
+      })
+      .catch(() => {
+        if (!cancelled) setPlan(null);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [subscriptionPlanId]);
+
+  const statusLabel = getSubscriptionLabel(status);
+  const isPaid = isPaidSubscription(user);
 
   return (
-    <Card className="border-primary/25 bg-primary/5 dark:bg-primary/10 backdrop-blur-sm overflow-hidden">
-      <CardHeader className="pb-2">
-        <div className="flex items-center justify-between gap-2">
-          <p className="text-xs font-medium text-primary">برنامه فعال</p>
-          {daysLeft != null && (
-            <span className="text-[11px] rounded-full bg-background/80 px-2 py-0.5 text-muted-foreground">
-              {daysLeft} روز باقی‌مانده
-            </span>
-          )}
-        </div>
-        <CardTitle className="text-base sm:text-lg leading-snug">
-          {access.planTitle ?? "برنامه تمرینی"}
-        </CardTitle>
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground pt-0.5">
-          {access.planSource === "coach" ? (
-            <>
-              <UserRound className="size-3.5" />
-              <span>{access.coachName ?? "مربی"}</span>
-            </>
-          ) : (
-            <>
-              <Sparkles className="size-3.5" />
-              <span>هوش مصنوعی</span>
-            </>
-          )}
-          <span className="opacity-50">·</span>
-          <span>{formatAccessDates(access)}</span>
+    <Card className="border-border bg-card/80 dark:bg-card/60 backdrop-blur-sm">
+      <CardHeader className="pb-3">
+        <div className="flex items-center gap-2">
+          <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
+            <Crown className="w-4 h-4 text-primary" />
+          </div>
+          <CardTitle className="text-base">اشتراک فعلی</CardTitle>
         </div>
       </CardHeader>
 
-      <CardContent className="pt-2 flex flex-col sm:flex-row gap-2">
-        <Button asChild className="flex-1 gap-2">
-          <Link href="/workout/today">
-            <Play className="size-4" />
-            تمرین امروز
-          </Link>
-        </Button>
-        <Button
-          variant="outline"
-          className="flex-1 gap-2"
-          disabled={isDownloading}
-          onClick={() => download(plan, access)}
-        >
-          <Download className="size-4" />
-          {isDownloading ? "در حال ساخت..." : "دانلود PDF"}
-        </Button>
-        <Button asChild variant="ghost" size="sm" className="sm:px-3">
-          <Link href={`/plans/${access.planId}`}>جزئیات</Link>
-        </Button>
+      <CardContent className="space-y-3">
+        {loading ? (
+          <div className="flex justify-center py-4">
+            <Loader2 className="w-5 h-5 animate-spin text-primary" />
+          </div>
+        ) : (
+          <>
+            <div className="flex items-center justify-between gap-3 text-sm">
+              <span className="text-muted-foreground">وضعیت</span>
+              <span className="font-medium text-foreground">{statusLabel}</span>
+            </div>
+
+            <div className="flex items-center justify-between gap-3 text-sm">
+              <span className="text-muted-foreground">پلن</span>
+              <span className="font-medium text-foreground text-left">
+                {plan?.name || "پلن رایگان"}
+              </span>
+            </div>
+
+            {plan && (
+              <div className="flex items-center justify-between gap-3 text-sm">
+                <span className="text-muted-foreground">قیمت</span>
+                <span className="font-medium text-primary">
+                  {plan.price.toLocaleString("fa-IR")} تومان
+                </span>
+              </div>
+            )}
+
+            {user?.subscriptionExpiresAt && isPaid && (
+              <div className="flex items-center justify-between gap-3 text-sm">
+                <span className="text-muted-foreground">انقضا</span>
+                <span className="font-medium text-foreground">
+                  {new Date(user.subscriptionExpiresAt).toLocaleDateString(
+                    "fa-IR",
+                  )}
+                </span>
+              </div>
+            )}
+
+            <Button asChild variant="outline" size="sm" className="w-full mt-1">
+              <Link href={plan ? `/checkout?plan=${plan.id}` : "/#plans"}>
+                {isPaid || plan ? "مدیریت / تغییر پلن" : "ارتقای اشتراک"}
+              </Link>
+            </Button>
+          </>
+        )}
       </CardContent>
     </Card>
   );

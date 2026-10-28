@@ -199,3 +199,43 @@ export function getCoachNameByIdSync(
   const coach = db.coaches.find((c) => c.id === coachId);
   return coach?.name ?? null;
 }
+
+/**
+ * پیدا کردن پروفایل مربی بر اساس userId
+ * اگر نبود و کاربر coach+approved است، یک پروفایل حداقلی می‌سازد (Fake / Frontend)
+ */
+
+export async function getOrCreateCoachProfileForUser(input: {
+  userId: string;
+  name: string;
+  avatarUrl?: string;
+}): Promise<Coach> {
+  await delay();
+
+  const existing = db.coaches.find((c) => c.userId === input.userId);
+  if (existing) return { ...existing, specialties: [...existing.specialties] };
+
+  const coach: Coach = {
+    id: createId("coach"),
+    userId: input.userId,
+    name: input.name,
+    bio: "مربی سپندتن",
+    specialties: [],
+    experienceYears: 0,
+    rating: 0,
+    reviewCount: 0,
+    pricePerPlan: 0,
+    pricePerConsultation: 0,
+    avatarUrl: input.avatarUrl,
+    verified: true,
+    isActive: true,
+    samplePlans: [],
+    createdAt: new Date().toISOString(),
+    commissionRateDisplay: "۲۰–۲۵٪",
+    documentsStatus: "none",
+  };
+
+  // اگر تایپ Coach فیلدهای دیگری اجباری دارد، با type موجود در پروژه هماهنگ کن
+  db.coaches.push(coach as (typeof db.coaches)[number]);
+  return { ...coach, specialties: [...coach.specialties] };
+}

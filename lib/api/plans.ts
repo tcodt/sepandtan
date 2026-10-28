@@ -9,6 +9,7 @@ import { generatePlan } from "@/lib/plan/generate-plan";
 import { completeUserOnboarding } from "./users";
 import { db } from "./db";
 import { createId, delay } from "./client";
+import { createPlanAccessForPlan } from "./access";
 
 export async function getPlanById(id: string): Promise<Plan> {
   await delay();
@@ -46,7 +47,6 @@ export async function createPlan(plan: Plan): Promise<Plan> {
   return structuredClone(saved);
 }
 
-/** ساخت برنامه + ذخیره + آپدیت کاربر */
 export async function generateAndSavePlan(input: {
   userId: string;
   bodyInfo: BodyInfo;
@@ -56,6 +56,15 @@ export async function generateAndSavePlan(input: {
 }): Promise<{ plan: Plan; userId: string }> {
   const plan = generatePlan(input);
   const saved = await createPlan(plan);
+
+  // برنامه رایگان آنبوردینگ → Access فعال ۳۰ روزه
+  await createPlanAccessForPlan({
+    userId: input.userId,
+    plan: saved,
+    durationDays: 30,
+    pricePaid: 0,
+    status: "active",
+  });
 
   await completeUserOnboarding(input.userId, {
     bodyInfo: input.bodyInfo,

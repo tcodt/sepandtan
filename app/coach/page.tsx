@@ -26,6 +26,7 @@ import {
 } from "@/lib/api/coach-plans";
 import type { CollaborationRequest } from "@/lib/types/coach";
 import { cn } from "@/lib/utils";
+import { getOrCreateCoachProfileForUser } from "@/lib/api/coaches";
 
 export default function CoachDashboardPage() {
   const user = useUserStore((s) => s.user);
@@ -46,12 +47,11 @@ export default function CoachDashboardPage() {
     setLoading(true);
 
     try {
-      const coach = db.coaches.find((c) => c.userId === user.id);
-      if (!coach) {
-        setCoachMissing(true);
-        setLoading(false);
-        return;
-      }
+      const coach = await getOrCreateCoachProfileForUser({
+        userId: user.id,
+        name: user.name,
+        avatarUrl: user.avatarUrl,
+      });
       setCoachMissing(false);
 
       const [relations, plans] = await Promise.all([
@@ -80,7 +80,7 @@ export default function CoachDashboardPage() {
     } finally {
       setLoading(false);
     }
-  }, [user?.id]);
+  }, [user?.avatarUrl, user?.id, user?.name]);
 
   useEffect(() => {
     loadData();

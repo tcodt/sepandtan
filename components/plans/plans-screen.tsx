@@ -7,7 +7,10 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useActivePlan } from "@/hooks/use-active-plan";
 import { useUserPlanAccesses } from "@/hooks/use-user-plan-accesses";
-import { activatePlanAccess } from "@/lib/api/access";
+import {
+  activatePlanAccess,
+  ensureAccessForCurrentPlan,
+} from "@/lib/api/access";
 import { useUserStore } from "@/lib/store/user-store";
 import type { PlanAccess } from "@/lib/types/access";
 import { cn } from "@/lib/utils";
@@ -18,6 +21,7 @@ import { PlansTabs, type PlansTab } from "./plans-tabs";
 import { PlansEmptyState } from "./plans-empty-state";
 import { ConfirmSwitchSheet } from "./confirm-switch-sheet";
 import { PlanAccessCardSkeleton } from "./plan-access-card-skeleton";
+import { getPlanById } from "@/lib/api/plans";
 
 type Props = {
   className?: string;
@@ -31,6 +35,7 @@ type Props = {
 export function PlansScreen({ className, showRefresh = false }: Props) {
   const userId = useUserStore((s) => s.user?.id);
   const updateProfile = useUserStore((s) => s.updateProfile);
+  const currentPlanId = useUserStore((s) => s.user?.currentPlanId);
 
   const {
     activeAccess,
@@ -76,6 +81,35 @@ export function PlansScreen({ className, showRefresh = false }: Props) {
   );
 
   const loading = isLoading || activeLoading;
+
+  useEffect(() => {
+    if (!userId || !currentPlanId) return;
+    if (isLoading) return;
+    if (!isEmpty) return;
+
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const plan = await getPlanById(currentPlanId);
+        if (cancelled) return;
+        await ensureAccessForCurrentPlan({
+          userId,
+          planId: plan.id,
+          planTitle: plan.title,
+          planSource: plan.source,
+          durationDays: 30,
+        });
+        if (!cancelled) await refetch();
+      } catch {
+        // ignore
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [userId, currentPlanId, isLoading, isEmpty, refetch]);
 
   // Graceful tab fallback if the current tab empties out after an action
   useEffect(() => {
@@ -163,7 +197,7 @@ export function PlansScreen({ className, showRefresh = false }: Props) {
       {/* Active highlight */}
       {activeAccess && !activeLoading && (
         <section aria-label="برنامه فعال">
-          <ActivePlanCard access={activeAccess} />
+          <ActivePlanCard />
         </section>
       )}
 
