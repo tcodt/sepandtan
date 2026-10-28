@@ -246,6 +246,7 @@ model Exercise {
   caloriesMax Int?            @map("calories_max")
   gif         String?         @map("gif_url")
   video       String?         @map("video_url")
+  extraData   Json?           @map("extra_data")
   isActive    Boolean         @default(true) @map("is_active") // هیچ‌وقت حذف فیزیکی نکن، فقط غیرفعال کن
 
   category  Category? @relation(fields: [categoryId], references: [id], onDelete: Restrict)
