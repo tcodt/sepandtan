@@ -18,6 +18,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { useRequireAuth } from "@/hooks/use-require-auth";
 import { useUserStore } from "@/lib/store/user-store";
+import { logoutRequest } from "@/lib/api/auth";
 
 /* -------------------------------------------------------------------------- */
 /* Helpers                                                                    */
@@ -162,7 +163,14 @@ export default function RolePendingPage() {
     blockPending: false,
   });
 
-  const logout = useUserStore((s) => s.logout);
+  async function handleLogout() {
+    try {
+      await logoutRequest();
+    } finally {
+      useUserStore.getState().logout();
+      router.replace("/login");
+    }
+  }
 
   /* ---------- Redirect approved users — moved out of render ---------- */
   useEffect(() => {
@@ -270,10 +278,7 @@ export default function RolePendingPage() {
             <div className="flex justify-center pt-1">
               <button
                 type="button"
-                onClick={() => {
-                  logout();
-                  router.replace("/login");
-                }}
+                onClick={handleLogout}
                 className="inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground transition hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               >
                 <LogOut className="h-3 w-3" />

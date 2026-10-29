@@ -22,13 +22,12 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useUserStore } from "@/lib/store/user-store";
-import { createUser, findUserByEmail, findUserByPhone } from "@/lib/api/users";
+import { useRegisterMutation } from "@/features/auth/hooks/use-auth-mutations";
 
 const registerSchema = z
   .object({
     name: z.string().min(2, "نام باید حداقل ۲ کاراکتر باشد"),
-    lastName: z.string().min(2, "نام خانوادگی باید حداقل 2 کاراکتر باشد"),
+    lastName: z.string().min(2, "نام خانوادگی باید حداقل ۲ کاراکتر باشد"),
     contact: z.string().min(1, "این فیلد الزامی است"),
     password: z.string().min(6, "رمز عبور باید حداقل ۶ کاراکتر باشد"),
     confirmPassword: z.string(),
@@ -42,7 +41,6 @@ type RegisterForm = z.infer<typeof registerSchema>;
 
 export default function RegisterPage() {
   const router = useRouter();
-  const setUser = useUserStore((s) => s.setUser);
   const searchParams = useSearchParams();
   const next = searchParams.get("next");
   const plan = searchParams.get("plan");
@@ -50,7 +48,7 @@ export default function RegisterPage() {
   const [contactType, setContactType] = useState<"email" | "phone">("email");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const registerMutation = useRegisterMutation();
 
   const {
     register,
@@ -60,6 +58,13 @@ export default function RegisterPage() {
     clearErrors,
   } = useForm<RegisterForm>({
     resolver: zodResolver(registerSchema),
+    defaultValues: {
+      name: "",
+      lastName: "",
+      contact: "",
+      password: "",
+      confirmPassword: "",
+    },
   });
 
   const handleContactTypeChange = (value: string) => {
@@ -68,81 +73,47 @@ export default function RegisterPage() {
     clearErrors("contact");
   };
 
-  const onSubmit = async (data: {
-    name: string;
-    lastName?: string;
-    contact: string;
-    password: string;
-  }) => {
-    setIsLoading(true);
+  const onSubmit = (data: RegisterForm) => {
+    const contact = data.contact.trim();
+    const fullName = `${data.name.trim()} ${data.lastName.trim()}`.trim();
 
-    try {
-      const contact = data.contact.trim();
-
-      // جلوگیری از کاربر تکراری
-      if (contactType === "email") {
-        const existing = await findUserByEmail(contact);
-        if (existing) {
-          toast.error("این ایمیل قبلاً ثبت شده است");
-          return;
-        }
-      } else {
-        const existing = await findUserByPhone(contact);
-        if (existing) {
-          toast.error("این شماره قبلاً ثبت شده است");
-          return;
-        }
+    if (contactType === "email") {
+      const emailSchema = z.string().email("ایمیل معتبر وارد کنید");
+      const parsed = emailSchema.safeParse(contact);
+      if (!parsed.success) {
+        toast.error(parsed.error.issues[0]?.message ?? "ایمیل معتبر وارد کنید");
+        return;
       }
+    } else {
+      // اعتبارسنجی ساده شماره ایران
+      const phoneOk = /^09\d{9}$/.test(contact);
+      if (!phoneOk) {
+        toast.error("شماره موبایل معتبر وارد کنید (مثال: 09123456789)");
+        return;
+      }
+    }
 
-      const fullName = data.lastName
-        ? `${data.name.trim()} ${data.lastName.trim()}`.trim()
-        : data.name.trim();
-
-      const newUser = await createUser({
+    registerMutation.mutate(
+      {
         name: fullName,
         email: contactType === "email" ? contact : undefined,
         phone: contactType === "phone" ? contact : undefined,
         password: data.password,
-      });
-
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { password: _pw, ...safeUser } = newUser as typeof newUser & {
-        password?: string;
-      };
-
-      setUser({
-        ...safeUser,
-        role: "trainee", // موقت — در role-selection قطعی می‌شود
-        roleStatus: "approved",
-        roles: ["trainee"],
-        onboardingStatus: "not_started",
-        currentOnboardingStep: 1,
-        onboardingCompleted: false,
-        subscriptionStatus: "free",
-        createdAt: safeUser.createdAt || new Date().toISOString(),
-      });
-
-      toast.success("حسابت ساخته شد!");
-
-      // اگر از checkout آمده، مستقیم بره (بدون role selection)
-      if (next === "/checkout") {
-        const planQuery = plan ? `?plan=${encodeURIComponent(plan)}` : "";
-        router.replace(`/checkout${planQuery}`);
-        return;
-      }
-
-      // مسیر اصلی: Role Selection اجباری
-      router.replace("/role-selection");
-    } catch (err) {
-      const message =
-        err instanceof Error
-          ? err.message
-          : "ثبت‌نام ناموفق بود. دوباره تلاش کن.";
-      toast.error(message);
-    } finally {
-      setIsLoading(false);
-    }
+      },
+      {
+        onSuccess: () => {
+          if (next === "/checkout") {
+            const planQuery = plan ? `?plan=${encodeURIComponent(plan)}` : "";
+            router.replace(`/checkout${planQuery}`);
+            return;
+          }
+          // هدایت پیش‌فرض در خود mutation به /role-selection است
+        },
+      },
+    );
   };
+
+  const isLoading = registerMutation.isPending;
 
   return (
     <motion.div
@@ -156,33 +127,33 @@ export default function RegisterPage() {
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ delay: 0.1 }}
-            className="mx-auto w-14 h-14 rounded-2xl bg-primary/10 dark:bg-primary/20 flex items-center justify-center"
+            className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 dark:bg-primary/20"
           >
-            <Flame className="w-7 h-7 text-primary" />
+            <Flame className="h-7 w-7 text-primary" />
           </motion.div>
 
-          <CardTitle className="text-xl sm:text-2xl font-bold text-foreground">
+          <CardTitle className="text-xl font-bold text-foreground sm:text-2xl">
             ثبت‌نام در سپندتن
           </CardTitle>
-          <CardDescription className="text-sm sm:text-base text-muted-foreground">
+          <CardDescription className="text-sm text-muted-foreground sm:text-base">
             برنامه شخصی‌سازی‌شده‌ات فقط چند قدم فاصله داره
           </CardDescription>
         </CardHeader>
 
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-            {/* نام */}
-            <div className="flex items-center gap-4">
-              <div className="space-y-2">
+            {/* نام و نام خانوادگی */}
+            <div className="flex items-start gap-4">
+              <div className="w-full space-y-2">
                 <Label htmlFor="name" className="text-foreground">
                   نام
                 </Label>
                 <div className="relative">
-                  <User className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <User className="absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   <Input
                     id="name"
                     placeholder="مثلاً امیر"
-                    className="h-11 pr-10 bg-background"
+                    className="h-11 bg-background pr-10"
                     {...register("name")}
                     disabled={isLoading}
                   />
@@ -193,16 +164,17 @@ export default function RegisterPage() {
                   </p>
                 )}
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="name" className="text-foreground">
+
+              <div className="w-full space-y-2">
+                <Label htmlFor="lastName" className="text-foreground">
                   نام خانوادگی
                 </Label>
                 <div className="relative">
-                  <User className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <User className="absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   <Input
                     id="lastName"
                     placeholder="مثلاً خانجانی"
-                    className="h-11 pr-10 bg-background"
+                    className="h-11 bg-background pr-10"
                     {...register("lastName")}
                     disabled={isLoading}
                   />
@@ -223,13 +195,13 @@ export default function RegisterPage() {
                 onValueChange={handleContactTypeChange}
                 className="w-full"
               >
-                <TabsList className="grid w-full grid-cols-2 h-10">
+                <TabsList className="grid h-10 w-full grid-cols-2">
                   <TabsTrigger value="email" className="gap-1.5 text-sm">
-                    <Mail className="w-3.5 h-3.5" />
+                    <Mail className="h-3.5 w-3.5" />
                     ایمیل
                   </TabsTrigger>
                   <TabsTrigger value="phone" className="gap-1.5 text-sm">
-                    <Phone className="w-3.5 h-3.5" />
+                    <Phone className="h-3.5 w-3.5" />
                     موبایل
                   </TabsTrigger>
                 </TabsList>
@@ -252,7 +224,9 @@ export default function RegisterPage() {
                         : "09123456789"
                     }
                     dir={contactType === "email" ? "ltr" : "rtl"}
-                    className={`h-11 bg-background ${contactType === "email" ? "text-left" : ""}`}
+                    className={`h-11 bg-background ${
+                      contactType === "email" ? "text-left" : ""
+                    }`}
                     {...register("contact")}
                     disabled={isLoading}
                   />
@@ -276,14 +250,14 @@ export default function RegisterPage() {
                   id="password"
                   type={showPassword ? "text" : "password"}
                   placeholder="حداقل ۶ کاراکتر"
-                  className="h-11 pl-10 bg-background"
+                  className="h-11 bg-background pl-10"
                   {...register("password")}
                   disabled={isLoading}
                 />
                 <button
                   type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  onClick={() => setShowPassword((v) => !v)}
+                  className="absolute top-1/2 left-3 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
                   tabIndex={-1}
                 >
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -306,14 +280,14 @@ export default function RegisterPage() {
                   id="confirmPassword"
                   type={showConfirm ? "text" : "password"}
                   placeholder="رمز عبور را دوباره وارد کنید"
-                  className="h-11 pl-10 bg-background"
+                  className="h-11 bg-background pl-10"
                   {...register("confirmPassword")}
                   disabled={isLoading}
                 />
                 <button
                   type="button"
-                  onClick={() => setShowConfirm(!showConfirm)}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  onClick={() => setShowConfirm((v) => !v)}
+                  className="absolute top-1/2 left-3 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
                   tabIndex={-1}
                 >
                   {showConfirm ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -328,12 +302,12 @@ export default function RegisterPage() {
 
             <Button
               type="submit"
-              className="w-full h-11 text-base font-medium"
+              className="h-11 w-full text-base font-medium"
               disabled={isLoading}
             >
               {isLoading ? (
                 <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <Loader2 className="h-4 w-4 animate-spin" />
                   در حال ثبت‌نام...
                 </>
               ) : (
@@ -348,7 +322,7 @@ export default function RegisterPage() {
             قبلاً ثبت‌نام کردی؟{" "}
             <Link
               href="/login"
-              className="text-primary font-medium hover:underline underline-offset-4"
+              className="font-medium text-primary underline-offset-4 hover:underline"
             >
               وارد شو
             </Link>

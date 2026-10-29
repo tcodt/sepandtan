@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -22,8 +22,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useUserStore } from "@/lib/store/user-store";
-import { loginWithEmail, loginWithPhone } from "@/lib/api/users";
+import { useLoginMutation } from "@/features/auth/hooks/use-auth-mutations";
 
 const loginSchema = z.object({
   contact: z.string().min(1, "این فیلد الزامی است"),
@@ -33,15 +32,13 @@ const loginSchema = z.object({
 type LoginForm = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
-  const router = useRouter();
-  const setUser = useUserStore((s) => s.setUser);
   const searchParams = useSearchParams();
   const next = searchParams.get("next");
   const plan = searchParams.get("plan");
 
   const [contactType, setContactType] = useState<"email" | "phone">("email");
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const loginMutation = useLoginMutation();
 
   const {
     register,
@@ -51,6 +48,10 @@ export default function LoginPage() {
     clearErrors,
   } = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
+    defaultValues: {
+      contact: "",
+      password: "",
+    },
   });
 
   const handleContactTypeChange = (value: string) => {
@@ -59,87 +60,43 @@ export default function LoginPage() {
     clearErrors("contact");
   };
 
-  const onSubmit = async (data: { contact: string; password: string }) => {
-    setIsLoading(true);
+  const onSubmit = (data: LoginForm) => {
+    const contact = data.contact.trim();
+    const password = data.password;
 
-    try {
-      const user =
-        contactType === "email"
-          ? await loginWithEmail(data.contact.trim(), data.password)
-          : await loginWithPhone(data.contact.trim(), data.password);
-
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { password: _pw, ...safeUser } = user as typeof user & {
-        password?: string;
-      };
-
-      // نرمال‌سازی فیلدهای جدید
-      const normalizedUser = {
-        ...safeUser,
-        role: safeUser.role || "trainee",
-        roleStatus: safeUser.roleStatus || "approved",
-        roles: safeUser.roles || [safeUser.role || "trainee"],
-        onboardingStatus:
-          safeUser.onboardingStatus ||
-          (safeUser.onboardingCompleted ? "completed" : "not_started"),
-        currentOnboardingStep:
-          safeUser.currentOnboardingStep ??
-          (safeUser.onboardingCompleted ? 0 : 1),
-        onboardingCompleted: !!safeUser.onboardingCompleted,
-        subscriptionStatus: safeUser.subscriptionStatus || "free",
-        createdAt: safeUser.createdAt || new Date().toISOString(),
-      };
-
-      setUser(normalizedUser);
-      toast.success(`خوش آمدی ${normalizedUser.name}!`);
-
-      // ——— منطق هدایت ———
-      // ۱. از checkout آمده
-      if (next === "/checkout") {
-        const planQuery = plan ? `?plan=${encodeURIComponent(plan)}` : "";
-        router.replace(`/checkout${planQuery}`);
-        return;
-      }
-
-      // ۲. نقش هنوز تأیید نشده
-      if (normalizedUser.roleStatus !== "approved") {
-        router.replace(`/role-pending?type=${normalizedUser.role}`);
-        return;
-      }
-
-      // ۳. مربی تأییدشده
-      if (normalizedUser.role === "coach") {
-        router.replace("/coach");
-        return;
-      }
-
-      // ۴. فروشنده تأییدشده (فعلاً داشبورد)
-      if (normalizedUser.role === "seller") {
-        router.replace("/dashboard");
-        return;
-      }
-
-      // ۵. Trainee
-      if (normalizedUser.role === "trainee") {
-        if (
-          normalizedUser.onboardingStatus === "completed" ||
-          normalizedUser.onboardingCompleted
-        ) {
-          router.replace("/dashboard");
-        } else {
-          router.replace("/onboarding");
-        }
-        return;
-      }
-
-      // پیش‌فرض
-      router.replace("/dashboard");
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "ورود ناموفق بود");
-    } finally {
-      setIsLoading(false);
+    // بک‌اند فعلی فقط login با email را پشتیبانی می‌کند
+    if (contactType === "phone") {
+      toast.error("ورود با موبایل هنوز فعال نیست. از ایمیل استفاده کنید.");
+      return;
     }
+
+    const emailSchema = z.string().email("ایمیل معتبر وارد کنید");
+    const parsed = emailSchema.safeParse(contact);
+    if (!parsed.success) {
+      toast.error(parsed.error.issues[0]?.message ?? "ایمیل معتبر وارد کنید");
+      return;
+    }
+
+    loginMutation.mutate(
+      {
+        email: contact,
+        password,
+      },
+      {
+        // هدایت سفارشی در صورت نیاز (اختیاری)
+        onSuccess: () => {
+          // منطق پیش‌فرض در خود mutation هست؛
+          // اگر next داشتید می‌توانید اینجا override کنید
+          if (next === "/checkout") {
+            const planQuery = plan ? `?plan=${encodeURIComponent(plan)}` : "";
+            window.location.href = `/checkout${planQuery}`;
+          }
+        },
+      },
+    );
   };
+
+  const isLoading = loginMutation.isPending;
 
   return (
     <motion.div
@@ -153,15 +110,15 @@ export default function LoginPage() {
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ delay: 0.1 }}
-            className="mx-auto w-14 h-14 rounded-2xl bg-primary/10 dark:bg-primary/20 flex items-center justify-center"
+            className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 dark:bg-primary/20"
           >
-            <LogIn className="w-7 h-7 text-primary" />
+            <LogIn className="h-7 w-7 text-primary" />
           </motion.div>
 
-          <CardTitle className="text-xl sm:text-2xl font-bold text-foreground">
+          <CardTitle className="text-xl font-bold text-foreground sm:text-2xl">
             ورود به سپندتن
           </CardTitle>
-          <CardDescription className="text-sm sm:text-base text-muted-foreground">
+          <CardDescription className="text-sm text-muted-foreground sm:text-base">
             دوباره خوش اومدی! برنامه‌ات منتظرته
           </CardDescription>
         </CardHeader>
@@ -176,13 +133,13 @@ export default function LoginPage() {
                 onValueChange={handleContactTypeChange}
                 className="w-full"
               >
-                <TabsList className="grid w-full grid-cols-2 h-10">
+                <TabsList className="grid h-10 w-full grid-cols-2">
                   <TabsTrigger value="email" className="gap-1.5 text-sm">
-                    <Mail className="w-3.5 h-3.5" />
+                    <Mail className="h-3.5 w-3.5" />
                     ایمیل
                   </TabsTrigger>
                   <TabsTrigger value="phone" className="gap-1.5 text-sm">
-                    <Phone className="w-3.5 h-3.5" />
+                    <Phone className="h-3.5 w-3.5" />
                     موبایل
                   </TabsTrigger>
                 </TabsList>
@@ -205,7 +162,9 @@ export default function LoginPage() {
                         : "09123456789"
                     }
                     dir={contactType === "email" ? "ltr" : "rtl"}
-                    className={`h-11 bg-background ${contactType === "email" ? "text-left" : ""}`}
+                    className={`h-11 bg-background ${
+                      contactType === "email" ? "text-left" : ""
+                    }`}
                     {...register("contact")}
                     disabled={isLoading}
                   />
@@ -215,6 +174,13 @@ export default function LoginPage() {
               {errors.contact && (
                 <p className="text-sm text-destructive">
                   {errors.contact.message}
+                </p>
+              )}
+
+              {contactType === "phone" && (
+                <p className="text-xs text-muted-foreground">
+                  ورود با موبایل (OTP) به‌زودی فعال می‌شود. فعلاً از ایمیل
+                  استفاده کنید.
                 </p>
               )}
             </div>
@@ -227,7 +193,7 @@ export default function LoginPage() {
                 </Label>
                 <Link
                   href="/forgot-password"
-                  className="text-xs text-primary hover:underline underline-offset-4"
+                  className="text-xs text-primary underline-offset-4 hover:underline"
                 >
                   فراموشی رمز؟
                 </Link>
@@ -237,14 +203,14 @@ export default function LoginPage() {
                   id="password"
                   type={showPassword ? "text" : "password"}
                   placeholder="رمز عبور خود را وارد کنید"
-                  className="h-11 pl-10 bg-background"
+                  className="h-11 bg-background pl-10"
                   {...register("password")}
                   disabled={isLoading}
                 />
                 <button
                   type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  onClick={() => setShowPassword((v) => !v)}
+                  className="absolute top-1/2 left-3 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
                   tabIndex={-1}
                 >
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -259,12 +225,12 @@ export default function LoginPage() {
 
             <Button
               type="submit"
-              className="w-full h-11 text-base font-medium"
-              disabled={isLoading}
+              className="h-11 w-full text-base font-medium"
+              disabled={isLoading || contactType === "phone"}
             >
               {isLoading ? (
                 <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <Loader2 className="h-4 w-4 animate-spin" />
                   در حال ورود...
                 </>
               ) : (
@@ -279,7 +245,7 @@ export default function LoginPage() {
             حساب کاربری نداری؟{" "}
             <Link
               href="/register"
-              className="text-primary font-medium hover:underline underline-offset-4"
+              className="font-medium text-primary underline-offset-4 hover:underline"
             >
               ثبت‌نام کن
             </Link>
