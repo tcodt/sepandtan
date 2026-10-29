@@ -20,6 +20,7 @@ import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { useUserStore } from "@/lib/store/user-store";
+import { logoutRequest } from "@/lib/api/auth";
 
 /* -------------------------------------------------------------------------- */
 /* Helpers                                                                    */
@@ -226,8 +227,16 @@ const ContactCard: React.FC<ContactCardProps> = ({ item }) => {
 export default function SupportPage() {
   const router = useRouter();
   const user = useUserStore((s) => s.user);
-  const logout = useUserStore((s) => s.logout);
   const reduceMotion = useReducedMotion();
+
+  async function handleLogout() {
+    try {
+      await logoutRequest();
+    } finally {
+      useUserStore.getState().logout();
+      router.replace("/login");
+    }
+  }
 
   const isPending =
     user?.roleStatus === "pending" ||
@@ -317,10 +326,7 @@ export default function SupportPage() {
               <Button
                 variant="ghost"
                 className="w-full justify-between text-muted-foreground"
-                onClick={() => {
-                  logout();
-                  router.replace("/login");
-                }}
+                onClick={handleLogout}
               >
                 خروج از حساب کاربری
                 <LogOut className="h-4 w-4" />

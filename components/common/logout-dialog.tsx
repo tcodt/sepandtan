@@ -17,6 +17,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { useUserStore } from "@/lib/store/user-store";
 import { cn } from "@/lib/utils";
+import { logoutRequest } from "@/lib/api/auth";
 
 type LogoutDialogProps = {
   /** ظاهر دکمه تریگر */
@@ -37,13 +38,16 @@ export function LogoutDialog({
   children,
 }: LogoutDialogProps) {
   const router = useRouter();
-  const logout = useUserStore((s) => s.logout);
 
-  const handleConfirm = () => {
-    logout();
-    toast.success("با موفقیت خارج شدی");
-    router.replace("/login");
-  };
+  async function handleConfirm() {
+    try {
+      await logoutRequest();
+    } finally {
+      useUserStore.getState().logout();
+      toast.success("با موفقیت خارج شدی");
+      router.replace("/login");
+    }
+  }
 
   return (
     <AlertDialog>

@@ -21,6 +21,7 @@ type UserState = {
   setHasHydrated: (value: boolean) => void;
   setUser: (user: UserProfile) => void;
   updateProfile: (data: Partial<UserProfile>) => void;
+  setAuthFromBackend: (user: UserProfile) => void;
   logout: () => void;
 
   // Role
@@ -65,11 +66,18 @@ export const useUserStore = create<UserState>()(
         });
       },
 
-      logout: () =>
+      setAuthFromBackend: (user) =>
+        set({
+          user,
+          isAuthenticated: true,
+        }),
+
+      logout: () => {
         set({
           user: null,
           isAuthenticated: false,
-        }),
+        });
+      },
 
       setRole: (role, status = "approved") => {
         const current = get().user;
