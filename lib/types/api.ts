@@ -30,19 +30,43 @@ export type AuthEntities = {
   phone?: string | null;
   googleId?: string | null;
   role: BackendRole;
-  /** Some backends return token in body; optional for flexibility */
   accessToken?: string;
   token?: string;
 };
 
+export type ActivityLevelBackend =
+  | "SEDENTARY"
+  | "LIGHT"
+  | "MODERATE"
+  | "ACTIVE"
+  | "VERY_ACTIVE";
+
+export type ExperienceLevelBackend = "BEGINNER" | "INTERMEDIATE" | "ADVANCED";
+
+export type GenderBackend = "MALE" | "FEMALE" | "OTHER";
+
+export type TrainingLocationBackend = "HOME" | "GYM" | "BOTH";
+
 export type ProfileDto = {
   id?: string;
-  // fitness-related fields already present in swagger ProfileDto
-  gender?: "MALE" | "FEMALE" | "OTHER" | null;
-  trainingLocation?: "HOME" | "GYM" | "BOTH" | null;
-  age?: string | null;
+  userId?: string;
+  avatar?: string | null;
+  firstName?: string | null;
+  lastName?: string | null;
+  heightCm?: number | null;
+  currentWeightKg?: number | null;
+  targetWeightKg?: number | null;
+  activityLevel?: ActivityLevelBackend | null;
+  experienceLevel?: ExperienceLevelBackend | null;
+  gender?: GenderBackend | null;
+  trainingLocation?: TrainingLocationBackend | null;
+  age?: string | null; // date string
   trainingDaysPerWeek?: number | null;
-  // extend when needed
+  availableEquipment?: string[] | null;
+  injuries?: string | null;
+  medicalConditions?: string | null;
+  allergies?: string[] | null;
+  dietaryRestrictions?: string[] | null;
   [key: string]: unknown;
 };
 
@@ -57,6 +81,26 @@ export type UserProfileResponseDto = {
   isPhoneVerified: boolean;
   createdAt: string;
   profile?: ProfileDto | null;
+};
+
+export type UpdateProfileDto = {
+  avatar?: string | null;
+  firstName?: string | null;
+  lastName?: string | null;
+  heightCm?: number | null;
+  currentWeightKg?: number | null;
+  targetWeightKg?: number | null;
+  activityLevel?: ActivityLevelBackend | null;
+  experienceLevel?: ExperienceLevelBackend | null;
+  gender?: GenderBackend | null;
+  trainingLocation?: TrainingLocationBackend | null;
+  age?: string | null;
+  trainingDaysPerWeek?: number | null;
+  availableEquipment?: string[] | null;
+  injuries?: string | null;
+  medicalConditions?: string | null;
+  allergies?: string[] | null;
+  dietaryRestrictions?: string[] | null;
 };
 
 export type ApiErrorBody = {

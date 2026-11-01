@@ -16,10 +16,9 @@ import { AccountSubscriptionSection } from "./account-subscription-section";
 import { AccountSummaryCards } from "./account-summary-cards";
 import { BecomeCoachCard } from "./become-coach-card";
 import { CoachAccountSection } from "./coach-account-section";
+import { AddressesSection } from "./addresses-section";
 import { useUserStore } from "@/lib/store/user-store";
 import { cn } from "@/lib/utils";
-
-/* ---------- Sub-components ---------- */
 
 function FinancialLink({ className }: { className?: string }) {
   return (
@@ -35,29 +34,30 @@ function FinancialLink({ className }: { className?: string }) {
       <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary transition-colors group-hover:bg-primary/15">
         <CreditCard className="size-5" />
       </div>
-
       <div className="min-w-0 flex-1">
         <p className="text-sm font-semibold text-foreground">مالی و اشتراک</p>
         <p className="mt-0.5 text-xs text-muted-foreground">
           وضعیت اشتراک، تاریخ انقضا و تاریخچه پرداخت
         </p>
       </div>
-
       <ArrowLeft className="size-4 shrink-0 text-muted-foreground transition-transform group-hover:-translate-x-0.5" />
     </Link>
   );
 }
 
-/* ---------- Screen ---------- */
-
 export function AccountScreen() {
   const user = useUserStore((s) => s.user);
   const isCoach = user?.role === "coach";
+  const isSeller = user?.role === "seller";
+  const isAdmin = user?.role === "admin";
+
+  const backHref = isCoach ? "/coach" : isAdmin ? "/admin" : "/dashboard";
+
+  const backLabel = isCoach ? "پنل مربی" : isAdmin ? "پنل ادمین" : "داشبورد";
 
   return (
     <div className="min-h-screen bg-muted pb-20 lg:pb-8">
       <div className="mx-auto w-full max-w-4xl space-y-4 px-4 py-4 sm:space-y-6 sm:px-6 sm:py-6 lg:px-8">
-        {/* Header */}
         <div className="flex items-center justify-between gap-3">
           <Button
             variant="ghost"
@@ -65,11 +65,9 @@ export function AccountScreen() {
             asChild
             className="-ms-2 gap-1.5 text-muted-foreground hover:text-foreground"
           >
-            <Link href={isCoach ? "/coach" : "/dashboard"}>
+            <Link href={backHref}>
               <ArrowRight className="size-4" />
-              <span className="hidden sm:inline">
-                {isCoach ? "پنل مربی" : "داشبورد"}
-              </span>
+              <span className="hidden sm:inline">{backLabel}</span>
             </Link>
           </Button>
 
@@ -90,12 +88,10 @@ export function AccountScreen() {
           </Button>
         </div>
 
-        {/* Profile Header */}
         <div className="rounded-2xl border border-border/50 bg-linear-to-br from-primary/5 via-background/30 to-transparent p-4 backdrop-blur-sm sm:p-6">
           <ProfileHeader />
         </div>
 
-        {/* Role-based content */}
         {isCoach ? (
           <>
             <CoachAccountSection />
@@ -103,14 +99,17 @@ export function AccountScreen() {
           </>
         ) : (
           <>
-            <AccountSummaryCards />
+            {!isSeller && !isAdmin && <AccountSummaryCards />}
             <FinancialLink />
-            <AccountSubscriptionSection />
-            <BecomeCoachCard />
+            {!isSeller && !isAdmin && <AccountSubscriptionSection />}
+            {/* فقط trainee می‌تواند درخواست مربی بدهد — seller نه */}
+            {user?.role === "trainee" && <BecomeCoachCard />}
           </>
         )}
 
-        {/* Shared edit form */}
+        {/* آدرس‌ها — برای همه نقش‌های کاربر عادی / فروشنده */}
+        {!isAdmin && <AddressesSection />}
+
         <div className="rounded-2xl border border-border/50 bg-card/80 p-4 backdrop-blur-sm dark:bg-card/60 sm:p-6">
           <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold text-foreground sm:text-base">
             <Shield className="size-4 text-primary" />
@@ -122,7 +121,7 @@ export function AccountScreen() {
         <p className="pb-2 text-center text-[11px] text-muted-foreground sm:text-xs">
           {isCoach
             ? "اطلاعات پروفایل مربی در پنل و صفحه عمومی مربیان نمایش داده می‌شود"
-            : "تغییرات بدنی و هدف روی پیشنهادهای برنامه و داشبورد اثر می‌گذارند"}
+            : "تغییرات در سرور ذخیره می‌شوند و روی برنامه و سفارش‌ها اثر می‌گذارند"}
         </p>
       </div>
     </div>

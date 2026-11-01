@@ -15,8 +15,11 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useUserStore } from "@/lib/store/user-store";
-import { setUserRole, requestRoleUpgrade } from "@/lib/api/users";
 import { useRequireAuth } from "@/hooks/use-require-auth";
+import {
+  useRequestCoachRole,
+  useRequestStoreRole,
+} from "@/features/role/hooks/use-role-request";
 
 const roles = [
   {
@@ -53,17 +56,19 @@ export default function RoleSelectionPage() {
   });
 
   const setRole = useUserStore((s) => s.setRole);
-  const requestRole = useUserStore((s) => s.requestRole);
   const updateProfile = useUserStore((s) => s.updateProfile);
 
+  const coachMutation = useRequestCoachRole();
+  const storeMutation = useRequestStoreRole();
+
   const [selected, setSelected] = useState<SelectableRole | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const isSubmitting = coachMutation.isPending || storeMutation.isPending;
 
   // ریدایرکت فقط در شرایط خاص
   useEffect(() => {
     if (isLoading || !isAuthenticated || !user) return;
 
-    // Coach یا Seller
     if (user.role === "coach" || user.role === "seller") {
       if (user.roleStatus === "approved") {
         router.replace(user.role === "coach" ? "/coach" : "/dashboard");
@@ -73,25 +78,22 @@ export default function RoleSelectionPage() {
       return;
     }
 
-    // Trainee که آنبوردینگ را شروع کرده یا تمام کرده
     if (user.role === "trainee") {
       if (user.onboardingStatus === "completed" || user.onboardingCompleted) {
         router.replace("/dashboard");
       } else if (user.onboardingStatus === "in_progress") {
         router.replace("/onboarding");
       }
-      // اگر not_started باشد → هیچ ریدایرکتی انجام نشود
+      // not_started → در همین صفحه می‌ماند
     }
   }, [isLoading, isAuthenticated, user, router]);
 
   const handleContinue = async () => {
     if (!selected || !user) return;
 
-    setIsSubmitting(true);
-
     try {
       if (selected === "trainee") {
-        await setUserRole(user.id, "trainee", "approved");
+        // Trainee نیاز به تأیید ادمین ندارد → فقط store محلی
         setRole("trainee", "approved");
         updateProfile({
           role: "trainee",
@@ -103,24 +105,28 @@ export default function RoleSelectionPage() {
 
         toast.success("عالی! حالا برنامه شخصیت رو می‌سازیم");
         router.replace("/onboarding");
-      } else {
-        // selected اینجا قطعاً "coach" یا "seller" است
-        await requestRoleUpgrade(user.id, selected);
-        requestRole(selected);
+        return;
+      }
 
-        toast.success("درخواستت ثبت شد. منتظر تأیید ادمین باش");
-        router.replace(`/role-pending?type=${selected}`);
+      if (selected === "coach") {
+        coachMutation.mutate({
+          isAcceptingClients: true,
+          headline: "مربی فیتنس",
+        });
+        return;
+      }
+
+      if (selected === "seller") {
+        storeMutation.mutate({});
+        return;
       }
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "خطایی رخ داد. دوباره تلاش کن.";
       toast.error(message);
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
-  // حالت Loading اولیه
   if (isLoading || !isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -129,7 +135,6 @@ export default function RoleSelectionPage() {
     );
   }
 
-  // اگر باید ریدایرکت شود، spinner نشان بده (جلوگیری از فلش محتوا)
   const shouldRedirect =
     !!user &&
     (user.role === "coach" ||
@@ -147,7 +152,6 @@ export default function RoleSelectionPage() {
     );
   }
 
-  // صفحه اصلی Role Selection
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-background">
       <motion.div

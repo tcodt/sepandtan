@@ -4,6 +4,7 @@ import type {
   LoginDto,
   RegisterDto,
   UserProfileResponseDto,
+  UpdateProfileDto,
 } from "@/lib/types/api";
 
 function extractToken(data: AuthEntities): string | null {
@@ -32,9 +33,19 @@ export async function logoutRequest(): Promise<void> {
   }
 }
 
-/** پروفایل کاربر لاگین‌شده */
 export async function getMyProfile(): Promise<UserProfileResponseDto> {
   const { data } = await apiClient.get<UserProfileResponseDto>("/user/profile");
+  return data;
+}
+
+/** PUT /user/profile — آپدیت پروفایل فیتنس */
+export async function updateMyProfile(
+  payload: UpdateProfileDto,
+): Promise<UserProfileResponseDto> {
+  const { data } = await apiClient.put<UserProfileResponseDto>(
+    "/user/profile",
+    payload,
+  );
   return data;
 }
 

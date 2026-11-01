@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { motion, useReducedMotion } from "framer-motion";
 import {
@@ -13,12 +12,20 @@ import {
   UserRound,
   LogOut,
   ArrowRight,
+  RefreshCw,
+  CheckCircle2,
+  XCircle,
+  Ban,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { useRequireAuth } from "@/hooks/use-require-auth";
 import { useUserStore } from "@/lib/store/user-store";
 import { logoutRequest } from "@/lib/api/auth";
+import {
+  useRoleStatusSync,
+  type RoleSyncState,
+} from "@/features/role/hooks/use-role-status-sync";
 
 /* -------------------------------------------------------------------------- */
 /* Helpers                                                                    */
@@ -36,21 +43,52 @@ const addBusinessDays = (from: Date, days: number): Date => {
   let added = 0;
   while (added < days) {
     d.setDate(d.getDate() + 1);
-    const day = d.getDay(); // 0=Sun, 5=Fri, 6=Sat (weekend in Iran)
+    const day = d.getDay();
     if (day !== 5 && day !== 6) added++;
   }
   return d;
 };
 
+function getDashboardHref(role?: string) {
+  if (role === "coach") return "/coach";
+  if (role === "admin") return "/admin";
+  if (role === "seller") return "/dashboard";
+  return "/dashboard";
+}
+
 /* -------------------------------------------------------------------------- */
 /* Stepper                                                                    */
 /* -------------------------------------------------------------------------- */
 
-const Stepper = () => {
+function Stepper({ state }: { state: RoleSyncState }) {
   const steps = [
-    { key: "submitted", label: "ثبت درخواست", state: "done" as const },
-    { key: "review", label: "در حال بررسی", state: "active" as const },
-    { key: "approved", label: "تأیید و شروع", state: "upcoming" as const },
+    {
+      key: "submitted",
+      label: "ثبت درخواست",
+      state: "done" as const,
+    },
+    {
+      key: "review",
+      label: "در حال بررسی",
+      state: state === "pending" ? ("active" as const) : ("done" as const),
+    },
+    {
+      key: "result",
+      label:
+        state === "rejected"
+          ? "رد شد"
+          : state === "suspended"
+            ? "معلق"
+            : state === "approved"
+              ? "تأیید شد"
+              : "تأیید و شروع",
+      state:
+        state === "pending"
+          ? ("upcoming" as const)
+          : state === "approved"
+            ? ("done" as const)
+            : ("active" as const),
+    },
   ];
 
   return (
@@ -63,7 +101,6 @@ const Stepper = () => {
           key={step.key}
           className="relative flex flex-1 flex-col items-center"
         >
-          {/* Connector */}
           {i < steps.length - 1 && (
             <span
               aria-hidden
@@ -74,7 +111,6 @@ const Stepper = () => {
             />
           )}
 
-          {/* Node */}
           <span
             className={`relative z-10 flex h-8 w-8 items-center justify-center rounded-full ring-4 ring-background ${
               step.state === "done"
@@ -86,14 +122,17 @@ const Stepper = () => {
           >
             {step.state === "done" ? (
               <Check className="h-4 w-4" strokeWidth={3} />
-            ) : step.state === "active" ? (
+            ) : step.state === "active" && state === "pending" ? (
               <Loader2 className="h-4 w-4 animate-spin" />
+            ) : step.state === "active" && state === "rejected" ? (
+              <XCircle className="h-4 w-4 text-destructive" />
+            ) : step.state === "active" && state === "suspended" ? (
+              <Ban className="h-4 w-4" />
             ) : (
               <Clock className="h-4 w-4" />
             )}
           </span>
 
-          {/* Label */}
           <span
             className={`mt-2 text-center text-[11px] font-medium leading-4 ${
               step.state === "active"
@@ -109,13 +148,13 @@ const Stepper = () => {
       ))}
     </ol>
   );
-};
+}
 
 /* -------------------------------------------------------------------------- */
 /* Info row                                                                   */
 /* -------------------------------------------------------------------------- */
 
-const InfoRow = ({
+function InfoRow({
   icon,
   label,
   value,
@@ -123,31 +162,116 @@ const InfoRow = ({
   icon: React.ReactNode;
   label: string;
   value: React.ReactNode;
-}) => (
-  <div className="flex items-start gap-3 rounded-xl border border-border bg-card p-3">
-    <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-      {icon}
-    </span>
-    <div className="min-w-0">
-      <p className="text-[11px] font-medium text-muted-foreground">{label}</p>
-      <p className="mt-0.5 text-sm font-semibold leading-5 text-foreground">
-        {value}
-      </p>
+}) {
+  return (
+    <div className="flex items-start gap-3 rounded-xl border border-border bg-card p-3">
+      <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+        {icon}
+      </span>
+      <div className="min-w-0">
+        <p className="text-[11px] font-medium text-muted-foreground">{label}</p>
+        <p className="mt-0.5 text-sm font-semibold leading-5 text-foreground">
+          {value}
+        </p>
+      </div>
     </div>
-  </div>
-);
+  );
+}
 
 /* -------------------------------------------------------------------------- */
 /* Skeleton                                                                   */
 /* -------------------------------------------------------------------------- */
 
-const PendingSkeleton = () => (
-  <div className="w-full max-w-md animate-pulse space-y-4" aria-busy="true">
-    <div className="h-40 rounded-2xl border border-border bg-card" />
-    <div className="h-28 rounded-2xl border border-border bg-card" />
-    <div className="h-12 rounded-xl bg-muted" />
-  </div>
-);
+function PendingSkeleton() {
+  return (
+    <div className="w-full max-w-md animate-pulse space-y-4" aria-busy="true">
+      <div className="h-40 rounded-2xl border border-border bg-card" />
+      <div className="h-28 rounded-2xl border border-border bg-card" />
+      <div className="h-12 rounded-xl bg-muted" />
+    </div>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/* Result banners                                                             */
+/* -------------------------------------------------------------------------- */
+
+function ResultHeader({
+  state,
+  roleLabel,
+}: {
+  state: RoleSyncState;
+  roleLabel: string;
+}) {
+  if (state === "approved") {
+    return (
+      <div className="space-y-3 border-b border-border px-6 pb-5 pt-6 text-center">
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-3 py-1 text-[11px] font-semibold text-emerald-700 dark:text-emerald-400">
+          <CheckCircle2 className="h-3 w-3" />
+          تأیید شد
+        </span>
+        <h1 className="text-xl font-bold leading-7 text-foreground">
+          درخواست {roleLabel} شما تأیید شد
+        </h1>
+        <p className="text-sm leading-6 text-muted-foreground">
+          حالا می‌توانید وارد پنل اختصاصی خود شوید. تا لحظاتی دیگر منتقل
+          می‌شوید...
+        </p>
+      </div>
+    );
+  }
+
+  if (state === "rejected") {
+    return (
+      <div className="space-y-3 border-b border-border px-6 pb-5 pt-6 text-center">
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-rose-500/10 px-3 py-1 text-[11px] font-semibold text-rose-700 dark:text-rose-400">
+          <XCircle className="h-3 w-3" />
+          رد شد
+        </span>
+        <h1 className="text-xl font-bold leading-7 text-foreground">
+          درخواست {roleLabel} رد شد
+        </h1>
+        <p className="text-sm leading-6 text-muted-foreground">
+          متأسفانه درخواست شما تأیید نشد. می‌توانید دوباره نقش دیگری انتخاب کنید
+          یا با پشتیبانی در تماس باشید.
+        </p>
+      </div>
+    );
+  }
+
+  if (state === "suspended") {
+    return (
+      <div className="space-y-3 border-b border-border px-6 pb-5 pt-6 text-center">
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 px-3 py-1 text-[11px] font-semibold text-amber-700 dark:text-amber-400">
+          <Ban className="h-3 w-3" />
+          معلق شده
+        </span>
+        <h1 className="text-xl font-bold leading-7 text-foreground">
+          حساب {roleLabel} شما معلق است
+        </h1>
+        <p className="text-sm leading-6 text-muted-foreground">
+          دسترسی شما موقتاً محدود شده است. برای جزئیات با پشتیبانی تماس بگیرید.
+        </p>
+      </div>
+    );
+  }
+
+  // pending
+  return (
+    <div className="space-y-3 border-b border-border px-6 pb-5 pt-6 text-center">
+      <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 px-3 py-1 text-[11px] font-semibold text-amber-700 dark:text-amber-400">
+        <Clock className="h-3 w-3" />
+        در حال بررسی
+      </span>
+      <h1 className="text-xl font-bold leading-7 text-foreground">
+        درخواست {roleLabel} شما در حال بررسی است
+      </h1>
+      <p className="text-sm leading-6 text-muted-foreground">
+        درخواست شما با موفقیت ثبت شد و تیم سپندتن در حال بررسی آن است.
+      </p>
+    </div>
+  );
+}
 
 /* -------------------------------------------------------------------------- */
 /* Page                                                                       */
@@ -159,9 +283,13 @@ export default function RolePendingPage() {
   const type = searchParams.get("type") || "coach";
   const reduceMotion = useReducedMotion();
 
-  const { isLoading, isAuthenticated, user } = useRequireAuth({
+  const { isLoading, isAuthenticated } = useRequireAuth({
     blockPending: false,
   });
+
+  const { isChecking, syncState, user, refetch } = useRoleStatusSync(
+    !isLoading && isAuthenticated,
+  );
 
   async function handleLogout() {
     try {
@@ -172,23 +300,6 @@ export default function RolePendingPage() {
     }
   }
 
-  /* ---------- Redirect approved users — moved out of render ---------- */
-  useEffect(() => {
-    if (isLoading || !isAuthenticated) return;
-    if (user?.roleStatus !== "approved") return;
-
-    if (user.role === "coach") {
-      router.replace("/coach");
-    } else if (user.role === "trainee") {
-      router.replace(
-        user.onboardingStatus === "completed" ? "/dashboard" : "/onboarding",
-      );
-    } else {
-      router.replace("/dashboard");
-    }
-  }, [isLoading, isAuthenticated, user, router]);
-
-  /* ---------- Loading ---------- */
   if (isLoading || !isAuthenticated) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background p-4">
@@ -203,7 +314,6 @@ export default function RolePendingPage() {
 
   return (
     <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-background p-4">
-      {/* Ambient glow */}
       <div
         aria-hidden
         className="pointer-events-none absolute -top-32 left-1/2 h-72 w-72 -translate-x-1/2 rounded-full bg-amber-500/10 blur-3xl dark:bg-amber-400/5"
@@ -215,66 +325,125 @@ export default function RolePendingPage() {
         transition={{ duration: 0.35, ease: "easeOut" }}
         className="relative w-full max-w-md"
       >
-        {/* Card — hand-assembled since we no longer need Card primitives */}
         <div className="rounded-3xl border border-border bg-card/80 shadow-xl shadow-black/5 backdrop-blur-md">
-          {/* Header */}
-          <div className="space-y-3 border-b border-border px-6 pb-5 pt-6 text-center">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 px-3 py-1 text-[11px] font-semibold text-amber-700 dark:text-amber-400">
-              <Clock className="h-3 w-3" />
-              در حال بررسی
-            </span>
+          <ResultHeader state={syncState} roleLabel={roleLabel} />
 
-            <h1 className="text-xl font-bold leading-7 text-foreground">
-              درخواست {roleLabel} شما در حال بررسی است
-            </h1>
-            <p className="text-sm leading-6 text-muted-foreground">
-              درخواست شما با موفقیت ثبت شد و تیم سپندتن در حال بررسی آن است.
-            </p>
-          </div>
-
-          {/* Body */}
           <div className="space-y-5 px-6 py-5">
-            <Stepper />
+            <Stepper state={syncState} />
 
-            <div className="space-y-2">
-              <InfoRow
-                icon={<CalendarClock className="h-4 w-4" />}
-                label="زمان تقریبی بررسی"
-                value={`تا ${formatFaDate(estimated)} (۱ تا ۳ روز کاری)`}
-              />
-              <InfoRow
-                icon={<Mail className="h-4 w-4" />}
-                label="نحوه اطلاع‌رسانی"
-                value="اعلان داخل اپ و ایمیل ثبت‌شده"
-              />
-              <InfoRow
-                icon={<UserRound className="h-4 w-4" />}
-                label="در این مدت"
-                value="با نقش ورزشکار می‌توانید از امکانات استفاده کنید"
-              />
-            </div>
+            {/* محتوای وابسته به state */}
+            {syncState === "pending" && (
+              <div className="space-y-2">
+                <InfoRow
+                  icon={<CalendarClock className="h-4 w-4" />}
+                  label="زمان تقریبی بررسی"
+                  value={`تا ${formatFaDate(estimated)} (۱ تا ۳ روز کاری)`}
+                />
+                <InfoRow
+                  icon={<Mail className="h-4 w-4" />}
+                  label="نحوه اطلاع‌رسانی"
+                  value="اعلان داخل اپ و ایمیل ثبت‌شده"
+                />
+                <InfoRow
+                  icon={<UserRound className="h-4 w-4" />}
+                  label="در این مدت"
+                  value="با نقش ورزشکار می‌توانید از امکانات استفاده کنید"
+                />
+              </div>
+            )}
 
-            {/* CTAs */}
+            {syncState === "approved" && (
+              <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4 text-center text-sm text-emerald-700 dark:text-emerald-400">
+                در حال انتقال به پنل شما...
+              </div>
+            )}
+
+            {syncState === "rejected" && (
+              <div className="rounded-xl border border-rose-500/20 bg-rose-500/5 p-4 text-center text-sm text-rose-700 dark:text-rose-400">
+                می‌توانید نقش دیگری انتخاب کنید یا دوباره درخواست دهید.
+              </div>
+            )}
+
+            {syncState === "suspended" && (
+              <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4 text-center text-sm text-amber-700 dark:text-amber-400">
+                تا رفع تعلیق، دسترسی نقش محدود است.
+              </div>
+            )}
+
+            {/* دکمه‌ها */}
             <div className="space-y-2 pt-1">
-              <Button
-                className="group w-full"
-                onClick={() => router.replace("/")}
-              >
-                بازگشت به خانه
-                <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" />
-              </Button>
+              {syncState === "pending" && (
+                <Button
+                  variant="secondary"
+                  className="w-full"
+                  onClick={() => refetch()}
+                  disabled={isChecking}
+                >
+                  {isChecking ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      در حال بررسی وضعیت...
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw className="h-4 w-4" />
+                      بررسی وضعیت درخواست
+                    </>
+                  )}
+                </Button>
+              )}
 
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={() => router.replace("/support")}
-              >
-                سؤال دارم، تماس با پشتیبانی
-                <ArrowRight className="h-4 w-4" />
-              </Button>
+              {syncState === "approved" && (
+                <Button
+                  className="w-full"
+                  onClick={() => router.replace(getDashboardHref(user?.role))}
+                >
+                  ورود به پنل
+                  <ArrowLeft className="h-4 w-4" />
+                </Button>
+              )}
+
+              {(syncState === "rejected" || syncState === "suspended") && (
+                <>
+                  <Button
+                    className="w-full"
+                    onClick={() => router.replace("/role-selection")}
+                  >
+                    انتخاب نقش دوباره
+                    <ArrowLeft className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => router.replace("/support")}
+                  >
+                    تماس با پشتیبانی
+                    <ArrowRight className="h-4 w-4" />
+                  </Button>
+                </>
+              )}
+
+              {syncState === "pending" && (
+                <>
+                  <Button
+                    className="group w-full"
+                    onClick={() => router.replace("/")}
+                  >
+                    بازگشت به خانه
+                    <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => router.replace("/support")}
+                  >
+                    سؤال دارم، تماس با پشتیبانی
+                    <ArrowRight className="h-4 w-4" />
+                  </Button>
+                </>
+              )}
             </div>
 
-            {/* Subtle logout */}
             <div className="flex justify-center pt-1">
               <button
                 type="button"
@@ -288,9 +457,12 @@ export default function RolePendingPage() {
           </div>
         </div>
 
-        {/* Footer note */}
         <p className="mt-4 text-center text-[11px] text-muted-foreground">
-          نتیجه بررسی از طریق اعلان و ایمیل به شما اطلاع داده می‌شود.
+          {syncState === "pending"
+            ? "این صفحه به‌صورت خودکار وضعیت را چک می‌کند."
+            : syncState === "approved"
+              ? "تا لحظاتی دیگر به پنل منتقل می‌شوید."
+              : "در صورت نیاز با پشتیبانی در تماس باشید."}
         </p>
       </motion.div>
     </div>

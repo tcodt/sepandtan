@@ -1,3 +1,5 @@
+// lib/api/client.ts
+
 import axios, {
   type AxiosError,
   type AxiosInstance,
@@ -48,7 +50,7 @@ apiClient.interceptors.response.use(
   (error: AxiosError<ApiErrorBody>) => {
     if (error.response?.status === 401) {
       setAccessToken(null);
-      // ریدایرکت را در لایه UI / store مدیریت می‌کنیم تا SSR نشکند
+      // ریدایرکت را در لایه UI مدیریت می‌کنیم
     }
     return Promise.reject(error);
   },

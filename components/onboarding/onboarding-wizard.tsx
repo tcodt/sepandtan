@@ -19,16 +19,16 @@ import {
 import { generateAndSavePlan } from "@/lib/api/plans";
 import { usePlanStore } from "@/lib/store/plan-store";
 import { addWeightLog } from "@/lib/api/logs";
-import { updateOnboardingProgress } from "@/lib/api/users";
+import { useCompleteOnboarding } from "@/features/onboarding/hooks/use-onboarding";
 
 export function OnboardingWizard() {
   const router = useRouter();
   const user = useUserStore((s) => s.user);
-  const completeOnboarding = useUserStore((s) => s.completeOnboarding);
   const updateOnboardingStep = useUserStore((s) => s.updateOnboardingStep);
   const setPlan = usePlanStore((s) => s.setPlan);
 
-  // شروع از مرحله ذخیره‌شده کاربر
+  const completeMutation = useCompleteOnboarding();
+
   const initialStep = Math.min(
     Math.max(user?.currentOnboardingStep ?? 1, 1),
     3,
@@ -43,15 +43,11 @@ export function OnboardingWizard() {
     user?.equipment ?? null,
   );
 
-  // همگام‌سازی step با store و API هر بار که تغییر می‌کند
+  // همگام‌سازی مرحله فعلی فقط در store محلی
   useEffect(() => {
     if (!user?.id) return;
-
-    // فقط اگر step واقعاً تغییر کرده باشد
     if (user.currentOnboardingStep !== step) {
       updateOnboardingStep(step);
-      // ذخیره در Fake API (برای آمادگی بک‌اند واقعی)
-      updateOnboardingProgress(user.id, step).catch(console.error);
     }
   }, [step, user?.id, user?.currentOnboardingStep, updateOnboardingStep]);
 
@@ -71,36 +67,36 @@ export function OnboardingWizard() {
       return;
     }
 
+    const targetWeight =
+      goal === "lose_weight" && bodyInfo.weight > 0
+        ? Math.round(bodyInfo.weight * 0.92)
+        : undefined;
+
     setIsGenerating(true);
 
     try {
+      // ۱. اول اطلاعات پروفایل را روی بک‌اند ذخیره کن
+      await completeMutation.mutateAsync({
+        bodyInfo,
+        equipment,
+        goal,
+        targetWeight,
+      });
+
+      // ۲. بعد برنامه را بساز (فعلاً هنوز Fake Layer)
       const { plan } = await generateAndSavePlan({
         userId: user.id,
         bodyInfo,
         equipment,
         goal,
-        targetWeight:
-          goal === "lose_weight" && bodyInfo.weight > 0
-            ? Math.round(bodyInfo.weight * 0.92)
-            : undefined,
+        targetWeight,
       });
 
-      completeOnboarding({
-        bodyInfo,
-        equipment,
-        goal,
-        currentPlanId: plan.id,
-        targetWeight:
-          goal === "lose_weight" && bodyInfo.weight > 0
-            ? Math.round(bodyInfo.weight * 0.92)
-            : undefined,
-      });
-
+      // ۳. plan را در store محلی بگذار
       setPlan(plan);
 
-      toast.success("برنامه شخصی‌ات آماده شد!");
-
-      if (bodyInfo?.weight) {
+      // ۴. وزن اولیه را لاگ کن (فعلاً Fake)
+      if (bodyInfo.weight) {
         try {
           await addWeightLog({
             userId: user.id,
@@ -114,18 +110,18 @@ export function OnboardingWizard() {
         }
       }
 
+      toast.success("برنامه شخصی‌ات آماده شد!");
       router.push("/welcome");
     } catch (err) {
       console.error(err);
-      // هرگز currentPlanId جعلی ست نشود
       setIsGenerating(false);
       toast.error("ساخت برنامه ناموفق بود", {
-        description: "لطفاً دوباره تلاش کن. برنامه ذخیره نشد.",
+        description: "لطفاً دوباره تلاش کن.",
       });
     }
   };
 
-  if (isGenerating) {
+  if (isGenerating || completeMutation.isPending) {
     return <GeneratingState />;
   }
 
