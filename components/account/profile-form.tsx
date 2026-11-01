@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -35,14 +35,29 @@ import {
   type Equipment,
   type Goal,
 } from "@/lib/store/user-store";
+import { updateMyProfile } from "@/lib/api/auth";
+import {
+  mapOnboardingToUpdateProfileDto,
+  mapProfileResponseToUser,
+} from "@/lib/api/mappers/user";
+import { getErrorMessage } from "@/lib/api/client";
 import { cn } from "@/lib/utils";
 
 const profileSchema = z.object({
   name: z.string().min(2, "نام باید حداقل ۲ کاراکتر باشد"),
   gender: z.enum(["male", "female"]),
-  age: z.coerce.number().min(14, "حداقل ۱۴").max(80, "حداکثر ۸۰"),
-  height: z.coerce.number().min(120, "حداقل ۱۲۰").max(230, "حداکثر ۲۳۰"),
-  weight: z.coerce.number().min(30, "حداقل ۳۰").max(250, "حداکثر ۲۵۰"),
+  age: z
+    .number({ message: "سن معتبر نیست" })
+    .min(14, "حداقل ۱۴")
+    .max(80, "حداکثر ۸۰"),
+  height: z
+    .number({ message: "قد معتبر نیست" })
+    .min(120, "حداقل ۱۲۰")
+    .max(230, "حداکثر ۲۳۰"),
+  weight: z
+    .number({ message: "وزن معتبر نیست" })
+    .min(30, "حداقل ۳۰")
+    .max(250, "حداکثر ۲۵۰"),
   activityLevel: z.enum([
     "sedentary",
     "light",
@@ -142,6 +157,8 @@ const goalOptions = [
 export function ProfileForm() {
   const user = useUserStore((s) => s.user);
   const updateProfile = useUserStore((s) => s.updateProfile);
+  const setAuthFromBackend = useUserStore((s) => s.setAuthFromBackend);
+  const [isSaving, setIsSaving] = useState(false);
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
@@ -171,30 +188,64 @@ export function ProfileForm() {
     });
   }, [user, form]);
 
-  const onSubmit = (data: ProfileFormValues) => {
-    const bodyInfo: BodyInfo = {
-      gender: data.gender,
-      age: data.age,
-      height: data.height,
-      weight: data.weight,
-      activityLevel: data.activityLevel,
-    };
+  const onSubmit = async (data: ProfileFormValues) => {
+    if (!user) return;
+    setIsSaving(true);
 
-    updateProfile({
-      name: data.name,
-      bodyInfo,
-      equipment: data.equipment as Equipment,
-      goal: data.goal as Goal,
-    });
+    try {
+      const bodyInfo: BodyInfo = {
+        gender: data.gender,
+        age: data.age,
+        height: data.height,
+        weight: data.weight,
+        activityLevel: data.activityLevel,
+      };
 
-    toast.success("پروفایل با موفقیت ذخیره شد");
+      const nameParts = data.name.trim().split(/\s+/);
+      const firstName = nameParts[0] ?? data.name;
+      const lastName = nameParts.slice(1).join(" ") || undefined;
+
+      const payload = {
+        ...mapOnboardingToUpdateProfileDto({
+          bodyInfo,
+          equipment: data.equipment as Equipment,
+          goal: data.goal as Goal,
+          targetWeight: user.targetWeight,
+        }),
+        firstName,
+        lastName,
+      };
+
+      const res = await updateMyProfile(payload);
+      const mapped = mapProfileResponseToUser(res);
+
+      setAuthFromBackend({
+        ...mapped,
+        name: data.name.trim(),
+        goal: data.goal as Goal,
+        equipment: data.equipment as Equipment,
+      });
+
+      updateProfile({
+        name: data.name.trim(),
+        bodyInfo,
+        equipment: data.equipment as Equipment,
+        goal: data.goal as Goal,
+      });
+
+      toast.success("پروفایل در سرور ذخیره شد");
+    } catch (err) {
+      toast.error(getErrorMessage(err, "ذخیره پروفایل ناموفق بود"));
+    } finally {
+      setIsSaving(false);
+    }
   };
-
-  // eslint-disable-next-line react-hooks/incompatible-library
   const selectedGender = form.watch("gender");
   const selectedActivityLevel = form.watch("activityLevel");
   const selectedEquipment = form.watch("equipment");
   const selectedGoal = form.watch("goal");
+
+  const busy = isSaving || form.formState.isSubmitting;
 
   return (
     <form
@@ -205,9 +256,9 @@ export function ProfileForm() {
       <div className="space-y-2">
         <Label
           htmlFor="name"
-          className="text-sm font-medium flex items-center gap-2"
+          className="flex items-center gap-2 text-sm font-medium"
         >
-          <User className="w-4 h-4 text-muted-foreground" />
+          <User className="h-4 w-4 text-muted-foreground" />
           نام و نام خانوادگی
         </Label>
         <Input
@@ -215,6 +266,7 @@ export function ProfileForm() {
           className="h-11"
           {...form.register("name")}
           placeholder="نام خود را وارد کنید"
+          disabled={busy}
         />
         {form.formState.errors.name && (
           <p className="text-sm text-destructive">
@@ -227,7 +279,7 @@ export function ProfileForm() {
       <div className="space-y-2">
         <Label>اطلاعات تماس</Label>
         <Input
-          className="h-11 bg-muted/50 cursor-not-allowed"
+          className="h-11 cursor-not-allowed bg-muted/50"
           value={user?.email || user?.phone || ""}
           disabled
           dir={user?.email ? "ltr" : "rtl"}
@@ -240,27 +292,26 @@ export function ProfileForm() {
       {/* جنسیت */}
       <div className="space-y-2">
         <Label className="flex items-center gap-2">
-          <User className="w-4 h-4 text-muted-foreground" />
+          <User className="h-4 w-4 text-muted-foreground" />
           جنسیت
         </Label>
         <div className="grid grid-cols-2 gap-2">
           {[
-            { value: "male", label: "مرد" },
-            { value: "female", label: "زن" },
+            { value: "male" as const, label: "مرد" },
+            { value: "female" as const, label: "زن" },
           ].map((item) => (
             <button
               key={item.value}
               type="button"
+              disabled={busy}
               onClick={() =>
-                form.setValue("gender", item.value as "male" | "female", {
-                  shouldValidate: true,
-                })
+                form.setValue("gender", item.value, { shouldValidate: true })
               }
               className={cn(
                 "h-11 rounded-xl border text-sm font-medium transition-all",
                 selectedGender === item.value
                   ? "border-primary bg-primary/10 text-primary shadow-sm shadow-primary/10"
-                  : "border-border bg-background hover:bg-muted hover:border-primary/30",
+                  : "border-border bg-background hover:border-primary/30 hover:bg-muted",
               )}
             >
               {item.label}
@@ -272,23 +323,24 @@ export function ProfileForm() {
       {/* سن / قد / وزن */}
       <div className="space-y-2">
         <Label className="flex items-center gap-2">
-          <Ruler className="w-4 h-4 text-muted-foreground" />
+          <Ruler className="h-4 w-4 text-muted-foreground" />
           اطلاعات بدنی
         </Label>
         <div className="grid grid-cols-3 gap-2 sm:gap-3">
           <div className="space-y-1.5">
             <Label
               htmlFor="age"
-              className="text-xs text-muted-foreground flex items-center gap-1"
+              className="flex items-center gap-1 text-xs text-muted-foreground"
             >
-              <Calendar className="w-3 h-3" />
+              <Calendar className="h-3 w-3" />
               سن
             </Label>
             <Input
               id="age"
               type="number"
               className="h-11"
-              {...form.register("age")}
+              disabled={busy}
+              {...form.register("age", { valueAsNumber: true })}
             />
             {form.formState.errors.age && (
               <p className="text-xs text-destructive">
@@ -299,16 +351,17 @@ export function ProfileForm() {
           <div className="space-y-1.5">
             <Label
               htmlFor="height"
-              className="text-xs text-muted-foreground flex items-center gap-1"
+              className="flex items-center gap-1 text-xs text-muted-foreground"
             >
-              <Ruler className="w-3 h-3" />
+              <Ruler className="h-3 w-3" />
               قد (cm)
             </Label>
             <Input
               id="height"
               type="number"
               className="h-11"
-              {...form.register("height")}
+              disabled={busy}
+              {...form.register("height", { valueAsNumber: true })}
             />
             {form.formState.errors.height && (
               <p className="text-xs text-destructive">
@@ -319,16 +372,17 @@ export function ProfileForm() {
           <div className="space-y-1.5">
             <Label
               htmlFor="weight"
-              className="text-xs text-muted-foreground flex items-center gap-1"
+              className="flex items-center gap-1 text-xs text-muted-foreground"
             >
-              <Weight className="w-3 h-3" />
+              <Weight className="h-3 w-3" />
               وزن (kg)
             </Label>
             <Input
               id="weight"
               type="number"
               className="h-11"
-              {...form.register("weight")}
+              disabled={busy}
+              {...form.register("weight", { valueAsNumber: true })}
             />
             {form.formState.errors.weight && (
               <p className="text-xs text-destructive">
@@ -342,10 +396,10 @@ export function ProfileForm() {
       {/* سطح فعالیت */}
       <div className="space-y-2">
         <Label className="flex items-center gap-2">
-          <Activity className="w-4 h-4 text-muted-foreground" />
+          <Activity className="h-4 w-4 text-muted-foreground" />
           سطح فعالیت
         </Label>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
           {activityOptions.map((item) => {
             const Icon = item.icon;
             const isSelected = selectedActivityLevel === item.value;
@@ -353,6 +407,7 @@ export function ProfileForm() {
               <button
                 key={item.value}
                 type="button"
+                disabled={busy}
                 onClick={() =>
                   form.setValue("activityLevel", item.value, {
                     shouldValidate: true,
@@ -362,21 +417,21 @@ export function ProfileForm() {
                   "rounded-xl border p-3 text-right transition-all",
                   isSelected
                     ? "border-primary bg-primary/10 text-primary shadow-sm shadow-primary/10"
-                    : "border-border bg-background hover:bg-muted hover:border-primary/30",
+                    : "border-border bg-background hover:border-primary/30 hover:bg-muted",
                 )}
               >
                 <div className="flex items-start gap-3">
                   <div
                     className={cn(
-                      "w-8 h-8 rounded-lg flex items-center justify-center shrink-0",
+                      "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg",
                       isSelected
                         ? "bg-primary/20 text-primary"
                         : "bg-muted text-muted-foreground",
                     )}
                   >
-                    <Icon className="w-4 h-4" />
+                    <Icon className="h-4 w-4" />
                   </div>
-                  <div className="flex-1 min-w-0">
+                  <div className="min-w-0 flex-1">
                     <p
                       className={cn(
                         "text-sm font-medium",
@@ -399,7 +454,7 @@ export function ProfileForm() {
       {/* امکانات */}
       <div className="space-y-2">
         <Label className="flex items-center gap-2">
-          <Dumbbell className="w-4 h-4 text-muted-foreground" />
+          <Dumbbell className="h-4 w-4 text-muted-foreground" />
           امکانات تمرینی
         </Label>
         <div className="grid grid-cols-3 gap-2">
@@ -410,6 +465,7 @@ export function ProfileForm() {
               <button
                 key={item.value}
                 type="button"
+                disabled={busy}
                 onClick={() =>
                   form.setValue("equipment", item.value, {
                     shouldValidate: true,
@@ -419,18 +475,18 @@ export function ProfileForm() {
                   "rounded-xl border p-3 text-center transition-all",
                   isSelected
                     ? "border-primary bg-primary/10 text-primary shadow-sm shadow-primary/10"
-                    : "border-border bg-background hover:bg-muted hover:border-primary/30",
+                    : "border-border bg-background hover:border-primary/30 hover:bg-muted",
                 )}
               >
                 <div
                   className={cn(
-                    "w-8 h-8 rounded-lg flex items-center justify-center mx-auto mb-1.5",
+                    "mx-auto mb-1.5 flex h-8 w-8 items-center justify-center rounded-lg",
                     isSelected
                       ? "bg-primary/20 text-primary"
                       : "bg-muted text-muted-foreground",
                   )}
                 >
-                  <Icon className="w-4 h-4" />
+                  <Icon className="h-4 w-4" />
                 </div>
                 <p
                   className={cn(
@@ -452,10 +508,10 @@ export function ProfileForm() {
       {/* هدف */}
       <div className="space-y-2">
         <Label className="flex items-center gap-2">
-          <Target className="w-4 h-4 text-muted-foreground" />
+          <Target className="h-4 w-4 text-muted-foreground" />
           هدف اصلی
         </Label>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
           {goalOptions.map((item) => {
             const Icon = item.icon;
             const isSelected = selectedGoal === item.value;
@@ -463,6 +519,7 @@ export function ProfileForm() {
               <button
                 key={item.value}
                 type="button"
+                disabled={busy}
                 onClick={() =>
                   form.setValue("goal", item.value, { shouldValidate: true })
                 }
@@ -470,21 +527,21 @@ export function ProfileForm() {
                   "rounded-xl border p-3 text-right transition-all",
                   isSelected
                     ? "border-primary bg-primary/10 text-primary shadow-sm shadow-primary/10"
-                    : "border-border bg-background hover:bg-muted hover:border-primary/30",
+                    : "border-border bg-background hover:border-primary/30 hover:bg-muted",
                 )}
               >
                 <div className="flex items-start gap-3">
                   <div
                     className={cn(
-                      "w-8 h-8 rounded-lg flex items-center justify-center shrink-0",
+                      "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg",
                       isSelected
                         ? "bg-primary/20 text-primary"
                         : "bg-muted text-muted-foreground",
                     )}
                   >
-                    <Icon className="w-4 h-4" />
+                    <Icon className="h-4 w-4" />
                   </div>
-                  <div className="flex-1 min-w-0">
+                  <div className="min-w-0 flex-1">
                     <p
                       className={cn(
                         "text-sm font-medium",
@@ -506,17 +563,17 @@ export function ProfileForm() {
 
       <Button
         type="submit"
-        className="w-full h-11 sm:h-12 gap-2 text-base font-semibold shadow-lg shadow-primary/20"
-        disabled={form.formState.isSubmitting}
+        className="h-11 w-full gap-2 text-base font-semibold shadow-lg shadow-primary/20 sm:h-12"
+        disabled={busy}
       >
-        {form.formState.isSubmitting ? (
+        {busy ? (
           <>
-            <Loader2 className="w-4 h-4 animate-spin" />
+            <Loader2 className="h-4 w-4 animate-spin" />
             در حال ذخیره...
           </>
         ) : (
           <>
-            <Save className="w-4 h-4" />
+            <Save className="h-4 w-4" />
             ذخیره تغییرات
           </>
         )}

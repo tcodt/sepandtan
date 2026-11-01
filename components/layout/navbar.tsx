@@ -46,6 +46,12 @@ export default function Navbar() {
 
   const loggedIn = hasHydrated && isAuthenticated && !!user;
 
+  function getDashboardHref(role?: string) {
+    if (role === "admin") return "/admin";
+    if (role === "coach") return "/coach";
+    return "/dashboard";
+  }
+
   return (
     <header className="sticky top-0 z-40 w-full border-b border-border bg-background/80 backdrop-blur-md supports-backdrop-filter:bg-background/70">
       <nav className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
@@ -190,7 +196,7 @@ export default function Navbar() {
               <DropdownMenuContent align="end" className="w-48">
                 <DropdownMenuItem asChild>
                   <Link
-                    href={user?.role === "coach" ? "/coach" : "/dashboard"}
+                    href={getDashboardHref(user?.role)}
                     className="flex items-center gap-2"
                   >
                     <LayoutDashboard className="w-4 h-4" />
@@ -271,7 +277,7 @@ export default function Navbar() {
                 <>
                   <DropdownMenuItem asChild>
                     <Link
-                      href={user?.role === "coach" ? "/coach" : "/dashboard"}
+                      href={getDashboardHref(user?.role)}
                       className="flex items-center gap-2"
                     >
                       <LayoutDashboard className="w-4 h-4" />

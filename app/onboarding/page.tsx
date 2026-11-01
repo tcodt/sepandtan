@@ -10,19 +10,15 @@ export default function OnboardingPage() {
 
   const { isLoading, isAuthenticated, user } = useRequireAuth({
     requireOnboarding: false, // خود این صفحه onboarding است
-    onlyTrainee: true, // فقط trainee اجازه دارد
+    onlyTrainee: true,
     blockPending: true,
   });
 
   useEffect(() => {
-    if (isLoading) return;
+    if (isLoading || !isAuthenticated || !user) return;
 
-    // اگر آنبوردینگ کامل شده → داشبورد
-    if (
-      isAuthenticated &&
-      user &&
-      (user.onboardingStatus === "completed" || user.onboardingCompleted)
-    ) {
+    // اگر onboarding کامل شده → داشبورد
+    if (user.onboardingStatus === "completed" || user.onboardingCompleted) {
       router.replace("/dashboard");
     }
   }, [isLoading, isAuthenticated, user, router]);
@@ -35,7 +31,7 @@ export default function OnboardingPage() {
     );
   }
 
-  // فقط trainee با وضعیت approved و آنبوردینگ ناقص اجازه دیدن wizard را دارد
+  // فقط trainee تأییدشده با onboarding ناقص اجازه دیدن wizard را دارد
   if (
     !user ||
     user.role !== "trainee" ||

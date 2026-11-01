@@ -9,7 +9,7 @@ export default function DashboardPage() {
   const router = useRouter();
 
   const { isLoading, isAuthenticated, user } = useRequireAuth({
-    requireOnboarding: true,
+    requireOnboarding: true, // trainee بدون onboarding کامل اینجا نمی‌ماند
     blockCoach: true,
     blockPending: true,
   });
@@ -27,18 +27,17 @@ export default function DashboardPage() {
     }
   }, [isLoading, isAuthenticated, router]);
 
-  if (
-    isLoading ||
-    !isAuthenticated ||
-    !user ||
-    user.role === "coach" ||
-    user.roleStatus !== "approved"
-  ) {
+  if (isLoading || !isAuthenticated || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
       </div>
     );
+  }
+
+  // بعد از عبور از useRequireAuth، فقط حالت‌های غیرمجاز باقی‌مانده را چک می‌کنیم
+  if (user.role === "coach" || user.roleStatus !== "approved") {
+    return null;
   }
 
   return <DashboardShell />;
