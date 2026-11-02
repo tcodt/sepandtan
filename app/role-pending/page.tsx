@@ -52,7 +52,7 @@ const addBusinessDays = (from: Date, days: number): Date => {
 function getDashboardHref(role?: string) {
   if (role === "coach") return "/coach";
   if (role === "admin") return "/admin";
-  if (role === "seller") return "/dashboard";
+  if (role === "seller") return "/seller";
   return "/dashboard";
 }
 

@@ -19,13 +19,15 @@ import {
   Moon,
   House,
   User,
+  X,
 } from "lucide-react";
 
-import { useRequireAuth, useAuth } from "@/features/auth/hooks/use-auth";
+import { useAuth } from "@/features/auth/hooks/use-auth";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
+  SheetClose,
   SheetContent,
   SheetHeader,
   SheetTitle,
@@ -41,6 +43,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { useRequireAuth } from "@/hooks/use-require-auth";
 
 /* -------------------------------------------------------------------------- */
 /*                                Nav config                                  */
@@ -57,6 +60,7 @@ const navItems = [
 
 function isActive(pathname: string, href: string) {
   if (href === "/admin") return pathname === "/admin";
+  if (href === "/") return pathname === "/";
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
@@ -67,6 +71,7 @@ function isActive(pathname: string, href: string) {
 function ThemeToggle({ className }: { className?: string }) {
   const { resolvedTheme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
+
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -122,6 +127,7 @@ function ThemeLogo({
 }) {
   const { resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
+
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -211,8 +217,8 @@ function NavList({
 function BrandHeader() {
   return (
     <div className="flex h-14 shrink-0 items-center gap-2.5 border-b border-border px-4">
-      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted/60 overflow-hidden">
-        <ThemeLogo size={32} className="h-full w-full" />
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-muted/60">
+        <ThemeLogo size={40} className="h-full w-full object-cover" />
       </div>
       <div className="min-w-0">
         <div className="truncate text-sm font-bold text-foreground">
@@ -299,21 +305,40 @@ export default function AdminLayout({
                 <Menu className="h-5 w-5" />
               </Button>
             </SheetTrigger>
-            <SheetContent side="right" className="flex w-64 flex-col p-0">
+            <SheetContent
+              side="right"
+              className="flex w-64 flex-col p-0"
+              showCloseButton={false}
+            >
               <SheetHeader className="border-b border-border px-4 py-3 text-start">
                 <div className="flex items-center gap-2.5">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted/60">
-                    <ThemeLogo size={28} className="h-7 w-7" />
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-muted/60">
+                    <ThemeLogo
+                      size={32}
+                      className="h-full w-full object-cover"
+                    />
                   </div>
-                  <SheetTitle className="text-sm font-bold">
+                  <SheetTitle className="truncate text-sm font-bold">
                     پنل ادمین
                   </SheetTitle>
+                  <SheetClose asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="ms-auto h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground"
+                      aria-label="بستن منو"
+                    >
+                      <X className="h-4 w-4" aria-hidden="true" />
+                    </Button>
+                  </SheetClose>
                 </div>
               </SheetHeader>
+
               <NavList
                 pathname={pathname}
                 onNavigate={() => setMobileOpen(false)}
               />
+
               <div className="flex items-center gap-1 border-t border-border p-3">
                 <Button
                   variant="ghost"

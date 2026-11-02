@@ -4,27 +4,22 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useUserStore } from "@/lib/store/user-store";
 import type { UserRole } from "@/lib/types/plan";
-
-// گزینه‌های تنظیم برای اعتبارسنجی احراز هویت
+import { getHomePathForRole } from "@/features/onboarding/utils";
 
 type Options = {
-  /** آیا آنبوردینگ کامل لازم است؟ */
   requireOnboarding?: boolean;
-  /** آیا فقط trainee اجازه دارد؟ */
   onlyTrainee?: boolean;
-  /** آیا کاربر pending را بلاک کند؟ */
   blockPending?: boolean;
-  /**
-   * سازگاری با کدهای قدیمی:
-   * اگر true باشد، مربی‌ها را به /coach هدایت می‌کند
-   */
+  /** مربی را از صفحات trainee دور کن */
   blockCoach?: boolean;
-  /** فقط این نقش‌ها اجازه ورود دارند */
+  /** فروشنده را از صفحات trainee دور کن */
+  blockSeller?: boolean;
   allowedRoles?: UserRole[];
   redirectToLogin?: string;
   redirectToOnboarding?: string;
   redirectToRolePending?: string;
   redirectToCoach?: string;
+  redirectToSeller?: string;
   redirectToDashboard?: string;
 };
 
@@ -34,11 +29,13 @@ export function useRequireAuth(options: Options = {}) {
     onlyTrainee = false,
     blockPending = true,
     blockCoach = false,
+    blockSeller = false,
     allowedRoles,
     redirectToLogin = "/login",
     redirectToOnboarding = "/onboarding",
     redirectToRolePending = "/role-pending",
     redirectToCoach = "/coach",
+    redirectToSeller = "/seller",
     redirectToDashboard = "/dashboard",
   } = options;
 
@@ -58,45 +55,39 @@ export function useRequireAuth(options: Options = {}) {
     if (!mounted || !hasHydrated) return;
 
     const t = window.setTimeout(() => {
-      // ۱. لاگین نکرده
       if (!isAuthenticated || !user) {
         router.replace(redirectToLogin);
         return;
       }
 
-      // ۲. نقش در حالت pending / rejected / suspended
       if (blockPending && user.roleStatus && user.roleStatus !== "approved") {
-        router.replace(redirectToRolePending);
-        return;
+        // ادمین/کاربر عادی معمولاً approved هستند؛ coach/seller pending اینجا می‌مانند
+        if (user.role === "coach" || user.role === "seller") {
+          router.replace(redirectToRolePending);
+          return;
+        }
       }
 
-      // ۳. سازگاری با blockCoach قدیمی
       if (blockCoach && user.role === "coach") {
         router.replace(redirectToCoach);
         return;
       }
 
-      // ۴. محدودیت نقش
+      if (blockSeller && user.role === "seller") {
+        router.replace(redirectToSeller);
+        return;
+      }
+
       if (allowedRoles && !allowedRoles.includes(user.role)) {
-        if (user.role === "coach") {
-          router.replace(redirectToCoach);
-        } else {
-          router.replace(redirectToDashboard);
-        }
+        router.replace(getHomePathForRole(user.role));
         return;
       }
 
-      // ۵. فقط trainee
       if (onlyTrainee && user.role !== "trainee") {
-        if (user.role === "coach") {
-          router.replace(redirectToCoach);
-        } else {
-          router.replace(redirectToDashboard);
-        }
+        router.replace(getHomePathForRole(user.role));
         return;
       }
 
-      // ۶. آنبوردینگ اجباری (فقط برای trainee)
       if (
         requireOnboarding &&
         user.role === "trainee" &&
@@ -118,11 +109,13 @@ export function useRequireAuth(options: Options = {}) {
     onlyTrainee,
     blockPending,
     blockCoach,
+    blockSeller,
     allowedRoles,
     redirectToLogin,
     redirectToOnboarding,
     redirectToRolePending,
     redirectToCoach,
+    redirectToSeller,
     redirectToDashboard,
     router,
   ]);
@@ -134,5 +127,7 @@ export function useRequireAuth(options: Options = {}) {
     isAuthenticated: !!isAuthenticated && !!user,
     user,
     ready: mounted && hasHydrated,
+    /** alias سازگار با layoutهای قدیمی */
+    isReady: mounted && hasHydrated,
   };
 }

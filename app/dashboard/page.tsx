@@ -9,9 +9,11 @@ export default function DashboardPage() {
   const router = useRouter();
 
   const { isLoading, isAuthenticated, user } = useRequireAuth({
-    requireOnboarding: true, // trainee بدون onboarding کامل اینجا نمی‌ماند
+    requireOnboarding: true,
     blockCoach: true,
+    blockSeller: true, // مهم
     blockPending: true,
+    onlyTrainee: true, // اختیاری ولی واضح‌تر
   });
 
   useEffect(() => {
@@ -35,8 +37,11 @@ export default function DashboardPage() {
     );
   }
 
-  // بعد از عبور از useRequireAuth، فقط حالت‌های غیرمجاز باقی‌مانده را چک می‌کنیم
-  if (user.role === "coach" || user.roleStatus !== "approved") {
+  if (
+    user.role === "coach" ||
+    user.role === "seller" ||
+    user.roleStatus !== "approved"
+  ) {
     return null;
   }
 

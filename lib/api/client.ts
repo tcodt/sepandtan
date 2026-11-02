@@ -1,5 +1,3 @@
-// lib/api/client.ts
-
 import axios, {
   type AxiosError,
   type AxiosInstance,
@@ -30,11 +28,8 @@ export function getAccessToken(): string | null {
 
 export function setAccessToken(token: string | null): void {
   if (typeof window === "undefined") return;
-  if (token) {
-    localStorage.setItem(TOKEN_KEY, token);
-  } else {
-    localStorage.removeItem(TOKEN_KEY);
-  }
+  if (token) localStorage.setItem(TOKEN_KEY, token);
+  else localStorage.removeItem(TOKEN_KEY);
 }
 
 apiClient.interceptors.request.use((config: InternalAxiosRequestConfig) => {
@@ -50,13 +45,11 @@ apiClient.interceptors.response.use(
   (error: AxiosError<ApiErrorBody>) => {
     if (error.response?.status === 401) {
       setAccessToken(null);
-      // ریدایرکت را در لایه UI مدیریت می‌کنیم
     }
     return Promise.reject(error);
   },
 );
 
-/** پیام خطای خوانا از پاسخ بک‌اند */
 export function getErrorMessage(
   error: unknown,
   fallback = "خطایی رخ داد",
@@ -76,7 +69,7 @@ export function getErrorMessage(
   return fallback;
 }
 
-// سازگاری با کدهای قدیمی فیک (موقتاً)
+/** فقط برای لایه‌های فیک باقی‌مانده — در P0 جدید استفاده نکنید */
 export function delay(ms = 40): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }

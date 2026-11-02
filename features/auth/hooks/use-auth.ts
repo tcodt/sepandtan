@@ -9,12 +9,8 @@ import { mapProfileResponseToUser } from "@/lib/api/mappers/user";
 import { useUserStore } from "@/lib/store/user-store";
 import { getAccessToken, setAccessToken } from "@/lib/api/client";
 
-const PROFILE_QUERY_KEY = ["auth", "me"] as const;
+export const PROFILE_QUERY_KEY = ["auth", "me"] as const;
 
-/**
- * Hydrate و مدیریت session
- * این hook را یک‌بار در AuthProvider یا layout اصلی صدا بزنید.
- */
 export function useAuthHydration() {
   const setAuthFromBackend = useUserStore((s) => s.setAuthFromBackend);
   const logout = useUserStore((s) => s.logout);
@@ -28,20 +24,18 @@ export function useAuthHydration() {
     queryFn: getMyProfile,
     enabled: isLoggedIn() && hasHydrated,
     retry: false,
-    staleTime: 5 * 60 * 1000, // 5 دقیقه
+    staleTime: 5 * 60 * 1000,
   });
 
   useEffect(() => {
     if (!hasHydrated || didInit.current) return;
 
-    // اگر token نداریم → فوراً hydrated در نظر بگیر
     if (!getAccessToken()) {
       setHasHydrated(true);
       didInit.current = true;
       return;
     }
 
-    // منتظر نتیجه query می‌مانیم
     if (!isFetched) return;
 
     didInit.current = true;
@@ -53,8 +47,7 @@ export function useAuthHydration() {
       return;
     }
 
-    const user = mapProfileResponseToUser(data);
-    setAuthFromBackend(user);
+    setAuthFromBackend(mapProfileResponseToUser(data));
   }, [
     hasHydrated,
     isFetched,
@@ -67,9 +60,6 @@ export function useAuthHydration() {
   ]);
 }
 
-/**
- * دسترسی ساده به وضعیت auth
- */
 export function useAuth() {
   const user = useUserStore((s) => s.user);
   const isAuthenticated = useUserStore((s) => s.isAuthenticated);
@@ -97,37 +87,4 @@ export function useAuth() {
   };
 }
 
-/**
- * Guard برای صفحات محافظت‌شده
- * استفاده: const { user, isReady } = useRequireAuth({ roles: ["admin"] })
- */
-export function useRequireAuth(options?: {
-  roles?: Array<"trainee" | "coach" | "seller" | "admin">;
-  redirectTo?: string;
-}) {
-  const { user, isAuthenticated, isReady } = useAuth();
-  const router = useRouter();
-  const redirectTo = options?.redirectTo ?? "/login";
-
-  useEffect(() => {
-    if (!isReady) return;
-
-    if (!isAuthenticated || !user) {
-      router.replace(redirectTo);
-      return;
-    }
-
-    if (options?.roles && !options.roles.includes(user.role)) {
-      // نقش مجاز نیست
-      if (user.role === "admin") router.replace("/admin");
-      else if (user.role === "coach") router.replace("/coach");
-      else router.replace("/dashboard");
-    }
-  }, [isReady, isAuthenticated, user, options?.roles, redirectTo, router]);
-
-  return {
-    user,
-    isReady,
-    isAuthenticated: isAuthenticated && Boolean(user),
-  };
-}
+export { useRequireAuth } from "@/hooks/use-require-auth";

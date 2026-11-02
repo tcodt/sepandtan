@@ -17,9 +17,11 @@ import {
 import { getErrorMessage } from "@/lib/api/client";
 import { useUserStore } from "@/lib/store/user-store";
 import type { LoginDto, RegisterDto } from "@/lib/types/api";
-import { getPostAuthRedirect } from "@/features/onboarding/utils";
-
-const PROFILE_QUERY_KEY = ["auth", "me"] as const;
+import {
+  getPostAuthRedirect,
+  getPostRegisterRedirect,
+} from "@/features/onboarding/utils";
+import { PROFILE_QUERY_KEY } from "./use-auth";
 
 export function useLoginMutation() {
   const router = useRouter();
@@ -29,7 +31,6 @@ export function useLoginMutation() {
   return useMutation({
     mutationFn: async (dto: LoginDto) => {
       const auth = await loginRequest(dto);
-      // بعد از login، profile کامل را بگیر
       try {
         const profile = await getMyProfile();
         return { auth, profile };
@@ -76,13 +77,7 @@ export function useRegisterMutation() {
       setAuthFromBackend(user);
       queryClient.setQueryData(PROFILE_QUERY_KEY, profile ?? undefined);
       toast.success("ثبت‌نام موفق");
-
-      // بعد از ثبت‌نام معمولاً role-selection یا onboarding
-      if (user.role === "trainee") {
-        router.replace("/role-selection"); // یا مستقیم "/onboarding" اگر role-selection نداری
-      } else {
-        router.replace(getPostAuthRedirect(user));
-      }
+      router.replace(getPostRegisterRedirect(user));
     },
     onError: (error) => {
       toast.error(getErrorMessage(error, "ثبت‌نام ناموفق بود"));
