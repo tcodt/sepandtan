@@ -19,10 +19,6 @@ import type {
   Goal,
 } from "@/lib/types/plan";
 
-/* -------------------------------------------------------------------------- */
-/* Role & Status                                                              */
-/* -------------------------------------------------------------------------- */
-
 function mapRole(role: BackendRole | string | undefined | null): UserRole {
   switch (role) {
     case "COACH":
@@ -39,20 +35,11 @@ function mapRole(role: BackendRole | string | undefined | null): UserRole {
   }
 }
 
-/**
- * وضعیت حساب کاربر در بک‌اند:
- * ACTIVE | SUSPENDED | DELETED
- * → roleStatus فرانت
- */
 function mapAccountStatus(status?: string | null): RoleStatus {
   if (status === "SUSPENDED") return "suspended";
   if (status === "DELETED") return "rejected";
   return "approved";
 }
-
-/* -------------------------------------------------------------------------- */
-/* Profile field mappers                                                      */
-/* -------------------------------------------------------------------------- */
 
 function mapActivityLevel(
   level?: ActivityLevelBackend | string | null,
@@ -87,6 +74,10 @@ function mapTrainingLocation(
 
 function extractAge(ageValue?: string | null): number | undefined {
   if (!ageValue) return undefined;
+  const asNumber = Number(ageValue);
+  if (Number.isFinite(asNumber) && asNumber > 0 && asNumber < 120) {
+    return Math.round(asNumber);
+  }
   const birth = new Date(ageValue);
   if (Number.isNaN(birth.getTime())) return undefined;
   const now = new Date();
@@ -126,13 +117,58 @@ function asOptionalString(value: unknown): string | undefined {
   return undefined;
 }
 
-/* -------------------------------------------------------------------------- */
-/* Auth → UserProfile                                                         */
-/* -------------------------------------------------------------------------- */
+/**
+ * Onboarding فقط برای trainee معنی دارد.
+ * کامل = فیلدهای اجباری بدن + محل تمرین موجود باشند
+ * یا بک‌اند صریحاً onboardingCompleted بفرستد.
+ */
+function resolveOnboarding(role: UserRole, profile?: ProfileDto | null) {
+  if (role !== "trainee") {
+    return {
+      onboardingCompleted: true,
+      onboardingStatus: "completed" as const,
+      currentOnboardingStep: 0,
+    };
+  }
 
-/** از پاسخ login / register */
+  if (profile?.onboardingCompleted === true) {
+    return {
+      onboardingCompleted: true,
+      onboardingStatus: "completed" as const,
+      currentOnboardingStep: 0,
+    };
+  }
+
+  const bodyInfo = extractBodyInfo(profile ?? null);
+  const equipment = mapTrainingLocation(profile?.trainingLocation);
+
+  // کامل فقط وقتی هم bodyInfo و هم equipment داریم
+  if (bodyInfo && equipment) {
+    return {
+      onboardingCompleted: true,
+      onboardingStatus: "completed" as const,
+      currentOnboardingStep: 0,
+    };
+  }
+
+  if (bodyInfo || equipment) {
+    return {
+      onboardingCompleted: false,
+      onboardingStatus: "in_progress" as const,
+      currentOnboardingStep: bodyInfo ? 2 : 1,
+    };
+  }
+
+  return {
+    onboardingCompleted: false,
+    onboardingStatus: "not_started" as const,
+    currentOnboardingStep: 1,
+  };
+}
+
 export function mapAuthToUserProfile(auth: AuthEntities): UserProfile {
   const role = mapRole(auth.role);
+  const onboarding = resolveOnboarding(role, null);
 
   return {
     id: auth.id,
@@ -142,20 +178,13 @@ export function mapAuthToUserProfile(auth: AuthEntities): UserProfile {
     role,
     roles: [role],
     roleStatus: "approved",
-    onboardingStatus: role === "trainee" ? "not_started" : "completed",
-    currentOnboardingStep: role === "trainee" ? 1 : 0,
-    onboardingCompleted: role !== "trainee",
+    ...onboarding,
     subscriptionStatus: "free",
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   };
 }
 
-/* -------------------------------------------------------------------------- */
-/* Profile response → UserProfile                                             */
-/* -------------------------------------------------------------------------- */
-
-/** از GET /user/profile */
 export function mapProfileResponseToUser(
   res: UserProfileResponseDto,
 ): UserProfile {
@@ -163,12 +192,7 @@ export function mapProfileResponseToUser(
   const bodyInfo = extractBodyInfo(res.profile ?? null);
   const equipment = mapTrainingLocation(res.profile?.trainingLocation);
   const targetWeight = res.profile?.targetWeightKg ?? undefined;
-
-  const hasBodyInfo = Boolean(bodyInfo);
-  const onboardingCompleted =
-    role !== "trainee" ||
-    hasBodyInfo ||
-    Boolean(res.profile?.onboardingCompleted);
+  const onboarding = resolveOnboarding(role, res.profile ?? null);
 
   return {
     id: res.id,
@@ -179,13 +203,7 @@ export function mapProfileResponseToUser(
     role,
     roles: [role],
     roleStatus: mapAccountStatus(res.status),
-    onboardingStatus: onboardingCompleted
-      ? "completed"
-      : hasBodyInfo
-        ? "in_progress"
-        : "not_started",
-    currentOnboardingStep: onboardingCompleted ? 0 : 1,
-    onboardingCompleted,
+    ...onboarding,
     bodyInfo,
     equipment,
     targetWeight,
@@ -194,10 +212,6 @@ export function mapProfileResponseToUser(
     updatedAt: new Date().toISOString(),
   };
 }
-
-/* -------------------------------------------------------------------------- */
-/* Onboarding → UpdateProfileDto                                              */
-/* -------------------------------------------------------------------------- */
 
 function toBackendActivity(level: ActivityLevel): ActivityLevelBackend {
   const map: Record<ActivityLevel, ActivityLevelBackend> = {
@@ -220,7 +234,6 @@ function toBackendLocation(eq: Equipment): TrainingLocationBackend {
   return "BOTH";
 }
 
-/** تبدیل داده‌های onboarding فرانت به UpdateProfileDto بک‌اند */
 export function mapOnboardingToUpdateProfileDto(input: {
   bodyInfo: BodyInfo;
   equipment: Equipment;
@@ -228,7 +241,6 @@ export function mapOnboardingToUpdateProfileDto(input: {
   targetWeight?: number;
 }): UpdateProfileDto {
   const { bodyInfo, equipment, targetWeight } = input;
-
   const birthYear = new Date().getFullYear() - bodyInfo.age;
   const ageDate = `${birthYear}-01-01`;
 

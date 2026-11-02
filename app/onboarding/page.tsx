@@ -9,7 +9,7 @@ export default function OnboardingPage() {
   const router = useRouter();
 
   const { isLoading, isAuthenticated, user } = useRequireAuth({
-    requireOnboarding: false, // خود این صفحه onboarding است
+    requireOnboarding: false,
     onlyTrainee: true,
     blockPending: true,
   });

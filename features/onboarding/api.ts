@@ -11,7 +11,6 @@ export type CompleteOnboardingPayload = {
   currentPlanId?: string;
 };
 
-/** ذخیره اطلاعات onboarding روی پروفایل بک‌اند */
 export async function saveOnboardingToBackend(
   payload: CompleteOnboardingPayload,
 ): Promise<UserProfileResponseDto> {

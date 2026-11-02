@@ -5,6 +5,7 @@ import {
   ArrowLeft,
   ArrowRight,
   CreditCard,
+  Package,
   Settings,
   Shield,
   User,
@@ -19,6 +20,33 @@ import { CoachAccountSection } from "./coach-account-section";
 import { AddressesSection } from "./addresses-section";
 import { useUserStore } from "@/lib/store/user-store";
 import { cn } from "@/lib/utils";
+
+function OrdersLink({ className }: { className?: string }) {
+  return (
+    <Link
+      href="/account/orders"
+      aria-label="سفارش‌های فروشگاه"
+      className={cn(
+        "group flex items-center gap-3 rounded-2xl border border-border bg-card/80 dark:bg-card/60 backdrop-blur-sm p-4 transition-all",
+        "hover:bg-accent/40 hover:border-primary/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
+        className,
+      )}
+    >
+      <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary transition-colors group-hover:bg-primary/15">
+        <Package className="size-5" />
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-semibold text-foreground">
+          سفارش‌های فروشگاه
+        </p>
+        <p className="mt-0.5 text-xs text-muted-foreground">
+          پیگیری تسویه، پرداخت و جزئیات خرید
+        </p>
+      </div>
+      <ArrowLeft className="size-4 shrink-0 text-muted-foreground transition-transform group-hover:-translate-x-0.5" />
+    </Link>
+  );
+}
 
 function FinancialLink({ className }: { className?: string }) {
   return (
@@ -96,11 +124,13 @@ export function AccountScreen() {
           <>
             <CoachAccountSection />
             <FinancialLink />
+            <OrdersLink />
           </>
         ) : (
           <>
             {!isSeller && !isAdmin && <AccountSummaryCards />}
             <FinancialLink />
+            <OrdersLink />
             {!isSeller && !isAdmin && <AccountSubscriptionSection />}
             {/* فقط trainee می‌تواند درخواست مربی بدهد — seller نه */}
             {user?.role === "trainee" && <BecomeCoachCard />}

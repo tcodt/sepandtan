@@ -203,7 +203,7 @@ function RejectionReason({
         className="mt-0.5 h-3.5 w-3.5 shrink-0"
         aria-hidden="true"
       />
-      <span className="line-clamp-2 break-words" title={reason}>
+      <span className="line-clamp-2 wrap-break-word" title={reason}>
         {reason}
       </span>
     </div>
@@ -410,7 +410,7 @@ function ErrorState({
         <h3 className="text-base font-semibold text-foreground">
           خطا در دریافت لیست فروشندگان
         </h3>
-        <p className="mx-auto max-w-md break-words text-sm text-muted-foreground">
+        <p className="mx-auto max-w-md wrap-break-word text-sm text-muted-foreground">
           {message}
         </p>
       </div>
@@ -460,6 +460,7 @@ export default function AdminStoresPage() {
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [pending, setPending] = useState<PendingAction>(null);
   const [rejectReason, setRejectReason] = useState("");
+  const updateMutation = useUpdateStoreByAdmin();
 
   const filters: AdminStoresFilters = useMemo(
     () => ({ page, limit: PAGE_SIZE, order: "desc", status }),
@@ -468,7 +469,6 @@ export default function AdminStoresPage() {
 
   const { data, isLoading, isFetching, isError, error, refetch } =
     useAdminStores(filters);
-  const updateMutation = useUpdateStoreByAdmin();
 
   const stores: AdminStoreItem[] = data?.data ?? [];
   const total = data?.pagination?.total ?? 0;
@@ -488,19 +488,28 @@ export default function AdminStoresPage() {
   const handleUpdate = useCallback(
     (
       store: AdminStoreItem,
-      newStatus: StoreRequestStatus,
+      nextStatus: "APPROVED" | "REJECTED" | "PENDING",
       statusReason?: string,
     ) => {
       updateMutation.mutate(
         {
           storeId: store.id,
+          source: store.source, // "request" | "store"
           payload: {
-            status: newStatus,
+            status: nextStatus,
             statusReason: statusReason ?? null,
           },
-          source: store.source,
         },
-        { onSettled: () => closePending() },
+        {
+          onSuccess: () => {
+            // بعد از approve/reject اگر روی PENDING فیلتر بودید، آیتم ناپدید می‌شود
+            if (nextStatus === "APPROVED" || nextStatus === "REJECTED") {
+              setStatus("ALL");
+              setPage(1);
+            }
+            closePending();
+          },
+        },
       );
     },
     [updateMutation, closePending],

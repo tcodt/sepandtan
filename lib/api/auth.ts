@@ -38,7 +38,6 @@ export async function getMyProfile(): Promise<UserProfileResponseDto> {
   return data;
 }
 
-/** PUT /user/profile — آپدیت پروفایل فیتنس */
 export async function updateMyProfile(
   payload: UpdateProfileDto,
 ): Promise<UserProfileResponseDto> {

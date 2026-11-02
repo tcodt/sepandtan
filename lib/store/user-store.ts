@@ -23,12 +23,8 @@ type UserState = {
   updateProfile: (data: Partial<UserProfile>) => void;
   setAuthFromBackend: (user: UserProfile) => void;
   logout: () => void;
-
-  // Role
   setRole: (role: UserRole, status?: RoleStatus) => void;
   requestRole: (role: "coach" | "seller") => void;
-
-  // Onboarding
   updateOnboardingStep: (step: number) => void;
   completeOnboarding: (data: {
     bodyInfo: BodyInfo;
@@ -48,11 +44,7 @@ export const useUserStore = create<UserState>()(
 
       setHasHydrated: (value) => set({ _hasHydrated: value }),
 
-      setUser: (user) =>
-        set({
-          user,
-          isAuthenticated: true,
-        }),
+      setUser: (user) => set({ user, isAuthenticated: true }),
 
       updateProfile: (data) => {
         const current = get().user;
@@ -82,7 +74,6 @@ export const useUserStore = create<UserState>()(
       setRole: (role, status = "approved") => {
         const current = get().user;
         if (!current) return;
-
         set({
           user: {
             ...current,
@@ -97,7 +88,6 @@ export const useUserStore = create<UserState>()(
       requestRole: (role) => {
         const current = get().user;
         if (!current) return;
-
         set({
           user: {
             ...current,
@@ -112,38 +102,31 @@ export const useUserStore = create<UserState>()(
       updateOnboardingStep: (step) => {
         const current = get().user;
         if (!current) return;
-
         set({
           user: {
             ...current,
             currentOnboardingStep: step,
             onboardingStatus:
-              step > 0 ? "in_progress" : current.onboardingStatus,
+              step > 1 ? "in_progress" : current.onboardingStatus,
             updatedAt: new Date().toISOString(),
           },
         });
       },
 
-      /**
-       * آنبوردینگ فقط Training Plan را ست می‌کند.
-       * subscriptionStatus را تغییر نمی‌دهد (جداسازی قفل‌شده محصول).
-       */
       completeOnboarding: (data) => {
         const current = get().user;
         if (!current) return;
-
         set({
           user: {
             ...current,
             bodyInfo: data.bodyInfo,
             equipment: data.equipment,
             goal: data.goal,
-            currentPlanId: data.currentPlanId,
+            currentPlanId: data.currentPlanId || null,
             targetWeight: data.targetWeight,
             onboardingCompleted: true,
             onboardingStatus: "completed",
             currentOnboardingStep: 0,
-            // subscriptionStatus عمداً دست نخورده می‌ماند
             updatedAt: new Date().toISOString(),
           },
         });
@@ -162,16 +145,3 @@ export const useUserStore = create<UserState>()(
     },
   ),
 );
-
-/** صبر تا hydrate از localStorage تمام شود */
-export function useAuthReady() {
-  const hasHydrated = useUserStore((s) => s._hasHydrated);
-  const isAuthenticated = useUserStore((s) => s.isAuthenticated);
-  const user = useUserStore((s) => s.user);
-
-  return {
-    ready: hasHydrated,
-    isAuthenticated,
-    user,
-  };
-}

@@ -1,6 +1,4 @@
-import { items } from "@/lib/products";
-import { Metadata } from "next";
-import { Product } from "@/lib/products-type";
+import type { Metadata } from "next";
 import StoreClient from "@/components/store/store-client";
 
 export const metadata: Metadata = {
@@ -9,6 +7,6 @@ export const metadata: Metadata = {
     "بهترین محصولات ورزشی، تجهیزات و مکمل‌ها را با بهترین قیمت پیدا کنید.",
 };
 
-export default function Store() {
-  return <StoreClient initialItems={items as Product[]} />;
+export default function StorePage() {
+  return <StoreClient />;
 }

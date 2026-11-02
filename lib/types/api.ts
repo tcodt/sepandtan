@@ -22,7 +22,6 @@ export type RegisterDto = {
   googleIdToken?: string;
 };
 
-/** Response of POST /auth/login and /auth/register */
 export type AuthEntities = {
   id: string;
   name: string;
@@ -60,13 +59,17 @@ export type ProfileDto = {
   experienceLevel?: ExperienceLevelBackend | null;
   gender?: GenderBackend | null;
   trainingLocation?: TrainingLocationBackend | null;
-  age?: string | null; // date string
+  /** تاریخ تولد یا سن به‌صورت string از بک‌اند */
+  age?: string | null;
   trainingDaysPerWeek?: number | null;
   availableEquipment?: string[] | null;
   injuries?: string | null;
   medicalConditions?: string | null;
   allergies?: string[] | null;
   dietaryRestrictions?: string[] | null;
+  /** اگر بک‌اند بعداً اضافه کند */
+  onboardingCompleted?: boolean | null;
+  goal?: string | null;
   [key: string]: unknown;
 };
 

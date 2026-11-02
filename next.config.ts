@@ -12,7 +12,6 @@ const withSerwist = withSerwistInit({
   swSrc: "app/sw.ts",
   swDest: "public/sw.js",
   disable: process.env.NODE_ENV === "development",
-  cacheOnNavigation: true,
   reloadOnOnline: true,
   additionalPrecacheEntries: [{ url: "/offline", revision }],
 });
@@ -22,6 +21,13 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   images: {
     formats: ["image/avif", "image/webp"],
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "c333224.parspack.net",
+        pathname: "/**",
+      },
+    ],
   },
 };
 

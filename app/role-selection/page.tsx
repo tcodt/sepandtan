@@ -71,9 +71,9 @@ export default function RoleSelectionPage() {
 
     if (user.role === "coach" || user.role === "seller") {
       if (user.roleStatus === "approved") {
-        router.replace(user.role === "coach" ? "/coach" : "/dashboard");
+        router.replace(user.role === "coach" ? "/coach" : "/seller");
       } else {
-        router.replace(`/role-pending?type=${user.role}`);
+        router.replace("/role-pending");
       }
       return;
     }

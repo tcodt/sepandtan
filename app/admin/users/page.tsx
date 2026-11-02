@@ -19,6 +19,7 @@ import {
   ChevronRight,
   SlidersHorizontal,
 } from "lucide-react";
+import { toast } from "sonner";
 
 import {
   useAdminUsers,
@@ -75,7 +76,7 @@ import {
 import { cn } from "@/lib/utils";
 
 /* -------------------------------------------------------------------------- */
-/*                                Constants                                   */
+/* Constants                                                                  */
 /* -------------------------------------------------------------------------- */
 
 const PAGE_SIZE = 20;
@@ -115,8 +116,19 @@ const ROLE_STYLES: Record<BackendRole, string> = {
     "bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-500/30",
 };
 
+/** Coach و Seller متقابلاً انحصاری‌اند */
+function isForbiddenRoleSwitch(
+  current: BackendRole,
+  next: BackendRole,
+): boolean {
+  return (
+    (current === "STORE" && next === "COACH") ||
+    (current === "COACH" && next === "STORE")
+  );
+}
+
 /* -------------------------------------------------------------------------- */
-/*                            Sub-components                                  */
+/* Sub-components                                                             */
 /* -------------------------------------------------------------------------- */
 
 function VerifiedIndicator({
@@ -151,8 +163,6 @@ function VerifiedIndicator({
   );
 }
 
-/* --------------------------------- Mobile card ------------------------------ */
-
 function UserCard({
   user,
   onChangeRole,
@@ -175,7 +185,6 @@ function UserCard({
 }) {
   return (
     <article className="rounded-xl border border-border bg-card p-4 shadow-sm transition-colors duration-150 hover:bg-muted/30">
-      {/* Top row: name + menu */}
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <h3 className="truncate text-sm font-semibold text-foreground">
@@ -199,7 +208,6 @@ function UserCard({
         />
       </div>
 
-      {/* Badges row */}
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <Badge
           variant="outline"
@@ -215,7 +223,6 @@ function UserCard({
         </Badge>
       </div>
 
-      {/* Verification row */}
       <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 border-t border-border pt-3">
         <VerifiedIndicator
           verified={user.isEmailVerified}
@@ -231,8 +238,6 @@ function UserCard({
     </article>
   );
 }
-
-/* -------------------------- Shared actions menu ---------------------------- */
 
 function UserActions({
   user,
@@ -262,7 +267,7 @@ function UserActions({
           <MoreHorizontal className="h-4 w-4" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-48">
+      <DropdownMenuContent align="end" className="w-52">
         <DropdownMenuLabel className="text-xs text-muted-foreground">
           تغییر نقش
         </DropdownMenuLabel>
@@ -270,13 +275,29 @@ function UserActions({
           <Shield className="me-2 h-4 w-4" />
           کاربر
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => onChangeRole(user.id, "COACH")}>
+        <DropdownMenuItem
+          disabled={user.role === "STORE"}
+          onClick={() => onChangeRole(user.id, "COACH")}
+        >
           <Shield className="me-2 h-4 w-4" />
           مربی
+          {user.role === "STORE" ? (
+            <span className="ms-auto text-[10px] text-muted-foreground">
+              اول کاربر
+            </span>
+          ) : null}
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => onChangeRole(user.id, "STORE")}>
+        <DropdownMenuItem
+          disabled={user.role === "COACH"}
+          onClick={() => onChangeRole(user.id, "STORE")}
+        >
           <Shield className="me-2 h-4 w-4" />
           فروشنده
+          {user.role === "COACH" ? (
+            <span className="ms-auto text-[10px] text-muted-foreground">
+              اول کاربر
+            </span>
+          ) : null}
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => onChangeRole(user.id, "ADMIN")}>
           <Shield className="me-2 h-4 w-4" />
@@ -304,8 +325,6 @@ function UserActions({
     </DropdownMenu>
   );
 }
-
-/* ----------------------------- Skeletons ---------------------------------- */
 
 function MobileSkeleton() {
   return (
@@ -365,8 +384,6 @@ function DesktopSkeleton() {
   );
 }
 
-/* ----------------------------- Empty & Error ------------------------------ */
-
 function EmptyState({
   hasFilters,
   onReset,
@@ -419,7 +436,7 @@ function ErrorState({
         <h3 className="text-base font-semibold text-foreground">
           خطا در دریافت لیست کاربران
         </h3>
-        <p className="mx-auto max-w-md break-words text-sm text-muted-foreground">
+        <p className="mx-auto max-w-md wrap-break-word text-sm text-muted-foreground">
           {message}
         </p>
       </div>
@@ -430,8 +447,6 @@ function ErrorState({
     </div>
   );
 }
-
-/* ----------------------------- Filter Fields ------------------------------ */
 
 function FilterFields({
   role,
@@ -484,7 +499,7 @@ function FilterFields({
 }
 
 /* -------------------------------------------------------------------------- */
-/*                                Page                                        */
+/* Page                                                                       */
 /* -------------------------------------------------------------------------- */
 
 export default function AdminUsersPage() {
@@ -516,7 +531,7 @@ export default function AdminUsersPage() {
   const updateMutation = useUpdateAdminUser();
   const deleteMutation = useDeleteAdminUser();
 
-  const users = data?.users ?? [];
+  const users = useMemo(() => data?.users ?? [], [data?.users]);
   const total = data?.pagination.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const hasActiveFilters = !!search || role !== "ALL" || status !== "ALL";
@@ -536,9 +551,27 @@ export default function AdminUsersPage() {
 
   const handleChangeRole = useCallback(
     (userId: string, newRole: BackendRole) => {
+      const target = users.find((u) => u.id === userId);
+      if (!target) return;
+
+      if (target.role === newRole) return;
+
+      if (isForbiddenRoleSwitch(target.role, newRole)) {
+        toast.error(
+          "نقش مربی و فروشنده همزمان مجاز نیست. ابتدا نقش را به «کاربر» تغییر دهید، سپس نقش جدید را انتخاب کنید.",
+        );
+        return;
+      }
+
+      const label = ROLE_LABEL[newRole] ?? newRole;
+      const ok = window.confirm(
+        `نقش «${target.name}» از «${ROLE_LABEL[target.role]}» به «${label}» تغییر کند؟`,
+      );
+      if (!ok) return;
+
       updateMutation.mutate({ id: userId, payload: { role: newRole } });
     },
-    [updateMutation],
+    [users, updateMutation],
   );
 
   const handleChangeStatus = useCallback(
@@ -557,19 +590,17 @@ export default function AdminUsersPage() {
 
   return (
     <div className="mx-auto w-full max-w-7xl space-y-4 px-4 py-4 sm:space-y-6 sm:px-6 sm:py-6 lg:px-8">
-      {/* ----------------------------- Header ----------------------------- */}
       <header className="flex flex-col gap-1">
         <h1 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">
           مدیریت کاربران
         </h1>
         <p className="text-xs text-muted-foreground sm:text-sm">
-          لیست، فیلتر و مدیریت نقش و وضعیت کاربران
+          لیست، فیلتر و مدیریت نقش و وضعیت کاربران — مربی و فروشنده متقابل
+          انحصاری‌اند
         </p>
       </header>
 
-      {/* --------------------------- Filter bar --------------------------- */}
       <section aria-label="فیلترهای جستجوی کاربران" className="space-y-3">
-        {/* Search + mobile filter trigger */}
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
           <div className="flex flex-1 gap-2">
             <div className="relative flex-1">
@@ -607,7 +638,6 @@ export default function AdminUsersPage() {
               <span className="hidden sm:inline">جستجو</span>
             </Button>
 
-            {/* Mobile filters trigger */}
             <Sheet open={mobileFiltersOpen} onOpenChange={setMobileFiltersOpen}>
               <SheetTrigger asChild>
                 <Button
@@ -623,7 +653,7 @@ export default function AdminUsersPage() {
                   )}
                 </Button>
               </SheetTrigger>
-              <SheetContent side="bottom" className="lg:hidden">
+              <SheetContent side="bottom" className="lg:hidden p-6">
                 <SheetHeader>
                   <SheetTitle>فیلترها</SheetTitle>
                 </SheetHeader>
@@ -665,7 +695,6 @@ export default function AdminUsersPage() {
           </div>
         </div>
 
-        {/* Desktop inline filters */}
         <div className="hidden gap-3 lg:flex">
           <FilterFields
             role={role}
@@ -693,7 +722,6 @@ export default function AdminUsersPage() {
         </div>
       </section>
 
-      {/* ----------------------------- Results ---------------------------- */}
       <section
         aria-label="لیست کاربران"
         aria-busy={isLoading || isFetching}
@@ -717,7 +745,6 @@ export default function AdminUsersPage() {
           <EmptyState hasFilters={hasActiveFilters} onReset={handleReset} />
         ) : (
           <>
-            {/* Mobile: card stack */}
             <div className="space-y-3 p-3 md:hidden">
               {users.map((user) => (
                 <UserCard
@@ -730,7 +757,6 @@ export default function AdminUsersPage() {
               ))}
             </div>
 
-            {/* Desktop: table */}
             <div className="hidden md:block">
               <Table>
                 <TableHeader>
@@ -757,10 +783,7 @@ export default function AdminUsersPage() {
                         >
                           {user.email || "—"}
                         </div>
-                        <div
-                          dir="ltr"
-                          className="max-w-[12rem] truncate text-xs"
-                        >
+                        <div dir="ltr" className="max-w-48 truncate text-xs">
                           {user.phone || "—"}
                         </div>
                       </TableCell>
@@ -810,7 +833,6 @@ export default function AdminUsersPage() {
           </>
         )}
 
-        {/* --------------------------- Pagination ------------------------- */}
         {totalPages > 1 && !isLoading && !isError && (
           <div className="flex flex-col gap-3 border-t border-border px-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-4">
             <p className="order-2 text-center text-xs text-muted-foreground sm:order-1 sm:text-start">
@@ -825,7 +847,6 @@ export default function AdminUsersPage() {
               )}
             </p>
 
-            {/* Desktop: prev/next */}
             <div className="order-1 flex gap-2 sm:order-2">
               <Button
                 variant="outline"
@@ -866,7 +887,6 @@ export default function AdminUsersPage() {
         )}
       </section>
 
-      {/* ---------------------- Destructive confirmation ------------------ */}
       <AlertDialog
         open={!!pendingDelete}
         onOpenChange={(open) => !open && setPendingDelete(null)}
