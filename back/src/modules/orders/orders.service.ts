@@ -252,7 +252,7 @@ export class OrdersService {
         for (const store of stores) {
             if (!store.storeId) {
                 throw new BadRequestException(
-                    'شناسه فروشگاه در اطلاعات سفارش وجود ندارد.',
+                    'آیدی فروشگاه در اطلاعات سفارش وجود ندارد.',
                 );
             }
 
@@ -612,6 +612,7 @@ export class OrdersService {
                     salesProfit: true,
                     orders: {
                         select: {
+                            storeId: true,
                             id: true,
                             returnDeadline: true,
                             totalPrice: true,
@@ -712,7 +713,20 @@ export class OrdersService {
                         },
                     });
                 }
+                const totalQty = await tx.orderItem.aggregate({
+                    where: { orderId: order.id },
+                    _sum: { quantity: true },
+                });
+
+                const qty = totalQty._sum.quantity ?? 0;
+                if (qty > 0) {
+                    await tx.storeRating.update({
+                        where: { storeId: order.storeId },
+                        data: { saleCount: { increment: qty } },
+                    });
+                }
             }
+
             await tx.walletTransaction.createMany({
                 data: [
                     {

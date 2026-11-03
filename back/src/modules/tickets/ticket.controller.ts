@@ -43,7 +43,7 @@ export class TicketController {
   }
 
   /**
-   * دریافت تیکت با شناسه
+   * دریافت تیکت با آیدی
    */
   @Get(':id')
   @ApiOkResponse({ type: TicketDetailEntity })

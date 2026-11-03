@@ -27,7 +27,7 @@ export class CartService {
       const store = storesMap.get(storeId);
       const price = Number(item.variant.price);
       const discountValue = item.variant.discount?.isActive
-        ? (item.variant.discount.type === 'fixed'
+        ? (item.variant.discount.type === 'FIXED'
           ? Number(item.variant.discount.value)
           : price * (Number(item.variant.discount.value) / 100))
         : 0;
@@ -166,7 +166,7 @@ export class CartService {
    * خالی کردن کامل سبد خرید
    */
   async clearCart(userId: string) {
-    this.prisma.cartItem.deleteMany({ where: { userId } });
+    await this.prisma.cartItem.deleteMany({ where: { userId } });
     return { success: true }
   }
 }

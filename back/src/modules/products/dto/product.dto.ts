@@ -63,7 +63,7 @@ export class CreateProductDto {
   @IsObject()
   productTable?: Prisma.InputJsonValue;
 
-  @ApiProperty({ description: 'شناسه دسته‌بندی حتما باید ارسال شود', example: '820e47b7-20b3-4fb6-8e29-56d2766efabd' })
+  @ApiProperty({ description: 'آیدی دسته‌بندی حتما باید ارسال شود', example: '820e47b7-20b3-4fb6-8e29-56d2766efabd' })
   @IsString()
   categoryId!: string;
 
@@ -81,12 +81,12 @@ export class CreateProductDto {
 export class UpdateProductDto extends PartialType(CreateProductDto) { }
 
 export class ProductFilterDto {
-  @ApiPropertyOptional({ description: 'شناسه دسته‌بندی' })
+  @ApiPropertyOptional({ description: 'آیدی دسته‌بندی' })
   @IsOptional()
   @IsString()
   category?: string;
 
-  @ApiPropertyOptional({ description: 'شناسه فروشنده' })
+  @ApiPropertyOptional({ description: 'آیدی فروشنده' })
   @IsOptional()
   @IsString()
   seller?: string;

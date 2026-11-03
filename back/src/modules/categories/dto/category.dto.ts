@@ -23,7 +23,7 @@ export class CreateCategoryDto {
   slug!: string;
 
   @ApiPropertyOptional({
-    description: 'شناسه والد (برای ساختار درختی) اجباری نیست میتونی نفرستی',
+    description: 'آیدی والد (برای ساختار درختی) اجباری نیست میتونی نفرستی',
     example: 'cf91f6d4-ba85-4dd4-b870-37dbf1702ca4',
     nullable: true,
   })

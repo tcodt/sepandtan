@@ -12,6 +12,7 @@ import { RolePerson } from '../../generated/prisma/enums.js';
 import { PaginatedResponse } from '../../common/dtos/pagination-response.dto.js';
 import { AdminCheckoutEntity, CheckoutDetailEntity, CheckoutEntity, OrderEntity } from './entities/order.entity.js';
 import { Roles } from '../auth/decorators/roles.decorator.js';
+import { Throttle } from '@nestjs/throttler';
 
 @ApiTags('Orders')
 @Controller('orders')
@@ -19,7 +20,10 @@ import { Roles } from '../auth/decorators/roles.decorator.js';
 export class OrdersController {
     constructor(private readonly ordersService: OrdersService) { }
 
+
+
     @Post()
+    @Throttle({ default: { limit: 5, ttl: 60_000 } })
     @ApiOperation({
         summary: 'ثبت تسویه حساب (User)', description: `
         * کد تخفیف اجباری نیست ارسالش

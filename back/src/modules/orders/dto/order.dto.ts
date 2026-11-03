@@ -6,7 +6,7 @@ import { QueryDefaultDto } from '../../../common/dtos/query.defualt.dto.js';
 
 export class CheckoutItemDto {
   @ApiProperty({
-    description: 'شناسه فروشگاه',
+    description: 'آیدی فروشگاه',
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
   @IsString()
@@ -14,7 +14,7 @@ export class CheckoutItemDto {
   storeId!: string;
 
   @ApiProperty({
-    description: 'شناسه روش ارسال (storeShippingMethods)',
+    description: 'آیدی روش ارسال (storeShippingMethods)',
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
   @IsUUID()
@@ -44,7 +44,7 @@ export class CheckoutItemDto {
 
 export class CreateCheckoutDto {
   @ApiPropertyOptional({
-    description: 'شناسه آدرس ذخیره‌شده کاربر (در صورت انتخاب آدرس قبلی)',
+    description: 'آیدی آدرس ذخیره‌شده کاربر (در صورت انتخاب آدرس قبلی)',
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
   @IsOptional()
@@ -139,7 +139,7 @@ export class SearchCheckouts extends QueryDefaultDto {
   paymentMethod?: PaymentMethod | "All";
 
   @ApiPropertyOptional({
-    description: 'شناسه تخفیف اعمال‌شده روی سفارش',
+    description: 'آیدی تخفیف اعمال‌شده روی سفارش',
     required: false,
   })
   @IsOptional()
@@ -163,7 +163,7 @@ export class SearchCheckouts extends QueryDefaultDto {
   paymentRef?: string;
 
   @ApiPropertyOptional({
-    description: 'شناسه کاربر صاحب سفارش',
+    description: 'آیدی کاربر صاحب سفارش',
     required: false,
   })
   @IsOptional()
@@ -199,7 +199,7 @@ export class SearchOrders extends QueryDefaultDto {
   trackingCode?: string;
 
   @ApiPropertyOptional({
-    description: 'شناسه روش ارسال فروشگاه',
+    description: 'آیدی روش ارسال فروشگاه',
     required: false,
   })
   @IsOptional()
@@ -207,7 +207,7 @@ export class SearchOrders extends QueryDefaultDto {
   storeShippingMethodId?: string;
 
   @ApiPropertyOptional({
-    description: 'شناسه کاربر صاحب سفارش',
+    description: 'آیدی کاربر صاحب سفارش',
     required: false,
   })
   @IsOptional()
@@ -215,7 +215,7 @@ export class SearchOrders extends QueryDefaultDto {
   userId?: string;
 
   @ApiPropertyOptional({
-    description: 'شناسه فروشگاه مربوط به سفارش',
+    description: 'آیدی فروشگاه مربوط به سفارش',
     required: false,
   })
   @IsOptional()
@@ -322,7 +322,7 @@ export class updateStoreOrderDto {
   status?: OrderStatus;
 
   @ApiPropertyOptional({
-    description: 'شناسه فروشگاه مربوط به سفارش',
+    description: 'آیدی فروشگاه مربوط به سفارش',
     required: false,
   })
   @IsString()

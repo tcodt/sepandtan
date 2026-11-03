@@ -44,7 +44,7 @@ export class BankAccountController {
     @Roles('STORE', 'ADMIN', 'SUPERADMIN')
     @Put(':id')
     @ApiOperation({ summary: 'ویرایش حساب بانکی (Admin,Store,Coach)', description: 'تمام اطلاعات حساب بانکی قابل ویرایش و ادمین نمیتونه حساب کس دیگه ای رو تغییر بده و فقط خود شخص میتونه حسابشو تغییر بده و ایجاد کنه' })
-    @ApiParam({ name: 'id', description: 'شناسه حساب بانکی' })
+    @ApiParam({ name: 'id', description: 'آیدی حساب بانکی' })
     async update(
         @CurrentUser('id') userId: string,
         @Param('id') id: string,
@@ -59,7 +59,7 @@ export class BankAccountController {
     @Delete(':id')
     @Roles('STORE', 'ADMIN', 'SUPERADMIN', 'COACH')
     @ApiOperation({ summary: 'حذف حساب بانکی (Admin,Store,Coach)', description: 'سعی کن موقع حذف حساب پیشفرض بهش اخطار بدی چون فقط ادمین میتونه برای واریزی وجه حساب پیشفرض رو ببینه' })
-    @ApiParam({ name: 'id', description: 'شناسه حساب بانکی' })
+    @ApiParam({ name: 'id', description: 'آیدی حساب بانکی' })
     async delete(
         @CurrentUser('id') userId: string,
         @Param('id') id: string,

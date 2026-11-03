@@ -3,12 +3,12 @@ import { IsString, IsNotEmpty, IsInt, Min, Max, IsOptional, IsIn, IsBoolean } fr
 import { Transform, Type } from 'class-transformer';
 
 export class CreateReviewDto {
-  @ApiProperty({ description: 'شناسه محصول', example: '8351bf0e-0cc9-4db3-8db3-677739fb4039' })
+  @ApiProperty({ description: 'آیدی محصول', example: '8351bf0e-0cc9-4db3-8db3-677739fb4039' })
   @IsString()
   @IsNotEmpty()
   productId!: string;
 
-  @ApiPropertyOptional({ description: 'شناسه سفارش مرتبط بعدا بر اساس خرید هاشون پیامک میفرستیم و شناسه سفارش رو اینطوری میگیریم فعلا اجباری نیست', example: '8351bf0e-0cc9-4db3-8db3-677739fb4039' })
+  @ApiPropertyOptional({ description: 'آیدی سفارش مرتبط بعدا بر اساس خرید هاشون پیامک میفرستیم و آیدی سفارش رو اینطوری میگیریم فعلا اجباری نیست', example: '8351bf0e-0cc9-4db3-8db3-677739fb4039' })
   @IsString()
   @IsOptional()
   orderId?: string;

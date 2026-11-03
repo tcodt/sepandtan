@@ -177,14 +177,14 @@ export class CreateStoreDto {
   businessType?: BusinessType;
 
   @ApiPropertyOptional({
-    description: 'شناسه کاربر',
+    description: 'آیدی کاربر',
     example: '217b4ad1-92ec-4747-8240-520ce44384a6',
   })
   @IsString()
   userId!: string;
 
   @ApiPropertyOptional({
-    description: 'شناسه ملی',
+    description: 'آیدی ملی',
     example: '1234567890',
   })
   @IsOptional()
@@ -356,7 +356,7 @@ export class UpdateStoreDto {
   businessType?: BusinessType;
 
   @ApiPropertyOptional({
-    description: 'شناسه ملی',
+    description: 'آیدی ملی',
     example: '1234567890',
   })
   @IsOptional()

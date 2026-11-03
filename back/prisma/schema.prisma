@@ -17,18 +17,18 @@ datasource db {
 }
 
 // اطلاعات کاربر و احراز هویتش
-
 model User {
   id              String     @id @default(uuid()) @db.Uuid
-  email           String?    @unique
-  name            String
-  password        String?
-  googleId        String?    @unique
-  phone           String?    @unique
-  role            RolePerson @default(USER)
-  status          UserStatus @default(ACTIVE)
-  isPhoneVerified Boolean    @default(false)
-  isEmailVerified Boolean    @default(false)
+  email           String?    @unique @map("email")
+  name            String     @map("name")
+  avatar          String?    @map("avatar")
+  password        String?    @map("password")
+  googleId        String?    @unique @map("googleId")
+  phone           String?    @unique @map("phone")
+  role            RolePerson @default(USER) @map("role")
+  status          UserStatus @default(ACTIVE) @map("status")
+  isPhoneVerified Boolean    @default(false) @map("is_phone_verified")
+  isEmailVerified Boolean    @default(false) @map("is_email_verified")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -57,6 +57,7 @@ model User {
   reviews              Review[]            @relation("ReviewUser")
   reviewAnswers        Review[]            @relation("ReviewAnswer")
   discountCodesCreated DiscountCode[]      @relation("DiscountCodeCreator")
+  reactions            Reaction[]
 
   @@index([name])
   @@index([role])
@@ -73,9 +74,9 @@ model Profile {
   lastName  String? @map("last_name")
 
   // بدن
-  heightCm        Float? @map("height_cm")
-  currentWeightKg Float? @map("current_weight_kg")
-  targetWeightKg  Float? @map("target_weight_kg")
+  heightCm        Decimal? @map("height_cm") @db.Decimal(7, 2)
+  currentWeightKg Decimal? @map("current_weight_kg") @db.Decimal(7, 2)
+  targetWeightKg  Decimal? @map("target_weight_kg") @db.Decimal(7, 2)
 
   // سرچ بر اساس پروفایل
   activityLevel       ActivityLevel?    @map("activity_level")
@@ -99,6 +100,7 @@ model Profile {
 
   user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   trainingGoal TrainingGoal? @relation(fields: [trainingGoalId], references: [id])
+  equipment    Equipment[]
 }
 
 model Address {
@@ -118,6 +120,7 @@ model Address {
   province   Province   @relation(fields: [provinceId], references: [id], onDelete: Cascade)
   city       City       @relation(fields: [cityId], references: [id], onDelete: Cascade)
   checkouts  Checkout[]
+  coaches    Coach[]
 
   @@index([userId])
   @@map("addresses")
@@ -130,7 +133,7 @@ model Token {
   createdAt   DateTime @default(now()) @map("created_at")
   device      String?  @map("device")
   ipAddress   String?  @map("ip_address")
-  expiredDate DateTime @map("expired_date") @db.Date
+  expiredDate DateTime @map("expired_date")
 
   User User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -225,9 +228,11 @@ model Equipment {
   id          String     @id @default(uuid())
   slug        String     @unique @map("slug")
   title       String     @map("title")
-  image       String     @map("image")
+  image       String?    @map("image")
   description String?    @map("description")
+  
   exercises   Exercise[]
+  profile     Profile[]
 
   @@map("equipments")
 }
@@ -247,6 +252,7 @@ model Exercise {
   gif         String?         @map("gif_url")
   video       String?         @map("video_url")
   extraData   Json?           @map("extra_data")
+  coverImg    String?         @map("cover_img")
   isActive    Boolean         @default(true) @map("is_active") // هیچ‌وقت حذف فیزیکی نکن، فقط غیرفعال کن
 
   category  Category? @relation(fields: [categoryId], references: [id], onDelete: Restrict)
@@ -263,16 +269,15 @@ model Exercise {
 
 model Food {
   id              String  @id @default(uuid())
-  name            String  @map("name")
-  categoryId      String? @map("category_id")
-  caloriesPer100g Float   @map("calories_per_100g")
-  proteinPer100g  Float   @default(0) @map("protein_per_100g")
-  carbsPer100g    Float   @default(0) @map("carbs_per_100g")
-  fatPer100g      Float   @default(0) @map("fat_per_100g")
-  isActive        Boolean @default(true) @map("is_active")
+  name            String  @unique @map("name")
+  caloriesPer100g Decimal @default(0) @map("calories_per_100g") @db.Decimal(6, 2)
+  proteinPer100g  Decimal @default(0) @map("protein_per_100g") @db.Decimal(6, 2)
+  carbsPer100g    Decimal @default(0) @map("carbs_per_100g") @db.Decimal(6, 2)
+  fatPer100g      Decimal @default(0) @map("fat_per_100g") @db.Decimal(6, 2)
+  isActive        Boolean @default(true) @map("is_active") // هیچ‌وقت حذف فیزیکی نکن، فقط غیرفعال کن
 
-  createdAt DateTime  @default(now()) @map("created_at")
-  category  Category? @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   mealItems DietMealItem[]
 
@@ -286,7 +291,8 @@ model Specialty {
   slug  String @unique @map("slug") // weight-loss, bodybuilding, yoga, rehab, nutrition ...
   title String @map("title")
 
-  coaches Coach[]
+  createdAt DateTime @default(now()) @map("created_at")
+  coaches   Coach[]
 
   @@map("specialties")
 }
@@ -296,6 +302,7 @@ model TrainingGoal {
   title        String        @map("title")
   logo         String?       @map("logo")
   description  String?       @map("description")
+  sortOrder    Int?          @default(0) @map("sort_order")
   profile      Profile[]
   workoutPlans WorkoutPlan[]
   dietPlans    DietPlan[]
@@ -304,65 +311,129 @@ model TrainingGoal {
 }
 
 //////////////// دیتایی که توسط ادمین پر میشه ///////////////////
-
 // مربی
 model Coach {
-  id                 String      @id @default(uuid())
-  userId             String      @unique @map("user_id") @db.Uuid
+  id         String  @id @default(uuid())
+  userId     String  @unique @map("user_id") @db.Uuid
+  provinceId String? @map("province_id")
+  nationalId String? @map("national_id") // کد ملی یا آیدی ملی
+  cityId     String? @map("city_id")
+  addressId  String? @map("address_id")
+
+  title              String      @unique @map("title") // اسم یا نام مستعار و یا نام باشگاه
+  slug               String      @unique @map("slug")
   headline           String?     @map("headline") // مثلا: «مربی بدنسازی و تغذیه»
   bio                String?     @map("bio")
-  nationalId         String?     @map("national_id") // کد ملی یا شناسه ملی
   instagram          String?     @map("instagram")
-  address            String?     @map("address")
   commissionRate     Decimal     @default(0) @map("commission_rate") @db.Decimal(12, 2)
-  provinceId         String?     @map("province_id")
-  cityId             String?     @map("city_id")
   // ظرفیت
   maxClients         Int         @default(20) @map("max_clients")
   isAcceptingClients Boolean     @default(true) @map("is_accepting_clients")
   // تایید توسط ادمین
   status             CoachStatus @default(PENDING) @map("status")
   rejectionReason    String?     @map("rejection_reason")
-  ratingAvg          Float       @default(0) @map("rating_avg")
-  ratingCount        Int         @default(0) @map("rating_count")
 
   experienceYears DateTime? @map("experience_years") @db.Date
   createdAt       DateTime  @default(now()) @map("created_at")
   updatedAt       DateTime  @updatedAt @map("updated_at")
 
-  province       Province?           @relation(fields: [provinceId], references: [id])
-  city           City?               @relation(fields: [cityId], references: [id])
-  user           User                @relation(fields: [userId], references: [id], onDelete: Cascade)
-  specialties    Specialty[]
-  certifications Certification[]
-  availabilities CoachAvailability[]
-  reviews        CoachReview[]
-  planRequests   PlanRequest[]
-  workoutPlans   WorkoutPlan[]
-  dietPlans      DietPlan[]
-  userPlans      UserPlan[]
+  province Province? @relation(fields: [provinceId], references: [id])
+  city     City?     @relation(fields: [cityId], references: [id])
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  address  Address?  @relation(fields: [addressId], references: [id], onDelete: Cascade)
 
+  coachRating       CoachRating?
+  specialties       Specialty[]
+  availabilities    CoachAvailability[]
+  reviews           CoachReview[]
+  coachAchievements CoachAchievement[]
+  certifications    Certification[]
+  workoutPlans      WorkoutPlan[]
+  dietPlans         DietPlan[]
+
+  planRequests PlanRequest[]
+  userPlans    UserPlan[]
+
+  @@index([status, isAcceptingClients])
+  @@index([status, provinceId, cityId])
+  @@index([title, headline])
   @@index([status])
-  @@index([ratingAvg])
   @@map("coaches")
 }
 
-model Certification {
-  id          String    @id @default(uuid())
-  coachId     String    @map("coach_id")
-  title       String    @map("title")
-  issuer      String?   @map("issuer") // مثلا: فدراسیون بدنسازی
-  issuedAt    DateTime? @map("issued_at") @db.Date
-  expiresAt   DateTime? @map("expires_at") @db.Date
-  documentUrl String?   @map("document_url") // عکس یا اسکن مدرک
-  isVerified  Boolean   @default(false) @map("is_verified")
-  verifiedAt  DateTime? @map("verified_at")
+model CoachRating {
+  id             String  @id @default(uuid())
+  coachId        String  @unique @map("coach_id")
+  avgCoachRating Decimal @default(0) @map("avg_coach_rating") @db.Decimal(3, 2)
 
+  coachRatingTotal Decimal @default(0) @map("coach_rating_total") @db.Decimal(18, 2)
+  totalReviews     Int     @default(0) @map("total_reviews")
+  avgPlanRating    Decimal @default(0) @map("avg_plan_rating") @db.Decimal(3, 2)
+  planRatingTotal  Decimal @default(0) @map("plan_rating_total") @db.Decimal(18, 2)
+  avgDietRating    Decimal @default(0) @map("avg_diet_rating") @db.Decimal(3, 2)
+  dietRatingTotal  Decimal @default(0) @map("diet_rating_total") @db.Decimal(18, 2)
+  completedClients Int     @default(0) @map("completed_clients")
+  activeClients    Int     @default(0) @map("active_clients")
+
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  coach Coach @relation(fields: [coachId], references: [id], onDelete: Cascade)
+
+  @@index([avgCoachRating])
+  @@index([avgPlanRating])
+  @@index([totalReviews])
+  @@map("coach_ratings")
+}
+
+model CoachAchievement {
+  id      String @id @default(uuid())
+  coachId String @map("coach_id")
+
+  title       String           @map("title") // مثلاً: مدال طلای پرس سینه
+  type        AchievementType  @default(MEDAL)
+  scope       AchievementScope @default(NATIONAL)
+  issuer      String?          @map("issuer") // فدراسیون بدنسازی، المپیک، ...
+  place       Int?             @map("place") // رتبه: 1، 2، 3
+  eventName   String?          @map("event_name") // نام مسابقه / رویداد
+  description String?          @map("description")
+  documentUrl String?          @map("document_url") // عکس حکم / مدال
+
+  isVerified Boolean  @default(false) @map("is_verified")
+  year       DateTime @map("year")
+
+  sortOrder Int      @default(0) @map("sort_order")
   createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   coach Coach @relation(fields: [coachId], references: [id], onDelete: Cascade)
 
   @@index([coachId])
+  @@index([coachId, isVerified])
+  @@index([year])
+  @@map("coach_achievements")
+}
+model Certification {
+  id      String @id @default(uuid())
+  coachId String @map("coach_id")
+
+  type        CertificationType @map("type") // تفکیک دانشگاهی از حرفه‌ای
+  title       String            @map("title") // مثلا: کارشناسی تربیت بدنی
+  field       String?           @map("field") // رشته تحصیلی/تخصص
+  level       String?           @map("level") // کارشناسی / ارشد / درجه ۱ ...
+  issuer      String?           @map("issuer")
+  documentUrl String?           @map("document_url")
+
+  isPrimary  Boolean   @default(false) @map("is_primary") // مدرک اصلی/شاخص
+  isVerified Boolean   @default(false) @map("is_verified")
+  expiresAt  DateTime? @map("expires_at") @db.Date
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  coach Coach @relation(fields: [coachId], references: [id], onDelete: Cascade)
+
+  @@index([coachId])
+  @@index([coachId, type])
   @@map("certifications")
 }
 
@@ -373,39 +444,11 @@ model CoachAvailability {
   startTime String @map("start_time") // "09:00"
   endTime   String @map("end_time") // "13:00"
 
-  coach Coach @relation(fields: [coachId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now()) @map("created_at")
+  coach     Coach    @relation(fields: [coachId], references: [id], onDelete: Cascade)
 
   @@index([coachId, weekday])
   @@map("coach_availabilities")
-}
-
-model PlanRequest {
-  id                String  @id @default(uuid())
-  userId            String  @map("user_id") @db.Uuid
-  coachId           String  @map("coach_id")
-  workoutTemplateId String? @map("workout_template_id")
-  dietTemplateId    String? @map("diet_template_id")
-
-  note            String?           @map("note")
-  price           Decimal?          @map("price") @db.Decimal(18, 2)
-  originalPrice   Decimal?          @map("original_price") @db.Decimal(18, 2)
-  status          PlanRequestStatus @default(PENDING) @map("status")
-  rejectionReason String?           @map("rejection_reason")
-  respondedAt     DateTime?         @map("responded_at")
-
-  createdAt DateTime @default(now()) @map("created_at")
-
-  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  coach           Coach         @relation(fields: [coachId], references: [id], onDelete: Cascade)
-  workoutTemplate WorkoutPlan?  @relation("RequestedWorkoutTemplate", fields: [workoutTemplateId], references: [id], onDelete: SetNull)
-  dietTemplate    DietPlan?     @relation("RequestedDietTemplate", fields: [dietTemplateId], references: [id], onDelete: SetNull)
-  payments        Payment[]
-  coachReviews    CoachReview[]
-  userPlans       UserPlan[]
-
-  @@index([coachId, status])
-  @@index([userId, status])
-  @@map("plan_requests")
 }
 
 // لاگ به صورت روزانه توانایی اضافه کردن وزن به صورت روزانه
@@ -463,38 +506,81 @@ model UserPlan {
   dietPlanId    String? @map("diet_plan_id")
   coachId       String? @map("coach_id")
 
-  snapshotVersion  Int?  @map("snapshot_version")
   snapshotExercise Json? @map("snapshot_exercise") // زمانی که مربی بخواد به صورت دستی تغییری بده
   snapshotDiet     Json? @map("snapshot_diet") // زمانی که مربی بخواد به صورت دستی تغییری بده
 
-  startDate   DateTime? @map("start_date") @db.Date
-  endDate     DateTime? @map("end_date") @db.Date
-  activatedAt DateTime? @map("activated_at")
+  startDate    DateTime? @map("start_date") @db.Date
+  endDate      DateTime? @map("end_date") @db.Date
+  activatedAt  DateTime? @map("activated_at")
+  customizedAt DateTime  @map("customized_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
 
-  customizedAt DateTime @map("customized_at")
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
-
-  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  workoutPlan WorkoutPlan? @relation(fields: [workoutPlanId], references: [id], onDelete: Restrict)
-  dietPlan    DietPlan?    @relation(fields: [dietPlanId], references: [id], onDelete: Restrict)
-  request     PlanRequest? @relation(fields: [requestId], references: [id], onDelete: SetNull)
-  coach       Coach?       @relation(fields: [coachId], references: [id], onDelete: SetNull)
-  userLogs    UserLog[]
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workoutPlan  WorkoutPlan?  @relation(fields: [workoutPlanId], references: [id], onDelete: Restrict)
+  dietPlan     DietPlan?     @relation(fields: [dietPlanId], references: [id], onDelete: Restrict)
+  request      PlanRequest?  @relation(fields: [requestId], references: [id], onDelete: SetNull)
+  coach        Coach?        @relation(fields: [coachId], references: [id], onDelete: SetNull)
+  userLogs     UserLog[]
+  coachReviews CoachReview[]
 
   @@index([userId, status])
   @@index([requestId])
   @@map("user_plans")
 }
 
+model PlanRequest {
+  id                String  @id @default(uuid())
+  userId            String  @map("user_id") @db.Uuid
+  coachId           String  @map("coach_id")
+  workoutTemplateId String? @map("workout_template_id")
+  dietTemplateId    String? @map("diet_template_id")
+
+  images         String[]          @map("images")
+  note           String?           @map("note")
+  commissionRate Decimal?          @map("commission_rate") @db.Decimal(18, 2)
+  discountAmount Decimal?          @map("discount_amount") @db.Decimal(18, 2)
+  price          Decimal?          @map("price") @db.Decimal(18, 2)
+  originalPrice  Decimal?          @map("original_price") @db.Decimal(18, 2)
+  status         PlanRequestStatus @default(PENDING) @map("status")
+
+  rejectionReason String?   @map("rejection_reason")
+  respondedAt     DateTime? @map("responded_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+
+  user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  coach           Coach        @relation(fields: [coachId], references: [id], onDelete: Cascade)
+  workoutTemplate WorkoutPlan? @relation("RequestedWorkoutTemplate", fields: [workoutTemplateId], references: [id], onDelete: SetNull)
+  dietTemplate    DietPlan?    @relation("RequestedDietTemplate", fields: [dietTemplateId], references: [id], onDelete: SetNull)
+  payments        Payment[]
+  userPlans       UserPlan[]
+
+  @@index([coachId, status])
+  @@index([userId, status])
+  @@map("plan_requests")
+}
+
 // ورزش و برنامه ها
 model WorkoutPlan {
-  id                  String            @id @default(uuid())
-  title               String            @map("title")
-  description         String?           @map("description")
-  price               Decimal           @default(0) @map("price") @db.Decimal(18, 2)
-  discountPrice       Decimal?          @map("discount_price") @db.Decimal(18, 2)
-  dietPlanId          String?           @map("diet_plan_id")
+  id         String  @id @default(uuid())
+  coachId    String? @map("coach_id") // مربی سازنده یا مسئول
+  dietPlanId String? @map("diet_plan_id")
+
+  coverImage    String[]   @map("cover_image")
+  title         String     @map("title")
+  description   String?    @map("description")
+  price         Decimal    @default(0) @map("price") @db.Decimal(18, 2)
+  discountPrice Decimal?   @map("discount_price") @db.Decimal(18, 2)
+  isPublished   Boolean    @default(false) @map("is_published") // قالب‌های منتشرشده رو کاربر می‌تونه ببینه و انتخاب کنه
+  minAge        Int?       @map("min_age")
+  maxAge        Int?       @map("max_age")
+  note          String?    @map("note")
+  countRating   Int        @default(0) @map("count_rating")
+  totalRating   Int        @default(0) @map("total_rating")
+  avgRating     Decimal    @default(0) @map("avg_rating") @db.Decimal(3, 2)
+  durationWeeks Int?       @map("duration_weeks")
+  source        PlanSource @default(COACH) @map("source")
+
   // سرچ بر اساس پروفایل
   trainingGoalId      String?           @map("training_goal_id")
   activityLevel       ActivityLevel?    @map("activity_level")
@@ -503,15 +589,6 @@ model WorkoutPlan {
   trainingLocation    TrainingLocation? @map("training_location")
   trainingDaysPerWeek Int?              @map("days_per_week")
   requiredEquipment   String[]          @map("required_equipment")
-  isPublished         Boolean           @default(false) @map("is_published") // قالب‌های منتشرشده رو کاربر می‌تونه ببینه و انتخاب کنه
-  minAge              Int?              @map("min_age")
-  maxAge              Int?              @map("max_age")
-  note                String?           @map("note")
-
-  durationWeeks Int?       @map("duration_weeks")
-  source        PlanSource @default(COACH) @map("source")
-
-  coachId String? @map("coach_id") // مربی سازنده یا مسئول
 
   discountExpired DateTime? @map("discount_expired")
   createdAt       DateTime  @default(now()) @map("created_at")
@@ -525,7 +602,8 @@ model WorkoutPlan {
   userPlans    UserPlan[]
 
   @@index([coachId])
-  @@index([isPublished])
+  @@index([avgRating])
+  @@index([isPublished, avgRating])
   @@map("workout_plans")
 }
 
@@ -564,11 +642,19 @@ model WorkoutDayExercise {
 
 // برنامه غذایی
 model DietPlan {
-  id            String   @id @default(uuid())
-  title         String   @map("title")
-  description   String?  @map("description")
-  price         Decimal  @default(0) @map("price") @db.Decimal(18, 2)
-  discountPrice Decimal? @map("discount_price") @db.Decimal(18, 2)
+  id      String  @id @default(uuid())
+  coachId String? @map("coach_id")
+
+  coverImage    String[]   @map("cover_image")
+  title         String     @map("title")
+  description   String?    @map("description")
+  price         Decimal    @default(0) @map("price") @db.Decimal(18, 2)
+  discountPrice Decimal?   @map("discount_price") @db.Decimal(18, 2)
+  countRating   Int        @default(0) @map("count_rating")
+  totalRating   Int        @default(0) @map("total_rating")
+  avgRating     Decimal    @default(0) @map("avg_rating") @db.Decimal(3, 2)
+  isPublished   Boolean    @default(false) @map("is_published")
+  source        PlanSource @default(COACH) @map("source")
 
   // سرچ بر اساس پروفایل
   trainingGoalId String? @map("training_goal_id")
@@ -578,24 +664,20 @@ model DietPlan {
   targetFatG     Int?    @map("target_fat_g")
   durationWeeks  Int?    @map("duration_weeks")
 
-  isPublished Boolean    @default(false) @map("is_published")
-  source      PlanSource @default(COACH) @map("source")
-
-  coachId String? @map("coach_id")
-
   discountExpired DateTime? @map("discount_expired")
   createdAt       DateTime  @default(now()) @map("created_at")
   updatedAt       DateTime  @updatedAt @map("updated_at")
 
   coach        Coach?        @relation(fields: [coachId], references: [id], onDelete: SetNull)
+  trainingGoal TrainingGoal? @relation(fields: [trainingGoalId], references: [id])
   requestedIn  PlanRequest[] @relation("RequestedDietTemplate")
   days         DietDay[]
   workoutPlans WorkoutPlan[]
   userPlans    UserPlan[]
-  trainingGoal TrainingGoal? @relation(fields: [trainingGoalId], references: [id])
 
   @@index([coachId])
   @@index([isPublished])
+  @@index([isPublished, avgRating])
   @@map("diet_plans")
 }
 
@@ -632,7 +714,7 @@ model DietMealItem {
   id            String  @id @default(uuid())
   mealId        String  @map("meal_id")
   foodId        String  @map("food_id")
-  quantityGrams Float   @map("quantity_grams")
+  quantityGrams Decimal @map("quantity_grams") @db.Decimal(6, 2)
   notes         String? @map("notes")
 
   meal DietMeal @relation(fields: [mealId], references: [id], onDelete: Cascade)
@@ -652,7 +734,7 @@ model Store {
   banner           String?       @map("banner")
   description      String?       @map("description")
   businessType     BusinessType  @default(INDIVIDUAL) @map("business_type") // حقیقی / حقوقی
-  nationalId       String?       @map("national_id") // کد ملی یا شناسه ملی
+  nationalId       String?       @map("national_id") // کد ملی یا آیدی ملی
   economicCode     String?       @map("economic_code")
   commissionRate   Decimal       @default(0) @map("commission_rate") @db.Decimal(12, 2)
   status           DefaultStatus @default(PENDING) @map("status")
@@ -880,23 +962,55 @@ model StoreReview {
 }
 
 model CoachReview {
-  id            String        @id @default(uuid())
-  planRequestId String
-  status        DefaultStatus @default(PENDING) @map("status")
-  coachId       String
-  authorId      String        @db.Uuid
-  comment       String?
-  rating        Int           @map("rating")
-  answerReview  String?       @map("answer_review")
-  updatedAt     DateTime      @updatedAt @map("updated_at")
-  createdAt     DateTime      @default(now())
-  coach         Coach         @relation(fields: [coachId], references: [id], onDelete: Cascade)
-  author        User          @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  planRequest   PlanRequest   @relation(fields: [planRequestId], references: [id])
+  id         String  @id @default(uuid())
+  coachId    String  @map("coach_id")
+  authorId   String  @map("author_id") @db.Uuid
+  userPlanId String? @map("user_plan_id")
+
+  images      String[] @map("images")
+  coachRating Int      @map("coach_rating") // 1..5 به مربی
+  planRating  Int      @map("plan_rating") // 1..5 به کیفیت برنامه
+  dietRating  Int      @map("diet_rating") // 1..5  به کیفیت برنامه غذایی
+  body        String? // متن نظر
+  isAnonymous Boolean  @default(false) @map("is_anonymous")
+  isVerified  Boolean  @default(false) @map("verified") // شاگرد واقعی
+
+  status       DefaultStatus @default(PENDING) // یا DRAFT/ACTIVE/... اگر خواستی یکسان با محصول
+  answerReview String?       @map("answer_review") // پاسخ مربی (اختیاری)
+  answeredAt   DateTime?     @map("answered_at")
+
+  likeCount    Int @default(0) @map("like_count")
+  dislikeCount Int @default(0) @map("dislike_count")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  coach     Coach      @relation(fields: [coachId], references: [id], onDelete: Cascade)
+  author    User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  userPlan  UserPlan?  @relation(fields: [userPlanId], references: [id], onDelete: SetNull)
+  reactions Reaction[]
 
   @@unique([coachId, authorId])
-  @@index([coachId])
+  @@index([coachId, status])
+  @@index([authorId])
+  @@index([createdAt])
   @@map("coach_reviews")
+}
+
+model Reaction {
+  id       String       @id @default(uuid())
+  userId   String       @map("user_id") @db.Uuid
+  reviewId String       @map("review_id")
+  type     ReactionType
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user   User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  review CoachReview @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, reviewId])
+  @@index([reviewId, type])
+  @@map("reactions")
 }
 
 // مدل های مربوطه به سفارش
@@ -1023,6 +1137,7 @@ model Checkout {
   payments   Payment[]
 
   @@index([userId])
+  @@index([paymentStatus, status, createdAt])
   @@map("checkouts")
 }
 
@@ -1167,7 +1282,6 @@ model Category {
   products             Product[]
   attributeDefinitions AttributeDefinition[]
   exercises            Exercise[]
-  food                 Food[]
 
   @@index([parentId])
   @@index([isActive, sortOrder])
@@ -1562,6 +1676,8 @@ enum StatusDiscount {
   STORE
   COMMISSION
   PRODUCT
+  COACH
+  PLAN
 }
 
 enum PaymentStatus {
@@ -1648,6 +1764,7 @@ enum MediaUseCase {
   WATERMARK
   REPORTS
   MAINS
+  REVIEW
 }
 
 enum TypeMedia {
@@ -1669,6 +1786,7 @@ enum CoachStatus {
   APPROVED
   REJECTED
   SUSPENDED
+  DELETED
 }
 
 enum PlanStatus {
@@ -1704,4 +1822,34 @@ enum MealType {
   LUNCH
   DINNER
   SNACK
+}
+
+enum CertificationType {
+  ACADEMIC // دانشگاهی (کارشناسی، ارشد، دکتری)
+  PROFESSIONAL // حرفه‌ای (مربیگری درجه ۳/۲/۱، CPR و...)
+  FEDERATION // فدراسیونی (فدراسیون بدنسازی و پرورش اندام)
+  WORKSHOP // کارگاه/دوره کوتاه‌مدت
+  OTHER
+}
+
+enum ReactionType {
+  LIKE
+  DISLIKE
+}
+
+enum AchievementType {
+  MEDAL // مدال قهرمانی
+  TROPHY // جام / مقام تیمی
+  TITLE // عنوان رسمی (مثلاً مربی سال)
+  AWARD // جایزه همایش / فدراسیون
+  RECORD // رکورد شخصی یا ملی
+  OTHER
+}
+
+enum AchievementScope {
+  LOCAL // محلی
+  NATIONAL // ملی
+  INTERNATIONAL // جهانی
+  ACADEMIC // اکادمیک
+  OTHER
 }

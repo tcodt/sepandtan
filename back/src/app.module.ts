@@ -25,13 +25,29 @@ import { RedisModule } from './modules/redis/redis.module.js';
 import { DiscountQueueModule } from './modules/queues/discount/discount-queue.module.js';
 import { AddressesModule } from './modules/addresse/addresses.module.js';
 import { CountryModule } from './modules/country/country.module.js';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
+import { AdminsModule } from './modules/admin/admin.module.js';
+import { CoachModule } from './modules/coach/coach.module.js';
+import { DietModule } from './modules/diet/diet.module.js';
+import { WorkoutModule } from './modules/workout/workout.module.js';
+import { UserPlanModule } from './modules/user-plan/user-plan.module.js';
+import { SubscriptionModule } from './modules/subscription/subscription.module.js';
+import { LogModule } from './modules/log/log.module.js';
 
 @Module({
   imports: [
+    ThrottlerModule.forRoot([
+      {
+        name: 'default',
+        ttl: 60_000, // ۶۰ ثانیه
+        limit: 30,   // حداکثر ۳۰ درخواست در این ۶۰ ثانیه
+      },
+    ]),
     PrismaModule,
     RedisModule,
     ConfigModules,
-    DiscountQueueModule, 
+    DiscountQueueModule,
     AuthModule, // ورود
     UserModule, // کاربران
     AddressesModule, // آدرس
@@ -54,6 +70,19 @@ import { CountryModule } from './modules/country/country.module.js';
     ReviewsModule, // نظرات
     ReportModule, // گزارشات
     CountryModule, //  کشور ها
+    AdminsModule,
+    CoachModule,
+    DietModule,
+    LogModule,
+    WorkoutModule,
+    UserPlanModule,
+    SubscriptionModule,
+  ],
+  providers: [
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard, // روی تقریباً همه endpointها اعمال می‌شود
+    },
   ],
 })
 export class AppModule { }

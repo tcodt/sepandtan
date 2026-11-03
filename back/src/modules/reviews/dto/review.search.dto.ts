@@ -10,7 +10,7 @@ export class ReviewSearchDto extends QueryDefaultDto {
     @ApiPropertyOptional({ example: false, description: 'وضعیت تایید نظر' })
     isApproved?: boolean;
 
-    @ApiPropertyOptional({ description: 'فیلتر بر اساس شناسه محصول' })
+    @ApiPropertyOptional({ description: 'فیلتر بر اساس آیدی محصول' })
     @IsOptional()
     @IsString()
     productId?: string;

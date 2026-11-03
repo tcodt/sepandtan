@@ -1,7 +1,6 @@
 import { Body, Controller, Delete, Get, Param, Post, Put, Query, Req, UseGuards } from '@nestjs/common';
 import { ApiBody, ApiExtraModels, ApiOkResponse, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
 import { ProvinceService } from './province.service.js';
-import type { Request } from 'express';
 import { CreateCityDto, CreateProvinceDto, GetCityByProvinceId, UpdateCityDto } from './dtos/create.province.dto.js';
 import { AccessTokenGuard } from '../auth/guard/access-token.guard.js';
 import { Roles } from '../auth/decorators/roles.decorator.js';

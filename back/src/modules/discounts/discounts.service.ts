@@ -25,7 +25,7 @@ export class DiscountsService {
     const where: Prisma.DiscountCodeWhereInput = {
       ...(code && { code: { contains: code, mode: 'insensitive' } }),
       ...(status && status !== 'ALL' && { status }),
-      ...(isActive && { isActive }),
+      ...(isActive !== undefined && { isActive }),
       ...(userId && { userId }),
       ...((type === 'FIXED' || type === 'PERCENTAGE') && { type }),
     }
@@ -114,7 +114,7 @@ export class DiscountsService {
       where: { id: discountId }
     });
     if (!existingDiscount) {
-      throw new NotFoundException(`کد تخفیف با شناسه ${discountId} یافت نشد`);
+      throw new NotFoundException(`کد تخفیف با آیدی ${discountId} یافت نشد`);
     }
     const { storeId, status, ...body } = dto
     const now = new Date();

@@ -157,7 +157,7 @@ export class UserController {
   @Delete('/:id')
   @UseGuards(AccessTokenGuard)
   @Roles('SUPERADMIN')
-  @ApiParam({ name: 'id', description: 'شناسه کاربر که باید حذف شود', example: 'cf91f6d4-ba85-4dd4-b870-37dbf1702ca4' })
+  @ApiParam({ name: 'id', description: 'آیدی کاربر که باید حذف شود', example: 'cf91f6d4-ba85-4dd4-b870-37dbf1702ca4' })
   @ApiOkResponse({ schema: { example: { success: true } } })
   @ApiOperation({ summary: 'delete user with ID by  Super Admin', description: 'دسترسی : سوپر ادمین' })
   deleteUser(@Param('id') id: string) {

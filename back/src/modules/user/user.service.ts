@@ -226,7 +226,7 @@ export class UserService {
   // store //
   async updateStoreStatus(body: UpdateStoreByAdminDto, id: string) {
     console.log(id);
-    
+
     const { status } = body
     const userData = await this.prisma.store.findUnique({
       where: { id }, select: {
@@ -338,7 +338,14 @@ export class UserService {
   }
 
   async requestAddCoach(body: CreateCoachDto, id: string) {
-    await this.prisma.coach.create({ data: { ...body, userId: id } })
+    await this.prisma.coach.create({
+      data: {
+        ...body, userId: id,
+        coachRating: {
+          create: {}
+        }
+      }
+    })
     return { success: true }
   }
 

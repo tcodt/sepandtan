@@ -20,25 +20,25 @@ export class UploadImageDto {
     @IsString()
     alt?: string;
 
-    @ApiPropertyOptional({ description: 'شناسه‌ی محصول', format: 'uuid' })
+    @ApiPropertyOptional({ description: 'آیدی‌ی محصول', format: 'uuid' })
     @Transform(emptyToUndefined)
     @IsOptional()
     @IsUUID()
     productId?: string;
 
-    @ApiPropertyOptional({ description: 'شناسه‌ی گزارش', format: 'uuid' })
+    @ApiPropertyOptional({ description: 'آیدی‌ی گزارش', format: 'uuid' })
     @Transform(emptyToUndefined)
     @IsOptional()
     @IsUUID()
     reportsId?: string;
 
-    @ApiPropertyOptional({ description: 'شناسه‌ی پشتیبانی', format: 'uuid' })
+    @ApiPropertyOptional({ description: 'آیدی‌ی پشتیبانی', format: 'uuid' })
     @Transform(emptyToUndefined)
     @IsOptional()
     @IsUUID()
     ticketMessageId?: string;
 
-    @ApiPropertyOptional({ description: 'شناسه‌ی درخواست', format: 'uuid' })
+    @ApiPropertyOptional({ description: 'آیدی‌ی درخواست', format: 'uuid' })
     @Transform(emptyToUndefined)
     @IsOptional()
     @IsUUID()

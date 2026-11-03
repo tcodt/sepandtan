@@ -283,7 +283,7 @@ export class StoreService {
     }
   }
 
-  async getStore(slug: string) {    
+  async getStore(slug: string) {
     const takeReview = Number(this.configService.get('limit.storeReview'))
     const store = await this.prisma.store.findUnique({
       where: { slug },
@@ -467,16 +467,19 @@ export class StoreService {
         status: DefaultStatus.APPROVED,
         isActive: true,
       },
-      select: {
-        id: true,
-      },
+      select: { id: true },
     })
 
-    if (!store) {
-      throw new NotFoundException(
-        'Store not found',
-      )
-    }
+    if (!store) throw new NotFoundException('Store not found')
+    const hasPurchase = await this.prisma.order.findFirst({
+      where: {
+        userId,
+        storeId,
+        checkout: { paymentStatus: 'PAID' },
+        status: { notIn: ['CANCELLED'] },
+      },
+      select: { id: true },
+    });
 
     return this.prisma.storeReview.create({
       data: {
@@ -484,6 +487,7 @@ export class StoreService {
         storeId,
         rating: dto.rating,
         body: dto.body,
+        verifiedPurchase: Boolean(hasPurchase),
         productQuality: dto.productQuality,
         status: DefaultStatus.PENDING,
       },
@@ -1036,10 +1040,6 @@ export class StoreService {
       },
     })
   }
-  // await this.storeService.registerReturn(
-  //   orderItem.storeId,
-  //   returnItem.quantity,
-  // )
   async registerReturn(
     storeId: string,
     quantity: number,
@@ -1061,229 +1061,114 @@ export class StoreService {
 
   async rebuildStoreRating(storeId: string) {
     return this.prisma.$transaction(async (tx) => {
-      const [
-        productCount,
-        reviewStats,
-        orderStats,
-        reviewResponseStats,
-        qnaResponseStats,
-      ] = await Promise.all([
-        // 1. تعداد محصولات APPROVED
-        tx.product.count({
-          where: {
-            storeId,
-            status: 'ACTIVE',
-          },
-        }),
+      const [productCount, reviewStats, orderStats, reviewResponseStats, productQualityCount] =
+        await Promise.all([
+          // 1. تعداد محصولات فعال
+          tx.product.count({
+            where: { storeId, status: 'ACTIVE' },
+          }),
 
-        // 2. آمار Reviewهای APPROVED
-        tx.storeReview.aggregate({
-          where: {
-            storeId,
-            status: DefaultStatus.APPROVED,
-          },
-          _count: {
-            _all: true,
-          },
-          _sum: {
-            rating: true,
-            productQuality: true,
-          },
-        }),
+          // 2. آمار نظرات تاییدشده
+          tx.storeReview.aggregate({
+            where: { storeId, status: DefaultStatus.APPROVED },
+            _count: { _all: true },
+            _sum: { rating: true, productQuality: true },
+          }),
 
-        // 3. آمار فروش و مرجوعی
-        tx.orderItem.aggregate({
-          where: {
-            storeId,
-            order: {
-              checkout: {
-                paymentStatus: 'PAID',
-              },
-              status: {
-                not: 'CANCELLED',
+          // 3. فروش و مرجوعی (فقط سفارش‌های پرداخت‌شده و غیرلغو)
+          tx.orderItem.aggregate({
+            where: {
+              storeId,
+              order: {
+                checkout: { paymentStatus: 'PAID' },
+                status: { not: 'CANCELLED' },
               },
             },
-          },
-          _sum: {
-            quantity: true,
-            returnedQty: true,
-          },
-        }),
+            _sum: { quantity: true, returnedQty: true },
+          }),
 
-        // 4. Response Statistics مربوط به Review
-        tx.$queryRaw<{
-          totalRequests: number
-          answered: number
-          totalResponseTime: number
-        }[]>`
-        SELECT
-          COUNT(*)::int AS "totalRequests",
-
-          COUNT("response_at")::int AS "answered",
-
-          COALESCE(
-            SUM(
-              CASE
-                WHEN "response_at" IS NOT NULL
-                THEN EXTRACT(
-                  EPOCH FROM (
-                    "response_at" - "created_at"
-                  )
-                ) / 60
-                ELSE 0
-              END
-            ),
-            0
-          )::float8 AS "totalResponseTime"
-
-        FROM "store_reviews"
-
-        WHERE
-          "store_id" = ${storeId}
-          AND "status" = 'APPROVED'
-      `,
-
-        // 5. Response Statistics مربوط به Qna
-        tx.$queryRaw<{
-          totalRequests: number
-          answered: number
-          totalResponseTime: number
-        }[]>`
-        SELECT
-          COUNT(*)::int AS "totalRequests",
-
-          COUNT(reply.id)::int AS "answered",
-
-          COALESCE(
-            SUM(
-              CASE
-                WHEN reply.id IS NOT NULL
-                THEN EXTRACT(
-                  EPOCH FROM (
-                    reply."createdAt" - question."createdAt"
-                  )
-                ) / 60
-                ELSE 0
-              END
-            ),
-            0
-          )::float8 AS "totalResponseTime"
-
-        FROM "Qna" question
-
-        INNER JOIN "products" product
-          ON product.id = question."productId"
-
-        LEFT JOIN LATERAL (
+          // 4. آمار پاسخ‌دهی — فقط StoreReview
+          tx.$queryRaw<
+            { totalRequests: number; answered: number; totalResponseTime: number }[]
+          >`
           SELECT
-            reply.id,
-            reply."createdAt"
-          FROM "Qna" reply
-          WHERE
-            reply."parentId" = question.id
-            AND reply.role = 'STORE'
-          ORDER BY reply."createdAt" ASC
-          LIMIT 1
-        ) reply ON true
+            COUNT(*)::int AS "totalRequests",
+            COUNT("response_at")::int AS "answered",
+            COALESCE(
+              SUM(
+                CASE
+                  WHEN "response_at" IS NOT NULL
+                  THEN EXTRACT(EPOCH FROM ("response_at" - "created_at")) / 60
+                  ELSE 0
+                END
+              ),
+              0
+            )::float8 AS "totalResponseTime"
+          FROM "store_reviews"
+          WHERE "store_id" = ${storeId}
+            AND "status" = 'APPROVED'
+        `,
 
-        WHERE
-          question."parentId" IS NULL
-          AND question.status = 'APPROVED'
-          AND product."store_id" = ${storeId}
-      `,
-      ])
-
-      const reviewResponse = reviewResponseStats[0]
-      const qnaResponse = qnaResponseStats[0]
-
-      // -------------------------------------------------------
-      // Review Rating
-      // -------------------------------------------------------
-
-      const totalReviews = reviewStats._count._all
-      const ratingTotal =
-        reviewStats._sum.rating ?? 0
-      const avgRating =
-        totalReviews > 0
-          ? ratingTotal / totalReviews
-          : 0
-      const productQualityCount =
-        await tx.storeReview.count({
-          where: {
-            storeId,
-            status: DefaultStatus.APPROVED,
-            productQuality: {
-              not: null,
+          // 5. تعداد نظراتی که productQuality دارند
+          tx.storeReview.count({
+            where: {
+              storeId,
+              status: DefaultStatus.APPROVED,
+              productQuality: { not: null },
             },
-          },
-        })
-      const productQualityTotal =
-        reviewStats._sum.productQuality ?? 0
+          }),
+        ]);
+
+      const reviewResponse = reviewResponseStats[0] ?? {
+        totalRequests: 0,
+        answered: 0,
+        totalResponseTime: 0,
+      };
+
+      const totalReviews = reviewStats._count._all;
+      const ratingTotal = reviewStats._sum.rating ?? 0;
+      const avgRating = totalReviews > 0 ? ratingTotal / totalReviews : 0;
+
+      const productQualityTotal = reviewStats._sum.productQuality ?? 0;
       const productQuality =
-        productQualityCount > 0
-          ? productQualityTotal / productQualityCount
-          : 5
-      const totalResponseRequests =
-        Number(reviewResponse.totalRequests) +
-        Number(qnaResponse.totalRequests)
-      const answeredResponses =
-        Number(reviewResponse.answered) +
-        Number(qnaResponse.answered)
-      const totalResponseTime =
-        Number(reviewResponse.totalResponseTime) +
-        Number(qnaResponse.totalResponseTime)
+        productQualityCount > 0 ? productQualityTotal / productQualityCount : 5;
+
+      const totalResponseRequests = Number(reviewResponse.totalRequests);
+      const answeredResponses = Number(reviewResponse.answered);
+      const totalResponseTime = Number(reviewResponse.totalResponseTime);
+
       const responseRate =
         totalResponseRequests > 0
-          ? (answeredResponses /
-            totalResponseRequests) *
-          100
-          : 100
+          ? (answeredResponses / totalResponseRequests) * 100
+          : 100;
+
       const responseTime =
-        answeredResponses > 0
-          ? totalResponseTime /
-          answeredResponses
-          : 0
-      const totalQuantity =
-        orderStats._sum.quantity ?? 0
-      const returnedQuantity =
-        orderStats._sum.returnedQty ?? 0
-      const saleCount = Math.max(
-        0,
-        totalQuantity - returnedQuantity,
-      )
-      const returnCount = Math.max(
-        0,
-        returnedQuantity,
-      )
+        answeredResponses > 0 ? totalResponseTime / answeredResponses : 0;
+
+      const totalQuantity = orderStats._sum.quantity ?? 0;
+      const returnedQuantity = orderStats._sum.returnedQty ?? 0;
+      const saleCount = Math.max(0, totalQuantity - returnedQuantity);
+      const returnCount = Math.max(0, returnedQuantity);
+
       return tx.storeRating.update({
-        where: {
-          storeId,
-        },
+        where: { storeId },
         data: {
           avgRating,
           ratingTotal,
           totalReviews,
-
           productCount,
-
           productQuality,
           productQualityTotal,
           productQualityCount,
-
           totalResponseRequests,
           answeredResponses,
           totalResponseTime,
           responseRate,
           responseTime,
-
           saleCount,
           returnCount,
-
-          // فعلاً دست نخورده:
-          // communication
-          // onTimeDelivery
         },
-      })
-    })
+      });
+    });
   }
 }

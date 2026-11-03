@@ -3,7 +3,7 @@ import { Transform, Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateAttributeValueDto {
-  @ApiProperty({ description: 'شناسه ویژگی', example: '6864a6cb-f493-49ba-9481-07dc34448e50' })
+  @ApiProperty({ description: 'آیدی ویژگی', example: '6864a6cb-f493-49ba-9481-07dc34448e50' })
   @IsString()
   attributeId!: string;
 
@@ -30,7 +30,7 @@ export class CreateProductVariantDto {
   @Min(0)
   quantity!: number;
 
-  @ApiPropertyOptional({ description: 'شناسه رنگ', example: '6864a6cb-f493-49ba-9481-07dc34448e50' })
+  @ApiPropertyOptional({ description: 'آیدی رنگ', example: '6864a6cb-f493-49ba-9481-07dc34448e50' })
   @IsOptional()
   @IsString()
   colorId?: string;
@@ -40,13 +40,13 @@ export class CreateProductVariantDto {
   @IsString()
   image?: string;
 
-  @ApiPropertyOptional({ description: 'شناسه تخفیف', example: '6864a6cb-f493-49ba-9481-07dc34448e50' })
+  @ApiPropertyOptional({ description: 'آیدی تخفیف', example: '6864a6cb-f493-49ba-9481-07dc34448e50' })
   @IsOptional()
   @IsString()
   @Transform(({ value }) => value === '' ? null : value)
   discountId?: string;
 
-  @ApiProperty({ description: 'شناسه محصول', example: '6864a6cb-f493-49ba-9481-07dc34448e50' })
+  @ApiProperty({ description: 'آیدی محصول', example: '6864a6cb-f493-49ba-9481-07dc34448e50' })
   @IsString()
   productId!: string;
 

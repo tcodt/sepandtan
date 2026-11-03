@@ -6,11 +6,11 @@ import { IsString, IsNumber, IsOptional, Min } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class AddToCartDto {
-  @ApiProperty({ description: 'شناسه محصول', example: '5be26d04-b98b-4c59-a969-0e2e4ec9442e' })
+  @ApiProperty({ description: 'آیدی محصول', example: '5be26d04-b98b-4c59-a969-0e2e4ec9442e' })
   @IsString()
   productId!: string;
 
-  @ApiProperty({ description: 'شناسه ویژگی محصول', example: '5be26d04-b98b-4c59-a969-0e2e4ec9442e' })
+  @ApiProperty({ description: 'آیدی ویژگی محصول', example: '5be26d04-b98b-4c59-a969-0e2e4ec9442e' })
   @IsString()
   variantId!: string;
 
