@@ -1,6 +1,6 @@
 "use client";
 
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { ChevronLeft, CheckCircle2 } from "lucide-react";
@@ -20,27 +20,29 @@ import type { BodyInfo } from "@/lib/store/user-store";
 
 const bodySchema = z.object({
   gender: z.enum(["male", "female"], {
-    required_error: "جنسیت را انتخاب کنید",
+    error: "جنسیت را انتخاب کنید",
   }),
   age: z.coerce
-    .number({ invalid_type_error: "سن معتبر وارد کنید" })
+    .number({ error: "سن معتبر وارد کنید" })
     .min(14, "حداقل سن ۱۴ سال است")
     .max(80, "حداکثر سن ۸۰ سال است"),
   height: z.coerce
-    .number({ invalid_type_error: "قد معتبر وارد کنید" })
+    .number({ error: "قد معتبر وارد کنید" })
     .min(120, "قد باید حداقل ۱۲۰ سانتی‌متر باشد")
     .max(230, "قد باید حداکثر ۲۳۰ سانتی‌متر باشد"),
   weight: z.coerce
-    .number({ invalid_type_error: "وزن معتبر وارد کنید" })
+    .number({ error: "وزن معتبر وارد کنید" })
     .min(30, "وزن باید حداقل ۳۰ کیلوگرم باشد")
     .max(250, "وزن باید حداکثر ۲۵۰ کیلوگرم باشد"),
   activityLevel: z.enum(
     ["sedentary", "light", "moderate", "active", "very_active"],
-    { required_error: "سطح فعالیت را انتخاب کنید" },
+    { error: "سطح فعالیت را انتخاب کنید" },
   ),
 });
 
-type BodyFormValues = z.infer<typeof bodySchema>;
+// Zod v4: z.coerce.* has `unknown` as input and `number` as output.
+type BodyInput = z.input<typeof bodySchema>;
+type BodyOutput = z.output<typeof bodySchema>;
 
 const activityOptions = [
   { value: "sedentary", label: "کم‌تحرک", desc: "نشسته بیشتر روز" },
@@ -60,7 +62,7 @@ type BodyStepProps = {
 };
 
 export function BodyStep({ defaultValues, onNext }: BodyStepProps) {
-  const form = useForm<BodyFormValues>({
+  const form = useForm<BodyInput, unknown, BodyOutput>({
     resolver: zodResolver(bodySchema),
     defaultValues: {
       gender: defaultValues?.gender,
@@ -71,7 +73,13 @@ export function BodyStep({ defaultValues, onNext }: BodyStepProps) {
     },
   });
 
-  const onSubmit = (data: BodyFormValues) => {
+  const gender = useWatch({ control: form.control, name: "gender" });
+  const activityLevel = useWatch({
+    control: form.control,
+    name: "activityLevel",
+  });
+
+  const onSubmit = (data: BodyOutput) => {
     onNext(data as BodyInfo);
   };
 
@@ -106,7 +114,7 @@ export function BodyStep({ defaultValues, onNext }: BodyStepProps) {
                   }
                   className={cn(
                     "h-12 rounded-xl border text-sm font-medium transition-all",
-                    form.watch("gender") === item.value
+                    gender === item.value
                       ? "border-primary bg-primary/10 text-primary"
                       : "border-border bg-background hover:bg-muted text-foreground",
                   )}
@@ -178,7 +186,7 @@ export function BodyStep({ defaultValues, onNext }: BodyStepProps) {
             <Label>سطح فعالیت فعلی</Label>
             <div className="space-y-2">
               {activityOptions.map((item) => {
-                const selected = form.watch("activityLevel") === item.value;
+                const selected = activityLevel === item.value;
                 return (
                   <button
                     key={item.value}

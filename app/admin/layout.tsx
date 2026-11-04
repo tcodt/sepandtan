@@ -240,8 +240,8 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   const { isReady, isAuthenticated } = useRequireAuth({
-    roles: ["admin"],
-    redirectTo: "/login",
+    allowedRoles: ["admin"],
+    redirectToLogin: "/login",
   });
   const { logout } = useAuth();
   const pathname = usePathname();

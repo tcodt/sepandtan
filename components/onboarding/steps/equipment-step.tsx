@@ -1,6 +1,6 @@
 "use client";
 
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import {
@@ -25,7 +25,7 @@ import type { Equipment } from "@/lib/store/user-store";
 
 const equipmentSchema = z.object({
   equipment: z.enum(["home", "gym", "both"], {
-    required_error: "امکانات تمرینی را انتخاب کنید",
+    error: "امکانات تمرینی را انتخاب کنید",
   }),
 });
 
@@ -70,6 +70,11 @@ export function EquipmentStep({
     },
   });
 
+  const selectedEquipment = useWatch({
+    control: form.control,
+    name: "equipment",
+  });
+
   const onSubmit = (data: EquipmentFormValues) => {
     onNext(data.equipment);
   };
@@ -90,7 +95,7 @@ export function EquipmentStep({
           <div className="grid grid-cols-1 gap-3">
             {options.map((item) => {
               const Icon = item.icon;
-              const selected = form.watch("equipment") === item.value;
+              const selected = selectedEquipment === item.value;
 
               return (
                 <button

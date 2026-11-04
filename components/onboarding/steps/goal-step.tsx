@@ -1,6 +1,6 @@
 "use client";
 
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import {
@@ -28,7 +28,7 @@ import type { Goal } from "@/lib/store/user-store";
 const goalSchema = z.object({
   goal: z.enum(
     ["lose_weight", "build_muscle", "maintain", "endurance", "general_fitness"],
-    { required_error: "هدف خود را انتخاب کنید" },
+    { error: "هدف خود را انتخاب کنید" },
   ),
 });
 
@@ -81,6 +81,11 @@ export function GoalStep({ defaultValue, onNext, onBack }: GoalStepProps) {
     },
   });
 
+  const selectedGoal = useWatch({
+    control: form.control,
+    name: "goal",
+  });
+
   const onSubmit = (data: GoalFormValues) => {
     onNext(data.goal);
   };
@@ -101,7 +106,7 @@ export function GoalStep({ defaultValue, onNext, onBack }: GoalStepProps) {
           <div className="grid grid-cols-1 gap-3">
             {options.map((item) => {
               const Icon = item.icon;
-              const selected = form.watch("goal") === item.value;
+              const selected = selectedGoal === item.value;
 
               return (
                 <button

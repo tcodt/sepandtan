@@ -40,7 +40,7 @@ const SPECIALTIES = [
 const formSchema = z.object({
   specialties: z.array(z.string()).min(1, "حداقل یک تخصص انتخاب کن"),
   experienceYears: z
-    .number({ invalid_type_error: "عدد وارد کن" })
+    .number({ error: "عدد وارد کن" })
     .min(0, "نمی‌تونه منفی باشه")
     .max(30, "حداکثر ۳۰ سال"),
   bio: z
