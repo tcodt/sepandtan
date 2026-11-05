@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsArray, IsBoolean, IsDateString, IsEmail, IsEnum, IsIn, IsInt, IsNumber, IsOptional, IsString, IsUrl, IsUUID, Max, MaxLength, Min, } from 'class-validator';
-import { ActivityLevel, AccountStatus, DefaultStatus, ExperienceLevel, Gender, RolePerson, TrainingLocation, UserStatus } from '../../../generated/prisma/enums.js';
+import { ActivityLevel, AccountStatus, DefaultStatus, ExperienceLevel, Gender, RolePerson, TrainingLocation, UserStatus, OnBoardingStep } from '../../../generated/prisma/enums.js';
 
 export class UpdateUserDto {
   @ApiPropertyOptional({ example: 'ali 123' })
@@ -158,10 +158,10 @@ export class UpdateProfileDto {
 
   // ===== وضعیت =====
 
-  @ApiPropertyOptional({ description: 'اتمام مراحل آموزشی کاربر برای فرانت', example: true })
+  @ApiPropertyOptional({ description: 'اتمام مراحل آموزشی کاربر برای فرانت', example: true, enum: OnBoardingStep })
   @IsOptional()
-  @IsBoolean()
-  onboardingCompleted?: boolean;
+  @IsEnum(OnBoardingStep)
+  onBoardingStep?: OnBoardingStep;
 }
 
 export class UpdateStoreByAdminDto {

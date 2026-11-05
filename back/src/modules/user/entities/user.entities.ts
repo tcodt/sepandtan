@@ -125,8 +125,8 @@ export class ProfileDto {
   @ApiPropertyOptional({ nullable: true })
   trainingGoalId: string | null;
 
-  @ApiProperty({ example: false })
-  onboardingCompleted: boolean;
+  @ApiProperty({ enum: OnBoardingStep })
+  onBoardingStep: OnBoardingStep;
 
   @ApiProperty({ type: String, format: 'date-time' })
   createdAt: Date;
