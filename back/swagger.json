@@ -469,13 +469,13 @@
         ]
       }
     },
-    "/user/profile/{idUser}": {
+    "/user/profile/{userId}": {
       "put": {
         "description": "دسترسی : سوپر ادمین",
         "operationId": "UserController_updateProfileByAdmin",
         "parameters": [
           {
-            "name": "idUser",
+            "name": "userId",
             "required": true,
             "in": "path",
             "schema": {
@@ -514,6 +514,45 @@
           }
         ],
         "summary": "update user By Super Admin",
+        "tags": [
+          "User"
+        ]
+      }
+    },
+    "/user/profile/onboarding": {
+      "patch": {
+        "description": "دسترسی : خود کاربر و تمام کاربرانی که احراز هویت کردند",
+        "operationId": "UserController_updateOnboardByAdmin",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "آپدیت آموزش کاربر",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/classOnBoardingDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileOnboardEntity"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "update onboarding user By user",
         "tags": [
           "User"
         ]
@@ -828,7 +867,7 @@
     "/user/coach/{coachId}": {
       "patch": {
         "description": "دسترسی : سوپر ادمین",
-        "operationId": "UserController_updateCoachStatus",
+        "operationId": "UserController_updateAccountStatus",
         "parameters": [
           {
             "name": "coachId",
@@ -1162,6 +1201,47 @@
           }
         ],
         "summary": "Update All Users by Super Admin",
+        "tags": [
+          "User"
+        ]
+      }
+    },
+    "/user/db/{id}": {
+      "delete": {
+        "description": "دسترسی : سوپر ادمین اخطار با حذف کاربر به طور دائم از دیتابیس پاک میشود",
+        "operationId": "UserController_deleteDbUser",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "آیدی کاربر که باید حذف شود",
+            "schema": {
+              "example": "cf91f6d4-ba85-4dd4-b870-37dbf1702ca4",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "success": true
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Delete the user with the given ID from the database by the admin.",
         "tags": [
           "User"
         ]
@@ -1574,7 +1654,9 @@
               "enum": [
                 "PENDING",
                 "APPROVED",
-                "REJECTED"
+                "REJECTED",
+                "SUSPENDED",
+                "DELETED"
               ]
             }
           },
@@ -1774,37 +1856,26 @@
         ]
       }
     },
-    "/stores/{id}": {
-      "put": {
-        "description": " بعضی از اطلاعات رو از نمایش فروشنده بردار موقع آپدیت کردن مثلا کمیسیون تاییدیه و و چیزای دیگه که قکر میکنی ماله ادمین هستش رو از دسترسی فروشنده بردار ولی اکتیو بودن رو بزار فروشنده بتونه تغییر بده",
-        "operationId": "StoreController_updateStore",
+    "/stores/db/{storeId}": {
+      "delete": {
+        "description": "این فانکشن برای حذف دائم استفاده میشه با احتیاط استفاده کنید",
+        "operationId": "StoreController_deleteStoreDb",
         "parameters": [
           {
-            "name": "id",
+            "name": "storeId",
             "required": true,
             "in": "path",
-            "description": "Store ID",
             "schema": {
               "type": "string"
             }
           }
         ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateStoreDto"
-              }
-            }
-          }
-        },
         "responses": {
           "200": {
             "description": ""
           }
         },
-        "summary": "Update store (Admin & Store)",
+        "summary": "Delete store (Super Admin)",
         "tags": [
           "Stores"
         ]
@@ -1980,6 +2051,42 @@
           }
         },
         "summary": "Rebuild store review (Super Admin)",
+        "tags": [
+          "Stores"
+        ]
+      }
+    },
+    "/stores/{id}": {
+      "put": {
+        "description": " بعضی از اطلاعات رو از نمایش فروشنده بردار موقع آپدیت کردن مثلا کمیسیون تاییدیه و و چیزای دیگه که قکر میکنی ماله ادمین هستش رو از دسترسی فروشنده بردار ولی اکتیو بودن رو بزار فروشنده بتونه تغییر بده",
+        "operationId": "StoreController_updateStore",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Store ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateStoreDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Update store (Admin & Store)",
         "tags": [
           "Stores"
         ]
@@ -8119,6 +8226,28 @@
         ]
       }
     },
+    "/catalog/coach/selector": {
+      "get": {
+        "operationId": "CoachsController_getForSelector",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedCoachSelectorEntity"
+                }
+              }
+            }
+          }
+        },
+        "summary": "لیست مربی‌های فعال برای فرم‌های انتخاب‌گر (Public)",
+        "tags": [
+          "Coach"
+        ]
+      }
+    },
     "/catalog/coach/{slug}": {
       "get": {
         "operationId": "CoachsController_findBySlug",
@@ -8145,28 +8274,6 @@
           }
         },
         "summary": "جزئیات مربی بر اساس slug (Public)",
-        "tags": [
-          "Coach"
-        ]
-      }
-    },
-    "/catalog/coach/selector": {
-      "get": {
-        "operationId": "CoachsController_getForSelector",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PaginatedCoachSelectorEntity"
-                }
-              }
-            }
-          }
-        },
-        "summary": "لیست مربی‌های فعال برای فرم‌های انتخاب‌گر (Public)",
         "tags": [
           "Coach"
         ]
@@ -10209,17 +10316,10 @@
         ],
         "responses": {
           "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PaginatedDietPlanSummaryEntity"
-                }
-              }
-            }
+            "description": ""
           }
         },
-        "summary": "لیست برنامه‌های غذایی منتشرشده (Public)",
+        "summary": "لیست برنامه‌های غذایی منتشرشده",
         "tags": [
           "Diet"
         ]
@@ -10238,103 +10338,10 @@
           }
         },
         "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DietPlanEntity"
-                }
-              }
-            }
-          }
-        },
-        "summary": "ایجاد برنامه غذایی (Coach)",
-        "tags": [
-          "Diet"
-        ]
-      }
-    },
-    "/diet/plan/{id}": {
-      "get": {
-        "operationId": "DietController_getPlan",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DietPlanEntity"
-                }
-              }
-            }
-          }
-        },
-        "summary": "جزئیات یک برنامه غذایی (Public)",
-        "tags": [
-          "Diet"
-        ]
-      },
-      "put": {
-        "operationId": "DietController_updatePlan",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateDietPlanDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
+          "201": {
             "description": ""
           }
         },
-        "summary": "ویرایش برنامه غذایی (Coach)",
-        "tags": [
-          "Diet"
-        ]
-      },
-      "delete": {
-        "operationId": "DietController_deletePlan",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "summary": "حذف برنامه غذایی (Coach)",
         "tags": [
           "Diet"
         ]
@@ -10382,17 +10389,84 @@
         ],
         "responses": {
           "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PaginatedDietPlanSummaryEntity"
-                }
+            "description": ""
+          }
+        },
+        "tags": [
+          "Diet"
+        ]
+      }
+    },
+    "/diet/plan/{id}": {
+      "get": {
+        "operationId": "DietController_getPlan",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Diet"
+        ]
+      },
+      "put": {
+        "operationId": "DietController_updatePlan",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateDietPlanDto"
               }
             }
           }
         },
-        "summary": "لیست برنامه‌های غذایی من (Coach)",
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Diet"
+        ]
+      },
+      "delete": {
+        "operationId": "DietController_deletePlan",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
         "tags": [
           "Diet"
         ]
@@ -10416,7 +10490,93 @@
             "description": ""
           }
         },
-        "summary": "انتشار / لغو انتشار برنامه (Coach)",
+        "tags": [
+          "Diet"
+        ]
+      }
+    },
+    "/diet/plan/{planId}/phase": {
+      "post": {
+        "operationId": "DietController_addPhase",
+        "parameters": [
+          {
+            "name": "planId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateDietPhaseDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Diet"
+        ]
+      }
+    },
+    "/diet/phase/{phaseId}": {
+      "put": {
+        "operationId": "DietController_updatePhase",
+        "parameters": [
+          {
+            "name": "phaseId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateDietPhaseDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Diet"
+        ]
+      },
+      "delete": {
+        "operationId": "DietController_deletePhase",
+        "parameters": [
+          {
+            "name": "phaseId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
         "tags": [
           "Diet"
         ]
@@ -10446,18 +10606,10 @@
           }
         },
         "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DietDayEntity"
-                }
-              }
-            }
+          "201": {
+            "description": ""
           }
         },
-        "summary": "افزودن روز به برنامه (Coach)",
         "tags": [
           "Diet"
         ]
@@ -10491,7 +10643,6 @@
             "description": ""
           }
         },
-        "summary": "ویرایش روز (Coach)",
         "tags": [
           "Diet"
         ]
@@ -10513,7 +10664,6 @@
             "description": ""
           }
         },
-        "summary": "حذف روز (Coach)",
         "tags": [
           "Diet"
         ]
@@ -10543,18 +10693,10 @@
           }
         },
         "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DietMealEntity"
-                }
-              }
-            }
+          "201": {
+            "description": ""
           }
         },
-        "summary": "افزودن وعده به روز (Coach)",
         "tags": [
           "Diet"
         ]
@@ -10588,7 +10730,6 @@
             "description": ""
           }
         },
-        "summary": "ویرایش وعده (Coach)",
         "tags": [
           "Diet"
         ]
@@ -10610,7 +10751,6 @@
             "description": ""
           }
         },
-        "summary": "حذف وعده (Coach)",
         "tags": [
           "Diet"
         ]
@@ -10640,18 +10780,10 @@
           }
         },
         "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DietMealItemEntity"
-                }
-              }
-            }
+          "201": {
+            "description": ""
           }
         },
-        "summary": "افزودن غذا به وعده (Coach)",
         "tags": [
           "Diet"
         ]
@@ -10685,7 +10817,6 @@
             "description": ""
           }
         },
-        "summary": "ویرایش آیتم غذا (Coach)",
         "tags": [
           "Diet"
         ]
@@ -10707,7 +10838,6 @@
             "description": ""
           }
         },
-        "summary": "حذف آیتم غذا (Coach)",
         "tags": [
           "Diet"
         ]
@@ -11299,6 +11429,38 @@
         ]
       }
     },
+    "/workout/plan/my/{id}": {
+      "get": {
+        "description": "شامل روزها، حرکات و اطلاعات حرکت",
+        "operationId": "WorkoutController_getMyPlan",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkoutPlanEntity"
+                }
+              }
+            }
+          }
+        },
+        "summary": "جزئیات برنامه تمرینی (Coach)",
+        "tags": [
+          "Workout"
+        ]
+      }
+    },
     "/workout/plan/{id}/publish": {
       "patch": {
         "operationId": "WorkoutController_togglePublish",
@@ -11323,9 +11485,107 @@
         ]
       }
     },
+    "/workout/phase/{planId}": {
+      "post": {
+        "description": "weekday تکراری → 409",
+        "operationId": "WorkoutController_addPhase",
+        "parameters": [
+          {
+            "name": "planId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateWorkoutPhaseDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkoutDayEntity"
+                }
+              }
+            }
+          }
+        },
+        "summary": "افزودن هفته به برنامه (Coach)",
+        "tags": [
+          "Workout"
+        ]
+      }
+    },
+    "/workout/phase/{phaseId}": {
+      "put": {
+        "operationId": "WorkoutController_updatePhase",
+        "parameters": [
+          {
+            "name": "phaseId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateWorkoutPhaseDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "ویرایش هفته (Coach)",
+        "tags": [
+          "Workout"
+        ]
+      },
+      "delete": {
+        "operationId": "WorkoutController_deletePhase",
+        "parameters": [
+          {
+            "name": "phaseId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "حذف هفته (Coach)",
+        "tags": [
+          "Workout"
+        ]
+      }
+    },
     "/workout/plan/{planId}/day": {
       "post": {
-        "description": "dayIndex تکراری → 409",
+        "description": "weekday تکراری → 409",
         "operationId": "WorkoutController_addDay",
         "parameters": [
           {
@@ -12985,6 +13245,7 @@
             "enum": [
               "MALE",
               "FEMALE",
+              "BOTH",
               "OTHER"
             ],
             "nullable": true
@@ -13219,6 +13480,7 @@
             "enum": [
               "MALE",
               "FEMALE",
+              "BOTH",
               "OTHER"
             ],
             "nullable": true
@@ -13306,6 +13568,45 @@
             "example": true
           }
         }
+      },
+      "classOnBoardingDto": {
+        "type": "object",
+        "properties": {
+          "onBoardingStep": {
+            "type": "string",
+            "enum": [
+              "PROFILE",
+              "EQUIPMENT",
+              "TRAINING_GOAL",
+              "DONE"
+            ],
+            "description": "وضعیت آموزش"
+          }
+        },
+        "required": [
+          "onBoardingStep"
+        ]
+      },
+      "ProfileOnboardEntity": {
+        "type": "object",
+        "properties": {
+          "onBoardingStep": {
+            "type": "string",
+            "enum": [
+              "PROFILE",
+              "EQUIPMENT",
+              "TRAINING_GOAL",
+              "DONE"
+            ]
+          },
+          "id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "onBoardingStep",
+          "id"
+        ]
       },
       "PaginationMetaDto": {
         "type": "object",
@@ -14334,17 +14635,59 @@
           "storesReview"
         ]
       },
+      "CreateStoreReviewDto": {
+        "type": "object",
+        "properties": {
+          "rating": {
+            "type": "number",
+            "description": "امتیاز فروشگاه (۱ تا ۵)",
+            "minimum": 1,
+            "maximum": 5,
+            "example": 4.5
+          },
+          "body": {
+            "type": "string",
+            "description": "متن نظر",
+            "example": "فروشگاه عالی، محصولات با کیفیت و ارسال سریع"
+          },
+          "productQuality": {
+            "type": "number",
+            "description": "امتیاز کیفیت محصولات (۱ تا ۵)",
+            "minimum": 1,
+            "maximum": 5,
+            "example": 5
+          }
+        },
+        "required": [
+          "rating"
+        ]
+      },
+      "AnswerStoreReviewDto": {
+        "type": "object",
+        "properties": {
+          "answerReview": {
+            "type": "string",
+            "description": "پاسخ به نظر",
+            "example": "ممنون از نظر شما، خوشحالیم که راضی بودید"
+          }
+        },
+        "required": [
+          "answerReview"
+        ]
+      },
       "UpdateStoreDto": {
         "type": "object",
         "properties": {
           "status": {
             "type": "string",
-            "description": "وضعیت فروشگاه",
+            "description": "وضعیت فروشگاه فقط ادمین باید تغییر بتونه بده",
             "example": "APPROVED",
             "enum": [
               "PENDING",
               "APPROVED",
-              "REJECTED"
+              "REJECTED",
+              "SUSPENDED",
+              "DELETED"
             ]
           },
           "name": {
@@ -14479,46 +14822,6 @@
             "example": false
           }
         }
-      },
-      "CreateStoreReviewDto": {
-        "type": "object",
-        "properties": {
-          "rating": {
-            "type": "number",
-            "description": "امتیاز فروشگاه (۱ تا ۵)",
-            "minimum": 1,
-            "maximum": 5,
-            "example": 4.5
-          },
-          "body": {
-            "type": "string",
-            "description": "متن نظر",
-            "example": "فروشگاه عالی، محصولات با کیفیت و ارسال سریع"
-          },
-          "productQuality": {
-            "type": "number",
-            "description": "امتیاز کیفیت محصولات (۱ تا ۵)",
-            "minimum": 1,
-            "maximum": 5,
-            "example": 5
-          }
-        },
-        "required": [
-          "rating"
-        ]
-      },
-      "AnswerStoreReviewDto": {
-        "type": "object",
-        "properties": {
-          "answerReview": {
-            "type": "string",
-            "description": "پاسخ به نظر",
-            "example": "ممنون از نظر شما، خوشحالیم که راضی بودید"
-          }
-        },
-        "required": [
-          "answerReview"
-        ]
       },
       "CategoryTreeEntity": {
         "type": "object",
@@ -20217,21 +20520,21 @@
         "properties": {
           "id": {
             "type": "string",
-            "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+            "example": "..."
           },
           "coachId": {
             "type": "object",
-            "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+            "example": "...",
             "nullable": true
           },
           "dietPlanId": {
             "type": "object",
-            "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+            "example": "...",
             "nullable": true
           },
           "coverImage": {
             "example": [
-              "https://cdn.example.com/workout/cover.jpg"
+              "https://..."
             ],
             "type": "array",
             "items": {
@@ -20244,7 +20547,7 @@
           },
           "description": {
             "type": "object",
-            "example": "برنامه تمرینی...",
+            "example": "...",
             "nullable": true
           },
           "price": {
@@ -20272,7 +20575,7 @@
           },
           "note": {
             "type": "object",
-            "example": "نکات مهم",
+            "example": "نکات",
             "nullable": true
           },
           "countRating": {
@@ -20303,45 +20606,23 @@
           },
           "trainingGoalId": {
             "type": "object",
-            "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+            "example": "...",
             "nullable": true
           },
           "activityLevel": {
-            "type": "string",
-            "enum": [
-              "SEDENTARY",
-              "LIGHT",
-              "MODERATE",
-              "ACTIVE",
-              "VERY_ACTIVE"
-            ],
+            "type": "object",
             "nullable": true
           },
           "experienceLevel": {
-            "type": "string",
-            "enum": [
-              "BEGINNER",
-              "INTERMEDIATE",
-              "ADVANCED"
-            ],
+            "type": "object",
             "nullable": true
           },
           "gender": {
-            "type": "string",
-            "enum": [
-              "MALE",
-              "FEMALE",
-              "OTHER"
-            ],
+            "type": "object",
             "nullable": true
           },
           "trainingLocation": {
-            "type": "string",
-            "enum": [
-              "HOME",
-              "GYM",
-              "BOTH"
-            ],
+            "type": "object",
             "nullable": true
           },
           "trainingDaysPerWeek": {
@@ -20351,8 +20632,7 @@
           },
           "requiredEquipment": {
             "example": [
-              "barbell",
-              "bench"
+              "barbell"
             ],
             "type": "array",
             "items": {
@@ -20374,10 +20654,10 @@
             "type": "string",
             "example": "2025-01-01T00:00:00.000Z"
           },
-          "days": {
+          "phases": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/WorkoutDayEntity"
+              "$ref": "#/components/schemas/WorkoutPhaseEntity"
             }
           }
         },
@@ -20401,129 +20681,90 @@
         "properties": {
           "id": {
             "type": "string",
-            "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+            "example": "..."
           },
-          "coachId": {
-            "type": "object",
-            "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+          "title": {
+            "type": "string",
+            "example": "برنامه غذایی"
+          },
+          "description": {
+            "type": "string",
+            "example": "...",
             "nullable": true
           },
+          "price": {
+            "type": "number",
+            "example": 100000
+          },
+          "discountPrice": {
+            "type": "number",
+            "example": 80000,
+            "nullable": true
+          },
+          "countRating": {
+            "type": "number",
+            "example": 3
+          },
+          "totalRating": {
+            "type": "number",
+            "example": 15
+          },
           "coverImage": {
-            "example": [
-              "https://cdn.example.com/diet/cover.jpg"
-            ],
+            "example": [],
             "type": "array",
             "items": {
               "type": "string"
             }
           },
-          "title": {
-            "type": "string",
-            "example": "برنامه غذایی حجم"
-          },
-          "description": {
-            "type": "object",
-            "example": "برنامه ۸ هفته‌ای...",
-            "nullable": true
-          },
-          "price": {
-            "type": "number",
-            "example": 500000
-          },
-          "discountPrice": {
-            "type": "object",
-            "example": 400000,
-            "nullable": true
-          },
-          "countRating": {
-            "type": "number",
-            "example": 0
-          },
-          "totalRating": {
-            "type": "number",
-            "example": 0
-          },
           "avgRating": {
             "type": "number",
             "example": 4.5
           },
-          "isPublished": {
-            "type": "boolean",
-            "example": false
-          },
           "source": {
             "type": "string",
-            "enum": [
-              "COACH",
-              "SITE",
-              "AI"
-            ],
             "example": "COACH"
           },
-          "trainingGoalId": {
-            "type": "object",
-            "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-            "nullable": true
-          },
           "targetCalories": {
-            "type": "object",
+            "type": "number",
             "example": 2500,
             "nullable": true
           },
           "targetProteinG": {
-            "type": "object",
+            "type": "number",
             "example": 150,
             "nullable": true
           },
           "targetCarbsG": {
-            "type": "object",
+            "type": "number",
             "example": 250,
             "nullable": true
           },
           "targetFatG": {
-            "type": "object",
+            "type": "number",
             "example": 70,
             "nullable": true
           },
           "durationWeeks": {
-            "type": "object",
+            "type": "number",
             "example": 8,
             "nullable": true
           },
           "discountExpired": {
-            "type": "object",
+            "format": "date-time",
+            "type": "string",
             "example": "2025-01-01T00:00:00.000Z",
             "nullable": true
-          },
-          "createdAt": {
-            "format": "date-time",
-            "type": "string",
-            "example": "2025-01-01T00:00:00.000Z"
-          },
-          "updatedAt": {
-            "format": "date-time",
-            "type": "string",
-            "example": "2025-01-01T00:00:00.000Z"
-          },
-          "days": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/DietDayEntity"
-            }
           }
         },
         "required": [
           "id",
-          "coverImage",
           "title",
           "price",
           "countRating",
           "totalRating",
+          "coverImage",
           "avgRating",
-          "isPublished",
-          "source",
-          "createdAt",
-          "updatedAt"
+          "source"
         ]
       },
       "CoachDetailsEntity": {
@@ -21491,243 +21732,17 @@
           }
         }
       },
-      "DietPlanSummaryEntity": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
-          },
-          "title": {
-            "type": "string",
-            "example": "برنامه غذایی حجم"
-          },
-          "coverImage": {
-            "example": [
-              "https://..."
-            ],
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "price": {
-            "type": "number",
-            "example": 500000
-          },
-          "discountPrice": {
-            "type": "object",
-            "example": 400000,
-            "nullable": true
-          },
-          "avgRating": {
-            "type": "number",
-            "example": 4.5
-          },
-          "countRating": {
-            "type": "number",
-            "example": 10
-          },
-          "isPublished": {
-            "type": "boolean",
-            "example": true
-          },
-          "targetCalories": {
-            "type": "object",
-            "example": 2500,
-            "nullable": true
-          },
-          "durationWeeks": {
-            "type": "object",
-            "example": 8,
-            "nullable": true
-          },
-          "createdAt": {
-            "format": "date-time",
-            "type": "string",
-            "example": "2025-01-01T00:00:00.000Z"
-          }
-        },
-        "required": [
-          "id",
-          "title",
-          "coverImage",
-          "price",
-          "avgRating",
-          "countRating",
-          "isPublished",
-          "createdAt"
-        ]
-      },
-      "PaginatedDietPlanSummaryEntity": {
-        "type": "object",
-        "properties": {
-          "pagination": {
-            "description": "اطلاعات صفحه‌بندی",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/PaginationMetaDto"
-              }
-            ]
-          },
-          "dietPlans": {
-            "description": "داده‌ها",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/DietPlanSummaryEntity"
-            }
-          }
-        },
-        "required": [
-          "pagination",
-          "dietPlans"
-        ]
-      },
-      "DietMealItemEntity": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
-          },
-          "mealId": {
-            "type": "string",
-            "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
-          },
-          "foodId": {
-            "type": "string",
-            "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
-          },
-          "quantityGrams": {
-            "type": "number",
-            "example": 150,
-            "description": "گرم"
-          },
-          "notes": {
-            "type": "object",
-            "example": "پخته",
-            "nullable": true
-          },
-          "food": {
-            "type": "object",
-            "description": "اطلاعات غذا (در صورت include)"
-          }
-        },
-        "required": [
-          "id",
-          "mealId",
-          "foodId",
-          "quantityGrams"
-        ]
-      },
-      "DietMealEntity": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
-          },
-          "dayId": {
-            "type": "string",
-            "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
-          },
-          "type": {
-            "type": "string",
-            "enum": [
-              "BREAKFAST",
-              "LUNCH",
-              "DINNER",
-              "SNACK"
-            ],
-            "example": "BREAKFAST"
-          },
-          "priority": {
-            "type": "string",
-            "enum": [
-              "PRIMARY",
-              "SECONDARY",
-              "TERTIARY"
-            ],
-            "example": "PRIMARY"
-          },
-          "order": {
-            "type": "number",
-            "example": 1
-          },
-          "notes": {
-            "type": "object",
-            "example": "قبل از تمرین",
-            "nullable": true
-          },
-          "items": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/DietMealItemEntity"
-            }
-          }
-        },
-        "required": [
-          "id",
-          "dayId",
-          "type",
-          "priority",
-          "order"
-        ]
-      },
-      "DietDayEntity": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
-          },
-          "planId": {
-            "type": "string",
-            "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
-          },
-          "dayIndex": {
-            "type": "number",
-            "example": 1,
-            "description": "روز چندم برنامه"
-          },
-          "title": {
-            "type": "object",
-            "example": "روز اول",
-            "nullable": true
-          },
-          "notes": {
-            "type": "object",
-            "example": "نکات روز",
-            "nullable": true
-          },
-          "meals": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/DietMealEntity"
-            }
-          }
-        },
-        "required": [
-          "id",
-          "planId",
-          "dayIndex"
-        ]
-      },
       "CreateDietPlanDto": {
         "type": "object",
         "properties": {
           "title": {
             "type": "string",
-            "example": "برنامه غذایی حجم"
+            "example": "برنامه غذایی حجم ۸ هفته"
           },
           "description": {
-            "type": "string",
-            "example": "برنامه ۸ هفته‌ای..."
+            "type": "string"
           },
           "coverImage": {
-            "example": [
-              "https://cdn.example.com/diet/cover.jpg"
-            ],
             "type": "array",
             "items": {
               "type": "string"
@@ -21738,8 +21753,7 @@
             "example": 500000
           },
           "discountPrice": {
-            "type": "number",
-            "example": 400000
+            "type": "number"
           },
           "source": {
             "type": "string",
@@ -21747,36 +21761,31 @@
               "COACH",
               "SITE",
               "AI"
-            ],
-            "example": "COACH"
+            ]
           },
           "trainingGoalId": {
-            "type": "string",
-            "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+            "type": "string"
           },
           "targetCalories": {
             "type": "number",
             "example": 2500
           },
           "targetProteinG": {
-            "type": "number",
-            "example": 150
+            "type": "number"
           },
           "targetCarbsG": {
-            "type": "number",
-            "example": 250
+            "type": "number"
           },
           "targetFatG": {
-            "type": "number",
-            "example": 70
+            "type": "number"
           },
           "durationWeeks": {
             "type": "number",
-            "example": 8
+            "example": 8,
+            "description": "می‌تواند بیش از یک ماه باشد"
           },
           "discountExpired": {
-            "type": "string",
-            "example": "2025-12-01T00:00:00.000Z"
+            "type": "string"
           }
         },
         "required": [
@@ -21790,16 +21799,12 @@
         "properties": {
           "title": {
             "type": "string",
-            "example": "برنامه غذایی حجم"
+            "example": "برنامه غذایی حجم ۸ هفته"
           },
           "description": {
-            "type": "string",
-            "example": "برنامه ۸ هفته‌ای..."
+            "type": "string"
           },
           "coverImage": {
-            "example": [
-              "https://cdn.example.com/diet/cover.jpg"
-            ],
             "type": "array",
             "items": {
               "type": "string"
@@ -21810,8 +21815,7 @@
             "example": 500000
           },
           "discountPrice": {
-            "type": "number",
-            "example": 400000
+            "type": "number"
           },
           "source": {
             "type": "string",
@@ -21819,73 +21823,148 @@
               "COACH",
               "SITE",
               "AI"
-            ],
-            "example": "COACH"
+            ]
           },
           "trainingGoalId": {
-            "type": "string",
-            "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+            "type": "string"
           },
           "targetCalories": {
             "type": "number",
             "example": 2500
           },
           "targetProteinG": {
-            "type": "number",
-            "example": 150
+            "type": "number"
           },
           "targetCarbsG": {
-            "type": "number",
-            "example": 250
+            "type": "number"
           },
           "targetFatG": {
-            "type": "number",
-            "example": 70
+            "type": "number"
           },
           "durationWeeks": {
             "type": "number",
-            "example": 8
+            "example": 8,
+            "description": "می‌تواند بیش از یک ماه باشد"
           },
           "discountExpired": {
+            "type": "string"
+          }
+        }
+      },
+      "CreateDietPhaseDto": {
+        "type": "object",
+        "properties": {
+          "title": {
             "type": "string",
-            "example": "2025-12-01T00:00:00.000Z"
+            "example": "فاز کات — هفته ۱ تا ۴"
+          },
+          "startWeek": {
+            "type": "number",
+            "example": 1
+          },
+          "endWeek": {
+            "type": "number",
+            "example": 4
+          },
+          "order": {
+            "type": "number",
+            "example": 1
+          },
+          "targetCalories": {
+            "type": "number",
+            "example": 2200
+          },
+          "targetProteinG": {
+            "type": "number"
+          },
+          "targetCarbsG": {
+            "type": "number"
+          },
+          "targetFatG": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "title",
+          "startWeek",
+          "endWeek"
+        ]
+      },
+      "UpdateDietPhaseDto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "example": "فاز کات — هفته ۱ تا ۴"
+          },
+          "startWeek": {
+            "type": "number",
+            "example": 1
+          },
+          "endWeek": {
+            "type": "number",
+            "example": 4
+          },
+          "order": {
+            "type": "number",
+            "example": 1
+          },
+          "targetCalories": {
+            "type": "number",
+            "example": 2200
+          },
+          "targetProteinG": {
+            "type": "number"
+          },
+          "targetCarbsG": {
+            "type": "number"
+          },
+          "targetFatG": {
+            "type": "number"
           }
         }
       },
       "CreateDietDayDto": {
         "type": "object",
         "properties": {
-          "dayIndex": {
+          "dietPhaseId": {
+            "type": "string",
+            "description": "فاز والد — الزامی"
+          },
+          "weekday": {
             "type": "number",
-            "example": 1
+            "example": 0,
+            "description": "۰=شنبه … ۶=جمعه"
           },
           "title": {
-            "type": "string",
-            "example": "روز اول"
+            "type": "string"
           },
           "notes": {
-            "type": "string",
-            "example": "نکات"
+            "type": "string"
           }
         },
         "required": [
-          "dayIndex"
+          "dietPhaseId",
+          "weekday"
         ]
       },
       "UpdateDietDayDto": {
         "type": "object",
         "properties": {
-          "dayIndex": {
+          "dietPhaseId": {
+            "type": "string",
+            "description": "فاز والد — الزامی"
+          },
+          "weekday": {
             "type": "number",
-            "example": 1
+            "example": 0,
+            "description": "۰=شنبه … ۶=جمعه"
           },
           "title": {
-            "type": "string",
-            "example": "روز اول"
+            "type": "string"
           },
           "notes": {
-            "type": "string",
-            "example": "نکات"
+            "type": "string"
           }
         }
       },
@@ -21899,8 +21978,7 @@
               "LUNCH",
               "DINNER",
               "SNACK"
-            ],
-            "example": "BREAKFAST"
+            ]
           },
           "priority": {
             "type": "string",
@@ -21908,16 +21986,14 @@
               "PRIMARY",
               "SECONDARY",
               "TERTIARY"
-            ],
-            "example": "PRIMARY"
+            ]
           },
           "order": {
             "type": "number",
             "example": 1
           },
           "notes": {
-            "type": "string",
-            "example": "قبل از تمرین"
+            "type": "string"
           }
         },
         "required": [
@@ -21935,8 +22011,7 @@
               "LUNCH",
               "DINNER",
               "SNACK"
-            ],
-            "example": "BREAKFAST"
+            ]
           },
           "priority": {
             "type": "string",
@@ -21944,16 +22019,14 @@
               "PRIMARY",
               "SECONDARY",
               "TERTIARY"
-            ],
-            "example": "PRIMARY"
+            ]
           },
           "order": {
             "type": "number",
             "example": 1
           },
           "notes": {
-            "type": "string",
-            "example": "قبل از تمرین"
+            "type": "string"
           }
         }
       },
@@ -21961,16 +22034,14 @@
         "type": "object",
         "properties": {
           "foodId": {
-            "type": "string",
-            "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+            "type": "string"
           },
           "quantityGrams": {
             "type": "number",
             "example": 150
           },
           "notes": {
-            "type": "string",
-            "example": "پخته"
+            "type": "string"
           }
         },
         "required": [
@@ -21982,16 +22053,14 @@
         "type": "object",
         "properties": {
           "foodId": {
-            "type": "string",
-            "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+            "type": "string"
           },
           "quantityGrams": {
             "type": "number",
             "example": 150
           },
           "notes": {
-            "type": "string",
-            "example": "پخته"
+            "type": "string"
           }
         }
       },
@@ -22442,11 +22511,11 @@
         "properties": {
           "id": {
             "type": "string",
-            "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+            "example": "..."
           },
           "title": {
             "type": "string",
-            "example": "برنامه حجم ۸ هفته‌ای"
+            "example": "برنامه حجم"
           },
           "coverImage": {
             "example": [
@@ -22534,15 +22603,15 @@
         "properties": {
           "id": {
             "type": "string",
-            "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+            "example": "..."
           },
           "dayId": {
             "type": "string",
-            "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+            "example": "..."
           },
           "exerciseId": {
             "type": "string",
-            "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+            "example": "..."
           },
           "order": {
             "type": "number",
@@ -22556,8 +22625,7 @@
           "reps": {
             "type": "object",
             "example": "10",
-            "nullable": true,
-            "description": "\"10\" یا \"8-12\" یا \"تا ناتوانی\""
+            "nullable": true
           },
           "durationSec": {
             "type": "object",
@@ -22571,12 +22639,12 @@
           },
           "notes": {
             "type": "object",
-            "example": "با وزنه متوسط",
+            "example": "وزنه متوسط",
             "nullable": true
           },
           "exercise": {
             "type": "object",
-            "description": "اطلاعات حرکت (در صورت include)"
+            "description": "اطلاعات حرکت"
           }
         },
         "required": [
@@ -22591,30 +22659,44 @@
         "properties": {
           "id": {
             "type": "string",
-            "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+            "example": "..."
           },
-          "planId": {
+          "phaseId": {
             "type": "string",
-            "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+            "example": "..."
           },
-          "dayIndex": {
-            "type": "number",
+          "type": {
+            "type": "string",
+            "enum": [
+              "TEMPLATE",
+              "OVERRIDE"
+            ],
+            "example": "TEMPLATE"
+          },
+          "weekday": {
+            "type": "object",
             "example": 1,
-            "description": "روز چندم برنامه"
+            "nullable": true,
+            "description": "برای TEMPLATE (۱-۷)"
+          },
+          "date": {
+            "type": "object",
+            "example": "2026-11-14",
+            "nullable": true,
+            "description": "برای OVERRIDE"
           },
           "title": {
             "type": "object",
-            "example": "روز سینه و سه‌سر",
+            "example": "روز سینه",
             "nullable": true
           },
           "isRestDay": {
             "type": "boolean",
-            "example": false,
-            "description": "روز استراحت"
+            "example": false
           },
           "notes": {
             "type": "object",
-            "example": "نکات روز",
+            "example": "نکات",
             "nullable": true
           },
           "exercises": {
@@ -22626,9 +22708,52 @@
         },
         "required": [
           "id",
-          "planId",
-          "dayIndex",
+          "phaseId",
+          "type",
           "isRestDay"
+        ]
+      },
+      "WorkoutPhaseEntity": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "..."
+          },
+          "planId": {
+            "type": "string",
+            "example": "..."
+          },
+          "title": {
+            "type": "string",
+            "example": "هفته اول: آشنایی"
+          },
+          "startWeek": {
+            "type": "number",
+            "example": 1
+          },
+          "endWeek": {
+            "type": "number",
+            "example": 2
+          },
+          "order": {
+            "type": "number",
+            "example": 1
+          },
+          "days": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WorkoutDayEntity"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "planId",
+          "title",
+          "startWeek",
+          "endWeek",
+          "order"
         ]
       },
       "CreateWorkoutPlanDto": {
@@ -22673,7 +22798,8 @@
           },
           "durationWeeks": {
             "type": "number",
-            "example": 8
+            "example": 8,
+            "description": "مدت برنامه به هفته؛ می‌تواند بیش از یک ماه باشد"
           },
           "source": {
             "type": "string",
@@ -22711,6 +22837,7 @@
             "enum": [
               "MALE",
               "FEMALE",
+              "BOTH",
               "OTHER"
             ]
           },
@@ -22793,7 +22920,8 @@
           },
           "durationWeeks": {
             "type": "number",
-            "example": 8
+            "example": 8,
+            "description": "مدت برنامه به هفته؛ می‌تواند بیش از یک ماه باشد"
           },
           "source": {
             "type": "string",
@@ -22831,6 +22959,7 @@
             "enum": [
               "MALE",
               "FEMALE",
+              "BOTH",
               "OTHER"
             ]
           },
@@ -22866,16 +22995,75 @@
           }
         }
       },
+      "CreateWorkoutPhaseDto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "example": "فاز پایه — هفته ۱ تا ۲"
+          },
+          "startWeek": {
+            "type": "number",
+            "example": 1,
+            "description": "شروع از هفته ۱"
+          },
+          "endWeek": {
+            "type": "number",
+            "example": 2,
+            "description": "می‌تواند تا durationWeeks+1 برود (حاشیه یک هفته)"
+          },
+          "order": {
+            "type": "number",
+            "example": 1,
+            "description": "ترتیب نمایش؛ پیش‌فرض startWeek"
+          }
+        },
+        "required": [
+          "title",
+          "startWeek",
+          "endWeek"
+        ]
+      },
+      "UpdateWorkoutPhaseDto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "example": "فاز پایه — هفته ۱ تا ۲"
+          },
+          "startWeek": {
+            "type": "number",
+            "example": 1,
+            "description": "شروع از هفته ۱"
+          },
+          "endWeek": {
+            "type": "number",
+            "example": 2,
+            "description": "می‌تواند تا durationWeeks+1 برود (حاشیه یک هفته)"
+          },
+          "order": {
+            "type": "number",
+            "example": 1,
+            "description": "ترتیب نمایش؛ پیش‌فرض startWeek"
+          }
+        }
+      },
       "CreateWorkoutDayDto": {
         "type": "object",
         "properties": {
-          "dayIndex": {
+          "workoutPhaseId": {
+            "type": "string",
+            "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+            "description": "فاز والد — الزامی"
+          },
+          "weekday": {
             "type": "number",
-            "example": 1
+            "example": 0,
+            "description": "روز هفته: ۰=شنبه … ۶=جمعه (یا قرارداد خودت)"
           },
           "title": {
             "type": "string",
-            "example": "روز سینه و سه‌سر"
+            "example": "سینه و پشت بازو"
           },
           "isRestDay": {
             "type": "boolean",
@@ -22883,23 +23071,30 @@
           },
           "notes": {
             "type": "string",
-            "example": "نکات"
+            "example": "قبل از تمرین ۵ دقیقه گرم کردن"
           }
         },
         "required": [
-          "dayIndex"
+          "workoutPhaseId",
+          "weekday"
         ]
       },
       "UpdateWorkoutDayDto": {
         "type": "object",
         "properties": {
-          "dayIndex": {
+          "workoutPhaseId": {
+            "type": "string",
+            "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+            "description": "فاز والد — الزامی"
+          },
+          "weekday": {
             "type": "number",
-            "example": 1
+            "example": 0,
+            "description": "روز هفته: ۰=شنبه … ۶=جمعه (یا قرارداد خودت)"
           },
           "title": {
             "type": "string",
-            "example": "روز سینه و سه‌سر"
+            "example": "سینه و پشت بازو"
           },
           "isRestDay": {
             "type": "boolean",
@@ -22907,7 +23102,7 @@
           },
           "notes": {
             "type": "string",
-            "example": "نکات"
+            "example": "قبل از تمرین ۵ دقیقه گرم کردن"
           }
         }
       },

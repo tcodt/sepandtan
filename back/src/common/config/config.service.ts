@@ -34,6 +34,7 @@ const configServices = () => ({
     food: process.env.FOOD_LIMIT_PAGE || 10,
     userPlan: process.env.USERPLAN_LIMIT_PAGE || 10,
     diet: process.env.DIET_LIMIT_PAGE || 10,
+    workout: process.env.WORKOUT_LIMIT_PAGE || 10,
     trainingGoal: process.env.TRAININGGOAL_LIMIT_PAGE || 10,
   },
   jwt: {

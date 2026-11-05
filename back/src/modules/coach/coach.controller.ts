@@ -52,18 +52,18 @@ export class CoachsController {
         return this.coachsService.findAll(query);
     }
 
-    @Get('coach/:slug')
-    @ApiOkResponse({ type: CoachDetailsEntity })
-    @ApiOperation({ summary: 'جزئیات مربی بر اساس slug (Public)' })
-    async findBySlug(@Param('slug') slug: string) {
-        return this.coachsService.findBySlug(slug);
-    }
-
     @Get('coach/selector')
     @ApiOperation({ summary: 'لیست مربی‌های فعال برای فرم‌های انتخاب‌گر (Public)' })
     @ApiOkResponse({ type: PaginatedResponse(CoachSelectorEntity, 'coach') })
     async getForSelector() {
         return this.coachsService.getForSelector();
+    }
+
+    @Get('coach/:slug')
+    @ApiOkResponse({ type: CoachDetailsEntity })
+    @ApiOperation({ summary: 'جزئیات مربی بر اساس slug (Public)' })
+    async findBySlug(@Param('slug') slug: string) {
+        return this.coachsService.findBySlug(slug);
     }
 
     @Get('coach/admin')
@@ -134,8 +134,8 @@ export class CoachsController {
     @Roles('COACH')
     @ApiOkResponse({ type: PaginatedResponse(ReviewCoachEntity, 'reviews') })
     @ApiOperation({ summary: 'لیست نظرات من یا مربیِ لاگین‌ شده (Coach)', description: 'نظراتی که برای این مربی ثبت شده است' })
-    async coachAllReview(@CurrentUser('id') userId: string, @Query() query: SearchCoachReview) {
-        return this.reviewService.getAllReviewCoach(userId, query);
+    async coachAllReview(@Query() query: SearchCoachReview) {
+        return this.reviewService.getAllReviewCoach(query);
     }
 
     @Post('/review')
@@ -466,5 +466,4 @@ export class CoachsController {
     selectTrainingGoal() {
         return this.trainingGoalService.getSelector();
     }
-
 }

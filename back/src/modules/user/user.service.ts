@@ -1,6 +1,6 @@
 import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { Request } from 'express';
-import { GetPendingCoach, GetPendingStore, QueryUserDto } from './dtos/query.user.js';
+import { classOnBoardingDto, GetPendingCoach, GetPendingStore, QueryUserDto } from './dtos/query.user.js';
 import { UpdateCoachByAdminDto, UpdateProfileDto, UpdateStoreByAdminDto, UpdateUserDto } from './dtos/update.user.dto.js';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import pagination from '../../common/utils/pagination.js';
@@ -94,6 +94,30 @@ export class UserService {
     return { success: true }
   }
 
+  async deleteDbUser(id: string) {
+    const data = await this.prisma.user.findUnique({
+      where: { id },
+      select: { coach: { select: { id: true } }, store: { select: { id: true } } }
+    })
+    if (!data) throw new NotFoundException('کاربر یافت نشد');
+    await this.prisma.$transaction(async (tx) => {
+      if (data?.coach?.id) {
+        await tx.coach.update({
+          where: { id: data.coach?.id },
+          data: { status: 'DELETED' },
+        })
+      }
+      if (data?.store?.id) {
+        await tx.store.update({
+          where: { id: data.store?.id },
+          data: { status: 'REJECTED' },
+        })
+      }
+      await tx.user.delete({ where: { id } })
+    });
+    return { success: true }
+  }
+
   async deleteUser(id: string) {
     const data = await this.prisma.user.update({
       where: { id },
@@ -133,7 +157,8 @@ export class UserService {
           email: body.email,
           password: await hashPassword(body.password),
           role: body.role,
-          phone: body.phone
+          phone: body.phone,
+          profile: { create: {} }
         },
       });
       return { success: true }
@@ -223,10 +248,17 @@ export class UserService {
     }
   }
 
+  async updateOnboardByAdmin(body: classOnBoardingDto, id: string) {
+    const data = await this.prisma.user.findUnique({ where: { id }, select: { profile: { select: { id: true } } } })
+    return await this.prisma.profile.update({
+      where: { id: data?.profile?.id },
+      data: { onBoardingStep: body.onBoardingStep },
+      select: { onBoardingStep: true, id: true }
+    })
+  }
+
   // store //
   async updateStoreStatus(body: UpdateStoreByAdminDto, id: string) {
-    console.log(id);
-
     const { status } = body
     const userData = await this.prisma.store.findUnique({
       where: { id }, select: {
@@ -298,7 +330,7 @@ export class UserService {
   }
 
   // coach //
-  async updateCoachStatus(body: UpdateCoachByAdminDto, id: string) {
+  async updateAccountStatus(body: UpdateCoachByAdminDto, id: string) {
     const { rejectionReason, status } = body
     const userData = await this.prisma.coach.findUnique({
       where: { id }, select: {

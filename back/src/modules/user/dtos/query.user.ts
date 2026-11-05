@@ -1,7 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsBoolean, IsIn, IsOptional, IsString, } from 'class-validator';
 import { QueryDefaultDto } from '../../../common/dtos/query.defualt.dto.js';
-import { CoachStatus, DefaultStatus, RolePerson, UserStatus } from '../../../generated/prisma/enums.js';
+import { AccountStatus, DefaultStatus, OnBoardingStep, RolePerson, UserStatus } from '../../../generated/prisma/enums.js';
 import { Transform, Type } from 'class-transformer';
 
 export class QueryUserDto extends QueryDefaultDto {
@@ -54,11 +54,21 @@ export class GetPendingStore extends QueryDefaultDto {
 
 export class GetPendingCoach extends QueryDefaultDto {
     @IsOptional()
-    @IsIn([...Object.values(CoachStatus), 'ALL'])
+    @IsIn([...Object.values(AccountStatus), 'ALL'])
     @ApiProperty({
-        enum: [...Object.values(CoachStatus), 'ALL'],
+        enum: [...Object.values(AccountStatus), 'ALL'],
         required: false,
         description: 'وضعیت مربی',
     })
-    status?: CoachStatus | "ALL";
+    status?: AccountStatus | "ALL";
+}
+
+export class classOnBoardingDto {
+    @IsIn([...Object.values(OnBoardingStep)])
+    @ApiProperty({
+        enum: [...Object.values(OnBoardingStep)],
+        required: true,
+        description: 'وضعیت آموزش'
+    })
+    onBoardingStep!: OnBoardingStep
 }

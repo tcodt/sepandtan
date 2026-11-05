@@ -68,16 +68,13 @@ export class StoreController {
     return this.storeService.getStore(slug);
   }
 
-  @Put(':id')
+  @Delete('db/:storeId')
   @UseGuards(AccessTokenGuard)
-  @Roles('ADMIN', 'SUPERADMIN', 'STORE')
-  @ApiOperation({
-    summary: 'Update store (Admin & Store)', description: ` بعضی از اطلاعات رو از نمایش فروشنده بردار موقع آپدیت کردن مثلا کمیسیون تاییدیه و و چیزای دیگه که قکر میکنی ماله ادمین هستش رو از دسترسی فروشنده بردار ولی اکتیو بودن رو بزار فروشنده بتونه تغییر بده`
-  })
-  @ApiParam({ name: 'id', description: 'Store ID' })
-  @ApiBody({ type: UpdateStoreDto })
-  async updateStore(@Param('id') id: string, @Body() dto: UpdateStoreDto) {
-    return this.storeService.updateStore(id, dto);
+  @Roles('SUPERADMIN')
+  @ApiOperation({ summary: 'Delete store (Super Admin)', description: 'این فانکشن برای حذف دائم استفاده میشه با احتیاط استفاده کنید' })
+  @ApiParam({ name: 'storeId' })
+  async deleteStoreDb(@Param('storeId') storeId: string) {
+    return this.storeService.deleteStoreDb(storeId);
   }
 
   @Post(':storeId/reviews')
@@ -133,5 +130,17 @@ export class StoreController {
   @ApiParam({ name: 'storeId', description: 'Store review ID' })
   async RebuildStoreRating(@Param('storeId') storeId: string) {
     return this.storeService.rebuildStoreRating(storeId);
+  }
+
+  @Put(':id')
+  @UseGuards(AccessTokenGuard)
+  @Roles('ADMIN', 'SUPERADMIN', 'STORE')
+  @ApiOperation({
+    summary: 'Update store (Admin & Store)', description: ` بعضی از اطلاعات رو از نمایش فروشنده بردار موقع آپدیت کردن مثلا کمیسیون تاییدیه و و چیزای دیگه که قکر میکنی ماله ادمین هستش رو از دسترسی فروشنده بردار ولی اکتیو بودن رو بزار فروشنده بتونه تغییر بده`
+  })
+  @ApiParam({ name: 'id', description: 'Store ID' })
+  @ApiBody({ type: UpdateStoreDto })
+  async updateStore(@Param('id') id: string, @Body() dto: UpdateStoreDto) {
+    return this.storeService.updateStore(id, dto);
   }
 }

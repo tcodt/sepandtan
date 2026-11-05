@@ -1,2 +1,2 @@
 -- AlterEnum
-ALTER TYPE "CoachStatus" ADD VALUE 'DELETED';
+ALTER TYPE "AccountStatus" ADD VALUE 'DELETED';

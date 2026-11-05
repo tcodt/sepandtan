@@ -13,7 +13,7 @@ import {
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { QueryDefaultDto } from '../../../common/dtos/query.defualt.dto.js';
-import { BusinessType, DefaultStatus } from '../../../generated/prisma/enums.js';
+import { BusinessType, AccountStatus } from '../../../generated/prisma/enums.js';
 
 export enum SortOptionStore {
   OLDEST = 'oldest',
@@ -98,10 +98,10 @@ export class SearchAdminStore extends QueryDefaultDto {
   @IsEnum(SortOptionStore)
   sortBy?: SortOptionStore = SortOptionStore.NEWEST;
 
-  @ApiPropertyOptional({ description: 'نوع وضعیت', enum: DefaultStatus, default: DefaultStatus.PENDING })
+  @ApiPropertyOptional({ description: 'نوع وضعیت', enum: AccountStatus, default: AccountStatus.PENDING })
   @IsOptional()
-  @IsEnum(DefaultStatus)
-  status?: DefaultStatus;
+  @IsEnum(AccountStatus)
+  status?: AccountStatus;
 
   @ApiPropertyOptional({ description: 'فروشگاه های فعال' })
   @IsOptional()
@@ -298,13 +298,13 @@ export class CreateStoreDto {
 
 export class UpdateStoreDto {
   @ApiPropertyOptional({
-    description: 'وضعیت فروشگاه',
-    example: DefaultStatus.APPROVED,
-    enum: DefaultStatus
+    description: 'وضعیت فروشگاه فقط ادمین باید تغییر بتونه بده',
+    example: AccountStatus.APPROVED,
+    enum: AccountStatus
   })
   @IsOptional()
-  @IsEnum(DefaultStatus)
-  status?: DefaultStatus;
+  @IsEnum(AccountStatus)
+  status?: AccountStatus;
 
   @ApiPropertyOptional({
     description: 'نام فروشگاه (فارسی)',
@@ -522,10 +522,10 @@ export class UpdateStoreDto {
 export class UpdateStoreStatusDto {
   @ApiProperty({
     description: 'وضعیت فروشگاه',
-    enum: DefaultStatus,
+    enum: AccountStatus,
   })
-  @IsEnum(DefaultStatus)
-  status!: DefaultStatus;
+  @IsEnum(AccountStatus)
+  status!: AccountStatus;
 
   @ApiPropertyOptional({
     description: 'دلیل تغییر وضعیت',
@@ -583,11 +583,11 @@ export class AnswerStoreReviewDto {
 export class UpdateStoreReviewStatusDto {
   @ApiProperty({
     description: 'وضعیت نظر',
-    enum: DefaultStatus,
-    example: DefaultStatus.PENDING,
+    enum: AccountStatus,
+    example: AccountStatus.PENDING,
   })
-  @IsEnum(DefaultStatus)
-  status!: DefaultStatus;
+  @IsEnum(AccountStatus)
+  status!: AccountStatus;
 
   @ApiPropertyOptional({
     description: 'دلیل تغییر وضعیت نظر',

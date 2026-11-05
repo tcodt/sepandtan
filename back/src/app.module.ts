@@ -34,7 +34,7 @@ import { WorkoutModule } from './modules/workout/workout.module.js';
 import { UserPlanModule } from './modules/user-plan/user-plan.module.js';
 import { SubscriptionModule } from './modules/subscription/subscription.module.js';
 import { LogModule } from './modules/log/log.module.js';
-
+import { SettlementQueueModule } from './modules/queues/settlement/settlement-queue.module.js';
 @Module({
   imports: [
     ThrottlerModule.forRoot([
@@ -48,6 +48,7 @@ import { LogModule } from './modules/log/log.module.js';
     RedisModule,
     ConfigModules,
     DiscountQueueModule,
+    SettlementQueueModule,
     AuthModule, // ورود
     UserModule, // کاربران
     AddressesModule, // آدرس

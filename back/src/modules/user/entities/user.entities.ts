@@ -6,8 +6,9 @@ import {
   Gender,
   RolePerson,
   UserStatus,
+  OnBoardingStep,
 } from '../../../generated/prisma/enums.js';
-import { IsBoolean } from 'class-validator';
+import { IsBoolean, IsIn } from 'class-validator';
 export class UserEntity {
   @ApiProperty()
   id!: string;
@@ -44,6 +45,13 @@ export class UserEntity {
 
 // src/users/dto/user-profile-response.dto.ts
 
+export class ProfileOnboardEntity {
+  @ApiProperty({ enum: OnBoardingStep })
+  onBoardingStep: OnBoardingStep
+
+  @ApiProperty()
+  id: string
+}
 
 export class TrainingGoalSummaryDto {
   @ApiProperty({ example: '3fa85f64-5717-4562-b3fc-2c963f66afa6' })

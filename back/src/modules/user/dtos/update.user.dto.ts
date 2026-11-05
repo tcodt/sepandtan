@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsArray, IsBoolean, IsDateString, IsEmail, IsEnum, IsIn, IsInt, IsNumber, IsOptional, IsString, IsUrl, IsUUID, Max, MaxLength, Min, } from 'class-validator';
-import { ActivityLevel, CoachStatus, DefaultStatus, ExperienceLevel, Gender, RolePerson, TrainingLocation, UserStatus } from '../../../generated/prisma/enums.js';
+import { ActivityLevel, AccountStatus, DefaultStatus, ExperienceLevel, Gender, RolePerson, TrainingLocation, UserStatus } from '../../../generated/prisma/enums.js';
 
 export class UpdateUserDto {
   @ApiPropertyOptional({ example: 'ali 123' })
@@ -182,13 +182,13 @@ export class UpdateStoreByAdminDto {
 
 export class UpdateCoachByAdminDto {
   @IsOptional()
-  @IsIn([...Object.values(CoachStatus)])
+  @IsIn([...Object.values(AccountStatus)])
   @ApiProperty({
-    enum: [...Object.values(CoachStatus)],
+    enum: [...Object.values(AccountStatus)],
     required: false,
     description: 'وضعیت مربی',
   })
-  status?: CoachStatus;
+  status?: AccountStatus;
 
   @ApiPropertyOptional({ example: 'توضیحات مربوطه درباره رد مربی', nullable: true })
   @IsOptional()

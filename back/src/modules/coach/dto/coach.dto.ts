@@ -1,7 +1,7 @@
 import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger';
 import { Transform, Type } from 'class-transformer';
 import { ArrayMaxSize, IsArray, IsBoolean, IsDateString, IsEnum, IsIn, IsInt, IsNumber, IsOptional, IsString, IsUUID, Max, MaxLength, Min } from 'class-validator';
-import { AchievementScope, AchievementType, CertificationType, CoachStatus, DefaultStatus } from '../../../generated/prisma/enums.js';
+import { AchievementScope, AchievementType, CertificationType, AccountStatus, DefaultStatus } from '../../../generated/prisma/enums.js';
 import { QueryDefaultDto } from '../../../common/dtos/query.defualt.dto.js';
 
 export enum SortOptionCoach {
@@ -127,13 +127,13 @@ export class CreateCoachDto {
     @ApiPropertyOptional({ example: false, description: 'پذیرش دارد یا خیر' })
     isAcceptingClients?: boolean;
 
-    @IsIn([...Object.values(CoachStatus)])
+    @IsIn([...Object.values(AccountStatus)])
     @ApiProperty({
-        enum: [...Object.values(CoachStatus)],
+        enum: [...Object.values(AccountStatus)],
         required: false,
         description: 'وضعیت مربی',
     })
-    status!: CoachStatus
+    status!: AccountStatus
 
     @ApiPropertyOptional({
         description: 'دلیل رد شدن (فقط توسط ادمین تنظیم می‌شود)',
@@ -255,13 +255,13 @@ export class UpdateCoachDto {
     @ApiPropertyOptional({ example: false, description: 'پذیرش دارد یا خیر' })
     isAcceptingClients?: boolean;
 
-    @IsIn([...Object.values(CoachStatus)])
+    @IsIn([...Object.values(AccountStatus)])
     @ApiProperty({
-        enum: [...Object.values(CoachStatus)],
+        enum: [...Object.values(AccountStatus)],
         required: false,
         description: 'وضعیت مربی',
     })
-    status!: CoachStatus
+    status!: AccountStatus
 
     @ApiPropertyOptional({
         description: 'دلیل رد شدن (فقط توسط ادمین تنظیم می‌شود)',
@@ -309,13 +309,13 @@ export class SearchCoachDto extends QueryDefaultDto {
 }
 export class SearchAdminCoachDto extends SearchCoachDto {
     @IsOptional()
-    @IsIn([...Object.values(CoachStatus), 'ALL'])
+    @IsIn([...Object.values(AccountStatus), 'ALL'])
     @ApiProperty({
-        enum: [...Object.values(CoachStatus), 'ALL'],
+        enum: [...Object.values(AccountStatus), 'ALL'],
         required: false,
         description: 'وضعیت مربی این بخش رو به کاربر نمایش نده فقط برای ادمین ساختم',
     })
-    status?: CoachStatus | "ALL";
+    status?: AccountStatus | "ALL";
 }
 
 //////// Review ///////

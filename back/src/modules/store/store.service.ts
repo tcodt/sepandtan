@@ -12,7 +12,7 @@ import {
 
 } from './dto/store.dto.js'
 import { PrismaService } from '../../prisma/prisma.service.js'
-import { DefaultStatus, Prisma } from '../../generated/prisma/client.js'
+import { AccountStatus, Prisma } from '../../generated/prisma/client.js'
 import pagination from '../../common/utils/pagination.js'
 import { productSelector } from '../products/products.service.js'
 
@@ -190,7 +190,7 @@ export class StoreService {
       return this.prisma.store.findMany({
         where: {
           isActive: true,
-          status: DefaultStatus.APPROVED,
+          status: AccountStatus.APPROVED,
         },
         select: {
           id: true,
@@ -203,7 +203,7 @@ export class StoreService {
     }
 
     const where: Prisma.StoreWhereInput = {
-      status: DefaultStatus.APPROVED,
+      status: AccountStatus.APPROVED,
       isActive: true,
       ...(search && {
         OR: [
@@ -261,7 +261,7 @@ export class StoreService {
         data: {
           ...dto,
           userId: dto.userId,
-          status: DefaultStatus.PENDING,
+          status: AccountStatus.PENDING,
           isActive: false,
           isVerified: false,
           rating: {
@@ -313,7 +313,7 @@ export class StoreService {
         },
         storeReview: {
           where: {
-            status: DefaultStatus.APPROVED,
+            status: AccountStatus.APPROVED,
           },
           select: {
             user: {
@@ -367,6 +367,9 @@ export class StoreService {
     })
   }
 
+  async deleteStoreDb(id: string) {
+    return this.prisma.store.delete({ where: { id } })
+  }
   // -------------------------------------------------------
   // Store Review
   // -------------------------------------------------------
@@ -464,7 +467,7 @@ export class StoreService {
     const store = await this.prisma.store.findFirst({
       where: {
         id: storeId,
-        status: DefaultStatus.APPROVED,
+        status: AccountStatus.APPROVED,
         isActive: true,
       },
       select: { id: true },
@@ -489,7 +492,7 @@ export class StoreService {
         body: dto.body,
         verifiedPurchase: Boolean(hasPurchase),
         productQuality: dto.productQuality,
-        status: DefaultStatus.PENDING,
+        status: AccountStatus.PENDING,
       },
     })
   }
@@ -516,7 +519,7 @@ export class StoreService {
         )
       }
 
-      if (review.status === DefaultStatus.APPROVED) {
+      if (review.status === AccountStatus.APPROVED) {
         return review
       }
 
@@ -544,7 +547,7 @@ export class StoreService {
       return tx.storeReview.update({
         where: { id: reviewId },
         data: {
-          status: DefaultStatus.APPROVED,
+          status: AccountStatus.APPROVED,
           responseAt,
         },
       })
@@ -572,11 +575,11 @@ export class StoreService {
         )
       }
 
-      if (review.status === DefaultStatus.REJECTED) {
+      if (review.status === AccountStatus.REJECTED) {
         return review
       }
 
-      if (review.status === DefaultStatus.APPROVED) {
+      if (review.status === AccountStatus.APPROVED) {
         await this.removeReviewRating(tx, {
           storeId: review.storeId,
           rating: review.rating,
@@ -600,7 +603,7 @@ export class StoreService {
       return tx.storeReview.update({
         where: { id: reviewId },
         data: {
-          status: DefaultStatus.REJECTED,
+          status: AccountStatus.REJECTED,
         },
       })
     })
@@ -632,7 +635,7 @@ export class StoreService {
         )
       }
 
-      if (review.status === DefaultStatus.REJECTED) {
+      if (review.status === AccountStatus.REJECTED) {
         throw new BadRequestException(
           'Rejected store review cannot be answered',
         )
@@ -646,7 +649,7 @@ export class StoreService {
 
       const answerAt = new Date()
 
-      if (review.status === DefaultStatus.APPROVED) {
+      if (review.status === AccountStatus.APPROVED) {
         return tx.storeReview.update({
           where: { id: reviewId },
           data: {
@@ -678,7 +681,7 @@ export class StoreService {
           answerReview,
           answerAt,
           responseAt: answerAt,
-          status: DefaultStatus.APPROVED,
+          status: AccountStatus.APPROVED,
         },
       })
     })
@@ -703,7 +706,7 @@ export class StoreService {
         throw new NotFoundException('Store review not found')
       }
 
-      if (review.status === DefaultStatus.APPROVED) {
+      if (review.status === AccountStatus.APPROVED) {
         await this.removeReviewRating(tx, {
           storeId: review.storeId,
           rating: review.rating,
@@ -1070,7 +1073,7 @@ export class StoreService {
 
           // 2. آمار نظرات تاییدشده
           tx.storeReview.aggregate({
-            where: { storeId, status: DefaultStatus.APPROVED },
+            where: { storeId, status: AccountStatus.APPROVED },
             _count: { _all: true },
             _sum: { rating: true, productQuality: true },
           }),
@@ -1113,7 +1116,7 @@ export class StoreService {
           tx.storeReview.count({
             where: {
               storeId,
-              status: DefaultStatus.APPROVED,
+              status: AccountStatus.APPROVED,
               productQuality: { not: null },
             },
           }),

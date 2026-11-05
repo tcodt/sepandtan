@@ -5,12 +5,14 @@ import { CheckoutItemDto, CreateCheckoutDto, SearchCheckouts, SearchOrders, Upda
 import { OrderStatus, Prisma, RolePerson } from "../../generated/prisma/client.js";
 import { PrismaService } from "../../prisma/prisma.service.js";
 import pagination from "../../common/utils/pagination.js";
+import { SettlementQueueService } from "../queues/settlement/settlement-queue.service.js";
 
 @Injectable()
 export class OrdersService {
     constructor(
         private readonly prisma: PrismaService,
         // private readonly emailService: EmailService,
+        private readonly settlementQueue: SettlementQueueService,
         private readonly configService: ConfigService,
     ) { }
 
@@ -594,9 +596,179 @@ export class OrdersService {
         return { success: true };
     }
 
+    // async updatePaymentCheckout(checkoutId: string) {
+    //     return this.prisma.$transaction(async (tx) => {
+    //         // پرداخت فقط یک بار از pending به paid تغییر می‌کند
+    //         const checkout = await tx.checkout.update({
+    //             where: {
+    //                 id: checkoutId,
+    //                 paymentStatus: 'PENDING',
+    //             },
+    //             data: {
+    //                 paymentStatus: 'PAID',
+    //             },
+    //             select: {
+    //                 id: true,
+    //                 checkoutNumber: true,
+    //                 taxAmount: true,
+    //                 salesProfit: true,
+    //                 orders: {
+    //                     select: {
+    //                         storeId: true,
+    //                         id: true,
+    //                         returnDeadline: true,
+    //                         totalPrice: true,
+    //                         commissionAmount: true,
+    //                         taxAmount: true,
+    //                         store: {
+    //                             select: {
+    //                                 owner: {
+    //                                     select: {
+    //                                         id: true,
+    //                                         wallet: {
+    //                                             select: {
+    //                                                 id: true,
+    //                                             },
+    //                                         },
+    //                                     },
+    //                                 },
+    //                             },
+    //                         },
+    //                     },
+    //                 },
+    //             },
+    //         });
+    //         const superAdmin = await tx.user.findFirst({ where: { role: 'SUPERADMIN' }, select: { id: true, wallet: { select: { id: true } } } })
+    //         if (!checkout.orders.length || !superAdmin?.id || !superAdmin?.wallet?.id) {
+    //             throw new BadRequestException('سفارشی برای این پرداخت پیدا نشد.');
+    //         }
+    //         const deadLine = new Date(
+    //             Date.now() + 7 * 24 * 60 * 60 * 1000,
+    //         );
+    //         for (const order of checkout.orders) {
+    //             const seller = order.store.owner;
+    //             const wallet = seller.wallet;
+    //             const deadLine = order.returnDeadline
+    //             if (!wallet) {
+    //                 throw new BadRequestException(`کیف پول فروشنده سفارش ${order.id} پیدا نشد.`,);
+    //             }
+    //             // const settlementDate = new Date(deadLine);
+    //             // settlementDate.setDate(settlementDate.getDate() + 1);
+    //             const total = new Prisma.Decimal(order.totalPrice);
+    //             const commission = new Prisma.Decimal(order.commissionAmount,);
+    //             const tax = new Prisma.Decimal(order.taxAmount);
+    //             const sellerAmount = total.minus(commission).minus(tax);
+    //             if (total.lte(0) || commission.lt(0) || tax.lt(0) || sellerAmount.lt(0)) {
+    //                 throw new BadRequestException(`مبالغ مالی سفارش ${order.id} معتبر نیستند.`);
+    //             }
+    //             // فقط سهم خالص فروشنده وارد موجودی در انتظار می‌شود
+    //             await tx.wallet.update({
+    //                 where: { id: wallet.id },
+    //                 data: {
+    //                     pendingBalance: { increment: sellerAmount },
+    //                 },
+    //             });
+    //             // 1. سهم خالص فروشنده؛ منتظر موعد تسویه
+    //             await tx.walletTransaction.create({
+    //                 data: {
+    //                     type: 'SALE_SETTLEMENT',
+    //                     status: 'PENDING',
+    //                     amount: sellerAmount,
+    //                     trackingCode: this.generateTrackingCode('SET'),
+    //                     userId: seller.id,
+    //                     walletId: wallet.id,
+    //                     orderId: order.id,
+    //                     settlementDate: deadLine
+    //                 },
+    //             });
+    //             // 2. کمیسیون؛ ردیف توضیحی صورتحساب، بدون کسر مجدد از کیف پول
+    //             if (commission.gt(0)) {
+    //                 await tx.walletTransaction.create({
+    //                     data: {
+    //                         type: 'COMMISSION',
+    //                         status: 'COMPLETED',
+    //                         amount: commission,
+    //                         trackingCode: this.generateTrackingCode('COM'),
+    //                         userId: seller.id,
+    //                         walletId: wallet.id,
+    //                         orderId: order.id,
+    //                     },
+    //                 });
+    //             }
+    //             // 3. مالیات؛ ردیف توضیحی صورتحساب
+    //             if (tax.gt(0)) {
+    //                 await tx.walletTransaction.create({
+    //                     data: {
+    //                         type: 'TAX',
+    //                         status: 'COMPLETED',
+    //                         amount: tax,
+    //                         trackingCode: this.generateTrackingCode('TAX'),
+    //                         userId: seller.id,
+    //                         walletId: wallet.id,
+    //                         orderId: order.id,
+    //                     },
+    //                 });
+    //             }
+    //             const totalQty = await tx.orderItem.aggregate({
+    //                 where: { orderId: order.id },
+    //                 _sum: { quantity: true },
+    //             });
+    //             const qty = totalQty._sum.quantity ?? 0;
+    //             if (qty > 0) {
+    //                 await tx.storeRating.update({
+    //                     where: { storeId: order.storeId },
+    //                     data: { saleCount: { increment: qty } },
+    //                 });
+    //             }
+    //         }
+    //         await tx.walletTransaction.createMany({
+    //             data: [
+    //                 {
+    //                     amount: checkout.salesProfit,
+    //                     type: 'DEPOSIT',
+    //                     trackingCode: this.generateTrackingCode('DES'),
+    //                     status: 'COMPLETED',
+    //                     userId: superAdmin?.id,
+    //                     walletId: superAdmin.wallet.id,
+    //                     description: ` سود سفارش ${checkout.checkoutNumber} `,
+    //                 },
+    //                 {
+    //                     amount: checkout.taxAmount,
+    //                     type: 'TAX',
+    //                     trackingCode: this.generateTrackingCode('TAX'),
+    //                     status: 'COMPLETED',
+    //                     userId: superAdmin?.id,
+    //                     walletId: superAdmin.wallet.id,
+    //                     description: ` مالیات سفارش ${checkout.checkoutNumber} `,
+    //                 },
+    //             ]
+    //         })
+    //         await tx.wallet.update({
+    //             where: {
+    //                 id: superAdmin.wallet.id
+    //             },
+    //             data: {
+    //                 balance: { increment: checkout.salesProfit },
+    //                 pendingBalance: { increment: checkout.taxAmount },
+    //             }
+    //         })
+    //         await tx.order.updateMany({
+    //             where: { checkoutId: checkoutId },
+    //             data: { status: 'CONFIRMED' }
+    //         })
+    //         await tx.checkout.update({
+    //             where: { id: checkoutId },
+    //             data: { status: 'CONFIRMED' }
+    //         })
+    //         return { success: true, };
+    //     });
+    // }
+    //// متد اضافه شده
+
     async updatePaymentCheckout(checkoutId: string) {
-        return this.prisma.$transaction(async (tx) => {
-            // پرداخت فقط یک بار از pending به paid تغییر می‌کند
+        const scheduled: { id: string; at: Date | null }[] = [];
+
+        const result = await this.prisma.$transaction(async (tx) => {
             const checkout = await tx.checkout.update({
                 where: {
                     id: checkoutId,
@@ -623,11 +795,7 @@ export class OrdersService {
                                     owner: {
                                         select: {
                                             id: true,
-                                            wallet: {
-                                                select: {
-                                                    id: true,
-                                                },
-                                            },
+                                            wallet: { select: { id: true } },
                                         },
                                     },
                                 },
@@ -636,34 +804,46 @@ export class OrdersService {
                     },
                 },
             });
-            const superAdmin = await tx.user.findFirst({ where: { role: 'SUPERADMIN' }, select: { id: true, wallet: { select: { id: true } } } })
+
+            const superAdmin = await tx.user.findFirst({
+                where: { role: 'SUPERADMIN' },
+                select: { id: true, wallet: { select: { id: true } } },
+            });
+
             if (!checkout.orders.length || !superAdmin?.id || !superAdmin?.wallet?.id) {
                 throw new BadRequestException('سفارشی برای این پرداخت پیدا نشد.');
             }
-            const deadLine = new Date(
-                Date.now() + 7 * 24 * 60 * 60 * 1000,
-            );
+
+            // اگر returnDeadline خالی بود، پیش‌فرض ۷ روز
+            const fallbackDeadline = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
             for (const order of checkout.orders) {
                 const seller = order.store.owner;
                 const wallet = seller.wallet;
-                const deadLine = order.returnDeadline
+                const deadLine = order.returnDeadline ?? fallbackDeadline;
+
                 if (!wallet) {
-                    throw new BadRequestException(`کیف پول فروشنده سفارش ${order.id} پیدا نشد.`,);
+                    throw new BadRequestException(
+                        `کیف پول فروشنده سفارش ${order.id} پیدا نشد.`,
+                    );
                 }
-                // const settlementDate = new Date(deadLine);
-                // settlementDate.setDate(settlementDate.getDate() + 1);
 
                 const total = new Prisma.Decimal(order.totalPrice);
-                const commission = new Prisma.Decimal(order.commissionAmount,);
+                const commission = new Prisma.Decimal(order.commissionAmount);
                 const tax = new Prisma.Decimal(order.taxAmount);
                 const sellerAmount = total.minus(commission).minus(tax);
 
-                if (total.lte(0) || commission.lt(0) || tax.lt(0) || sellerAmount.lt(0)) {
-                    throw new BadRequestException(`مبالغ مالی سفارش ${order.id} معتبر نیستند.`);
+                if (
+                    total.lte(0) ||
+                    commission.lt(0) ||
+                    tax.lt(0) ||
+                    sellerAmount.lt(0)
+                ) {
+                    throw new BadRequestException(
+                        `مبالغ مالی سفارش ${order.id} معتبر نیستند.`,
+                    );
                 }
 
-                // فقط سهم خالص فروشنده وارد موجودی در انتظار می‌شود
                 await tx.wallet.update({
                     where: { id: wallet.id },
                     data: {
@@ -671,8 +851,8 @@ export class OrdersService {
                     },
                 });
 
-                // 1. سهم خالص فروشنده؛ منتظر موعد تسویه
-                await tx.walletTransaction.create({
+                // مهم: create + select id
+                const settlementTx = await tx.walletTransaction.create({
                     data: {
                         type: 'SALE_SETTLEMENT',
                         status: 'PENDING',
@@ -681,10 +861,14 @@ export class OrdersService {
                         userId: seller.id,
                         walletId: wallet.id,
                         orderId: order.id,
-                        settlementDate: deadLine
+                        settlementDate: deadLine,
                     },
+                    select: { id: true },
                 });
-                // 2. کمیسیون؛ ردیف توضیحی صورتحساب، بدون کسر مجدد از کیف پول
+
+                // فقط جمع می‌کنیم؛ هنوز Redis نه
+                scheduled.push({ id: settlementTx.id, at: deadLine });
+
                 if (commission.gt(0)) {
                     await tx.walletTransaction.create({
                         data: {
@@ -699,7 +883,6 @@ export class OrdersService {
                     });
                 }
 
-                // 3. مالیات؛ ردیف توضیحی صورتحساب
                 if (tax.gt(0)) {
                     await tx.walletTransaction.create({
                         data: {
@@ -713,11 +896,11 @@ export class OrdersService {
                         },
                     });
                 }
+
                 const totalQty = await tx.orderItem.aggregate({
                     where: { orderId: order.id },
                     _sum: { quantity: true },
                 });
-
                 const qty = totalQty._sum.quantity ?? 0;
                 if (qty > 0) {
                     await tx.storeRating.update({
@@ -734,7 +917,7 @@ export class OrdersService {
                         type: 'DEPOSIT',
                         trackingCode: this.generateTrackingCode('DES'),
                         status: 'COMPLETED',
-                        userId: superAdmin?.id,
+                        userId: superAdmin.id,
                         walletId: superAdmin.wallet.id,
                         description: ` سود سفارش ${checkout.checkoutNumber} `,
                     },
@@ -743,32 +926,43 @@ export class OrdersService {
                         type: 'TAX',
                         trackingCode: this.generateTrackingCode('TAX'),
                         status: 'COMPLETED',
-                        userId: superAdmin?.id,
+                        userId: superAdmin.id,
                         walletId: superAdmin.wallet.id,
                         description: ` مالیات سفارش ${checkout.checkoutNumber} `,
                     },
-                ]
-            })
+                ],
+            });
+
             await tx.wallet.update({
-                where: {
-                    id: superAdmin.wallet.id
-                },
+                where: { id: superAdmin.wallet.id },
                 data: {
                     balance: { increment: checkout.salesProfit },
                     pendingBalance: { increment: checkout.taxAmount },
-                }
-            })
+                },
+            });
+
             await tx.order.updateMany({
-                where: { checkoutId: checkoutId },
-                data: { status: 'CONFIRMED' }
-            })
+                where: { checkoutId },
+                data: { status: 'CONFIRMED' },
+            });
+
             await tx.checkout.update({
                 where: { id: checkoutId },
-                data: { status: 'CONFIRMED' }
-            })
+                data: { status: 'CONFIRMED' },
+            });
 
-            return { success: true, };
+            return { success: true as const };
         });
+
+        // ─── اینجا transaction تمام شده (commit) ───
+        // حالا Redis / صف
+        await Promise.allSettled(
+            scheduled.map((s) =>
+                this.settlementQueue.scheduleSettlement(s.id, s.at),
+            ),
+        );
+
+        return result;
     }
 
     async getDetailCheckout(id: string) {
@@ -809,3 +1003,31 @@ export class OrdersService {
         return { success: true }
     }
 }
+
+// 
+// داخل سرویس return، بعد از تأیید مرجوعی
+
+// const pending = await this.prisma.walletTransaction.findMany({
+//   where: {
+//     orderId: order.id, // یا orderIdهای درگیر
+//     type: 'SALE_SETTLEMENT',
+//     status: 'PENDING',
+//   },
+//   select: { id: true, amount: true, walletId: true },
+// });
+
+// await this.prisma.$transaction(async (tx) => {
+//   for (const p of pending) {
+//     await tx.wallet.update({
+//       where: { id: p.walletId },
+//       data: { pendingBalance: { decrement: p.amount } },
+//     });
+//     await tx.walletTransaction.update({
+//       where: { id: p.id },
+//       data: { status: 'FAILED' },
+//     });
+//   }
+//   // اینجا منطق برگشت پول به خریدار / wallet خریدار
+// });
+
+// await this.settlementQueue.cancelMany(pending.map((p) => p.id));

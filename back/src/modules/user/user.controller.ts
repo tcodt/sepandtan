@@ -1,9 +1,9 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Put, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiBody, ApiOkResponse, ApiOperation, ApiParam } from '@nestjs/swagger';
 import { UserService } from './user.service.js';
-import { UserEntity, UserProfileResponseDto } from './entities/user.entities.js';
+import { ProfileOnboardEntity, UserEntity, UserProfileResponseDto } from './entities/user.entities.js';
 import type { Request } from 'express';
-import { GetPendingCoach, GetPendingStore, QueryUserDto } from './dtos/query.user.js';
+import { classOnBoardingDto, GetPendingCoach, GetPendingStore, QueryUserDto } from './dtos/query.user.js';
 import { UpdateCoachByAdminDto, UpdateProfileDto, UpdateStoreByAdminDto, UpdateUserDto } from './dtos/update.user.dto.js';
 import { AccessTokenGuard } from '../auth/guard/access-token.guard.js';
 import { PaginatedResponse } from '../../common/dtos/pagination-response.dto.js';
@@ -12,6 +12,7 @@ import { QueryDefaultDto } from '../../common/dtos/query.defualt.dto.js';
 import { CurrentUser } from '../../common/decorators/current-user.decorator.js';
 import { CreateCoachDto } from '../coach/dto/coach.dto.js';
 import { CreateStoreDto } from '../store/dto/store.dto.js';
+import { OnBoardingStep } from '../../generated/prisma/enums.js';
 
 /** * کنترلر برای ساخت و اپدیت تمام کاربران سایت */
 @ApiBearerAuth()
@@ -51,7 +52,7 @@ export class UserController {
     return this.userService.updateOrCreateProfile(body, id);
   }
 
-  @Put('/profile/:idUser')
+  @Put('/profile/:userId')
   @UseGuards(AccessTokenGuard)
   @Roles('SUPERADMIN')
   @ApiOkResponse({ schema: { example: { success: true } } })
@@ -60,8 +61,20 @@ export class UserController {
     description: 'دسترسی : سوپر ادمین'
   })
   @ApiBody({ type: UpdateProfileDto, description: 'آپدیت اطلاعات اصلی کاربر' })
-  updateProfileByAdmin(@Body() body: UpdateProfileDto, @Param('idUser') id: string) {
+  updateProfileByAdmin(@Body() body: UpdateProfileDto, @Param('userId') id: string) {
     return this.userService.updateOrCreateProfile(body, id)
+  }
+
+  @Patch('/profile/onboarding')
+  @UseGuards(AccessTokenGuard)
+  @ApiOkResponse({ type: ProfileOnboardEntity })
+  @ApiOperation({
+    summary: 'update onboarding user By user',
+    description: 'دسترسی : خود کاربر و تمام کاربرانی که احراز هویت کردند'
+  })
+  @ApiBody({ type: classOnBoardingDto, description: 'آپدیت آموزش کاربر' })
+  updateOnboardByAdmin(@Body() body: classOnBoardingDto, @CurrentUser('id') userId: string) {
+    return this.userService.updateOnboardByAdmin(body, userId)
   }
 
   /// Store ///
@@ -130,12 +143,12 @@ export class UserController {
     description: 'دسترسی : سوپر ادمین'
   })
   @ApiBody({ type: UpdateCoachByAdminDto, description: 'آپدیت اطلاعات اصلی کاربر مثلا تایید و رد صلاحیت مربی' })
-  updateCoachStatus(@Body() body: UpdateCoachByAdminDto, @Param('coachId') coachId: string) {
-    return this.userService.updateCoachStatus(body, coachId)
+  updateAccountStatus(@Body() body: UpdateCoachByAdminDto, @Param('coachId') coachId: string) {
+    return this.userService.updateAccountStatus(body, coachId)
   }
 
   ///  User ///
-    @Get('/')
+  @Get('/')
   @UseGuards(AccessTokenGuard)
   @Roles('ADMIN')
   @ApiOperation({ summary: 'لیست تمام کاربران', description: 'دسترسی : ادمین وسوپر ادمین' })
@@ -161,6 +174,16 @@ export class UserController {
   @ApiOkResponse({ schema: { example: { success: true } } })
   @ApiOperation({ summary: 'delete user with ID by  Super Admin', description: 'دسترسی : سوپر ادمین' })
   deleteUser(@Param('id') id: string) {
+    return this.userService.deleteUser(id)
+  }
+
+  @Delete('/db/:id')
+  @UseGuards(AccessTokenGuard)
+  @Roles('SUPERADMIN')
+  @ApiParam({ name: 'id', description: 'آیدی کاربر که باید حذف شود', example: 'cf91f6d4-ba85-4dd4-b870-37dbf1702ca4' })
+  @ApiOkResponse({ schema: { example: { success: true } } })
+  @ApiOperation({ summary: 'Delete the user with the given ID from the database by the admin.', description: 'دسترسی : سوپر ادمین اخطار با حذف کاربر به طور دائم از دیتابیس پاک میشود' })
+  deleteDbUser(@Param('id') id: string) {
     return this.userService.deleteUser(id)
   }
 

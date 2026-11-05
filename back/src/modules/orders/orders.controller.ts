@@ -20,8 +20,6 @@ import { Throttle } from '@nestjs/throttler';
 export class OrdersController {
     constructor(private readonly ordersService: OrdersService) { }
 
-
-
     @Post()
     @Throttle({ default: { limit: 5, ttl: 60_000 } })
     @ApiOperation({

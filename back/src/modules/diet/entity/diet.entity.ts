@@ -61,7 +61,7 @@ export class DietDayEntity {
   planId!: string;
 
   @ApiProperty({ example: 1, description: 'روز چندم برنامه' })
-  dayIndex!: number;
+  weekday!: number;
 
   @ApiPropertyOptional({ example: 'روز اول', nullable: true })
   title?: string | null;

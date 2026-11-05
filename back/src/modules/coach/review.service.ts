@@ -303,13 +303,14 @@ export class ReviewCoachService {
         };
     }
 
-    async getAllReviewCoach(coachId: string, query: SearchCoachReview) {
+    async getAllReviewCoach(query: SearchCoachReview) {
+        if (!query.coachId) throw new NotFoundException('لطفا آیدی مربی را ارسال کنید')
         const { page, id, limit, order, status } = query
         const limitPage = Number(limit) || Number(this.configService.get('limit.coach')) || 10;
         const skip = (Number(page) - 1) * limitPage;
 
         const where: Prisma.CoachReviewWhereInput = {
-            coachId,
+            coachId: query.coachId,
             ...(status && status !== 'ALL' && { status }),
             ...(id && { id })
         };

@@ -13,6 +13,8 @@ import {
   CreateWorkoutPlanDto, UpdateWorkoutPlanDto,
   CreateWorkoutDayDto, UpdateWorkoutDayDto,
   CreateWorkoutExerciseDto, UpdateWorkoutExerciseDto,
+  CreateWorkoutPhaseDto,
+  UpdateWorkoutPhaseDto,
 } from './dto/workout.dto.js';
 import {
   WorkoutPlanEntity, WorkoutPlanSummaryEntity,
@@ -22,7 +24,7 @@ import {
 @ApiTags('Workout')
 @Controller('workout')
 export class WorkoutController {
-  constructor(private readonly workoutService: WorkoutService) {}
+  constructor(private readonly workoutService: WorkoutService) { }
 
   // ============ Public ============
 
@@ -49,6 +51,15 @@ export class WorkoutController {
   @ApiOperation({ summary: 'لیست برنامه‌های من (Coach)' })
   getMyPlans(@CurrentUser('id') userId: string, @Query() query: QueryDefaultDto) {
     return this.workoutService.getMyPlans(userId, query);
+  }
+
+  @Get('plan/my/:id')
+  @UseGuards(AccessTokenGuard)
+  @Roles('COACH')
+  @ApiOkResponse({ type: WorkoutPlanEntity })
+  @ApiOperation({ summary: 'جزئیات برنامه تمرینی (Coach)', description: 'شامل روزها، حرکات و اطلاعات حرکت' })
+  getMyPlan(@Param('id') id: string) {
+    return this.workoutService.getMyPlan(id);
   }
 
   @Post('plan')
@@ -84,13 +95,40 @@ export class WorkoutController {
     return this.workoutService.deletePlan(userId, id);
   }
 
+  // ============ Coach: Phase ============
+
+  @Post('phase/:planId')
+  @UseGuards(AccessTokenGuard)
+  @Roles('COACH')
+  @ApiOkResponse({ type: WorkoutDayEntity })
+  @ApiOperation({ summary: 'افزودن هفته به برنامه (Coach)', description: 'weekday تکراری → 409' })
+  addPhase(@CurrentUser('id') userId: string, @Param('planId') planId: string, @Body() dto: CreateWorkoutPhaseDto) {
+    return this.workoutService.addPhase(userId, planId, dto);
+  }
+
+  @Put('phase/:phaseId')
+  @UseGuards(AccessTokenGuard)
+  @Roles('COACH')
+  @ApiOperation({ summary: 'ویرایش هفته (Coach)' })
+  updatePhase(@CurrentUser('id') userId: string, @Param('phaseId') phaseId: string, @Body() dto: UpdateWorkoutPhaseDto) {
+    return this.workoutService.updatePhase(userId, phaseId, dto);
+  }
+
+  @Delete('phase/:phaseId')
+  @UseGuards(AccessTokenGuard)
+  @Roles('COACH')
+  @ApiOperation({ summary: 'حذف هفته (Coach)' })
+  deletePhase(@CurrentUser('id') userId: string, @Param('phaseId') phaseId: string) {
+    return this.workoutService.deletePhase(userId, phaseId);
+  }
+
   // ============ Coach: Day ============
 
   @Post('plan/:planId/day')
   @UseGuards(AccessTokenGuard)
   @Roles('COACH')
   @ApiOkResponse({ type: WorkoutDayEntity })
-  @ApiOperation({ summary: 'افزودن روز به برنامه (Coach)', description: 'dayIndex تکراری → 409' })
+  @ApiOperation({ summary: 'افزودن روز به برنامه (Coach)', description: 'weekday تکراری → 409' })
   addDay(@CurrentUser('id') userId: string, @Param('planId') planId: string, @Body() dto: CreateWorkoutDayDto) {
     return this.workoutService.addDay(userId, planId, dto);
   }

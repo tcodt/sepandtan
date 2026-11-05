@@ -86,7 +86,7 @@ CREATE TYPE "TypeMedia" AS ENUM ('VIDEO', 'IMAGE', 'VOICE', 'FILE', 'BANNER', 'A
 CREATE TYPE "ReportsStatus" AS ENUM ('PENDING', 'RESOLVED', 'CLOSED');
 
 -- CreateEnum
-CREATE TYPE "CoachStatus" AS ENUM ('PENDING', 'APPROVED', 'REJECTED', 'SUSPENDED');
+CREATE TYPE "AccountStatus" AS ENUM ('PENDING', 'APPROVED', 'REJECTED', 'SUSPENDED');
 
 -- CreateEnum
 CREATE TYPE "PlanStatus" AS ENUM ('DRAFT', 'ACTIVE', 'COMPLETED', 'CANCELLED');
@@ -335,7 +335,7 @@ CREATE TABLE "coaches" (
     "city_id" TEXT,
     "max_clients" INTEGER NOT NULL DEFAULT 20,
     "is_accepting_clients" BOOLEAN NOT NULL DEFAULT true,
-    "status" "CoachStatus" NOT NULL DEFAULT 'PENDING',
+    "status" "AccountStatus" NOT NULL DEFAULT 'PENDING',
     "rejection_reason" TEXT,
     "rating_avg" DOUBLE PRECISION NOT NULL DEFAULT 0,
     "rating_count" INTEGER NOT NULL DEFAULT 0,
