@@ -50,8 +50,9 @@ export async function createUser(data: {
     phone: data.phone,
     password: data.password,
     avatarUrl: data.avatarUrl,
-    role: "trainee", // پیش‌فرض
+    role: "trainee",
     roleStatus: "approved",
+    accountStatus: "ACTIVE", // ← الزامی
     roles: ["trainee"],
     onboardingStatus: "not_started",
     currentOnboardingStep: 1,
