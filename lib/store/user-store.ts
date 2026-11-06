@@ -9,7 +9,14 @@ import type {
   UserProfile,
   UserRole,
   RoleStatus,
+  ProfessionalRoleLock,
 } from "@/lib/types/plan";
+import {
+  canRequestProfessionalRole,
+  lockFromRole,
+  mergeProfessionalLock,
+} from "@/lib/role-lock";
+import { setAccessToken } from "@/lib/api/client";
 
 export type { BodyInfo, Equipment, Goal, UserProfile };
 
@@ -17,6 +24,8 @@ type UserState = {
   user: UserProfile | null;
   isAuthenticated: boolean;
   _hasHydrated: boolean;
+  /** قفل‌ها بعد از logout هم می‌مانند */
+  professionalLocksByUserId: Record<string, ProfessionalRoleLock>;
 
   setHasHydrated: (value: boolean) => void;
   setUser: (user: UserProfile) => void;
@@ -35,67 +44,126 @@ type UserState = {
   }) => void;
 };
 
+function withLock(
+  user: UserProfile,
+  locks: Record<string, ProfessionalRoleLock>,
+): {
+  user: UserProfile;
+  professionalLocksByUserId: Record<string, ProfessionalRoleLock>;
+} {
+  const fromMemory = locks[user.id];
+  const fromUser = user.professionalRoleLock;
+  const fromRole = lockFromRole(user.role);
+  const lock = mergeProfessionalLock(
+    fromMemory,
+    mergeProfessionalLock(fromUser, fromRole),
+  );
+
+  const professionalLocksByUserId = lock
+    ? { ...locks, [user.id]: lock }
+    : { ...locks };
+
+  return {
+    user: { ...user, professionalRoleLock: lock },
+    professionalLocksByUserId,
+  };
+}
+
 export const useUserStore = create<UserState>()(
   persist(
     (set, get) => ({
       user: null,
       isAuthenticated: false,
       _hasHydrated: false,
+      professionalLocksByUserId: {},
 
       setHasHydrated: (value) => set({ _hasHydrated: value }),
 
-      setUser: (user) => set({ user, isAuthenticated: true }),
+      setUser: (user) => {
+        const merged = withLock(user, get().professionalLocksByUserId);
+        set({
+          user: merged.user,
+          isAuthenticated: true,
+          professionalLocksByUserId: merged.professionalLocksByUserId,
+        });
+      },
 
       updateProfile: (data) => {
         const current = get().user;
         if (!current) return;
+        const next: UserProfile = {
+          ...current,
+          ...data,
+          updatedAt: new Date().toISOString(),
+        };
+        const merged = withLock(next, get().professionalLocksByUserId);
         set({
-          user: {
-            ...current,
-            ...data,
-            updatedAt: new Date().toISOString(),
-          },
+          user: merged.user,
+          professionalLocksByUserId: merged.professionalLocksByUserId,
         });
       },
 
-      setAuthFromBackend: (user) =>
+      setAuthFromBackend: (incoming) => {
+        const merged = withLock(incoming, get().professionalLocksByUserId);
         set({
-          user,
+          user: merged.user,
           isAuthenticated: true,
-        }),
+          professionalLocksByUserId: merged.professionalLocksByUserId,
+        });
+      },
 
       logout: () => {
+        setAccessToken(null);
         set({
           user: null,
           isAuthenticated: false,
+          // professionalLocksByUserId حفظ می‌شود
         });
       },
 
       setRole: (role, status = "approved") => {
         const current = get().user;
         if (!current) return;
+        const next: UserProfile = {
+          ...current,
+          role,
+          roleStatus: status,
+          roles: [role],
+          professionalRoleLock: mergeProfessionalLock(
+            current.professionalRoleLock,
+            lockFromRole(role),
+          ),
+          updatedAt: new Date().toISOString(),
+        };
+        const merged = withLock(next, get().professionalLocksByUserId);
         set({
-          user: {
-            ...current,
-            role,
-            roleStatus: status,
-            roles: [role],
-            updatedAt: new Date().toISOString(),
-          },
+          user: merged.user,
+          professionalLocksByUserId: merged.professionalLocksByUserId,
         });
       },
 
       requestRole: (role) => {
         const current = get().user;
         if (!current) return;
-        set({
-          user: {
-            ...current,
+
+        const gate = canRequestProfessionalRole(current, role);
+        if (!gate.ok) return;
+
+        const next: UserProfile = {
+          ...current,
+          role,
+          roleStatus: "pending",
+          roles: [role],
+          professionalRoleLock: mergeProfessionalLock(
+            current.professionalRoleLock,
             role,
-            roleStatus: "pending",
-            roles: [role],
-            updatedAt: new Date().toISOString(),
-          },
+          ),
+          updatedAt: new Date().toISOString(),
+        };
+        const merged = withLock(next, get().professionalLocksByUserId);
+        set({
+          user: merged.user,
+          professionalLocksByUserId: merged.professionalLocksByUserId,
         });
       },
 
@@ -138,6 +206,7 @@ export const useUserStore = create<UserState>()(
       partialize: (state) => ({
         user: state.user,
         isAuthenticated: state.isAuthenticated,
+        professionalLocksByUserId: state.professionalLocksByUserId,
       }),
       onRehydrateStorage: () => (state) => {
         state?.setHasHydrated(true);

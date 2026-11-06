@@ -20,6 +20,7 @@ import {
   House,
   User,
   X,
+  Tags,
 } from "lucide-react";
 
 import { useAuth } from "@/features/auth/hooks/use-auth";
@@ -50,12 +51,14 @@ import { useRequireAuth } from "@/hooks/use-require-auth";
 /* -------------------------------------------------------------------------- */
 
 const navItems = [
-  { href: "/admin", label: "داشبورد", icon: LayoutDashboard },
-  { href: "/", label: "صفحه اصلی", icon: House },
+  { href: "/admin", label: "نمای کلی", icon: LayoutDashboard },
   { href: "/admin/users", label: "کاربران", icon: Users },
-  { href: "/admin/coaches", label: "مربیان", icon: UserCheck },
-  { href: "/admin/stores", label: "فروشندگان", icon: Store },
-  { href: "/account", label: "حساب کاربری", icon: User },
+  { href: "/admin/coaches", label: "درخواست مربی", icon: UserCheck },
+  { href: "/admin/stores", label: "درخواست فروشنده", icon: Store },
+  { href: "/admin/categories", label: "دسته‌بندی‌ها", icon: Tags },
+  // بعدی: products moderate
+  { href: "/", label: "سایت", icon: House },
+  { href: "/account", label: "حساب", icon: User },
 ] as const;
 
 function isActive(pathname: string, href: string) {

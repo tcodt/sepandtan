@@ -5,7 +5,6 @@ import {
   Search,
   Loader2,
   MoreHorizontal,
-  Shield,
   UserX,
   Users,
   AlertTriangle,
@@ -25,6 +24,7 @@ import {
   useAdminUsers,
   useUpdateAdminUser,
   useDeleteAdminUser,
+  useSoftDeleteAdminUser,
 } from "@/features/admin/users/hooks/use-admin-users";
 import type { BackendRole, BackendUserStatus } from "@/lib/types/api";
 import type { AdminUsersFilters } from "@/features/admin/users/types";
@@ -74,6 +74,12 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
+import {
+  canAdminAssignRole,
+  getAdminRoleLock,
+  lockFromRole,
+  rememberAdminRoleLock,
+} from "@/lib/role-lock";
 
 /* -------------------------------------------------------------------------- */
 /* Constants                                                                  */
@@ -116,17 +122,6 @@ const ROLE_STYLES: Record<BackendRole, string> = {
     "bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-500/30",
 };
 
-/** Coach و Seller متقابلاً انحصاری‌اند */
-function isForbiddenRoleSwitch(
-  current: BackendRole,
-  next: BackendRole,
-): boolean {
-  return (
-    (current === "STORE" && next === "COACH") ||
-    (current === "COACH" && next === "STORE")
-  );
-}
-
 /* -------------------------------------------------------------------------- */
 /* Sub-components                                                             */
 /* -------------------------------------------------------------------------- */
@@ -167,6 +162,7 @@ function UserCard({
   user,
   onChangeRole,
   onChangeStatus,
+  onSoftDelete,
   onDelete,
 }: {
   user: {
@@ -181,6 +177,7 @@ function UserCard({
   };
   onChangeRole: (id: string, role: BackendRole) => void;
   onChangeStatus: (id: string, status: BackendUserStatus) => void;
+  onSoftDelete: (user: { id: string; name: string }) => void;
   onDelete: (user: { id: string; name: string }) => void;
 }) {
   return (
@@ -204,6 +201,7 @@ function UserCard({
           user={user}
           onChangeRole={onChangeRole}
           onChangeStatus={onChangeStatus}
+          onSoftDelete={onSoftDelete}
           onDelete={onDelete}
         />
       </div>
@@ -243,6 +241,7 @@ function UserActions({
   user,
   onChangeRole,
   onChangeStatus,
+  onSoftDelete,
   onDelete,
 }: {
   user: {
@@ -253,73 +252,102 @@ function UserActions({
   };
   onChangeRole: (id: string, role: BackendRole) => void;
   onChangeStatus: (id: string, status: BackendUserStatus) => void;
+  onSoftDelete: (user: { id: string; name: string }) => void;
   onDelete: (user: { id: string; name: string }) => void;
 }) {
+  const lock = getAdminRoleLock(user.id, user.role);
+  const disableCoach = lock === "seller" || user.role === "STORE";
+  const disableStore = lock === "coach" || user.role === "COACH";
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button
           variant="ghost"
           size="icon"
-          className="h-9 w-9 shrink-0 data-[state=open]:bg-muted"
-          aria-label={`گزینه‌های ${user.name}`}
+          className="h-9 w-9 shrink-0"
+          aria-label={`اقدامات ${user.name}`}
         >
           <MoreHorizontal className="h-4 w-4" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-52">
+      <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuLabel className="text-xs text-muted-foreground">
           تغییر نقش
+          {lock ? (
+            <span className="block font-normal text-[10px] mt-0.5">
+              قفل: {lock === "coach" ? "مربی" : "فروشنده"}
+            </span>
+          ) : null}
         </DropdownMenuLabel>
-        <DropdownMenuItem onClick={() => onChangeRole(user.id, "USER")}>
-          <Shield className="me-2 h-4 w-4" />
-          کاربر
-        </DropdownMenuItem>
+
         <DropdownMenuItem
-          disabled={user.role === "STORE"}
+          disabled={user.role === "USER"}
+          onClick={() => onChangeRole(user.id, "USER")}
+        >
+          کاربر عادی
+        </DropdownMenuItem>
+
+        <DropdownMenuItem
+          disabled={disableCoach || user.role === "COACH"}
           onClick={() => onChangeRole(user.id, "COACH")}
         >
-          <Shield className="me-2 h-4 w-4" />
           مربی
-          {user.role === "STORE" ? (
+          {disableCoach && (
             <span className="ms-auto text-[10px] text-muted-foreground">
-              اول کاربر
+              قفل
             </span>
-          ) : null}
+          )}
         </DropdownMenuItem>
+
         <DropdownMenuItem
-          disabled={user.role === "COACH"}
+          disabled={disableStore || user.role === "STORE"}
           onClick={() => onChangeRole(user.id, "STORE")}
         >
-          <Shield className="me-2 h-4 w-4" />
           فروشنده
-          {user.role === "COACH" ? (
+          {disableStore && (
             <span className="ms-auto text-[10px] text-muted-foreground">
-              اول کاربر
+              قفل
             </span>
-          ) : null}
+          )}
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => onChangeRole(user.id, "ADMIN")}>
-          <Shield className="me-2 h-4 w-4" />
+
+        <DropdownMenuItem
+          disabled={user.role === "ADMIN"}
+          onClick={() => onChangeRole(user.id, "ADMIN")}
+        >
           ادمین
         </DropdownMenuItem>
+
         <DropdownMenuSeparator />
         <DropdownMenuLabel className="text-xs text-muted-foreground">
-          تغییر وضعیت
+          وضعیت حساب
         </DropdownMenuLabel>
-        <DropdownMenuItem onClick={() => onChangeStatus(user.id, "ACTIVE")}>
-          فعال کردن
+        <DropdownMenuItem
+          disabled={user.status === "ACTIVE"}
+          onClick={() => onChangeStatus(user.id, "ACTIVE")}
+        >
+          فعال
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => onChangeStatus(user.id, "SUSPENDED")}>
-          معلق کردن
+        <DropdownMenuItem
+          disabled={user.status === "SUSPENDED"}
+          onClick={() => onChangeStatus(user.id, "SUSPENDED")}
+        >
+          تعلیق
         </DropdownMenuItem>
+        <DropdownMenuItem
+          disabled={user.status === "DELETED"}
+          onClick={() => onSoftDelete({ id: user.id, name: user.name })}
+        >
+          حذف منطقی
+        </DropdownMenuItem>
+
         <DropdownMenuSeparator />
         <DropdownMenuItem
           className="text-destructive focus:text-destructive"
           onClick={() => onDelete({ id: user.id, name: user.name })}
         >
-          <UserX className="me-2 h-4 w-4" />
-          حذف کاربر
+          حذف از سرور
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -487,10 +515,10 @@ function FilterFields({
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="ALL">همه</SelectItem>
             <SelectItem value="ACTIVE">فعال</SelectItem>
             <SelectItem value="SUSPENDED">معلق</SelectItem>
-            <SelectItem value="DELETED">حذف‌شده</SelectItem>
+            <SelectItem value="DELETED">حذف‌شده (منطقی)</SelectItem>
+            <SelectItem value="ALL">همه</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -506,7 +534,7 @@ export default function AdminUsersPage() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [role, setRole] = useState<BackendRole | "ALL">("ALL");
-  const [status, setStatus] = useState<BackendUserStatus | "ALL">("ALL");
+  const [status, setStatus] = useState<BackendUserStatus | "ALL">("ACTIVE");
   const [searchInput, setSearchInput] = useState("");
   const [pendingDelete, setPendingDelete] = useState<{
     id: string;
@@ -530,6 +558,7 @@ export default function AdminUsersPage() {
     useAdminUsers(filters);
   const updateMutation = useUpdateAdminUser();
   const deleteMutation = useDeleteAdminUser();
+  const softDeleteMutation = useSoftDeleteAdminUser();
 
   const users = useMemo(() => data?.users ?? [], [data?.users]);
   const total = data?.pagination.total ?? 0;
@@ -552,14 +581,13 @@ export default function AdminUsersPage() {
   const handleChangeRole = useCallback(
     (userId: string, newRole: BackendRole) => {
       const target = users.find((u) => u.id === userId);
-      if (!target) return;
+      if (!target || target.role === newRole) return;
 
-      if (target.role === newRole) return;
+      const lock = getAdminRoleLock(userId, target.role);
+      const gate = canAdminAssignRole(target.role, lock, newRole);
 
-      if (isForbiddenRoleSwitch(target.role, newRole)) {
-        toast.error(
-          "نقش مربی و فروشنده همزمان مجاز نیست. ابتدا نقش را به «کاربر» تغییر دهید، سپس نقش جدید را انتخاب کنید.",
-        );
+      if (!gate.ok) {
+        toast.error(gate.message);
         return;
       }
 
@@ -569,7 +597,16 @@ export default function AdminUsersPage() {
       );
       if (!ok) return;
 
-      updateMutation.mutate({ id: userId, payload: { role: newRole } });
+      updateMutation.mutate(
+        { id: userId, payload: { role: newRole } },
+        {
+          onSuccess: () => {
+            const nextLock = lockFromRole(newRole);
+            if (nextLock) rememberAdminRoleLock(userId, nextLock);
+            // اگر USER شد قفل قبلی را پاک نکنید
+          },
+        },
+      );
     },
     [users, updateMutation],
   );
@@ -581,12 +618,24 @@ export default function AdminUsersPage() {
     [updateMutation],
   );
 
-  const handleDelete = useCallback(() => {
+  // حذف منطقی
+  const onSoftDelete = (user: { id: string; name: string }) => {
+    if (!confirm(`«${user.name}» حذف منطقی شود؟ (status=DELETED)`)) return;
+    softDeleteMutation.mutate(user.id);
+  };
+
+  // حذف دائم
+  const handleDelete = () => {
     if (!pendingDelete) return;
     deleteMutation.mutate(pendingDelete.id, {
+      onSuccess: () => {
+        toast.message(
+          "اگر کاربر هنوز پنل می‌بیند، یک‌بار از حساب خارج شود یا صبر تا گارد پروفایل.",
+        );
+      },
       onSettled: () => setPendingDelete(null),
     });
-  }, [pendingDelete, deleteMutation]);
+  };
 
   return (
     <div className="mx-auto w-full max-w-7xl space-y-4 px-4 py-4 sm:space-y-6 sm:px-6 sm:py-6 lg:px-8">
@@ -752,6 +801,7 @@ export default function AdminUsersPage() {
                   user={user}
                   onChangeRole={handleChangeRole}
                   onChangeStatus={handleChangeStatus}
+                  onSoftDelete={onSoftDelete}
                   onDelete={setPendingDelete}
                 />
               ))}
@@ -822,6 +872,7 @@ export default function AdminUsersPage() {
                           user={user}
                           onChangeRole={handleChangeRole}
                           onChangeStatus={handleChangeStatus}
+                          onSoftDelete={onSoftDelete}
                           onDelete={setPendingDelete}
                         />
                       </TableCell>
@@ -893,10 +944,11 @@ export default function AdminUsersPage() {
       >
         <AlertDialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-md">
           <AlertDialogHeader>
-            <AlertDialogTitle>حذف کاربر</AlertDialogTitle>
+            <AlertDialogTitle>حذف دائمی کاربر</AlertDialogTitle>
             <AlertDialogDescription>
-              آیا از حذف کاربر «{pendingDelete?.name}» مطمئن هستید؟ این عملیات
-              قابل بازگشت نیست.
+              آیا از حذف دائمی «{pendingDelete?.name}» از سرور مطمئن هستید؟ این
+              عملیات قابل بازگشت نیست و تمام اطلاعات کاربر حذف می‌شود. برای
+              غیرفعال‌سازی موقت، از «حذف منطقی» استفاده کنید.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="flex-col-reverse gap-2 sm:flex-row sm:justify-end">
@@ -913,7 +965,7 @@ export default function AdminUsersPage() {
               ) : (
                 <UserX className="me-2 h-4 w-4" />
               )}
-              حذف
+              حذف دائم
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

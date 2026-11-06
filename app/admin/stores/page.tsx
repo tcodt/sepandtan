@@ -81,6 +81,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 /* -------------------------------------------------------------------------- */
 /* Constants                                                                  */
@@ -221,8 +222,9 @@ function StoreActions({
   onReject: (s: AdminStoreItem) => void;
   busy: boolean;
 }) {
-  const canApprove = store.status !== "APPROVED";
-  const canReject = store.status !== "REJECTED";
+  const hasId = Boolean(store.id?.trim());
+  const canApprove = hasId && store.status !== "APPROVED";
+  const canReject = hasId && store.status !== "REJECTED";
 
   return (
     <DropdownMenu>
@@ -237,12 +239,19 @@ function StoreActions({
           <MoreHorizontal className="h-4 w-4" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-52">
+      <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuLabel className="text-xs text-muted-foreground">
           اقدامات
         </DropdownMenuLabel>
+
+        {!hasId && (
+          <p className="px-2 py-1.5 text-[11px] text-destructive">
+            شناسه فروشگاه نامعتبر است — تأیید ممکن نیست
+          </p>
+        )}
+
         <DropdownMenuItem
-          disabled={!canApprove}
+          disabled={!canApprove || busy}
           onClick={() => onApprove(store)}
         >
           <CheckCircle2 className="me-2 h-4 w-4 text-emerald-600 dark:text-emerald-400" />
@@ -250,7 +259,7 @@ function StoreActions({
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem
-          disabled={!canReject}
+          disabled={!canReject || busy}
           className="text-destructive focus:text-destructive"
           onClick={() => onReject(store)}
         >
@@ -491,10 +500,16 @@ export default function AdminStoresPage() {
       nextStatus: "APPROVED" | "REJECTED" | "PENDING",
       statusReason?: string,
     ) => {
+      if (!store.id?.trim()) {
+        toast.error("شناسه فروشگاه نامعتبر است — تأیید/رد ممکن نیست");
+        closePending();
+        return;
+      }
+
       updateMutation.mutate(
         {
           storeId: store.id,
-          source: store.source, // "request" | "store"
+          source: store.source,
           payload: {
             status: nextStatus,
             statusReason: statusReason ?? null,
@@ -502,7 +517,6 @@ export default function AdminStoresPage() {
         },
         {
           onSuccess: () => {
-            // بعد از approve/reject اگر روی PENDING فیلتر بودید، آیتم ناپدید می‌شود
             if (nextStatus === "APPROVED" || nextStatus === "REJECTED") {
               setStatus("ALL");
               setPage(1);

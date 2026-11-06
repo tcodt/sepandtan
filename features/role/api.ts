@@ -32,6 +32,9 @@ export async function requestStoreRole(
   if (!userId) throw new Error("userId خالی است");
   if (!payload.name?.trim()) throw new Error("نام فروشگاه الزامی است");
   if (!payload.slug?.trim()) throw new Error("slug الزامی است");
+  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(payload.slug.trim())) {
+    throw new Error("slug باید فقط حروف کوچک انگلیسی، عدد و خط تیره باشد");
+  }
 
   const { data } = await apiClient.post<RoleRequestResult>(
     "/user/store",
@@ -39,10 +42,12 @@ export async function requestStoreRole(
       name: payload.name.trim(),
       slug: payload.slug.trim(),
       userId,
+      hasPhysicalStore: false,
       businessType: payload.businessType ?? "INDIVIDUAL",
       description: payload.description ?? "",
       phone: payload.phone,
       email: payload.email,
+      address: payload.address,
     },
     { params: { userId } },
   );

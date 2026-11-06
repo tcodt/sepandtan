@@ -6,14 +6,6 @@ export type {
   SubscriptionTier,
 } from "./access";
 
-// ====================== Role & Onboarding Types ======================
-
-export type UserRole = "trainee" | "coach" | "seller" | "admin";
-
-export type RoleStatus = "pending" | "approved" | "rejected" | "suspended";
-
-export type OnboardingStatus = "not_started" | "in_progress" | "completed";
-
 /** انواع مشترک برنامه تمرینی و رژیمی — منبع حقیقت برای User Flow + Coach Flow */
 
 export type Gender = "male" | "female";
@@ -49,6 +41,17 @@ export type BodyInfo = {
   activityLevel: ActivityLevel;
 };
 
+export type AccountStatus = "ACTIVE" | "SUSPENDED" | "DELETED";
+
+export type UserRole = "trainee" | "coach" | "seller" | "admin";
+
+export type RoleStatus = "pending" | "approved" | "rejected" | "suspended";
+
+/** قفل دائمی مسیر تخصصی — بعد از اولین coach/seller پاک نمی‌شود */
+export type ProfessionalRoleLock = "coach" | "seller";
+
+export type OnboardingStatus = "not_started" | "in_progress" | "completed";
+
 export type UserProfile = {
   id: string;
   name: string;
@@ -57,24 +60,26 @@ export type UserProfile = {
   password?: string;
   avatarUrl?: string;
 
-  // نقش‌ها
-  role: UserRole; // نقش اصلی فعلی
-  roles?: UserRole[]; // آماده multi-role آینده
-  roleStatus: RoleStatus; // وضعیت نقش اصلی
+  role: UserRole;
+  roles?: UserRole[];
+  roleStatus: RoleStatus;
 
-  // آنبوردینگ (فقط برای trainee معنی دارد)
+  /** وضعیت حساب از بک‌اند (ACTIVE / SUSPENDED / DELETED) */
+  accountStatus: AccountStatus;
+
+  /** اگر set باشد نقش مقابل برای همیشه مسدود است */
+  professionalRoleLock?: ProfessionalRoleLock | null;
+
   onboardingStatus: OnboardingStatus;
   currentOnboardingStep: number;
   onboardingCompleted: boolean;
 
-  // اطلاعات بدنی و برنامه
   bodyInfo?: BodyInfo;
   equipment?: Equipment;
   goal?: Goal;
   currentPlanId?: string | null;
   targetWeight?: number;
 
-  // اشتراک (کاملاً جدا)
   subscriptionStatus: SubscriptionStatus;
   subscriptionExpiresAt?: string | null;
 

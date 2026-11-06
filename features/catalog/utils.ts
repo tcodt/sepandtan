@@ -34,10 +34,12 @@ export function asArray(raw: unknown): unknown[] {
       r.data ??
       r.items ??
       r.results ??
+      r.category ?? // ← مهم برای /categories/admin
       r.categories ??
       r.brands ??
       r.colors ??
       r.media ??
+      r.products ??
       r.list;
     if (Array.isArray(candidate)) return candidate;
   }
@@ -64,14 +66,23 @@ export function resolveMediaUrl(pathOrUrl: string | null | undefined): string {
   return `${MEDIA_CDN_BASE}/${path}`;
 }
 
+/**
+ * فقط لاتین a-z / 0-9 / -
+ * نام فارسی → اسلاگ خالی نشود (fallback زمانی)
+ */
 export function toSlug(text: string): string {
-  return (
-    text
-      .trim()
-      .toLowerCase()
-      .replace(/\s+/g, "-")
-      .replace(/[^a-z0-9\u0600-\u06FF-]/g, "")
-      .replace(/-+/g, "-")
-      .replace(/^-|-$/g, "") || `item-${Date.now().toString(36)}`
-  );
+  const base = text
+    .trim()
+    .toLowerCase()
+    // فاصله و زیرخط → -
+    .replace(/[\s_]+/g, "-")
+    // حذف هر چیز غیر لاتین/عدد/خط تیره (از جمله فارسی)
+    .replace(/[^a-z0-9-]/g, "")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+
+  if (base.length >= 2) return base;
+
+  // اگر نام فقط فارسی بود
+  return `cat-${Date.now().toString(36)}`;
 }

@@ -26,7 +26,7 @@ function resolveRedirect(
   if (state !== "approved") return null;
 
   if (user.role === "coach") return "/coach";
-  if (user.role === "seller") return "/dashboard";
+  if (user.role === "seller") return "/seller";
   if (user.role === "admin") return "/admin";
   if (user.role === "trainee") {
     return user.onboardingCompleted || user.onboardingStatus === "completed"

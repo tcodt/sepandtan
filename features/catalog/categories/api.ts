@@ -118,8 +118,12 @@ export async function fetchCategoriesAdmin(
       order: filters.order ?? "desc",
     },
   });
+
   const r = (data ?? {}) as Record<string, unknown>;
-  const list = asArray(r.categories ?? r.data ?? data);
+
+  // swagger: PaginatedCategoryAdminEntity → { pagination, category: [] }
+  const list = asArray(r.category ?? r.categories ?? r.data ?? r.items ?? data);
+
   return {
     pagination: mapPagination(r.pagination ?? r.meta),
     categories: list

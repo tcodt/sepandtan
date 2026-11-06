@@ -13,6 +13,13 @@ export default function SellerLayout({
     requireOnboarding: false,
   });
 
+  const accountStatus = user?.accountStatus ?? "ACTIVE";
+
+  if (accountStatus === "SUSPENDED" || accountStatus === "DELETED") {
+    // همان logout اجباری
+    return null; // useRequireAuth باید redirect کند
+  }
+
   if (isLoading || !isAuthenticated || !user) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
