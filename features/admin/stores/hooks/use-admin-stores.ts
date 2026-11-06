@@ -4,12 +4,10 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 import { fetchAdminStores, updateStoreByAdmin } from "../api";
-import type {
-  AdminStoresFilters,
-  StoreRequestStatus,
-  UpdateStoreByAdminPayload,
-} from "../types";
+import type { AdminStoresFilters, UpdateStoreByAdminPayload } from "../types";
 import { getErrorMessage } from "@/lib/api/client";
+import { adminUsersKeys } from "@/features/admin/users/hooks/use-admin-users";
+import { rememberAdminRoleLock } from "@/lib/role-lock";
 
 export const adminStoresKeys = {
   all: ["admin", "stores"] as const,
@@ -33,30 +31,37 @@ export function useUpdateStoreByAdmin() {
       storeId,
       payload,
       source,
+      ownerId,
     }: {
       storeId: string;
       payload: UpdateStoreByAdminPayload;
       source?: "store" | "request";
-    }) => updateStoreByAdmin(storeId, payload, source ?? "request"),
+      ownerId?: string | null;
+    }) =>
+      updateStoreByAdmin(storeId, payload, {
+        source: source ?? "request",
+        ownerId,
+      }),
 
     onSuccess: async (_data, vars) => {
       const status = vars.payload.status;
+
       if (status === "APPROVED") {
-        toast.success(
-          vars.source === "store"
-            ? "فروشگاه تأیید شد"
-            : "درخواست فروشنده تأیید شد — کاربر پس از ورود بعدی به پنل فروشنده می‌رود",
-        );
+        toast.success("فروشنده تأیید شد و نقش کاربر به STORE تغییر کرد");
+        if (vars.ownerId) {
+          rememberAdminRoleLock(vars.ownerId, "seller");
+        }
       } else if (status === "REJECTED") {
-        toast.success(
-          vars.source === "store" ? "فروشگاه رد شد" : "درخواست فروشنده رد شد",
-        );
+        toast.success("درخواست فروشنده رد شد");
       } else {
         toast.success("وضعیت به‌روزرسانی شد");
       }
 
-      // همه فیلترها را تازه کن تا اگر روی PENDING بودید آیتم جابه‌جا شده دیده شود
-      await queryClient.invalidateQueries({ queryKey: adminStoresKeys.all });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: adminStoresKeys.all }),
+        // لیست کاربران باید نقش جدید را ببیند
+        queryClient.invalidateQueries({ queryKey: adminUsersKeys.all }),
+      ]);
     },
 
     onError: (error) => {
@@ -65,11 +70,4 @@ export function useUpdateStoreByAdmin() {
       );
     },
   });
-}
-
-/** helper اختیاری برای صفحه */
-export function statusToastLabel(status: StoreRequestStatus) {
-  if (status === "APPROVED") return "تأیید";
-  if (status === "REJECTED") return "رد";
-  return "در انتظار";
 }

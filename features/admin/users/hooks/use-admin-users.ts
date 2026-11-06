@@ -14,6 +14,7 @@ import type {
   AdminUser,
   AdminUsersFilters,
   AdminUsersResponse,
+  CreateAdminUserPayload,
   UpdateAdminUserPayload,
 } from "../types";
 import { getErrorMessage } from "@/lib/api/client";
@@ -36,10 +37,10 @@ export function useCreateAdminUser() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (payload: UpdateAdminUserPayload) => createAdminUser(payload),
+    mutationFn: (payload: CreateAdminUserPayload) => createAdminUser(payload),
     onSuccess: () => {
       toast.success("کاربر با موفقیت ساخته شد");
-      queryClient.invalidateQueries({ queryKey: adminUsersKeys.all });
+      void queryClient.invalidateQueries({ queryKey: adminUsersKeys.all });
     },
     onError: (error) => {
       toast.error(getErrorMessage(error, "ساخت کاربر ناموفق بود"));
@@ -59,7 +60,6 @@ export function useUpdateAdminUser() {
       payload: UpdateAdminUserPayload;
     }) => updateAdminUser(id, payload),
 
-    // UI فوری عوض شود
     onMutate: async ({ id, payload }) => {
       await queryClient.cancelQueries({ queryKey: adminUsersKeys.all });
 
@@ -74,7 +74,14 @@ export function useUpdateAdminUser() {
           return {
             ...old,
             users: old.users.map((u) =>
-              u.id === id ? ({ ...u, ...payload } as AdminUser) : u,
+              u.id === id
+                ? ({
+                    ...u,
+                    ...payload,
+                    // password را در UI نگه نمی‌داریم
+                    ...(payload.password ? {} : {}),
+                  } as AdminUser)
+                : u,
             ),
           };
         },
@@ -84,7 +91,6 @@ export function useUpdateAdminUser() {
     },
 
     onError: (error, _vars, context) => {
-      // rollback
       context?.previous?.forEach(([key, data]) => {
         queryClient.setQueryData(key, data);
       });
@@ -96,50 +102,35 @@ export function useUpdateAdminUser() {
     },
 
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: adminUsersKeys.all });
+      void queryClient.invalidateQueries({ queryKey: adminUsersKeys.all });
     },
   });
 }
 
-export function useSuspendAdminUser() {
+export function useSoftDeleteAdminUser() {
   const queryClient = useQueryClient();
+
   return useMutation({
-    mutationFn: (id: string) => updateAdminUser(id, { status: "SUSPENDED" }),
+    mutationFn: (id: string) => softDeleteAdminUser(id),
     onSuccess: () => {
-      toast.success("کاربر معلق شد — دسترسی‌ها قطع می‌شود");
-      queryClient.invalidateQueries({ queryKey: adminUsersKeys.all });
+      toast.success("کاربر حذف منطقی شد (status=DELETED)");
+      void queryClient.invalidateQueries({ queryKey: adminUsersKeys.all });
     },
-    onError: (e) => toast.error(getErrorMessage(e, "تعلیق ناموفق بود")),
+    onError: (error) => {
+      toast.error(getErrorMessage(error, "حذف منطقی ناموفق بود"));
+    },
   });
 }
 
+/**
+ * حذف دائم از سرور — بدون soft-fallback
+ * اگر 403 بگیرید یعنی نقش شما Super Admin نیست.
+ */
 export function useDeleteAdminUser() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (id: string) => {
-      try {
-        await deleteAdminUser(id);
-      } catch (err) {
-        // بعضی بک‌اندها DELETE واقعی ندارند / 403 / 405
-        // → حداقل حذف منطقی
-        const status =
-          typeof err === "object" &&
-          err !== null &&
-          "response" in err &&
-          typeof (err as { response?: { status?: number } }).response
-            ?.status === "number"
-            ? (err as { response: { status: number } }).response.status
-            : null;
-
-        if (status === 403 || status === 404 || status === 405) {
-          await softDeleteAdminUser(id);
-          return { mode: "soft" as const };
-        }
-        throw err;
-      }
-      return { mode: "hard" as const };
-    },
+    mutationFn: (id: string) => deleteAdminUser(id),
 
     onMutate: async (id) => {
       await queryClient.cancelQueries({ queryKey: adminUsersKeys.all });
@@ -147,7 +138,6 @@ export function useDeleteAdminUser() {
         queryKey: adminUsersKeys.all,
       });
 
-      // فوری از همه کش‌های لیست حذف کن
       queryClient.setQueriesData<AdminUsersResponse>(
         { queryKey: adminUsersKeys.all },
         (old) => {
@@ -170,68 +160,20 @@ export function useDeleteAdminUser() {
       context?.previous?.forEach(([key, data]) => {
         queryClient.setQueryData(key, data);
       });
-      toast.error(getErrorMessage(error, "حذف کاربر ناموفق بود"));
-    },
-
-    onSuccess: (result) => {
-      if (result?.mode === "soft") {
-        toast.success("کاربر به‌صورت منطقی حذف شد (status=DELETED)");
-      } else {
-        toast.success("کاربر حذف شد");
-      }
-    },
-
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: adminUsersKeys.all });
-    },
-  });
-}
-
-export function useSoftDeleteAdminUser() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (id: string) => softDeleteAdminUser(id),
-    onMutate: async (id) => {
-      await queryClient.cancelQueries({ queryKey: adminUsersKeys.all });
-      const previous = queryClient.getQueriesData<AdminUsersResponse>({
-        queryKey: adminUsersKeys.all,
-      });
-
-      queryClient.setQueriesData<AdminUsersResponse>(
-        { queryKey: adminUsersKeys.all },
-        (old) => {
-          if (!old) return old;
-          // از لیست ACTIVE خارج می‌شود؛ اگر ALL است badge حذف‌شده
-          return {
-            ...old,
-            users: old.users
-              .map((u) =>
-                u.id === id
-                  ? ({ ...u, status: "DELETED", role: "USER" } as AdminUser)
-                  : u,
-              )
-              .filter(() => {
-                // اگر این query فقط ACTIVE می‌خواست، حذف از UI
-                return true;
-              }),
-          };
-        },
+      toast.error(
+        getErrorMessage(
+          error,
+          "حذف دائم ناموفق بود. معمولاً فقط Super Admin مجاز است.",
+        ),
       );
+    },
 
-      return { previous };
-    },
-    onError: (error, _id, context) => {
-      context?.previous?.forEach(([key, data]) => {
-        queryClient.setQueryData(key, data);
-      });
-      toast.error(getErrorMessage(error, "حذف منطقی ناموفق بود"));
-    },
     onSuccess: () => {
-      toast.success("کاربر حذف منطقی شد و دیگر دسترسی ندارد");
+      toast.success("کاربر برای همیشه از سرور حذف شد");
     },
+
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: adminUsersKeys.all });
+      void queryClient.invalidateQueries({ queryKey: adminUsersKeys.all });
     },
   });
 }
