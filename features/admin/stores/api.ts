@@ -21,7 +21,7 @@ function mapStoreEntity(raw: unknown): AdminStoreItem {
   const owner = (r.owner ?? {}) as Record<string, unknown>;
 
   return {
-    id: String(r.id ?? ""),
+    id: asString(r.id) || "",
     name: asString(r.name) || asString(owner.name) || "—",
     slug: asString(r.slug),
     email: asString(r.email) || asString(owner.email),
@@ -44,6 +44,9 @@ function mapStoreRequest(raw: unknown): AdminStoreItem {
   const user = (r.user ?? r.owner ?? {}) as Record<string, unknown>;
   const profile = (r.profile ?? {}) as Record<string, unknown>;
 
+  // فقط id فروشگاه/درخواست — هرگز user.id برای PATCH
+  const storeId = asString(r.id) || asString(r.storeId) || "";
+
   const name =
     asString(r.name) ||
     asString(user.name) ||
@@ -53,7 +56,7 @@ function mapStoreRequest(raw: unknown): AdminStoreItem {
     "—";
 
   return {
-    id: String(r.id ?? user.id ?? ""),
+    id: storeId,
     name,
     slug: asString(r.slug),
     email: asString(r.email) || asString(user.email),
@@ -65,7 +68,7 @@ function mapStoreRequest(raw: unknown): AdminStoreItem {
       "PENDING",
     statusReason: asString(r.statusReason) || asString(r.rejectionReason),
     ownerName: asString(user.name) || name,
-    ownerId: asString(user.id) || asString(r.id),
+    ownerId: asString(user.id) || asString(r.userId),
     createdAt: asString(r.createdAt) ?? undefined,
     source: "request",
   };
@@ -79,7 +82,6 @@ function normalizePagination(raw: Record<string, unknown>, count: number) {
   };
 }
 
-/** فروشگاه‌های واقعی — GET /stores/admin */
 async function fetchStoresAdmin(
   filters: AdminStoresFilters,
 ): Promise<AdminStoresResponse> {
@@ -90,11 +92,9 @@ async function fetchStoresAdmin(
     sortBy: "newest",
   };
 
-  // /stores/admin مقدار ALL ندارد
   if (filters.status && filters.status !== "ALL") {
     params.status = filters.status;
   }
-
   if (filters.search) params.search = filters.search;
 
   const { data } = await apiClient.get("/stores/admin", { params });
@@ -112,7 +112,6 @@ async function fetchStoresAdmin(
   };
 }
 
-/** درخواست‌های نقش فروشنده — GET /user/store */
 async function fetchStoreRequests(
   filters: AdminStoresFilters,
 ): Promise<AdminStoresResponse> {
@@ -122,22 +121,23 @@ async function fetchStoreRequests(
     order: filters.order ?? "desc",
   };
 
-  // اینجا ALL مجاز است
-  params.status = filters.status ?? "ALL";
+  if (filters.status && filters.status !== "ALL") {
+    params.status = filters.status;
+  }
 
   const { data } = await apiClient.get("/user/store", { params });
   const r = (data ?? {}) as Record<string, unknown>;
-
-  // swagger: کلید coach
-  const listRaw = (r.coach ??
-    r.store ??
-    r.stores ??
+  const listRaw = (r.stores ??
     r.data ??
+    r.category ??
     r.users ??
     r.items ??
     []) as unknown[];
 
-  const list = (Array.isArray(listRaw) ? listRaw : []).map(mapStoreRequest);
+  const list = (Array.isArray(listRaw) ? listRaw : [])
+    .map(mapStoreRequest)
+    .filter((item) => Boolean(item.id)); // بدون id در لیست actionable نیاید
+
   const paginationRaw = (r.pagination ?? r.meta ?? {}) as Record<
     string,
     unknown
@@ -149,11 +149,6 @@ async function fetchStoreRequests(
   };
 }
 
-/**
- * ترکیب هر دو منبع:
- * 1) /stores/admin → فروشگاه‌ها
- * 2) /user/store → درخواست‌های نقش
- */
 export async function fetchAdminStores(
   filters: AdminStoresFilters = {},
 ): Promise<AdminStoresResponse> {
@@ -167,7 +162,6 @@ export async function fetchAdminStores(
   const requests =
     requestsResult.status === "fulfilled" ? requestsResult.value.data : [];
 
-  // اگر هر دو fail شدند، خطای اول را پرتاب کن
   if (
     storesResult.status === "rejected" &&
     requestsResult.status === "rejected"
@@ -175,11 +169,9 @@ export async function fetchAdminStores(
     throw storesResult.reason;
   }
 
-  // merge بدون تکرار id
   const map = new Map<string, AdminStoreItem>();
   for (const item of [...requests, ...stores]) {
     if (!item.id) continue;
-    // اولویت با store entity واقعی
     if (!map.has(item.id) || item.source === "store") {
       map.set(item.id, item);
     }
@@ -187,7 +179,6 @@ export async function fetchAdminStores(
 
   const data = Array.from(map.values());
 
-  // فیلتر وضعیت سمت کلاینت وقتی ALL است یا سرور فیلتر نکرده
   const filtered =
     filters.status && filters.status !== "ALL"
       ? data.filter((d) => d.status === filters.status)
@@ -215,14 +206,19 @@ export async function updateStoreByAdmin(
   payload: UpdateStoreByAdminPayload,
   source: "store" | "request" = "request",
 ): Promise<void> {
+  if (!storeId?.trim()) {
+    throw new Error("شناسه فروشگاه نامعتبر است — تأیید ممکن نیست");
+  }
+
   if (source === "store") {
-    // آپدیت فروشگاه واقعی
     await apiClient.put(`/stores/${storeId}`, {
       status: payload.status,
       statusReason: payload.statusReason ?? null,
+      ...(payload.status === "APPROVED"
+        ? { isActive: true, isVerified: true }
+        : {}),
     });
   } else {
-    // تأیید/رد درخواست نقش
     await apiClient.patch(`/user/store/${storeId}`, {
       status: payload.status,
       statusReason: payload.statusReason ?? null,

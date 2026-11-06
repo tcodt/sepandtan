@@ -25,7 +25,7 @@ import {
 import { useUserStore } from "@/lib/store/user-store";
 import { cn } from "@/lib/utils";
 import { LogoutDialog } from "../common/logout-dialog";
-import { useCartStore } from "@/lib/store/cart-store";
+import { useCart } from "@/features/cart/hooks";
 
 const navLinks = [
   { href: "/", label: "خانه" },
@@ -36,21 +36,24 @@ const navLinks = [
   { href: "/contact", label: "تماس با ما" },
 ];
 
+function getDashboardHref(role?: string) {
+  if (role === "admin") return "/admin";
+  if (role === "coach") return "/coach";
+  if (role === "seller") return "/seller";
+  return "/dashboard";
+}
+
 export default function Navbar() {
   const pathname = usePathname();
   const hasHydrated = useUserStore((s) => s._hasHydrated);
-  const totalItems = useCartStore((s) => s.totalItems);
-
   const user = useUserStore((s) => s.user);
   const isAuthenticated = useUserStore((s) => s.isAuthenticated);
 
   const loggedIn = hasHydrated && isAuthenticated && !!user;
 
-  function getDashboardHref(role?: string) {
-    if (role === "admin") return "/admin";
-    if (role === "coach") return "/coach";
-    return "/dashboard";
-  }
+  // سبد سرور — فقط وقتی لاگین است
+  const { data: cart } = useCart(loggedIn);
+  const cartCount = cart?.totalItems ?? 0;
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-border bg-background/80 backdrop-blur-md supports-backdrop-filter:bg-background/70">
@@ -159,9 +162,9 @@ export default function Navbar() {
               aria-label="سبد خرید"
             >
               <ShoppingCart className="w-4 h-4" />
-              {hasHydrated && totalItems() > 0 && (
+              {cartCount > 0 && (
                 <span className="absolute -top-1 -left-1 min-w-4 h-4 px-1 rounded-full bg-primary text-primary-foreground text-[10px] flex items-center justify-center">
-                  {totalItems()}
+                  {cartCount > 99 ? "۹۹+" : cartCount.toLocaleString("fa-IR")}
                 </span>
               )}
             </Link>
@@ -213,9 +216,9 @@ export default function Navbar() {
                   <Link href="/cart" className="flex items-center gap-2">
                     <ShoppingCart className="w-4 h-4" />
                     سبد خرید
-                    {totalItems() > 0 && (
+                    {cartCount > 0 && (
                       <span className="mr-auto text-xs text-muted-foreground">
-                        {totalItems().toLocaleString("fa-IR")}
+                        {cartCount.toLocaleString("fa-IR")}
                       </span>
                     )}
                   </Link>
@@ -288,6 +291,17 @@ export default function Navbar() {
                     <Link href="/account" className="flex items-center gap-2">
                       <CircleUserRound className="w-4 h-4" />
                       حساب کاربری
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/cart" className="flex items-center gap-2">
+                      <ShoppingCart className="w-4 h-4" />
+                      سبد خرید
+                      {cartCount > 0 && (
+                        <span className="mr-auto text-xs text-muted-foreground">
+                          {cartCount.toLocaleString("fa-IR")}
+                        </span>
+                      )}
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>

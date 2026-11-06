@@ -8,17 +8,19 @@ import { requestCoachRole, requestStoreRole } from "../api";
 import type { CreateCoachPayload, CreateStorePayload } from "../types";
 import { getErrorMessage } from "@/lib/api/client";
 import { useUserStore } from "@/lib/store/user-store";
+import { canRequestProfessionalRole } from "@/lib/role-lock";
 
 function toSlug(text: string): string {
-  return (
-    text
-      .trim()
-      .toLowerCase()
-      .replace(/\s+/g, "-")
-      .replace(/[^a-z0-9\u0600-\u06FF-]/g, "")
-      .replace(/-+/g, "-")
-      .replace(/^-|-$/g, "") || `store-${Date.now().toString(36)}`
-  );
+  const base = text
+    .trim()
+    .toLowerCase()
+    .replace(/[\s_]+/g, "-")
+    .replace(/[^a-z0-9-]/g, "")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+
+  if (base.length >= 2) return base;
+  return `store-${Date.now().toString(36)}`;
 }
 
 export function useRequestCoachRole() {
@@ -29,6 +31,8 @@ export function useRequestCoachRole() {
   return useMutation({
     mutationFn: (payload: CreateCoachPayload = {}) => {
       if (!user?.id) throw new Error("کاربر یافت نشد");
+      const gate = canRequestProfessionalRole(user, "coach");
+      if (!gate.ok) throw new Error(gate.message);
       return requestCoachRole(user.id, payload);
     },
     onSuccess: () => {
@@ -53,13 +57,23 @@ export function useRequestStoreRole() {
     mutationFn: (payload?: Partial<CreateStorePayload>) => {
       if (!user?.id) throw new Error("کاربر یافت نشد");
 
-      const name = payload?.name?.trim() || user.name?.trim() || "فروشگاه من";
-      const slug = payload?.slug?.trim() || toSlug(name);
+      const gate = canRequestProfessionalRole(user, "seller");
+      if (!gate.ok) throw new Error(gate.message);
+
+      const name = payload?.name?.trim() || user.name?.trim() || "My Store";
+
+      const slug =
+        (payload?.slug?.trim() &&
+        /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(payload.slug.trim())
+          ? payload.slug.trim()
+          : null) ||
+        toSlug(name) ||
+        `store-${user.id.replace(/[^a-z0-9]/gi, "").slice(0, 8) || Date.now().toString(36)}`;
 
       return requestStoreRole(user.id, {
         name,
         slug,
-        description: payload?.description,
+        description: payload?.description ?? "",
         phone: payload?.phone ?? user.phone,
         email: payload?.email ?? user.email,
         address: payload?.address,

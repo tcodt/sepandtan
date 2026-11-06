@@ -89,5 +89,15 @@ export async function updateAdminUser(
 }
 
 export async function deleteAdminUser(id: string): Promise<void> {
+  if (!id?.trim()) throw new Error("شناسه کاربر نامعتبر است");
+
+  // حذف سمت سرور (طبق swagger: Super Admin)
   await apiClient.delete(`/user/${id}`);
+}
+
+export async function softDeleteAdminUser(id: string): Promise<AdminUser> {
+  return updateAdminUser(id, {
+    status: "DELETED",
+    role: "USER",
+  });
 }

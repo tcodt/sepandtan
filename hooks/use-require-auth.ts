@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useUserStore } from "@/lib/store/user-store";
+import { setAccessToken } from "@/lib/api/client";
 import type { UserRole } from "@/lib/types/plan";
 import { getHomePathForRole } from "@/features/onboarding/utils";
 
@@ -62,6 +63,27 @@ export function useRequireAuth(options: Options = {}) {
 
       if (blockPending && user.roleStatus && user.roleStatus !== "approved") {
         // ادمین/کاربر عادی معمولاً approved هستند؛ coach/seller pending اینجا می‌مانند
+        if (user.role === "coach" || user.role === "seller") {
+          router.replace(redirectToRolePending);
+          return;
+        }
+      }
+
+      if (
+        user.accountStatus === "SUSPENDED" ||
+        user.accountStatus === "DELETED"
+      ) {
+        setAccessToken(null);
+        useUserStore.getState().logout();
+        router.replace(
+          user.accountStatus === "SUSPENDED"
+            ? "/login?reason=suspended"
+            : "/login?reason=deleted",
+        );
+        return;
+      }
+
+      if (blockPending && user.roleStatus && user.roleStatus !== "approved") {
         if (user.role === "coach" || user.role === "seller") {
           router.replace(redirectToRolePending);
           return;

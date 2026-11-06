@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { Dumbbell, Users, Store, Loader2, CheckCircle2 } from "lucide-react";
+import { Dumbbell, Users, Store, Loader2, Lock } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,8 @@ import {
   useRequestCoachRole,
   useRequestStoreRole,
 } from "@/features/role/hooks/use-role-request";
+import { canRequestProfessionalRole, lockFromRole } from "@/lib/role-lock";
+import { cn } from "@/lib/utils";
 
 const roles = [
   {
@@ -65,7 +67,10 @@ export default function RoleSelectionPage() {
 
   const isSubmitting = coachMutation.isPending || storeMutation.isPending;
 
-  // ریدایرکت فقط در شرایط خاص
+  const lock = user?.professionalRoleLock ?? lockFromRole(user?.role) ?? null;
+  const coachGate = canRequestProfessionalRole(user, "coach");
+  const sellerGate = canRequestProfessionalRole(user, "seller");
+
   useEffect(() => {
     if (isLoading || !isAuthenticated || !user) return;
 
@@ -75,16 +80,6 @@ export default function RoleSelectionPage() {
       } else {
         router.replace("/role-pending");
       }
-      return;
-    }
-
-    if (user.role === "trainee") {
-      if (user.onboardingStatus === "completed" || user.onboardingCompleted) {
-        router.replace("/dashboard");
-      } else if (user.onboardingStatus === "in_progress") {
-        router.replace("/onboarding");
-      }
-      // not_started → در همین صفحه می‌ماند
     }
   }, [isLoading, isAuthenticated, user, router]);
 
@@ -93,7 +88,6 @@ export default function RoleSelectionPage() {
 
     try {
       if (selected === "trainee") {
-        // Trainee نیاز به تأیید ادمین ندارد → فقط store محلی
         setRole("trainee", "approved");
         updateProfile({
           role: "trainee",
@@ -102,13 +96,16 @@ export default function RoleSelectionPage() {
           onboardingStatus: "not_started",
           currentOnboardingStep: 1,
         });
-
         toast.success("عالی! حالا برنامه شخصیت رو می‌سازیم");
         router.replace("/onboarding");
         return;
       }
 
       if (selected === "coach") {
+        if (!coachGate.ok) {
+          toast.error(coachGate.message);
+          return;
+        }
         coachMutation.mutate({
           isAcceptingClients: true,
           headline: "مربی فیتنس",
@@ -117,6 +114,10 @@ export default function RoleSelectionPage() {
       }
 
       if (selected === "seller") {
+        if (!sellerGate.ok) {
+          toast.error(sellerGate.message);
+          return;
+        }
         storeMutation.mutate({});
         return;
       }
@@ -135,23 +136,6 @@ export default function RoleSelectionPage() {
     );
   }
 
-  const shouldRedirect =
-    !!user &&
-    (user.role === "coach" ||
-      user.role === "seller" ||
-      (user.role === "trainee" &&
-        (user.onboardingStatus === "completed" ||
-          user.onboardingCompleted ||
-          user.onboardingStatus === "in_progress")));
-
-  if (shouldRedirect) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-background">
       <motion.div
@@ -160,79 +144,95 @@ export default function RoleSelectionPage() {
         transition={{ duration: 0.4 }}
         className="w-full max-w-lg"
       >
-        <Card className="border-border bg-muted/40 backdrop-blur-md shadow-xl">
-          <CardHeader className="text-center space-y-2 pb-2">
-            <CardTitle className="text-xl sm:text-2xl font-bold">
-              نقش خودت رو انتخاب کن
-            </CardTitle>
-            <CardDescription className="text-sm sm:text-base">
-              این انتخاب مسیر تجربه‌ات در سپندتن را مشخص می‌کند
+        <Card className="border-border shadow-lg">
+          <CardHeader className="text-center space-y-2">
+            <CardTitle className="text-xl">مسیر خودت را انتخاب کن</CardTitle>
+            <CardDescription>
+              مربی و فروشنده یک‌بار برای همیشه انتخاب می‌شوند و قابل تعویض
+              نیستند
             </CardDescription>
+            {lock && (
+              <p className="text-xs text-amber-600 dark:text-amber-400 flex items-center justify-center gap-1">
+                <Lock className="h-3.5 w-3.5" />
+                قفل فعلی: {lock === "coach" ? "مربی" : "فروشنده"}
+              </p>
+            )}
           </CardHeader>
+          <CardContent className="space-y-3">
+            {roles.map((role) => {
+              const Icon = role.icon;
+              const isSelected = selected === role.id;
 
-          <CardContent className="space-y-4 pt-4">
-            <div className="grid gap-3">
-              {roles.map((role) => {
-                const Icon = role.icon;
-                const isSelected = selected === role.id;
+              let disabled = isSubmitting;
+              let hint: string | null = null;
 
-                return (
-                  <button
-                    key={role.id}
-                    type="button"
-                    onClick={() => setSelected(role.id)}
-                    disabled={isSubmitting}
-                    className={`
-                      relative flex items-start gap-4 p-4 rounded-xl border text-right transition-all
-                      ${
-                        isSelected
-                          ? "border-primary bg-primary/5 ring-2 ring-primary/30"
-                          : "border-border bg-background hover:border-primary/40 hover:bg-muted/50"
-                      }
-                    `}
-                  >
-                    <div
-                      className={`shrink-0 w-11 h-11 rounded-xl flex items-center justify-center ${role.color}`}
+              if (role.id === "coach" && !coachGate.ok) {
+                disabled = true;
+                hint = coachGate.message;
+              }
+              if (role.id === "seller" && !sellerGate.ok) {
+                disabled = true;
+                hint = sellerGate.message;
+              }
+
+              return (
+                <button
+                  key={role.id}
+                  type="button"
+                  disabled={disabled}
+                  onClick={() => setSelected(role.id)}
+                  className={cn(
+                    "w-full text-start rounded-xl border p-4 transition-colors",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
+                    isSelected
+                      ? "border-primary bg-primary/5"
+                      : "border-border hover:bg-muted/40",
+                    disabled && "opacity-50 cursor-not-allowed",
+                  )}
+                >
+                  <div className="flex gap-3">
+                    <span
+                      className={cn(
+                        "flex h-10 w-10 shrink-0 items-center justify-center rounded-lg",
+                        role.color,
+                      )}
                     >
-                      <Icon className="w-5 h-5" />
-                    </div>
-
-                    <div className="flex-1 min-w-0">
-                      <div className="font-semibold text-foreground">
-                        {role.title}
-                      </div>
-                      <p className="text-sm text-muted-foreground mt-0.5 leading-relaxed">
+                      {disabled && role.id !== "trainee" ? (
+                        <Lock className="h-5 w-5" />
+                      ) : (
+                        <Icon className="h-5 w-5" />
+                      )}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-semibold text-sm">{role.title}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
                         {role.description}
                       </p>
+                      {hint && (
+                        <p className="text-[11px] text-destructive mt-1">
+                          {hint}
+                        </p>
+                      )}
                     </div>
-
-                    {isSelected && (
-                      <CheckCircle2 className="absolute top-4 left-4 w-5 h-5 text-primary" />
-                    )}
-                  </button>
-                );
-              })}
-            </div>
+                  </div>
+                </button>
+              );
+            })}
 
             <Button
-              onClick={handleContinue}
+              className="w-full mt-2"
               disabled={!selected || isSubmitting}
-              className="w-full h-11 text-base font-medium mt-2"
+              onClick={() => void handleContinue()}
             >
               {isSubmitting ? (
                 <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <Loader2 className="me-2 h-4 w-4 animate-spin" />
                   در حال ثبت...
                 </>
               ) : (
                 "ادامه"
               )}
             </Button>
-
-            <p className="text-xs text-center text-muted-foreground pt-1">
-              بعداً هم می‌تونی نقش اضافه کنی (مثلاً همزمان ورزشکار و فروشنده
-              باشی)
-            </p>
           </CardContent>
         </Card>
       </motion.div>

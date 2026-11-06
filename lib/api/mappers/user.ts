@@ -12,12 +12,14 @@ import type {
   UserProfile,
   UserRole,
   RoleStatus,
+  AccountStatus,
   BodyInfo,
   ActivityLevel,
   Gender,
   Equipment,
   Goal,
 } from "@/lib/types/plan";
+import { lockFromRole } from "@/lib/role-lock";
 
 function mapRole(role: BackendRole | string | undefined | null): UserRole {
   switch (role) {
@@ -35,9 +37,24 @@ function mapRole(role: BackendRole | string | undefined | null): UserRole {
   }
 }
 
-function mapAccountStatus(status?: string | null): RoleStatus {
-  if (status === "SUSPENDED") return "suspended";
-  if (status === "DELETED") return "rejected";
+function mapAccountStatus(status?: string | null): AccountStatus {
+  if (status === "SUSPENDED") return "SUSPENDED";
+  if (status === "DELETED") return "DELETED";
+  return "ACTIVE";
+}
+
+/**
+ * roleStatus نقش تخصصی است، نه status حساب.
+ * تعلیق/حذف حساب → suspended/rejected
+ * pending واقعی از requestRole لوکال / role-pending sync می‌آید
+ */
+function mapRoleStatus(
+  role: UserRole,
+  accountStatus: AccountStatus,
+): RoleStatus {
+  if (accountStatus === "SUSPENDED") return "suspended";
+  if (accountStatus === "DELETED") return "rejected";
+  if (role === "coach" || role === "seller") return "approved";
   return "approved";
 }
 
@@ -117,11 +134,6 @@ function asOptionalString(value: unknown): string | undefined {
   return undefined;
 }
 
-/**
- * Onboarding فقط برای trainee معنی دارد.
- * کامل = فیلدهای اجباری بدن + محل تمرین موجود باشند
- * یا بک‌اند صریحاً onboardingCompleted بفرستد.
- */
 function resolveOnboarding(role: UserRole, profile?: ProfileDto | null) {
   if (role !== "trainee") {
     return {
@@ -142,7 +154,6 @@ function resolveOnboarding(role: UserRole, profile?: ProfileDto | null) {
   const bodyInfo = extractBodyInfo(profile ?? null);
   const equipment = mapTrainingLocation(profile?.trainingLocation);
 
-  // کامل فقط وقتی هم bodyInfo و هم equipment داریم
   if (bodyInfo && equipment) {
     return {
       onboardingCompleted: true,
@@ -177,7 +188,9 @@ export function mapAuthToUserProfile(auth: AuthEntities): UserProfile {
     phone: asOptionalString(auth.phone),
     role,
     roles: [role],
+    accountStatus: "ACTIVE",
     roleStatus: "approved",
+    professionalRoleLock: lockFromRole(role),
     ...onboarding,
     subscriptionStatus: "free",
     createdAt: new Date().toISOString(),
@@ -189,6 +202,7 @@ export function mapProfileResponseToUser(
   res: UserProfileResponseDto,
 ): UserProfile {
   const role = mapRole(res.role);
+  const accountStatus = mapAccountStatus(res.status);
   const bodyInfo = extractBodyInfo(res.profile ?? null);
   const equipment = mapTrainingLocation(res.profile?.trainingLocation);
   const targetWeight = res.profile?.targetWeightKg ?? undefined;
@@ -202,7 +216,9 @@ export function mapProfileResponseToUser(
     avatarUrl: asOptionalString(res.profile?.avatar) ?? undefined,
     role,
     roles: [role],
-    roleStatus: mapAccountStatus(res.status),
+    accountStatus,
+    roleStatus: mapRoleStatus(role, accountStatus),
+    professionalRoleLock: lockFromRole(role),
     ...onboarding,
     bodyInfo,
     equipment,
