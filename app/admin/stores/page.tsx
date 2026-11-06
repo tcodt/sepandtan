@@ -510,6 +510,7 @@ export default function AdminStoresPage() {
         {
           storeId: store.id,
           source: store.source,
+          ownerId: store.ownerId,
           payload: {
             status: nextStatus,
             statusReason: statusReason ?? null,
@@ -534,9 +535,16 @@ export default function AdminStoresPage() {
 
     if (pending.kind === "reject") {
       handleUpdate(pending.store, "REJECTED", rejectReason.trim() || undefined);
-    } else {
-      handleUpdate(pending.store, "APPROVED");
+      return;
     }
+
+    // approve branch
+    if (!pending.store.ownerId) {
+      toast.error(
+        "شناسه مالک (ownerId) در این ردیف نیست؛ بعد از تأیید ممکن است نقش در Users عوض نشود.",
+      );
+    }
+    handleUpdate(pending.store, "APPROVED");
   }, [pending, rejectReason, handleUpdate]);
 
   const isRejectDialog = pending?.kind === "reject";

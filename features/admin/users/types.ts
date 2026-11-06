@@ -35,6 +35,7 @@ export type AdminUsersFilters = {
   isPhoneVerified?: boolean;
 };
 
+/** مطابق UpdateUserDto در swagger */
 export type UpdateAdminUserPayload = {
   name?: string;
   email?: string;
@@ -43,3 +44,5 @@ export type UpdateAdminUserPayload = {
   role?: BackendRole;
   status?: BackendUserStatus;
 };
+
+export type CreateAdminUserPayload = UpdateAdminUserPayload;

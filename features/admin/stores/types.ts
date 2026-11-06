@@ -11,8 +11,9 @@ export type AdminStoreItem = {
   isActive?: boolean;
   isVerified?: boolean;
   businessType?: string | null;
-  ownerName?: string | null;
+  /** شناسه کاربر مالک — برای ارتقای role لازم است */
   ownerId?: string | null;
+  ownerName?: string | null;
   createdAt?: string;
   source: "store" | "request";
 };

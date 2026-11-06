@@ -21,6 +21,9 @@ import {
   User,
   X,
   Tags,
+  Package,
+  Award,
+  Palette,
 } from "lucide-react";
 
 import { useAuth } from "@/features/auth/hooks/use-auth";
@@ -30,7 +33,7 @@ import {
   Sheet,
   SheetClose,
   SheetContent,
-  SheetHeader,
+  SheetDescription,
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
@@ -55,8 +58,10 @@ const navItems = [
   { href: "/admin/users", label: "کاربران", icon: Users },
   { href: "/admin/coaches", label: "درخواست مربی", icon: UserCheck },
   { href: "/admin/stores", label: "درخواست فروشنده", icon: Store },
+  { href: "/admin/products", label: "محصولات", icon: Package },
   { href: "/admin/categories", label: "دسته‌بندی‌ها", icon: Tags },
-  // بعدی: products moderate
+  { href: "/admin/brands", label: "برندها", icon: Award },
+  { href: "/admin/colors", label: "رنگ‌ها", icon: Palette },
   { href: "/", label: "سایت", icon: House },
   { href: "/account", label: "حساب", icon: User },
 ] as const;
@@ -84,7 +89,7 @@ function ThemeToggle({ className }: { className?: string }) {
       <Button
         variant="ghost"
         size="icon"
-        className={cn("h-9 w-9", className)}
+        className={cn("h-9 w-9 shrink-0", className)}
         aria-label="تغییر تم"
         disabled
       >
@@ -101,7 +106,7 @@ function ThemeToggle({ className }: { className?: string }) {
       variant="ghost"
       size="icon"
       className={cn(
-        "h-9 w-9 text-muted-foreground hover:text-foreground",
+        "h-9 w-9 shrink-0 text-muted-foreground hover:text-foreground",
         className,
       )}
       onClick={() => setTheme(next)}
@@ -118,7 +123,7 @@ function ThemeToggle({ className }: { className?: string }) {
 }
 
 /* -------------------------------------------------------------------------- */
-/*                             Theme-aware logo                               */
+/*                          Icon-first theme logo                             */
 /* -------------------------------------------------------------------------- */
 
 function ThemeLogo({
@@ -130,6 +135,7 @@ function ThemeLogo({
 }) {
   const { resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
+  const [imageOk, setImageOk] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -147,18 +153,33 @@ function ThemeLogo({
 
   const src =
     resolvedTheme === "dark"
-      ? "/images/logo-st-light.png" // light logo on dark backgrounds
-      : "/images/logo-st-dark.png"; // dark logo on light backgrounds
+      ? "/images/logo-st-light.png"
+      : "/images/logo-st-dark.png";
 
   return (
-    <Image
-      src={src}
-      alt="سپندتن"
-      width={size}
-      height={size}
-      className={cn("rounded-lg object-cover", className)}
-      priority
-    />
+    <div
+      className={cn(
+        "relative flex items-center justify-center overflow-hidden rounded-lg",
+        imageOk ? "bg-transparent" : "bg-primary/10 text-primary",
+        className,
+      )}
+      style={{ width: size, height: size }}
+    >
+      {!imageOk && <ShieldCheck className="h-1/2 w-1/2" aria-hidden="true" />}
+      <Image
+        key={src}
+        src={src}
+        alt="سپندتن"
+        width={size}
+        height={size}
+        className={cn(
+          "absolute inset-0 h-full w-full rounded-lg object-cover transition-opacity duration-200",
+          imageOk ? "opacity-100" : "opacity-0",
+        )}
+        priority
+        onLoad={() => setImageOk(true)}
+      />
+    </div>
   );
 }
 
@@ -175,7 +196,14 @@ function NavList({
 }) {
   return (
     <nav
-      className="flex-1 space-y-1 overflow-y-auto p-3"
+      className={cn(
+        "min-h-0 flex-1 space-y-1 overflow-y-auto px-3 py-3",
+        "[scrollbar-width:thin] [scrollbar-color:transparent_transparent]",
+        "hover:[scrollbar-color:rgba(148,163,184,0.35)_transparent]",
+        "[&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar]:bg-transparent",
+        "[&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-transparent",
+        "hover:[&::-webkit-scrollbar-thumb]:bg-zinc-400/30",
+      )}
       aria-label="منوی ادمین"
     >
       {navItems.map((item) => {
@@ -220,8 +248,8 @@ function NavList({
 function BrandHeader() {
   return (
     <div className="flex h-14 shrink-0 items-center gap-2.5 border-b border-border px-4">
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-muted/60">
-        <ThemeLogo size={40} className="h-full w-full object-cover" />
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg">
+        <ThemeLogo size={40} className="h-full w-full" />
       </div>
       <div className="min-w-0">
         <div className="truncate text-sm font-bold text-foreground">
@@ -271,16 +299,17 @@ export default function AdminLayout({
     navItems.find((i) => isActive(pathname, i.href))?.label ?? "پنل ادمین";
 
   return (
-    <div className="flex min-h-screen bg-background">
+    // h-screen + overflow-hidden → sidebar owns the viewport; main column scrolls
+    <div className="flex h-screen overflow-hidden bg-background">
       {/* --------------------------- Desktop sidebar -------------------------- */}
       <aside
-        className="hidden w-60 shrink-0 flex-col border-e border-border bg-muted/30 md:flex"
+        className="hidden h-screen w-60 shrink-0 flex-col border-e border-border bg-muted/30 md:sticky md:top-0 md:flex"
         aria-label="نوار کناری ادمین"
       >
         <BrandHeader />
         <NavList pathname={pathname} />
 
-        <div className="flex items-center gap-1 border-t border-border p-3">
+        <div className="flex shrink-0 items-center gap-1 border-t border-border p-3">
           <Button
             variant="ghost"
             className="flex-1 justify-start gap-2 text-muted-foreground hover:bg-muted hover:text-foreground"
@@ -294,55 +323,70 @@ export default function AdminLayout({
       </aside>
 
       {/* ------------------------------- Main -------------------------------- */}
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="flex h-screen min-w-0 flex-1 flex-col overflow-hidden">
         {/* Mobile top bar */}
-        <header className="sticky top-0 z-30 flex h-14 items-center gap-2 border-b border-border bg-background/80 px-3 backdrop-blur md:hidden">
+        <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-2 border-b border-border bg-background/80 px-3 backdrop-blur md:hidden">
           <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
             <SheetTrigger asChild>
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-9 w-9"
+                className="h-9 w-9 shrink-0"
                 aria-label="باز کردن منو"
               >
                 <Menu className="h-5 w-5" />
               </Button>
             </SheetTrigger>
+
             <SheetContent
               side="right"
-              className="flex w-64 flex-col p-0"
+              className="flex h-full w-[85vw] max-w-xs flex-col gap-0 p-0 sm:w-72"
               showCloseButton={false}
             >
-              <SheetHeader className="border-b border-border px-4 py-3 text-start">
-                <div className="flex items-center gap-2.5">
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-muted/60">
-                    <ThemeLogo
-                      size={32}
-                      className="h-full w-full object-cover"
-                    />
+              {/* Row 1: title + close at the end */}
+              <div className="shrink-0 border-b border-border">
+                <div className="flex items-start justify-between gap-2 px-4 pt-3">
+                  <div className="min-w-0 flex-1">
+                    <SheetTitle className="truncate text-sm font-bold text-foreground">
+                      پنل ادمین
+                    </SheetTitle>
+                    <SheetDescription className="truncate text-[10px] text-muted-foreground">
+                      سپندتن
+                    </SheetDescription>
                   </div>
-                  <SheetTitle className="truncate text-sm font-bold">
-                    پنل ادمین
-                  </SheetTitle>
                   <SheetClose asChild>
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="ms-auto h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground"
+                      className="h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground"
                       aria-label="بستن منو"
                     >
                       <X className="h-4 w-4" aria-hidden="true" />
                     </Button>
                   </SheetClose>
                 </div>
-              </SheetHeader>
+
+                <div className="flex items-center gap-2.5 px-4 pb-3 pt-2">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg">
+                    <ThemeLogo size={32} className="h-full w-full" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="truncate text-xs font-medium text-foreground">
+                      سپندتن
+                    </div>
+                    <div className="truncate text-[10px] text-muted-foreground">
+                      مربی شخصی هوشمند شما
+                    </div>
+                  </div>
+                </div>
+              </div>
 
               <NavList
                 pathname={pathname}
                 onNavigate={() => setMobileOpen(false)}
               />
 
-              <div className="flex items-center gap-1 border-t border-border p-3">
+              <div className="flex shrink-0 items-center gap-1 border-t border-border bg-background/95 p-3 backdrop-blur supports-backdrop-filter:bg-background/80">
                 <Button
                   variant="ghost"
                   className="flex-1 justify-start gap-2 text-muted-foreground"
@@ -351,7 +395,7 @@ export default function AdminLayout({
                     setLogoutOpen(true);
                   }}
                 >
-                  <LogOut className="h-4 w-4" />
+                  <LogOut className="h-4 w-4" aria-hidden="true" />
                   خروج
                 </Button>
                 <ThemeToggle />
@@ -372,7 +416,8 @@ export default function AdminLayout({
           <ThemeToggle />
         </header>
 
-        <main className="flex-1 overflow-auto">
+        {/* ONLY main scrolls */}
+        <main className="flex-1 overflow-y-auto bg-muted/30 dark:bg-background">
           <div className="mx-auto w-full max-w-6xl px-4 py-4 sm:px-6 sm:py-6">
             {children}
           </div>
@@ -381,7 +426,10 @@ export default function AdminLayout({
 
       {/* ----------------------- Logout confirmation ----------------------- */}
       <AlertDialog open={logoutOpen} onOpenChange={setLogoutOpen}>
-        <AlertDialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-md">
+        <AlertDialogContent
+          dir="rtl"
+          className="max-w-[calc(100vw-2rem)] sm:max-w-md"
+        >
           <AlertDialogHeader>
             <AlertDialogTitle>خروج از حساب</AlertDialogTitle>
             <AlertDialogDescription>
@@ -396,7 +444,7 @@ export default function AdminLayout({
               className="w-full bg-destructive text-destructive-foreground hover:bg-destructive/90 sm:w-auto"
               onClick={() => logout()}
             >
-              <LogOut className="me-2 h-4 w-4" />
+              <LogOut className="me-2 h-4 w-4" aria-hidden="true" />
               خروج
             </AlertDialogAction>
           </AlertDialogFooter>
