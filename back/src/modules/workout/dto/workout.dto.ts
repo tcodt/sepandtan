@@ -321,6 +321,11 @@ export class SearchWorkOutCoach extends QueryDefaultDto {
 }
 
 export class SearchWorkOutUser extends QueryDefaultDto {
+  @ApiPropertyOptional({ required: false, description: 'آیدی مربی' })
+  @IsOptional()
+  @IsString()
+  coachId?: string
+
   @ApiPropertyOptional({ description: 'نوع مرتب‌سازی', enum: SortOptionWorkoutPlan })
   @IsOptional()
   @IsEnum(SortOptionWorkoutPlan)

@@ -209,6 +209,7 @@ export class UserService {
         phone: true,
         role: true,
         status: true,
+
         isEmailVerified: true,
         isPhoneVerified: true,
         createdAt: true,
@@ -235,14 +236,24 @@ export class UserService {
       await this.prisma.profile.create({
         data: {
           ...body,
+          age: body.age ? new Date(body.age) : null,
           userId: id,
+          ...(body.availableEquipment?.length && {
+            equipment: { connect: body.availableEquipment.map((id) => ({ id })) },
+          }),
         }
       })
       return { success: true }
     } else {
       await this.prisma.profile.update({
         where: { id: data?.profile?.id },
-        data: body
+        data: {
+          ...body,
+          age: body.age ? new Date(body.age) : null,
+          ...(body.availableEquipment?.length && {
+            equipment: { set: body.availableEquipment.map((id) => ({ id })) },
+          }),
+        }
       })
       return { success: true }
     }

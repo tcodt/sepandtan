@@ -31,6 +31,10 @@ export class SpecialtyService {
 
     }
 
+    async getOne(coachId: string) {
+        return this.prisma.specialty.findMany({ where: { coaches: { some: { id: coachId } } }, select: { title: true, id: true } })
+    }
+
     async getMy(userId: string) {
         const coach = await this.prisma.coach.findUnique({
             where: { userId }, select: {

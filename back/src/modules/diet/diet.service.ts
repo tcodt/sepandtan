@@ -314,12 +314,13 @@ export class DietService {
   // ───────── Public ─────────
 
   async getPlans(query: SearchPlanDietUser) {
-    const { limit, page = 1, sortBy, title } = query
+    const { limit, page = 1, sortBy, title, coachId } = query
     const limitPage = this.getLimit(limit);
     const skip = (page - 1) * limitPage;
     // const where = this.publicWhere();
     const where = {
       isPublished: true,
+      ...(coachId && coachId !== undefined && { coachId }),
       ...(title && title !== undefined && { title: { contains: title, mode: 'insensitive' as const } }),
     };
     const orderBy = this.buildPlanOrderBy(sortBy ?? SortOptionDietPlan.MORE_RATE)

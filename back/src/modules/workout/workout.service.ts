@@ -7,7 +7,6 @@ import {
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { ConfigService } from '@nestjs/config';
 import pagination from '../../common/utils/pagination.js';
-import { QueryDefaultDto } from '../../common/dtos/query.defualt.dto.js';
 import {
   CreateWorkoutPlanDto,
   UpdateWorkoutPlanDto,
@@ -168,14 +167,17 @@ export class WorkoutService {
   // ─── Public ───
 
   async getPlans(query: SearchWorkOutUser) {
-    const { gender, limit, page = 1, sortBy, title } = query
+    const { gender, limit, page = 1, sortBy, title, coachId } = query
     const limitPage = this.getLimit(limit);
     const skip = (page - 1) * limitPage;
+    
     const where = {
       isPublished: true,
       ...(gender && gender !== undefined && { gender }),
+      ...(coachId && coachId !== undefined && { coachId }),
       ...(title && title !== undefined && { title: { contains: title, mode: 'insensitive' as const } }),
     };
+
     const orderBy = this.buildPlanOrderBy(sortBy ?? SortOptionWorkoutPlan.MORE_RATE)
     const [data, count] = await Promise.all([
       this.prisma.workoutPlan.findMany({

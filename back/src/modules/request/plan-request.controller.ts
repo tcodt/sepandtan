@@ -1,31 +1,30 @@
 import {
   Controller, Get, Post, Patch, Body, Param, Query, UseGuards,
+  Delete,
+  Put,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiOkResponse } from '@nestjs/swagger';
 import { AccessTokenGuard } from '../auth/guard/access-token.guard.js';
 import { Roles } from '../auth/decorators/roles.decorator.js';
 import { CurrentUser } from '../../common/decorators/current-user.decorator.js';
-import { PaginatedResponse } from '../../common/dtos/pagination-response.dto.js';
 import { PlanRequestService } from './plan-request.service.js';
 import {
   CreatePlanRequestDto, RejectPlanRequestDto, PlanRequestQueryDto,
+  PlanRequestAdminDto,
+  PlanRequestQueryAdminDto,
 } from './dto/plan-request.dto.js';
-import {
-  PlanRequestEntity, PlanRequestCoachItemEntity, PlanRequestCoachDetailEntity,
-  PlanRequestStatusEntity, PlanRequestAcceptEntity,
-} from './entity/plan-request.entity.js';
+
 
 @ApiTags('PlanRequest')
 @Controller('plan-request')
 @UseGuards(AccessTokenGuard)
 export class PlanRequestController {
-  constructor(private readonly planRequestService: PlanRequestService) {}
+  constructor(private readonly planRequestService: PlanRequestService) { }
 
   // ============ User ============
 
   @Post()
   @Roles('USER')
-  @ApiOkResponse({ type: PlanRequestEntity })
   @ApiOperation({
     summary: 'ثبت درخواست برنامه از مربی (User)',
     description:
@@ -45,7 +44,6 @@ export class PlanRequestController {
 
   @Get('my')
   @Roles('USER')
-  @ApiOkResponse({ type: PaginatedResponse(PlanRequestEntity, 'requests') })
   @ApiOperation({
     summary: 'درخواست‌های من (User)',
     description: 'جدیدترین اول. فیلتر اختیاری status. وقتی status=ACCEPTED است payableUntil مهلت پرداخت را می‌دهد.',
@@ -56,7 +54,6 @@ export class PlanRequestController {
 
   @Patch(':id/cancel')
   @Roles('USER')
-  @ApiOkResponse({ type: PlanRequestStatusEntity })
   @ApiOperation({
     summary: 'لغو درخواست (User)',
     description: 'فقط در وضعیت PENDING یا ACCEPTED (قبل از پرداخت). بعد از پرداخت → 409. درخواست لغوشده همچنان در سقف روزانه شمرده می‌شود.',
@@ -65,11 +62,17 @@ export class PlanRequestController {
     return this.planRequestService.cancel(userId, id);
   }
 
+  @Delete('my/:requestId')
+  @Roles('USER')
+  @ApiOperation({ summary: 'درخواست‌های من (User)', description: 'جدیدترین اول. فیلتر اختیاری status. وقتی status=ACCEPTED است payableUntil مهلت پرداخت را می‌دهد.' })
+  deleteMyRequests(@CurrentUser('id') userId: string, @Param('requestId') requestId: string) {
+    return this.planRequestService.deleteMyRequests(userId, requestId);
+  }
+
   // ============ Coach (قبل از مسیرهای پارامتری) ============
 
   @Get('coach')
   @Roles('COACH')
-  @ApiOkResponse({ type: PaginatedResponse(PlanRequestCoachItemEntity, 'requests') })
   @ApiOperation({
     summary: 'درخواست‌های دریافتی من (Coach)',
     description: 'جدیدترین اول. برای صف بررسی از status=PENDING و برای ساخت برنامه از status=PAID استفاده کن.',
@@ -80,7 +83,6 @@ export class PlanRequestController {
 
   @Get('coach/:id')
   @Roles('COACH')
-  @ApiOkResponse({ type: PlanRequestCoachDetailEntity })
   @ApiOperation({
     summary: 'جزئیات درخواست + پروفایل کاربر (Coach)',
     description: 'پروفایل شامل قد، وزن، سطح، آسیب‌ها، بیماری، حساسیت‌ها و محدودیت‌های غذایی برای تصمیم‌گیری مربی است.',
@@ -91,7 +93,6 @@ export class PlanRequestController {
 
   @Patch('coach/:id/accept')
   @Roles('COACH')
-  @ApiOkResponse({ type: PlanRequestAcceptEntity })
   @ApiOperation({
     summary: 'تایید درخواست (Coach)',
     description:
@@ -106,7 +107,6 @@ export class PlanRequestController {
 
   @Patch('coach/:id/reject')
   @Roles('COACH')
-  @ApiOkResponse({ type: PlanRequestStatusEntity })
   @ApiOperation({
     summary: 'رد درخواست (Coach)',
     description: 'فقط از وضعیت PENDING. reason الزامی است و به کاربر نمایش داده می‌شود.',
@@ -117,5 +117,31 @@ export class PlanRequestController {
     @Body() dto: RejectPlanRequestDto,
   ) {
     return this.planRequestService.reject(coachUserId, id, dto.reason);
+  }
+  // ============ Admin (قبل از مسیرهای پارامتری) ============
+
+  @Get('admin')
+  @Roles('SUPERADMIN')
+  @ApiOperation({
+    summary: ' درخواست کاربران (Super Admin)',
+  })
+  getAdmin(@Query() query: PlanRequestQueryAdminDto) {
+    return this.planRequestService.getAllRequestAdmin(query);
+  }
+
+  @Get('admin/:id')
+  @Roles('SUPERADMIN')
+  @ApiOperation({
+    summary: 'جزئیات درخواست + پروفایل کاربر (Super Admin)',
+  })
+  getOneAdmin(@Param('id') id: string) {
+    return this.planRequestService.getSingleRequestAdmin(id);
+  }
+
+  @Put('admin/:id')
+  @Roles('SUPERADMIN')
+  @ApiOperation({ summary: 'ویرایش درخواست (Super Admin)', description: 'فقط سوپر ادمین مجاز به تغییر درخواست ها هستش' })
+  updateAdmin(@Param('id') id: string, @Body() dto: PlanRequestAdminDto,) {
+    return this.planRequestService.updateAdmin(id, dto);
   }
 }

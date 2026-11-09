@@ -85,3 +85,44 @@ export class PlanRequestQueryDto extends QueryDefaultDto {
   @IsEnum(PlanRequestStatus)
   status?: PlanRequestStatus;
 }
+
+export class PlanRequestQueryAdminDto extends PlanRequestQueryDto {
+  @ApiProperty({
+    required: false,
+    description: 'آیدی مربی',
+  })
+  @IsOptional()
+  coachId?: string;
+}
+
+export class PlanRequestAdminDto {
+  @ApiPropertyOptional({
+    enum: [...Object.values(PlanRequestStatus)],
+    description: 'وضعیت درخواست',
+    example: PlanRequestStatus.ACCEPTED
+  })
+  @IsOptional()
+  @IsEnum(PlanRequestStatus)
+  status?: PlanRequestStatus;
+
+  @ApiPropertyOptional({
+    example: '3fa85f64-5717-4562-b3fc-2c963f66afa6',
+    description: ''
+  })
+  @IsOptional()
+  dietTemplateId?: string;
+
+  @ApiPropertyOptional({
+    example: '3fa85f64-5717-4562-b3fc-2c963f66afa6',
+    description: 'توضیحات شاگرد به مربی'
+  })
+  @IsOptional()
+  note?: string;
+
+  @ApiPropertyOptional({
+    example: '3fa85f64-5717-4562-b3fc-2c963f66afa6',
+    description: 'توضیحات مربی به شاگرد در زمان رد شاگرد'
+  })
+  @IsOptional()
+  rejectionReason?: string;
+}

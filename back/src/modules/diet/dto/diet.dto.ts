@@ -191,6 +191,11 @@ export class SearchPlanDietUser extends QueryDefaultDto {
   @IsEnum(SortOptionDietPlan)
   sortBy?: SortOptionDietPlan;
 
+  @ApiPropertyOptional({ required: false, description: 'آیدی مربی' })
+  @IsOptional()
+  @IsString()
+  coachId?: string
+
   @ApiPropertyOptional({ required: false, description: 'توی تایتل پلن جستجو میشه' })
   @IsOptional()
   @IsString()

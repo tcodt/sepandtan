@@ -51,19 +51,6 @@ export class UserPlanController {
     return this.userPlanService.getMyCurrent(userId);
   }
 
-  @Get('my/today')
-  @Roles('USER')
-  @ApiOkResponse({ type: TodayEntity })
-  @ApiOperation({
-    summary: 'تمرین و وعده‌های امروز (User)',
-    description:
-      'فقط همان یک روز از دیتابیس استخراج می‌شود (کم‌حجم‌ترین endpoint). date اختیاری (پیش‌فرض امروز تهران). ' +
-      'workout/diet برابر null یعنی آن روز برنامه ندارد. شکل روزها در WorkoutDay/DietDay مستند است.',
-  })
-  getMyToday(@CurrentUser('id') userId: string, @Query() query: TodayQueryDto) {
-    return this.userPlanService.getMyToday(userId, query.date);
-  }
-
   @Get('my/current/workout')
   @Roles('USER')
   @ApiOkResponse({ type: PartEntity })

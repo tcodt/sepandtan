@@ -13,10 +13,11 @@ import { FoodService } from '../admin/food.service.js';
 import { MuscleGroupService } from '../admin/muscleGroup.service.js';
 import { TrainingGoalService } from '../admin/trainingGoal.service.js';
 import { AdminsModule } from '../admin/admin.module.js';
+import { CatalogController } from './catalog.controller.js';
 
 @Module({
   imports: [AuthModule, AdminsModule],
-  controllers: [CoachsController],
+  controllers: [CoachsController, CatalogController],
   providers: [
     CoachService,
     CertificationService,

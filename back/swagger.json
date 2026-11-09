@@ -8136,175 +8136,7 @@
         ]
       }
     },
-    "/catalog/coach": {
-      "get": {
-        "operationId": "CoachsController_findAll",
-        "parameters": [
-          {
-            "name": "order",
-            "required": false,
-            "in": "query",
-            "description": "ترتیب داده‌ها",
-            "schema": {
-              "nullable": true,
-              "example": "desc",
-              "type": "string",
-              "enum": [
-                "asc",
-                "desc"
-              ]
-            }
-          },
-          {
-            "name": "page",
-            "required": false,
-            "in": "query",
-            "description": "شماره صفحه",
-            "schema": {
-              "example": 1,
-              "type": "number"
-            }
-          },
-          {
-            "name": "limit",
-            "required": false,
-            "in": "query",
-            "description": "تعداد آیتم در هر صفحه",
-            "schema": {
-              "example": 10,
-              "type": "number"
-            }
-          },
-          {
-            "name": "search",
-            "required": false,
-            "in": "query",
-            "description": "توی اسلاگ و تایتل مربی جستجو میشه",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "sortBy",
-            "required": false,
-            "in": "query",
-            "description": "نوع مرتب‌سازی",
-            "schema": {
-              "default": "newest",
-              "type": "string",
-              "enum": [
-                "oldest",
-                "newest",
-                "more_selling",
-                "low_selling",
-                "more_reviews",
-                "low_reviews",
-                "more_rate",
-                "low_rate"
-              ]
-            }
-          },
-          {
-            "name": "isAcceptingClients",
-            "required": false,
-            "in": "query",
-            "description": "پذیرش دارد یا خیر",
-            "schema": {
-              "example": false,
-              "type": "boolean"
-            }
-          },
-          {
-            "name": "cityId",
-            "required": false,
-            "in": "query",
-            "description": "آیدی شهر",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "provinceId",
-            "required": false,
-            "in": "query",
-            "description": "آیدی استان",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PaginatedCoachSelectorEntity"
-                }
-              }
-            }
-          }
-        },
-        "summary": "لیست مربی‌های فعال (Public)",
-        "tags": [
-          "Coach"
-        ]
-      },
-      "post": {
-        "description": "برای زمانی که کاربر دسترسی نداشته باشد و ادمین بخواهد مستقیماً مربی اضافه کند",
-        "operationId": "CoachsController_create",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateCoachDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "example": {
-                  "success": true
-                }
-              }
-            }
-          }
-        },
-        "summary": "ایجاد مربی جدید (Admin)",
-        "tags": [
-          "Coach"
-        ]
-      }
-    },
-    "/catalog/coach/selector": {
-      "get": {
-        "operationId": "CoachsController_getForSelector",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PaginatedCoachSelectorEntity"
-                }
-              }
-            }
-          }
-        },
-        "summary": "لیست مربی‌های فعال برای فرم‌های انتخاب‌گر (Public)",
-        "tags": [
-          "Coach"
-        ]
-      }
-    },
-    "/catalog/coach/admin": {
+    "/coach/get/admin": {
       "get": {
         "description": "مربی‌ها با تمام جزئیات و مدارک/تخصص‌هایشان",
         "operationId": "CoachsController_findAllAdmin",
@@ -8437,7 +8269,23 @@
         ]
       }
     },
-    "/catalog/coach/admin/{id}": {
+    "/coach/my": {
+      "get": {
+        "description": "تمام اطلاعات من مربی",
+        "operationId": "CoachsController_findMyData",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "اطلاعات من (Coach)",
+        "tags": [
+          "Coach"
+        ]
+      }
+    },
+    "/coach/get/admin/{id}": {
       "get": {
         "operationId": "CoachsController_findById",
         "parameters": [
@@ -8468,43 +8316,45 @@
         ]
       }
     },
-    "/catalog/coach/{slug}": {
-      "get": {
-        "operationId": "CoachsController_findBySlug",
-        "parameters": [
-          {
-            "name": "slug",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
+    "/coach/create": {
+      "post": {
+        "description": "برای زمانی که کاربر دسترسی نداشته باشد و ادمین بخواهد مستقیماً مربی اضافه کند",
+        "operationId": "CoachsController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCoachDto"
+              }
             }
           }
-        ],
+        },
         "responses": {
           "200": {
             "description": "",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CoachDetailsEntity"
+                "example": {
+                  "success": true
                 }
               }
             }
           }
         },
-        "summary": "جزئیات مربی بر اساس slug (Public)",
+        "summary": "ایجاد مربی جدید (Admin)",
         "tags": [
           "Coach"
         ]
       }
     },
-    "/catalog/coach/{id}": {
+    "/coach/update/{coachId}": {
       "put": {
         "operationId": "CoachsController_update",
         "parameters": [
           {
-            "name": "id",
+            "name": "coachId",
             "required": true,
             "in": "path",
             "schema": {
@@ -8538,7 +8388,9 @@
         "tags": [
           "Coach"
         ]
-      },
+      }
+    },
+    "/coach/del/{id}": {
       "delete": {
         "operationId": "CoachsController_delete",
         "parameters": [
@@ -8569,7 +8421,7 @@
         ]
       }
     },
-    "/catalog/coach-db/{id}": {
+    "/coach/del-db/{id}": {
       "delete": {
         "operationId": "CoachsController_deleteDb",
         "parameters": [
@@ -8600,74 +8452,7 @@
         ]
       }
     },
-    "/catalog/review/coach": {
-      "get": {
-        "description": "بر اساس آیدی مربی، نظرات را برمی‌گرداند",
-        "operationId": "CoachsController_reviewCoach",
-        "parameters": [
-          {
-            "name": "coachId",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "order",
-            "required": false,
-            "in": "query",
-            "description": "ترتیب داده‌ها",
-            "schema": {
-              "nullable": true,
-              "example": "desc",
-              "type": "string",
-              "enum": [
-                "asc",
-                "desc"
-              ]
-            }
-          },
-          {
-            "name": "page",
-            "required": false,
-            "in": "query",
-            "description": "شماره صفحه",
-            "schema": {
-              "example": 1,
-              "type": "number"
-            }
-          },
-          {
-            "name": "limit",
-            "required": false,
-            "in": "query",
-            "description": "تعداد آیتم در هر صفحه",
-            "schema": {
-              "example": 10,
-              "type": "number"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PaginatedReviewCoachEntity"
-                }
-              }
-            }
-          }
-        },
-        "summary": "لیست نظرات یک مربی (Public)",
-        "tags": [
-          "Coach"
-        ]
-      }
-    },
-    "/catalog/review/admin": {
+    "/coach/review/admin": {
       "get": {
         "description": "با فیلتر و جستجو",
         "operationId": "CoachsController_adminAllReviewCoach",
@@ -8751,7 +8536,7 @@
         ]
       }
     },
-    "/catalog/review": {
+    "/coach/review": {
       "get": {
         "description": "نظراتی که برای این مربی ثبت شده است",
         "operationId": "CoachsController_coachAllReview",
@@ -8833,40 +8618,9 @@
         "tags": [
           "Coach"
         ]
-      },
-      "post": {
-        "description": "کاربر لاگین‌شده برای مربی نظر ثبت می‌کند",
-        "operationId": "CoachsController_createReview",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateCoachReviewDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "example": {
-                  "success": true
-                }
-              }
-            }
-          }
-        },
-        "summary": "ثبت نظر برای مربی (User)",
-        "tags": [
-          "Coach"
-        ]
       }
     },
-    "/catalog/review/rebuild/{id}": {
+    "/coach/review/rebuild/{id}": {
       "post": {
         "description": "امتیازهای مربی را از نو محاسبه می‌کند",
         "operationId": "CoachsController_rebuildCoachRating",
@@ -8898,7 +8652,7 @@
         ]
       }
     },
-    "/catalog/review/approve/{id}": {
+    "/coach/review/approve/{id}": {
       "put": {
         "operationId": "CoachsController_approveReviewCoach",
         "parameters": [
@@ -8939,7 +8693,7 @@
         ]
       }
     },
-    "/catalog/review/status/{id}": {
+    "/coach/review/status/{id}": {
       "patch": {
         "operationId": "CoachsController_updateStatusCoach",
         "parameters": [
@@ -8980,7 +8734,7 @@
         ]
       }
     },
-    "/catalog/review/{id}": {
+    "/coach/review/{id}": {
       "delete": {
         "operationId": "CoachsController_deleteReviewCoach",
         "parameters": [
@@ -9011,7 +8765,7 @@
         ]
       }
     },
-    "/catalog/certification/admin": {
+    "/coach/certification/admin": {
       "get": {
         "description": "فیلتر اختیاری با coachId و صفحه‌بندی",
         "operationId": "CoachsController_getAdminCertification",
@@ -9070,7 +8824,7 @@
         ]
       }
     },
-    "/catalog/certification/my": {
+    "/coach/certification/my": {
       "get": {
         "operationId": "CoachsController_myCertification",
         "parameters": [],
@@ -9095,41 +8849,7 @@
         ]
       }
     },
-    "/catalog/certification/{coachId}": {
-      "get": {
-        "operationId": "CoachsController_getCertificationCoach",
-        "parameters": [
-          {
-            "name": "coachId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/CertificationEntity"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "summary": "لیست مدارک تأییدشده مربی (Public)",
-        "tags": [
-          "Coach"
-        ]
-      }
-    },
-    "/catalog/certification": {
+    "/coach/certification": {
       "post": {
         "description": "مجاز به ساخت بیش از 10 مورد مدرک نیست",
         "operationId": "CoachsController_createCertification",
@@ -9162,7 +8882,7 @@
         ]
       }
     },
-    "/catalog/certification/admin/{id}/verify": {
+    "/coach/certification/admin/{id}/verify": {
       "patch": {
         "operationId": "CoachsController_approveCertification",
         "parameters": [
@@ -9194,7 +8914,7 @@
         ]
       }
     },
-    "/catalog/certification/{id}": {
+    "/coach/certification/{id}": {
       "put": {
         "operationId": "CoachsController_updateCertification",
         "parameters": [
@@ -9264,7 +8984,7 @@
         ]
       }
     },
-    "/catalog/availability": {
+    "/coach/availability": {
       "get": {
         "operationId": "CoachsController_getAvailability",
         "parameters": [],
@@ -9320,7 +9040,7 @@
         ]
       }
     },
-    "/catalog/availability/{id}": {
+    "/coach/availability/{id}": {
       "put": {
         "operationId": "CoachsController_updateAvailability",
         "parameters": [
@@ -9390,7 +9110,7 @@
         ]
       }
     },
-    "/catalog/achievement/my": {
+    "/coach/achievement/my": {
       "get": {
         "operationId": "CoachsController_getMyAchievement",
         "parameters": [
@@ -9448,73 +9168,7 @@
         ]
       }
     },
-    "/catalog/achievement/{coachId}": {
-      "get": {
-        "operationId": "CoachsController_getAchievementCoach",
-        "parameters": [
-          {
-            "name": "coachId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "order",
-            "required": false,
-            "in": "query",
-            "description": "ترتیب داده‌ها",
-            "schema": {
-              "nullable": true,
-              "example": "desc",
-              "type": "string",
-              "enum": [
-                "asc",
-                "desc"
-              ]
-            }
-          },
-          {
-            "name": "page",
-            "required": false,
-            "in": "query",
-            "description": "شماره صفحه",
-            "schema": {
-              "example": 1,
-              "type": "number"
-            }
-          },
-          {
-            "name": "limit",
-            "required": false,
-            "in": "query",
-            "description": "تعداد آیتم در هر صفحه",
-            "schema": {
-              "example": 10,
-              "type": "number"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PaginatedAchievementEntity"
-                }
-              }
-            }
-          }
-        },
-        "summary": "لیست دستاوردهای تأییدشده یک مربی (Public)",
-        "tags": [
-          "Coach"
-        ]
-      }
-    },
-    "/catalog/achievement": {
+    "/coach/achievement": {
       "post": {
         "operationId": "CoachsController_createAchievement",
         "parameters": [],
@@ -9546,7 +9200,7 @@
         ]
       }
     },
-    "/catalog/achievement/{id}": {
+    "/coach/achievement/{id}": {
       "put": {
         "operationId": "CoachsController_updateAchievement",
         "parameters": [
@@ -9616,7 +9270,7 @@
         ]
       }
     },
-    "/catalog/achievement/admin/{id}/verify": {
+    "/coach/achievement/admin/{id}/verify": {
       "patch": {
         "operationId": "CoachsController_verifyAchievement",
         "parameters": [
@@ -9648,7 +9302,7 @@
         ]
       }
     },
-    "/catalog/specialty": {
+    "/coach/specialty": {
       "get": {
         "operationId": "CoachsController_getSpecialty",
         "parameters": [
@@ -9712,7 +9366,7 @@
             }
           }
         },
-        "summary": "لیست تخصص (User & Coach)",
+        "summary": "لیست تخصص (Coach)",
         "tags": [
           "Coach"
         ]
@@ -9755,7 +9409,7 @@
         ]
       }
     },
-    "/catalog/specialty/selector": {
+    "/coach/specialty/selector": {
       "get": {
         "operationId": "CoachsController_selectSpecialty",
         "parameters": [
@@ -9784,13 +9438,13 @@
             }
           }
         },
-        "summary": "لیست انتخابگر تخصص (User & Coach)",
+        "summary": "لیست انتخابگر تخصص (Coach)",
         "tags": [
           "Coach"
         ]
       }
     },
-    "/catalog/specialty/my": {
+    "/coach/specialty/my": {
       "get": {
         "operationId": "CoachsController_mySpecialty",
         "parameters": [],
@@ -9815,9 +9469,411 @@
         ]
       }
     },
+    "/catalog/coach": {
+      "get": {
+        "operationId": "CatalogController_findAll",
+        "parameters": [
+          {
+            "name": "order",
+            "required": false,
+            "in": "query",
+            "description": "ترتیب داده‌ها",
+            "schema": {
+              "nullable": true,
+              "example": "desc",
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ]
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "شماره صفحه",
+            "schema": {
+              "example": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "تعداد آیتم در هر صفحه",
+            "schema": {
+              "example": 10,
+              "type": "number"
+            }
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "description": "توی اسلاگ و تایتل مربی جستجو میشه",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sortBy",
+            "required": false,
+            "in": "query",
+            "description": "نوع مرتب‌سازی",
+            "schema": {
+              "default": "newest",
+              "type": "string",
+              "enum": [
+                "oldest",
+                "newest",
+                "more_selling",
+                "low_selling",
+                "more_reviews",
+                "low_reviews",
+                "more_rate",
+                "low_rate"
+              ]
+            }
+          },
+          {
+            "name": "isAcceptingClients",
+            "required": false,
+            "in": "query",
+            "description": "پذیرش دارد یا خیر",
+            "schema": {
+              "example": false,
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "cityId",
+            "required": false,
+            "in": "query",
+            "description": "آیدی شهر",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "provinceId",
+            "required": false,
+            "in": "query",
+            "description": "آیدی استان",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedCoachSelectorEntity"
+                }
+              }
+            }
+          }
+        },
+        "summary": "لیست مربی‌های فعال (Public)",
+        "tags": [
+          "Catalog"
+        ]
+      }
+    },
+    "/catalog/coach/selector": {
+      "get": {
+        "operationId": "CatalogController_getForSelector",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedCoachSelectorEntity"
+                }
+              }
+            }
+          }
+        },
+        "summary": "لیست مربی‌های فعال برای فرم‌های انتخاب‌گر (Public)",
+        "tags": [
+          "Catalog"
+        ]
+      }
+    },
+    "/catalog/coach/{slug}": {
+      "get": {
+        "operationId": "CatalogController_findBySlug",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CoachDetailsEntity"
+                }
+              }
+            }
+          }
+        },
+        "summary": "جزئیات مربی بر اساس slug (Public)",
+        "tags": [
+          "Catalog"
+        ]
+      }
+    },
+    "/catalog/review/coach": {
+      "get": {
+        "description": "بر اساس آیدی مربی، نظرات را برمی‌گرداند",
+        "operationId": "CatalogController_reviewCoach",
+        "parameters": [
+          {
+            "name": "coachId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "order",
+            "required": false,
+            "in": "query",
+            "description": "ترتیب داده‌ها",
+            "schema": {
+              "nullable": true,
+              "example": "desc",
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ]
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "شماره صفحه",
+            "schema": {
+              "example": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "تعداد آیتم در هر صفحه",
+            "schema": {
+              "example": 10,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedReviewCoachEntity"
+                }
+              }
+            }
+          }
+        },
+        "summary": "لیست نظرات یک مربی (Public)",
+        "tags": [
+          "Catalog"
+        ]
+      }
+    },
+    "/catalog/review": {
+      "post": {
+        "description": "کاربر لاگین‌شده برای مربی نظر ثبت می‌کند",
+        "operationId": "CatalogController_createReview",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCoachReviewDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": true
+                }
+              }
+            }
+          }
+        },
+        "summary": "ثبت نظر برای مربی (User)",
+        "tags": [
+          "Catalog"
+        ]
+      }
+    },
+    "/catalog/certification/{coachId}": {
+      "get": {
+        "operationId": "CatalogController_getCertificationCoach",
+        "parameters": [
+          {
+            "name": "coachId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CertificationEntity"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "لیست مدارک تأییدشده مربی (Public)",
+        "tags": [
+          "Catalog"
+        ]
+      }
+    },
+    "/catalog/specialty/{coachId}": {
+      "get": {
+        "operationId": "CatalogController_getSpecialty",
+        "parameters": [
+          {
+            "name": "coachId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SpecialtyEntity"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "لیست تخصص یک مربی (Coach)",
+        "tags": [
+          "Catalog"
+        ]
+      }
+    },
+    "/catalog/achievement/{coachId}": {
+      "get": {
+        "operationId": "CatalogController_getAchievementCoach",
+        "parameters": [
+          {
+            "name": "coachId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "order",
+            "required": false,
+            "in": "query",
+            "description": "ترتیب داده‌ها",
+            "schema": {
+              "nullable": true,
+              "example": "desc",
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ]
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "شماره صفحه",
+            "schema": {
+              "example": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "تعداد آیتم در هر صفحه",
+            "schema": {
+              "example": 10,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedAchievementEntity"
+                }
+              }
+            }
+          }
+        },
+        "summary": "لیست دستاوردهای تأییدشده یک مربی (Public)",
+        "tags": [
+          "Catalog"
+        ]
+      }
+    },
     "/catalog/equipment": {
       "get": {
-        "operationId": "CoachsController_getEquipment",
+        "operationId": "CatalogController_getEquipment",
         "parameters": [
           {
             "name": "title",
@@ -9881,12 +9937,12 @@
         },
         "summary": "لیست تجهیزات (User & Coach)",
         "tags": [
-          "Coach"
+          "Catalog"
         ]
       },
       "patch": {
         "description": "زمانی که کاربر میخواد تجهیزاتی که داره رو ثبت بکنه تجهیزات رو بهش نمایش بده به صورت انتخابگر و اونایی که دارن رو انتخاب بکنه و بعد ایدی هاشونو به صورت لیست بفرسته",
-        "operationId": "CoachsController_updateEquipmentCoach",
+        "operationId": "CatalogController_updateEquipmentCoach",
         "parameters": [
           {
             "name": "ids",
@@ -9918,13 +9974,13 @@
         },
         "summary": "افزودن و ویرایش تجهیزات کاربر (User)",
         "tags": [
-          "Coach"
+          "Catalog"
         ]
       }
     },
     "/catalog/equipment/selector": {
       "get": {
-        "operationId": "CoachsController_selectEquipment",
+        "operationId": "CatalogController_selectEquipment",
         "parameters": [
           {
             "name": "title",
@@ -9953,13 +10009,13 @@
         },
         "summary": "لیست انتخابگر تجهیزات (User & Coach)",
         "tags": [
-          "Coach"
+          "Catalog"
         ]
       }
     },
     "/catalog/equipment/my": {
       "get": {
-        "operationId": "CoachsController_myEquipment",
+        "operationId": "CatalogController_myEquipment",
         "parameters": [],
         "responses": {
           "200": {
@@ -9978,13 +10034,13 @@
         },
         "summary": "لیست تجهیزات من(User)",
         "tags": [
-          "Coach"
+          "Catalog"
         ]
       }
     },
     "/catalog/exercise": {
       "get": {
-        "operationId": "CoachsController_getExercise",
+        "operationId": "CatalogController_getExercise",
         "parameters": [
           {
             "name": "title",
@@ -10057,13 +10113,13 @@
         },
         "summary": "لیست تمرین (User & Coach)",
         "tags": [
-          "Coach"
+          "Catalog"
         ]
       }
     },
     "/catalog/exercise/selector": {
       "get": {
-        "operationId": "CoachsController_selectExercise",
+        "operationId": "CatalogController_selectExercise",
         "parameters": [
           {
             "name": "title",
@@ -10092,13 +10148,13 @@
         },
         "summary": "لیست تمرین انتخابگر(User & Coach)",
         "tags": [
-          "Coach"
+          "Catalog"
         ]
       }
     },
     "/catalog/exercise/{slug}": {
       "get": {
-        "operationId": "CoachsController_getOneExercise",
+        "operationId": "CatalogController_getOneExercise",
         "parameters": [
           {
             "name": "slug",
@@ -10121,15 +10177,15 @@
             }
           }
         },
-        "summary": " تمرین تکی(User & Coach)",
+        "summary": "تمرین تکی(User & Coach)",
         "tags": [
-          "Coach"
+          "Catalog"
         ]
       }
     },
     "/catalog/food": {
       "get": {
-        "operationId": "CoachsController_getFood",
+        "operationId": "CatalogController_getFood",
         "parameters": [
           {
             "name": "name",
@@ -10193,13 +10249,13 @@
         },
         "summary": "لیست غذاها (Coach & User)",
         "tags": [
-          "Coach"
+          "Catalog"
         ]
       }
     },
     "/catalog/food/selector": {
       "get": {
-        "operationId": "CoachsController_selectFood",
+        "operationId": "CatalogController_selectFood",
         "parameters": [
           {
             "name": "name",
@@ -10228,13 +10284,13 @@
         },
         "summary": "لیست غذا انتخابگر(Coach & User)",
         "tags": [
-          "Coach"
+          "Catalog"
         ]
       }
     },
     "/catalog/muscle-group": {
       "get": {
-        "operationId": "CoachsController_getMuscleGroup",
+        "operationId": "CatalogController_getMuscleGroup",
         "parameters": [
           {
             "name": "order",
@@ -10298,13 +10354,13 @@
         },
         "summary": "لیست گروه عضلانی (User & Coach)",
         "tags": [
-          "Coach"
+          "Catalog"
         ]
       }
     },
     "/catalog/muscle-group/selector": {
       "get": {
-        "operationId": "CoachsController_selectMuscleGroup",
+        "operationId": "CatalogController_selectMuscleGroup",
         "parameters": [
           {
             "name": "title",
@@ -10333,13 +10389,13 @@
         },
         "summary": "لیست عضلانی انتخابگر(Coach & User)",
         "tags": [
-          "Coach"
+          "Catalog"
         ]
       }
     },
     "/catalog/training-goal": {
       "get": {
-        "operationId": "CoachsController_getTrainingGoal",
+        "operationId": "CatalogController_getTrainingGoal",
         "parameters": [
           {
             "name": "order",
@@ -10403,13 +10459,13 @@
         },
         "summary": "لیست هدف تمرینی (Coach & User)",
         "tags": [
-          "Coach"
+          "Catalog"
         ]
       }
     },
     "/catalog/training-goal/selector": {
       "get": {
-        "operationId": "CoachsController_selectTrainingGoal",
+        "operationId": "CatalogController_selectTrainingGoal",
         "parameters": [
           {
             "name": "title",
@@ -10438,7 +10494,7 @@
         },
         "summary": "لیست هدف انتخابگر(Coach & User)",
         "tags": [
-          "Coach"
+          "Catalog"
         ]
       }
     },
@@ -11219,6 +11275,15 @@
             "schema": {
               "example": 10,
               "type": "number"
+            }
+          },
+          {
+            "name": "coachId",
+            "required": false,
+            "in": "query",
+            "description": "آیدی مربی",
+            "schema": {
+              "type": "string"
             }
           },
           {
@@ -12088,6 +12153,15 @@
             }
           },
           {
+            "name": "coachId",
+            "required": false,
+            "in": "query",
+            "description": "آیدی مربی",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "title",
             "required": false,
             "in": "query",
@@ -12806,9 +12880,10 @@
         ]
       }
     },
-    "/user-plan/request": {
+    "/plan-request": {
       "post": {
-        "operationId": "UserPlanController_createRequest",
+        "description": "workoutTemplateId و/یا dietTemplateId (حداقل یکی). مربی از روی برنامه‌ها تعیین می‌شود و هر دو برنامه باید از یک مربی باشند.\n\nقوانین:\n• سقف ۵ درخواست در روز (به وقت تهران)؛ لغوشده‌ها هم شمرده می‌شوند → 429\n• سقف ۵ درخواست باز هم‌زمان (PENDING + ACCEPTED) → 429\n• هر کاربر هم‌زمان فقط یک برنامه‌ی ورزشی و یک برنامه‌ی غذایی فعال دارد؛ اگر دارد (یا پرداخت‌کرده و منتظر تحویل است) → 409\n• برنامه‌ی غذایی بدون برنامه‌ی ورزشی ممکن نیست: یا هر دو را با هم درخواست بده، یا برنامه‌ی ورزشی فعال داشته باش → 400\n• «فقط غذایی» باید از همان مربی‌ی برنامه‌ی ورزشی فعال باشد (اگر برنامه‌ی ورزشی از مربی است) → 400\n• درخواست تکراری باز برای همان برنامه‌ها → 409\n• قیمت در همین لحظه ثابت می‌شود.",
+        "operationId": "PlanRequestController_create",
         "parameters": [],
         "requestBody": {
           "required": true,
@@ -12825,15 +12900,16 @@
             "description": ""
           }
         },
-        "summary": "درخواست برنامه از مربی (User)",
+        "summary": "ثبت درخواست برنامه از مربی (User)",
         "tags": [
-          "UserPlan"
+          "PlanRequest"
         ]
       }
     },
-    "/user-plan/request/my": {
+    "/plan-request/my": {
       "get": {
-        "operationId": "UserPlanController_getMyRequests",
+        "description": "جدیدترین اول. فیلتر اختیاری status. وقتی status=ACCEPTED است payableUntil مهلت پرداخت را می‌دهد.",
+        "operationId": "PlanRequestController_getMyRequests",
         "parameters": [
           {
             "name": "order",
@@ -12869,88 +12945,209 @@
               "example": 10,
               "type": "number"
             }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PaginatedPlanRequestEntity"
-                }
-              }
-            }
-          }
-        },
-        "summary": "لیست درخواست‌های من (User)",
-        "tags": [
-          "UserPlan"
-        ]
-      }
-    },
-    "/user-plan/request/coach": {
-      "get": {
-        "operationId": "UserPlanController_getCoachRequests",
-        "parameters": [
+          },
           {
-            "name": "order",
+            "name": "status",
             "required": false,
             "in": "query",
-            "description": "ترتیب داده‌ها",
+            "description": "فیلتر بر اساس وضعیت درخواست",
             "schema": {
-              "nullable": true,
-              "example": "desc",
               "type": "string",
               "enum": [
-                "asc",
-                "desc"
+                "PENDING",
+                "ACCEPTED",
+                "PAID",
+                "DELIVERED",
+                "REJECTED",
+                "CANCELLED"
               ]
-            }
-          },
-          {
-            "name": "page",
-            "required": false,
-            "in": "query",
-            "description": "شماره صفحه",
-            "schema": {
-              "example": 1,
-              "type": "number"
-            }
-          },
-          {
-            "name": "limit",
-            "required": false,
-            "in": "query",
-            "description": "تعداد آیتم در هر صفحه",
-            "schema": {
-              "example": 10,
-              "type": "number"
             }
           }
         ],
         "responses": {
           "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PaginatedPlanRequestEntity"
-                }
-              }
-            }
+            "description": ""
           }
         },
-        "summary": "لیست درخواست‌های دریافتی (Coach)",
+        "summary": "درخواست‌های من (User)",
         "tags": [
-          "UserPlan"
+          "PlanRequest"
         ]
       }
     },
-    "/user-plan/request/{id}/status": {
+    "/plan-request/{id}/cancel": {
       "patch": {
-        "description": "فقط برای PENDING — ACCEPTED/REJECTED",
-        "operationId": "UserPlanController_updateRequestStatus",
+        "description": "فقط در وضعیت PENDING یا ACCEPTED (قبل از پرداخت). بعد از پرداخت → 409. درخواست لغوشده همچنان در سقف روزانه شمرده می‌شود.",
+        "operationId": "PlanRequestController_cancel",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "لغو درخواست (User)",
+        "tags": [
+          "PlanRequest"
+        ]
+      }
+    },
+    "/plan-request/my/{requestId}": {
+      "delete": {
+        "description": "جدیدترین اول. فیلتر اختیاری status. وقتی status=ACCEPTED است payableUntil مهلت پرداخت را می‌دهد.",
+        "operationId": "PlanRequestController_deleteMyRequests",
+        "parameters": [
+          {
+            "name": "requestId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "درخواست‌های من (User)",
+        "tags": [
+          "PlanRequest"
+        ]
+      }
+    },
+    "/plan-request/coach": {
+      "get": {
+        "description": "جدیدترین اول. برای صف بررسی از status=PENDING و برای ساخت برنامه از status=PAID استفاده کن.",
+        "operationId": "PlanRequestController_getCoachRequests",
+        "parameters": [
+          {
+            "name": "order",
+            "required": false,
+            "in": "query",
+            "description": "ترتیب داده‌ها",
+            "schema": {
+              "nullable": true,
+              "example": "desc",
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ]
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "شماره صفحه",
+            "schema": {
+              "example": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "تعداد آیتم در هر صفحه",
+            "schema": {
+              "example": 10,
+              "type": "number"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "description": "فیلتر بر اساس وضعیت درخواست",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "PENDING",
+                "ACCEPTED",
+                "PAID",
+                "DELIVERED",
+                "REJECTED",
+                "CANCELLED"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "درخواست‌های دریافتی من (Coach)",
+        "tags": [
+          "PlanRequest"
+        ]
+      }
+    },
+    "/plan-request/coach/{id}": {
+      "get": {
+        "description": "پروفایل شامل قد، وزن، سطح، آسیب‌ها، بیماری، حساسیت‌ها و محدودیت‌های غذایی برای تصمیم‌گیری مربی است.",
+        "operationId": "PlanRequestController_getCoachRequest",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "جزئیات درخواست + پروفایل کاربر (Coach)",
+        "tags": [
+          "PlanRequest"
+        ]
+      }
+    },
+    "/plan-request/coach/{id}/accept": {
+      "patch": {
+        "description": "فقط از وضعیت PENDING. بعد از تایید کاربر ۴۸ ساعت مهلت پرداخت دارد (payableUntil).\n• اگر حساب مربی APPROVED نباشد → 400\n• ظرفیت (maxClients) برای مشتری‌ی جدید چک می‌شود → 409 (غذایی‌ِ مشتری‌ی فعلی ظرفیت نمی‌گیرد)\n• برنامه‌ی رایگان (مبلغ ۰) بدون پرداخت مستقیم PAID می‌شود.",
+        "operationId": "PlanRequestController_accept",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "تایید درخواست (Coach)",
+        "tags": [
+          "PlanRequest"
+        ]
+      }
+    },
+    "/plan-request/coach/{id}/reject": {
+      "patch": {
+        "description": "فقط از وضعیت PENDING. reason الزامی است و به کاربر نمایش داده می‌شود.",
+        "operationId": "PlanRequestController_reject",
         "parameters": [
           {
             "name": "id",
@@ -12966,7 +13163,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/UpdatePlanRequestStatusDto"
+                "$ref": "#/components/schemas/RejectPlanRequestDto"
               }
             }
           }
@@ -12976,14 +13173,149 @@
             "description": ""
           }
         },
-        "summary": "تغییر وضعیت درخواست (Coach)",
+        "summary": "رد درخواست (Coach)",
         "tags": [
-          "UserPlan"
+          "PlanRequest"
         ]
       }
     },
-    "/user-plan": {
+    "/plan-request/admin": {
       "get": {
+        "operationId": "PlanRequestController_getAdmin",
+        "parameters": [
+          {
+            "name": "order",
+            "required": false,
+            "in": "query",
+            "description": "ترتیب داده‌ها",
+            "schema": {
+              "nullable": true,
+              "example": "desc",
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ]
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "شماره صفحه",
+            "schema": {
+              "example": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "تعداد آیتم در هر صفحه",
+            "schema": {
+              "example": 10,
+              "type": "number"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "description": "فیلتر بر اساس وضعیت درخواست",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "PENDING",
+                "ACCEPTED",
+                "PAID",
+                "DELIVERED",
+                "REJECTED",
+                "CANCELLED"
+              ]
+            }
+          },
+          {
+            "name": "coachId",
+            "required": false,
+            "in": "query",
+            "description": "آیدی مربی",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": " درخواست کاربران (Super Admin)",
+        "tags": [
+          "PlanRequest"
+        ]
+      }
+    },
+    "/plan-request/admin/{id}": {
+      "get": {
+        "operationId": "PlanRequestController_getOneAdmin",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "جزئیات درخواست + پروفایل کاربر (Super Admin)",
+        "tags": [
+          "PlanRequest"
+        ]
+      },
+      "put": {
+        "description": "فقط سوپر ادمین مجاز به تغییر درخواست ها هستش",
+        "operationId": "PlanRequestController_updateAdmin",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlanRequestAdminDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "ویرایش درخواست (Super Admin)",
+        "tags": [
+          "PlanRequest"
+        ]
+      }
+    },
+    "/user-plan/my": {
+      "get": {
+        "description": "بدون snapshot و بدون پیش‌نویس‌ها. جدیدترین اول. فیلتر اختیاری status.",
         "operationId": "UserPlanController_getMyPlans",
         "parameters": [
           {
@@ -13020,6 +13352,21 @@
               "example": 10,
               "type": "number"
             }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "description": "فیلتر وضعیت",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "DRAFT",
+                "ACTIVE",
+                "COMPLETED",
+                "CANCELLED"
+              ]
+            }
           }
         ],
         "responses": {
@@ -13028,54 +13375,219 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PaginatedUserPlanEntity"
+                  "$ref": "#/components/schemas/PaginatedUserPlanListItemEntity"
                 }
               }
             }
           }
         },
-        "summary": "لیست برنامه‌های من (User)",
-        "tags": [
-          "UserPlan"
-        ]
-      },
-      "post": {
-        "description": "حداقل یکی از workoutPlanId/dietPlanId/requestId الزامی",
-        "operationId": "UserPlanController_createPlan",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateUserPlanDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "example": {
-                    "success": true
-                  }
-                }
-              }
-            }
-          }
-        },
-        "summary": "ایجاد برنامه (User)",
+        "summary": "تاریخچه‌ی برنامه‌های من (User)",
         "tags": [
           "UserPlan"
         ]
       }
     },
-    "/user-plan/{id}": {
+    "/user-plan/my/current": {
       "get": {
-        "operationId": "UserPlanController_getPlan",
+        "description": "هر کاربر حداکثر یک برنامه‌ی فعال دارد که می‌تواند هم ورزشی هم غذایی باشد (hasWorkout / hasDiet). اگر ندارد { plan: null }. snapshot برنمی‌گردد (سبک)؛ محتوا را از my/today یا my/current/workout|diet بگیر.",
+        "operationId": "UserPlanController_getMyCurrent",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CurrentUserPlanResponseEntity"
+                }
+              }
+            }
+          }
+        },
+        "summary": "برنامه‌ی فعال من — فقط متادیتا (User)",
+        "tags": [
+          "UserPlan"
+        ]
+      }
+    },
+    "/user-plan/my/current/workout": {
+      "get": {
+        "description": "فازی که هفته‌ی week را پوشش می‌دهد (پیش‌فرض هفته‌ی جاری) همراه outline همه‌ی فازها برای ناوبری. بدون برنامه‌ی ورزشی فعال → 404.",
+        "operationId": "UserPlanController_getMyWorkout",
+        "parameters": [
+          {
+            "name": "week",
+            "required": false,
+            "in": "query",
+            "description": "شماره‌ی هفته‌ی برنامه؛ فازی که این هفته را پوشش می‌دهد برمی‌گردد. پیش‌فرض هفته‌ی جاری",
+            "schema": {
+              "example": 3,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PartEntity"
+                }
+              }
+            }
+          }
+        },
+        "summary": "فاز برنامه‌ی ورزشی (User)",
+        "tags": [
+          "UserPlan"
+        ]
+      }
+    },
+    "/user-plan/my/current/diet": {
+      "get": {
+        "description": "مثل my/current/workout برای برنامه‌ی غذایی. بدون برنامه‌ی غذایی فعال → 404.",
+        "operationId": "UserPlanController_getMyDiet",
+        "parameters": [
+          {
+            "name": "week",
+            "required": false,
+            "in": "query",
+            "description": "شماره‌ی هفته‌ی برنامه؛ فازی که این هفته را پوشش می‌دهد برمی‌گردد. پیش‌فرض هفته‌ی جاری",
+            "schema": {
+              "example": 3,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PartEntity"
+                }
+              }
+            }
+          }
+        },
+        "summary": "فاز برنامه‌ی غذایی (User)",
+        "tags": [
+          "UserPlan"
+        ]
+      }
+    },
+    "/user-plan/coach": {
+      "get": {
+        "description": "فیلتر status=DRAFT برای پیش‌نویس‌های در حال ساخت و ACTIVE برای شاگردان فعال. بدون snapshot.",
+        "operationId": "UserPlanController_getCoachPlans",
+        "parameters": [
+          {
+            "name": "order",
+            "required": false,
+            "in": "query",
+            "description": "ترتیب داده‌ها",
+            "schema": {
+              "nullable": true,
+              "example": "desc",
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ]
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "شماره صفحه",
+            "schema": {
+              "example": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "تعداد آیتم در هر صفحه",
+            "schema": {
+              "example": 10,
+              "type": "number"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "description": "فیلتر وضعیت",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "DRAFT",
+                "ACTIVE",
+                "COMPLETED",
+                "CANCELLED"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedCoachUserPlanListItemEntity"
+                }
+              }
+            }
+          }
+        },
+        "summary": "برنامه‌های شاگردان من (Coach)",
+        "tags": [
+          "UserPlan"
+        ]
+      }
+    },
+    "/user-plan/coach/from-request/{requestId}": {
+      "post": {
+        "description": "فقط وقتی درخواست PAID است. snapshot از روی قالب(ها) ساخته می‌شود و پلن با وضعیت DRAFT ثبت می‌شود (کاربر نمی‌بیند). idempotent: اگر قبلاً ساخته شده باشد created=false با همان id برمی‌گردد. درخواست «فقط غذایی» پیش‌نویس جدا (type=DIET) می‌گیرد و هنگام فعال‌سازی به برنامه‌ی فعال کاربر اضافه می‌شود.",
+        "operationId": "UserPlanController_createDraft",
+        "parameters": [
+          {
+            "name": "requestId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DraftResultEntity"
+                }
+              }
+            }
+          }
+        },
+        "summary": "ساخت پیش‌نویس برنامه از درخواست پرداخت‌شده (Coach)",
+        "tags": [
+          "UserPlan"
+        ]
+      }
+    },
+    "/user-plan/coach/{id}": {
+      "get": {
+        "description": "برای صفحه‌ی ویرایش. snapshotها کامل برمی‌گردند (حجیم)؛ فقط هنگام ویرایش صدا بزن.",
+        "operationId": "UserPlanController_getCoachPlan",
         "parameters": [
           {
             "name": "id",
@@ -13092,19 +13604,22 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UserPlanEntity"
+                  "$ref": "#/components/schemas/CoachUserPlanDetailEntity"
                 }
               }
             }
           }
         },
-        "summary": "جزئیات برنامه (User/Admin)",
+        "summary": "جزئیات کامل برنامه‌ی یک شاگرد با snapshot (Coach)",
         "tags": [
           "UserPlan"
         ]
-      },
+      }
+    },
+    "/user-plan/coach/{id}/snapshot": {
       "put": {
-        "operationId": "UserPlanController_updatePlan",
+        "description": "فقط پیش‌نویس. جایگزینی کامل workout و/یا diet. فقط id و پارامترها را بفرست؛ عنوان حرکت/غذا و کالری و ماکرو را سرور محاسبه می‌کند. برای وعده‌های موجود همان id قبلی را نگه دار. تغییرات فقط برای همین کاربر است و قالب اصلی دست‌نخورده می‌ماند. فازهای هم‌پوشان، weekday تکراری یا برنامه‌ی بدون حرکت/آیتم → 400.",
+        "operationId": "UserPlanController_updateSnapshot",
         "parameters": [
           {
             "name": "id",
@@ -13120,96 +13635,33 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/UpdateUserPlanDto"
+                "$ref": "#/components/schemas/UpdateUserPlanSnapshotDto"
               }
             }
           }
         },
         "responses": {
           "200": {
-            "description": ""
-          }
-        },
-        "summary": "ویرایش برنامه (User)",
-        "tags": [
-          "UserPlan"
-        ]
-      },
-      "delete": {
-        "operationId": "UserPlanController_deletePlan",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdatedEntity"
+                }
+              }
             }
           }
-        ],
-        "responses": {
-          "200": {
-            "description": ""
-          }
         },
-        "summary": "حذف برنامه (User)",
+        "summary": "ویرایش برنامه‌ی اختصاصی شاگرد (Coach)",
         "tags": [
           "UserPlan"
         ]
       }
     },
-    "/user-plan/{id}/activate": {
-      "patch": {
-        "description": "برنامه‌های ACTIVE قبلی COMPLETED می‌شوند",
-        "operationId": "UserPlanController_activatePlan",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "summary": "فعال‌سازی برنامه (User)",
-        "tags": [
-          "UserPlan"
-        ]
-      }
-    },
-    "/user-plan/{id}/complete": {
-      "patch": {
-        "operationId": "UserPlanController_completePlan",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "summary": "تکمیل برنامه (User)",
-        "tags": [
-          "UserPlan"
-        ]
-      }
-    },
-    "/user-plan/{id}/customize": {
-      "patch": {
-        "operationId": "UserPlanController_customizePlan",
+    "/user-plan/coach/{id}/activate": {
+      "post": {
+        "description": "پیش‌نویس را ACTIVE می‌کند و درخواست را DELIVERED. startDate اختیاری (پیش‌فرض امروز، حداکثر ۶۰ روز بعد). برای پلن «فقط غذایی» snapshot به برنامه‌ی فعال کاربر اضافه می‌شود (type → ALL) و id برگشتی id همان برنامه‌ی فعال است. اگر کاربر هم‌اکنون برنامه‌ی فعال دارد → 409.",
+        "operationId": "UserPlanController_activate",
         "parameters": [
           {
             "name": "id",
@@ -13225,17 +13677,24 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/CustomizeSnapshotDto"
+                "$ref": "#/components/schemas/ActivateUserPlanDto"
               }
             }
           }
         },
         "responses": {
           "200": {
-            "description": ""
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActivatedEntity"
+                }
+              }
+            }
           }
         },
-        "summary": "شخصی‌سازی snapshot (User/Coach)",
+        "summary": "تحویل برنامه به کاربر (Coach)",
         "tags": [
           "UserPlan"
         ]
@@ -14608,9 +15067,9 @@
           "availableEquipment": {
             "description": "تجهیزاتی که کاربر داره",
             "example": [
-              "dumbbell",
-              "barbell",
-              "bench"
+              "uuid",
+              "uuid",
+              "uuid"
             ],
             "nullable": true,
             "type": "array",
@@ -14657,17 +15116,6 @@
             "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
             "description": "آیدی TrainingGoal",
             "nullable": true
-          },
-          "onBoardingStep": {
-            "type": "string",
-            "description": "اتمام مراحل آموزشی کاربر برای فرانت",
-            "example": true,
-            "enum": [
-              "PROFILE",
-              "EQUIPMENT",
-              "TRAINING_GOAL",
-              "DONE"
-            ]
           }
         }
       },
@@ -21602,52 +22050,6 @@
           "caloriesPer100g"
         ]
       },
-      "CoachSelectorEntity": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "example": "..."
-          },
-          "title": {
-            "type": "string",
-            "example": "علی رضایی"
-          },
-          "slug": {
-            "type": "string",
-            "example": "ali-rezaei"
-          }
-        },
-        "required": [
-          "id",
-          "title",
-          "slug"
-        ]
-      },
-      "PaginatedCoachSelectorEntity": {
-        "type": "object",
-        "properties": {
-          "pagination": {
-            "description": "اطلاعات صفحه‌بندی",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/PaginationMetaDto"
-              }
-            ]
-          },
-          "coach": {
-            "description": "داده‌ها",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/CoachSelectorEntity"
-            }
-          }
-        },
-        "required": [
-          "pagination",
-          "coach"
-        ]
-      },
       "CoachRatingEntity": {
         "type": "object",
         "properties": {
@@ -21778,46 +22180,107 @@
           "coach"
         ]
       },
-      "AvailabilityEntity": {
+      "UpdateCoachDto": {
         "type": "object",
         "properties": {
-          "id": {
+          "nationalId": {
             "type": "string",
+            "description": "کد ملی",
+            "example": "0012345678"
+          },
+          "banner": {
+            "description": "آدرس تصاویر (حداکثر 10 عکس)",
+            "example": [
+              "https://cdn.example.com/review/1.jpg"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "cityId": {
+            "type": "string",
+            "description": "آیدی شهر",
             "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
           },
-          "coachId": {
+          "provinceId": {
             "type": "string",
+            "description": "آیدی استان",
             "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
           },
-          "weekday": {
+          "addressId": {
+            "type": "string",
+            "description": "آیدی آدرس",
+            "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+          },
+          "slug": {
+            "type": "string",
+            "description": "ویرایش اسلاگ فقط توسط ادمین",
+            "example": "بدنسازی رویایی"
+          },
+          "title": {
+            "type": "string",
+            "description": "ویرایش تایتل فقط توسط ادمین",
+            "example": "بدنسازی رویایی"
+          },
+          "headline": {
+            "type": "string",
+            "description": "عنوان/تیتر مربی",
+            "example": "مربی بدنسازی و تغذیه"
+          },
+          "bio": {
+            "type": "string",
+            "description": "بیوگرافی مربی",
+            "example": "دارای ۵ سال سابقه مربیگری..."
+          },
+          "instagram": {
+            "type": "string",
+            "description": "آیدی اینستاگرام",
+            "example": "coach_ali"
+          },
+          "commissionRate": {
             "type": "number",
-            "example": 0,
-            "description": "۰ = شنبه ... ۶ = جمعه"
+            "description": "درصد کمیسیون (0 تا 100) فقط باید توسط ادمین تغییر بکنه برای مربی نمایش نده",
+            "example": 15.5,
+            "minimum": 0,
+            "maximum": 100
           },
-          "startTime": {
-            "type": "string",
-            "example": "09:00"
+          "maxClients": {
+            "type": "number",
+            "description": "حداکثر تعداد مشتری به صورت خودکار 20 واحد در نظر گرفته میشود",
+            "example": 20,
+            "minimum": 0
           },
-          "endTime": {
-            "type": "string",
-            "example": "13:00"
+          "isAcceptingClients": {
+            "type": "boolean",
+            "example": false,
+            "description": "پذیرش دارد یا خیر"
           },
-          "createdAt": {
-            "format": "date-time",
+          "status": {
             "type": "string",
-            "example": "2025-01-01T00:00:00.000Z"
+            "enum": [
+              "PENDING",
+              "APPROVED",
+              "REJECTED",
+              "SUSPENDED",
+              "DELETED"
+            ],
+            "description": "وضعیت مربی"
+          },
+          "rejectionReason": {
+            "type": "string",
+            "description": "دلیل رد شدن (فقط توسط ادمین تنظیم می‌شود)",
+            "example": "دلیل رد شدن (فقط توسط ادمین تنظیم می‌شود) کاربر مجاز به ارسال نیست"
+          },
+          "experienceYears": {
+            "type": "string",
+            "description": "سال‌های تجربه",
+            "example": "2026-10-24T21:24:44.150Z",
+            "format": "date"
           }
-        },
-        "required": [
-          "id",
-          "coachId",
-          "weekday",
-          "startTime",
-          "endTime",
-          "createdAt"
-        ]
+        }
       },
-      "AchievementEntity": {
+      "ReviewAdminCoachEntity": {
         "type": "object",
         "properties": {
           "id": {
@@ -21826,59 +22289,297 @@
           },
           "title": {
             "type": "string",
-            "example": "مدال طلا"
+            "example": "علی رضایی"
           },
-          "type": {
+          "slug": {
             "type": "string",
-            "example": "MEDAL"
-          },
-          "scope": {
-            "type": "string",
-            "example": "NATIONAL"
-          },
-          "issuer": {
-            "type": "string",
-            "example": "فدراسیون",
-            "nullable": true
-          },
-          "place": {
-            "type": "number",
-            "example": 1,
-            "nullable": true
-          },
-          "year": {
-            "format": "date-time",
-            "type": "string",
-            "example": "2024-01-01T00:00:00.000Z"
-          },
-          "eventName": {
-            "type": "string",
-            "example": "مسابقات کشوری",
-            "nullable": true
-          },
-          "description": {
-            "type": "string",
-            "example": "...",
-            "nullable": true
-          },
-          "documentUrl": {
-            "type": "string",
-            "example": "https://...",
-            "nullable": true
-          },
-          "sortOrder": {
-            "type": "number",
-            "example": 1
+            "example": "ali-rezaei"
           }
         },
         "required": [
           "id",
           "title",
-          "type",
-          "scope",
-          "year",
-          "sortOrder"
+          "slug"
         ]
+      },
+      "ReviewAdminAuthorEntity": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "..."
+          },
+          "name": {
+            "type": "string",
+            "example": "کاربر"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ]
+      },
+      "ReviewCoachAdminEntity": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+          },
+          "body": {
+            "type": "object",
+            "example": "نظر",
+            "nullable": true
+          },
+          "images": {
+            "example": [],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "APPROVED",
+              "REJECTED"
+            ],
+            "example": "APPROVED"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2025-01-01T00:00:00.000Z"
+          },
+          "coachRating": {
+            "type": "number",
+            "example": 5
+          },
+          "planRating": {
+            "type": "number",
+            "example": 4
+          },
+          "dietRating": {
+            "type": "number",
+            "example": 4
+          },
+          "isAnonymous": {
+            "type": "boolean",
+            "example": false
+          },
+          "isVerified": {
+            "type": "boolean",
+            "example": true
+          },
+          "likeCount": {
+            "type": "number",
+            "example": 3
+          },
+          "dislikeCount": {
+            "type": "number",
+            "example": 0
+          },
+          "coach": {
+            "$ref": "#/components/schemas/ReviewAdminCoachEntity"
+          },
+          "author": {
+            "$ref": "#/components/schemas/ReviewAdminAuthorEntity"
+          }
+        },
+        "required": [
+          "id",
+          "images",
+          "status",
+          "createdAt",
+          "coachRating",
+          "planRating",
+          "dietRating",
+          "isAnonymous",
+          "isVerified",
+          "likeCount",
+          "dislikeCount",
+          "coach",
+          "author"
+        ]
+      },
+      "PaginatedReviewCoachAdminEntity": {
+        "type": "object",
+        "properties": {
+          "pagination": {
+            "description": "اطلاعات صفحه‌بندی",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMetaDto"
+              }
+            ]
+          },
+          "reviews": {
+            "description": "داده‌ها",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReviewCoachAdminEntity"
+            }
+          }
+        },
+        "required": [
+          "pagination",
+          "reviews"
+        ]
+      },
+      "ReviewAuthorEntity": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "علی رضایی"
+          },
+          "avatar": {
+            "type": "object",
+            "example": "https://...",
+            "nullable": true
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "ReviewCoachEntity": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+          },
+          "body": {
+            "type": "object",
+            "example": "نظر خیلی خوبی بود",
+            "nullable": true
+          },
+          "images": {
+            "example": [],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2025-01-01T00:00:00.000Z"
+          },
+          "answerReview": {
+            "type": "object",
+            "example": "ممنون از نظر شما",
+            "nullable": true
+          },
+          "answeredAt": {
+            "type": "object",
+            "example": "2025-01-02T00:00:00.000Z",
+            "nullable": true
+          },
+          "coachRating": {
+            "type": "number",
+            "example": 5
+          },
+          "planRating": {
+            "type": "number",
+            "example": 4
+          },
+          "dietRating": {
+            "type": "number",
+            "example": 4
+          },
+          "isAnonymous": {
+            "type": "boolean",
+            "example": false
+          },
+          "isVerified": {
+            "type": "boolean",
+            "example": true
+          },
+          "likeCount": {
+            "type": "number",
+            "example": 3
+          },
+          "dislikeCount": {
+            "type": "number",
+            "example": 0
+          },
+          "author": {
+            "nullable": true,
+            "description": "null اگر نظر ناشناس باشد",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ReviewAuthorEntity"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "images",
+          "createdAt",
+          "coachRating",
+          "planRating",
+          "dietRating",
+          "isAnonymous",
+          "isVerified",
+          "likeCount",
+          "dislikeCount"
+        ]
+      },
+      "PaginatedReviewCoachEntity": {
+        "type": "object",
+        "properties": {
+          "pagination": {
+            "description": "اطلاعات صفحه‌بندی",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMetaDto"
+              }
+            ]
+          },
+          "reviews": {
+            "description": "داده‌ها",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReviewCoachEntity"
+            }
+          }
+        },
+        "required": [
+          "pagination",
+          "reviews"
+        ]
+      },
+      "ApprovedCoachReviewDto": {
+        "type": "object",
+        "properties": {
+          "answerReview": {
+            "type": "string",
+            "description": "متن پاسخ مربی",
+            "example": ""
+          }
+        },
+        "required": [
+          "answerReview"
+        ]
+      },
+      "UpdateCoachReviewDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "APPROVED",
+              "REJECTED"
+            ],
+            "description": "وضعیت کامنت"
+          }
+        }
       },
       "CertificationEntity": {
         "type": "object",
@@ -21962,6 +22663,547 @@
           "isVerified",
           "createdAt",
           "updatedAt"
+        ]
+      },
+      "PaginatedCertificationEntity": {
+        "type": "object",
+        "properties": {
+          "pagination": {
+            "description": "اطلاعات صفحه‌بندی",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMetaDto"
+              }
+            ]
+          },
+          "certification": {
+            "description": "داده‌ها",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CertificationEntity"
+            }
+          }
+        },
+        "required": [
+          "pagination",
+          "certification"
+        ]
+      },
+      "CreateCertificationDto": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "ACADEMIC",
+              "PROFESSIONAL",
+              "FEDERATION",
+              "WORKSHOP",
+              "OTHER"
+            ],
+            "description": "\n      نوع مدرک:\n      * ACADEMIC // دانشگاهی (کارشناسی، ارشد، دکتری)\n      * PROFESSIONAL // حرفه‌ای (مربیگری درجه ۱/۲/۳، CPR و...)\n      * FEDERATION // فدراسیونی (فدراسیون بدنسازی و پرورش اندام)\n      * WORKSHOP // کارگاه/دوره کوتاه‌مدت\n      * OTHER\n    "
+          },
+          "title": {
+            "type": "string",
+            "description": "عنوان مدرک",
+            "example": "کارشناسی تربیت بدنی"
+          },
+          "field": {
+            "type": "string",
+            "description": "رشته تحصیلی / تخصص",
+            "example": "تربیت بدنی و علوم ورزشی"
+          },
+          "level": {
+            "type": "string",
+            "description": "مقطع / درجه",
+            "example": "کارشناسی"
+          },
+          "issuer": {
+            "type": "string",
+            "description": "صادرکننده",
+            "example": "دانشگاه تهران / فدراسیون بدنسازی"
+          },
+          "documentUrl": {
+            "type": "string",
+            "description": "آدرس تصویر/اسکن مدرک",
+            "example": "https://cdn.example.com/cert/1.jpg"
+          },
+          "expiresAt": {
+            "type": "string",
+            "description": "تاریخ انقضا (null = بدون انقضا)",
+            "example": "2025-09-01T00:00:00.000Z",
+            "format": "date"
+          },
+          "isPrimary": {
+            "type": "boolean",
+            "description": "مدرک اصلی/شاخص باشد؟ (فقط یکی می‌تواند primary باشد)",
+            "example": false,
+            "default": false
+          }
+        },
+        "required": [
+          "type",
+          "title"
+        ]
+      },
+      "UpdateCertificationDto": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "ACADEMIC",
+              "PROFESSIONAL",
+              "FEDERATION",
+              "WORKSHOP",
+              "OTHER"
+            ],
+            "description": "\n      نوع مدرک:\n      * ACADEMIC // دانشگاهی (کارشناسی، ارشد، دکتری)\n      * PROFESSIONAL // حرفه‌ای (مربیگری درجه ۱/۲/۳، CPR و...)\n      * FEDERATION // فدراسیونی (فدراسیون بدنسازی و پرورش اندام)\n      * WORKSHOP // کارگاه/دوره کوتاه‌مدت\n      * OTHER\n    "
+          },
+          "title": {
+            "type": "string",
+            "description": "عنوان مدرک",
+            "example": "کارشناسی تربیت بدنی"
+          },
+          "field": {
+            "type": "string",
+            "description": "رشته تحصیلی / تخصص",
+            "example": "تربیت بدنی و علوم ورزشی"
+          },
+          "level": {
+            "type": "string",
+            "description": "مقطع / درجه",
+            "example": "کارشناسی"
+          },
+          "issuer": {
+            "type": "string",
+            "description": "صادرکننده",
+            "example": "دانشگاه تهران / فدراسیون بدنسازی"
+          },
+          "documentUrl": {
+            "type": "string",
+            "description": "آدرس تصویر/اسکن مدرک",
+            "example": "https://cdn.example.com/cert/1.jpg"
+          },
+          "expiresAt": {
+            "type": "string",
+            "description": "تاریخ انقضا (null = بدون انقضا)",
+            "example": "2025-09-01T00:00:00.000Z",
+            "format": "date"
+          },
+          "isPrimary": {
+            "type": "boolean",
+            "description": "مدرک اصلی/شاخص باشد؟ (فقط یکی می‌تواند primary باشد)",
+            "example": false,
+            "default": false
+          }
+        }
+      },
+      "AvailabilityEntity": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+          },
+          "coachId": {
+            "type": "string",
+            "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+          },
+          "weekday": {
+            "type": "number",
+            "example": 0,
+            "description": "۰ = شنبه ... ۶ = جمعه"
+          },
+          "startTime": {
+            "type": "string",
+            "example": "09:00"
+          },
+          "endTime": {
+            "type": "string",
+            "example": "13:00"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2025-01-01T00:00:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "coachId",
+          "weekday",
+          "startTime",
+          "endTime",
+          "createdAt"
+        ]
+      },
+      "CreateAvailabilityDto": {
+        "type": "object",
+        "properties": {
+          "startTime": {
+            "type": "string",
+            "description": "شروع کلاس و حضور",
+            "example": "09:00"
+          },
+          "endTime": {
+            "type": "string",
+            "description": "پایان کلاس و حضور",
+            "example": "13:00"
+          },
+          "weekday": {
+            "type": "number",
+            "description": "ترتیب روزهای هفته از عدد 1 تا 7",
+            "example": 1,
+            "minimum": 1
+          }
+        },
+        "required": [
+          "startTime",
+          "endTime"
+        ]
+      },
+      "UpdateAvailabilityDto": {
+        "type": "object",
+        "properties": {
+          "startTime": {
+            "type": "string",
+            "description": "شروع کلاس و حضور",
+            "example": "09:00"
+          },
+          "endTime": {
+            "type": "string",
+            "description": "پایان کلاس و حضور",
+            "example": "13:00"
+          },
+          "weekday": {
+            "type": "number",
+            "description": "ترتیب روزهای هفته از عدد 1 تا 7",
+            "example": 1,
+            "minimum": 1
+          }
+        }
+      },
+      "AchievementEntity": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+          },
+          "coachId": {
+            "type": "string",
+            "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+          },
+          "title": {
+            "type": "string",
+            "example": "مدال طلای پرس سینه"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "MEDAL",
+              "TROPHY",
+              "TITLE",
+              "AWARD",
+              "RECORD",
+              "OTHER"
+            ],
+            "example": "MEDAL"
+          },
+          "scope": {
+            "type": "string",
+            "enum": [
+              "LOCAL",
+              "NATIONAL",
+              "INTERNATIONAL",
+              "ACADEMIC",
+              "OTHER"
+            ],
+            "example": "NATIONAL"
+          },
+          "issuer": {
+            "type": "object",
+            "example": "فدراسیون بدنسازی",
+            "nullable": true
+          },
+          "place": {
+            "type": "object",
+            "example": 1,
+            "nullable": true
+          },
+          "eventName": {
+            "type": "object",
+            "example": "مسابقات کشوری ۱۴۰۳",
+            "nullable": true
+          },
+          "description": {
+            "type": "object",
+            "example": "مدال طلا در وزن ۸۰ کیلوگرم",
+            "nullable": true
+          },
+          "documentUrl": {
+            "type": "object",
+            "example": "https://cdn.example.com/achievement/medal.jpg",
+            "nullable": true
+          },
+          "isVerified": {
+            "type": "boolean",
+            "example": false
+          },
+          "year": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2024-01-01T00:00:00.000Z"
+          },
+          "sortOrder": {
+            "type": "number",
+            "example": 1
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2025-01-01T00:00:00.000Z"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2025-01-01T00:00:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "coachId",
+          "title",
+          "type",
+          "scope",
+          "isVerified",
+          "year",
+          "sortOrder",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "PaginatedAchievementEntity": {
+        "type": "object",
+        "properties": {
+          "pagination": {
+            "description": "اطلاعات صفحه‌بندی",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMetaDto"
+              }
+            ]
+          },
+          "achievement": {
+            "description": "داده‌ها",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AchievementEntity"
+            }
+          }
+        },
+        "required": [
+          "pagination",
+          "achievement"
+        ]
+      },
+      "CreateAchievementDto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "عنوان دستاورد",
+            "example": "مدال طلای پرس سینه"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "MEDAL",
+              "TROPHY",
+              "TITLE",
+              "AWARD",
+              "RECORD",
+              "OTHER"
+            ],
+            "description": "\n      نوع افتخار:\n      * MEDAL // مدال قهرمانی\n      * TROPHY // جام / مقام تیمی\n      * TITLE // عنوان رسمی (مثلاً مربی سال)\n      * AWARD // جایزه همایش / فدراسیون\n      * RECORD // رکورد شخصی یا ملی\n      * OTHER\n    ",
+            "example": "OTHER"
+          },
+          "scope": {
+            "type": "string",
+            "enum": [
+              "LOCAL",
+              "NATIONAL",
+              "INTERNATIONAL",
+              "ACADEMIC",
+              "OTHER"
+            ],
+            "description": "\n      محدوده دستاورد:\n      * LOCAL // محلی\n      * NATIONAL // ملی\n      * INTERNATIONAL // بین‌المللی\n      * ACADEMIC // آکادمیک\n      * OTHER\n    ",
+            "example": "OTHER"
+          },
+          "issuer": {
+            "type": "string",
+            "description": "صادرکننده (فدراسیون، المپیک و...)",
+            "example": "فدراسیون بدنسازی و پرورش اندام"
+          },
+          "place": {
+            "type": "number",
+            "description": "رتبه کسب‌شده",
+            "example": 1,
+            "minimum": 0
+          },
+          "sortOrder": {
+            "type": "number",
+            "description": "اولویت نمایش",
+            "example": 1,
+            "minimum": 0
+          },
+          "eventName": {
+            "type": "string",
+            "description": "نام مسابقه / رویداد",
+            "example": "مسابقات کشوری پرس سینه ۱۴۰۳"
+          },
+          "description": {
+            "type": "string",
+            "description": "توضیحات",
+            "example": "مدال طلا در وزن ۸۰ کیلوگرم"
+          },
+          "documentUrl": {
+            "type": "string",
+            "description": "آدرس تصویر حکم / مدال",
+            "example": "https://cdn.example.com/achievement/medal.jpg"
+          },
+          "year": {
+            "type": "string",
+            "description": "سال کسب دستاورد",
+            "example": "2024-01-01T00:00:00.000Z",
+            "format": "date"
+          }
+        },
+        "required": [
+          "title",
+          "type",
+          "scope",
+          "year"
+        ]
+      },
+      "UpdateAchievementDto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "عنوان دستاورد",
+            "example": "مدال طلای پرس سینه"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "MEDAL",
+              "TROPHY",
+              "TITLE",
+              "AWARD",
+              "RECORD",
+              "OTHER"
+            ],
+            "description": "\n      نوع افتخار:\n      * MEDAL // مدال قهرمانی\n      * TROPHY // جام / مقام تیمی\n      * TITLE // عنوان رسمی (مثلاً مربی سال)\n      * AWARD // جایزه همایش / فدراسیون\n      * RECORD // رکورد شخصی یا ملی\n      * OTHER\n    ",
+            "example": "OTHER"
+          },
+          "scope": {
+            "type": "string",
+            "enum": [
+              "LOCAL",
+              "NATIONAL",
+              "INTERNATIONAL",
+              "ACADEMIC",
+              "OTHER"
+            ],
+            "description": "\n      محدوده دستاورد:\n      * LOCAL // محلی\n      * NATIONAL // ملی\n      * INTERNATIONAL // بین‌المللی\n      * ACADEMIC // آکادمیک\n      * OTHER\n    ",
+            "example": "OTHER"
+          },
+          "issuer": {
+            "type": "string",
+            "description": "صادرکننده (فدراسیون، المپیک و...)",
+            "example": "فدراسیون بدنسازی و پرورش اندام"
+          },
+          "place": {
+            "type": "number",
+            "description": "رتبه کسب‌شده",
+            "example": 1,
+            "minimum": 0
+          },
+          "sortOrder": {
+            "type": "number",
+            "description": "اولویت نمایش",
+            "example": 1,
+            "minimum": 0
+          },
+          "eventName": {
+            "type": "string",
+            "description": "نام مسابقه / رویداد",
+            "example": "مسابقات کشوری پرس سینه ۱۴۰۳"
+          },
+          "description": {
+            "type": "string",
+            "description": "توضیحات",
+            "example": "مدال طلا در وزن ۸۰ کیلوگرم"
+          },
+          "documentUrl": {
+            "type": "string",
+            "description": "آدرس تصویر حکم / مدال",
+            "example": "https://cdn.example.com/achievement/medal.jpg"
+          },
+          "year": {
+            "type": "string",
+            "description": "سال کسب دستاورد",
+            "example": "2024-01-01T00:00:00.000Z",
+            "format": "date"
+          }
+        }
+      },
+      "CoachSelectorEntity": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "..."
+          },
+          "title": {
+            "type": "string",
+            "example": "علی رضایی"
+          },
+          "slug": {
+            "type": "string",
+            "example": "ali-rezaei"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "slug"
+        ]
+      },
+      "PaginatedCoachSelectorEntity": {
+        "type": "object",
+        "properties": {
+          "pagination": {
+            "description": "اطلاعات صفحه‌بندی",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMetaDto"
+              }
+            ]
+          },
+          "coach": {
+            "description": "داده‌ها",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CoachSelectorEntity"
+            }
+          }
+        },
+        "required": [
+          "pagination",
+          "coach"
         ]
       },
       "WorkoutPlanEntity": {
@@ -22341,380 +23583,6 @@
           "maxClients"
         ]
       },
-      "UpdateCoachDto": {
-        "type": "object",
-        "properties": {
-          "nationalId": {
-            "type": "string",
-            "description": "کد ملی",
-            "example": "0012345678"
-          },
-          "banner": {
-            "description": "آدرس تصاویر (حداکثر 10 عکس)",
-            "example": [
-              "https://cdn.example.com/review/1.jpg"
-            ],
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "cityId": {
-            "type": "string",
-            "description": "آیدی شهر",
-            "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
-          },
-          "provinceId": {
-            "type": "string",
-            "description": "آیدی استان",
-            "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
-          },
-          "addressId": {
-            "type": "string",
-            "description": "آیدی آدرس",
-            "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
-          },
-          "slug": {
-            "type": "string",
-            "description": "ویرایش اسلاگ فقط توسط ادمین",
-            "example": "بدنسازی رویایی"
-          },
-          "title": {
-            "type": "string",
-            "description": "ویرایش تایتل فقط توسط ادمین",
-            "example": "بدنسازی رویایی"
-          },
-          "headline": {
-            "type": "string",
-            "description": "عنوان/تیتر مربی",
-            "example": "مربی بدنسازی و تغذیه"
-          },
-          "bio": {
-            "type": "string",
-            "description": "بیوگرافی مربی",
-            "example": "دارای ۵ سال سابقه مربیگری..."
-          },
-          "instagram": {
-            "type": "string",
-            "description": "آیدی اینستاگرام",
-            "example": "coach_ali"
-          },
-          "commissionRate": {
-            "type": "number",
-            "description": "درصد کمیسیون (0 تا 100) فقط باید توسط ادمین تغییر بکنه برای مربی نمایش نده",
-            "example": 15.5,
-            "minimum": 0,
-            "maximum": 100
-          },
-          "maxClients": {
-            "type": "number",
-            "description": "حداکثر تعداد مشتری به صورت خودکار 20 واحد در نظر گرفته میشود",
-            "example": 20,
-            "minimum": 0
-          },
-          "isAcceptingClients": {
-            "type": "boolean",
-            "example": false,
-            "description": "پذیرش دارد یا خیر"
-          },
-          "status": {
-            "type": "string",
-            "enum": [
-              "PENDING",
-              "APPROVED",
-              "REJECTED",
-              "SUSPENDED",
-              "DELETED"
-            ],
-            "description": "وضعیت مربی"
-          },
-          "rejectionReason": {
-            "type": "string",
-            "description": "دلیل رد شدن (فقط توسط ادمین تنظیم می‌شود)",
-            "example": "دلیل رد شدن (فقط توسط ادمین تنظیم می‌شود) کاربر مجاز به ارسال نیست"
-          },
-          "experienceYears": {
-            "type": "string",
-            "description": "سال‌های تجربه",
-            "example": "2026-10-24T21:24:44.150Z",
-            "format": "date"
-          }
-        }
-      },
-      "ReviewAuthorEntity": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "example": "علی رضایی"
-          },
-          "avatar": {
-            "type": "object",
-            "example": "https://...",
-            "nullable": true
-          }
-        },
-        "required": [
-          "name"
-        ]
-      },
-      "ReviewCoachEntity": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
-          },
-          "body": {
-            "type": "object",
-            "example": "نظر خیلی خوبی بود",
-            "nullable": true
-          },
-          "images": {
-            "example": [],
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "createdAt": {
-            "format": "date-time",
-            "type": "string",
-            "example": "2025-01-01T00:00:00.000Z"
-          },
-          "answerReview": {
-            "type": "object",
-            "example": "ممنون از نظر شما",
-            "nullable": true
-          },
-          "answeredAt": {
-            "type": "object",
-            "example": "2025-01-02T00:00:00.000Z",
-            "nullable": true
-          },
-          "coachRating": {
-            "type": "number",
-            "example": 5
-          },
-          "planRating": {
-            "type": "number",
-            "example": 4
-          },
-          "dietRating": {
-            "type": "number",
-            "example": 4
-          },
-          "isAnonymous": {
-            "type": "boolean",
-            "example": false
-          },
-          "isVerified": {
-            "type": "boolean",
-            "example": true
-          },
-          "likeCount": {
-            "type": "number",
-            "example": 3
-          },
-          "dislikeCount": {
-            "type": "number",
-            "example": 0
-          },
-          "author": {
-            "nullable": true,
-            "description": "null اگر نظر ناشناس باشد",
-            "type": "object",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/ReviewAuthorEntity"
-              }
-            ]
-          }
-        },
-        "required": [
-          "id",
-          "images",
-          "createdAt",
-          "coachRating",
-          "planRating",
-          "dietRating",
-          "isAnonymous",
-          "isVerified",
-          "likeCount",
-          "dislikeCount"
-        ]
-      },
-      "PaginatedReviewCoachEntity": {
-        "type": "object",
-        "properties": {
-          "pagination": {
-            "description": "اطلاعات صفحه‌بندی",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/PaginationMetaDto"
-              }
-            ]
-          },
-          "reviews": {
-            "description": "داده‌ها",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ReviewCoachEntity"
-            }
-          }
-        },
-        "required": [
-          "pagination",
-          "reviews"
-        ]
-      },
-      "ReviewAdminCoachEntity": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "example": "..."
-          },
-          "title": {
-            "type": "string",
-            "example": "علی رضایی"
-          },
-          "slug": {
-            "type": "string",
-            "example": "ali-rezaei"
-          }
-        },
-        "required": [
-          "id",
-          "title",
-          "slug"
-        ]
-      },
-      "ReviewAdminAuthorEntity": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "example": "..."
-          },
-          "name": {
-            "type": "string",
-            "example": "کاربر"
-          }
-        },
-        "required": [
-          "id",
-          "name"
-        ]
-      },
-      "ReviewCoachAdminEntity": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
-          },
-          "body": {
-            "type": "object",
-            "example": "نظر",
-            "nullable": true
-          },
-          "images": {
-            "example": [],
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "status": {
-            "type": "string",
-            "enum": [
-              "PENDING",
-              "APPROVED",
-              "REJECTED"
-            ],
-            "example": "APPROVED"
-          },
-          "createdAt": {
-            "format": "date-time",
-            "type": "string",
-            "example": "2025-01-01T00:00:00.000Z"
-          },
-          "coachRating": {
-            "type": "number",
-            "example": 5
-          },
-          "planRating": {
-            "type": "number",
-            "example": 4
-          },
-          "dietRating": {
-            "type": "number",
-            "example": 4
-          },
-          "isAnonymous": {
-            "type": "boolean",
-            "example": false
-          },
-          "isVerified": {
-            "type": "boolean",
-            "example": true
-          },
-          "likeCount": {
-            "type": "number",
-            "example": 3
-          },
-          "dislikeCount": {
-            "type": "number",
-            "example": 0
-          },
-          "coach": {
-            "$ref": "#/components/schemas/ReviewAdminCoachEntity"
-          },
-          "author": {
-            "$ref": "#/components/schemas/ReviewAdminAuthorEntity"
-          }
-        },
-        "required": [
-          "id",
-          "images",
-          "status",
-          "createdAt",
-          "coachRating",
-          "planRating",
-          "dietRating",
-          "isAnonymous",
-          "isVerified",
-          "likeCount",
-          "dislikeCount",
-          "coach",
-          "author"
-        ]
-      },
-      "PaginatedReviewCoachAdminEntity": {
-        "type": "object",
-        "properties": {
-          "pagination": {
-            "description": "اطلاعات صفحه‌بندی",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/PaginationMetaDto"
-              }
-            ]
-          },
-          "reviews": {
-            "description": "داده‌ها",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ReviewCoachAdminEntity"
-            }
-          }
-        },
-        "required": [
-          "pagination",
-          "reviews"
-        ]
-      },
       "CreateCoachReviewDto": {
         "type": "object",
         "properties": {
@@ -22778,389 +23646,6 @@
           "planRating",
           "dietRating"
         ]
-      },
-      "ApprovedCoachReviewDto": {
-        "type": "object",
-        "properties": {
-          "answerReview": {
-            "type": "string",
-            "description": "متن پاسخ مربی",
-            "example": ""
-          }
-        },
-        "required": [
-          "answerReview"
-        ]
-      },
-      "UpdateCoachReviewDto": {
-        "type": "object",
-        "properties": {
-          "status": {
-            "type": "string",
-            "enum": [
-              "PENDING",
-              "APPROVED",
-              "REJECTED"
-            ],
-            "description": "وضعیت کامنت"
-          }
-        }
-      },
-      "PaginatedCertificationEntity": {
-        "type": "object",
-        "properties": {
-          "pagination": {
-            "description": "اطلاعات صفحه‌بندی",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/PaginationMetaDto"
-              }
-            ]
-          },
-          "certification": {
-            "description": "داده‌ها",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/CertificationEntity"
-            }
-          }
-        },
-        "required": [
-          "pagination",
-          "certification"
-        ]
-      },
-      "CreateCertificationDto": {
-        "type": "object",
-        "properties": {
-          "type": {
-            "type": "string",
-            "enum": [
-              "ACADEMIC",
-              "PROFESSIONAL",
-              "FEDERATION",
-              "WORKSHOP",
-              "OTHER"
-            ],
-            "description": "\n      نوع مدرک:\n      * ACADEMIC // دانشگاهی (کارشناسی، ارشد، دکتری)\n      * PROFESSIONAL // حرفه‌ای (مربیگری درجه ۱/۲/۳، CPR و...)\n      * FEDERATION // فدراسیونی (فدراسیون بدنسازی و پرورش اندام)\n      * WORKSHOP // کارگاه/دوره کوتاه‌مدت\n      * OTHER\n    "
-          },
-          "title": {
-            "type": "string",
-            "description": "عنوان مدرک",
-            "example": "کارشناسی تربیت بدنی"
-          },
-          "field": {
-            "type": "string",
-            "description": "رشته تحصیلی / تخصص",
-            "example": "تربیت بدنی و علوم ورزشی"
-          },
-          "level": {
-            "type": "string",
-            "description": "مقطع / درجه",
-            "example": "کارشناسی"
-          },
-          "issuer": {
-            "type": "string",
-            "description": "صادرکننده",
-            "example": "دانشگاه تهران / فدراسیون بدنسازی"
-          },
-          "documentUrl": {
-            "type": "string",
-            "description": "آدرس تصویر/اسکن مدرک",
-            "example": "https://cdn.example.com/cert/1.jpg"
-          },
-          "expiresAt": {
-            "type": "string",
-            "description": "تاریخ انقضا (null = بدون انقضا)",
-            "example": "2025-09-01T00:00:00.000Z",
-            "format": "date"
-          },
-          "isPrimary": {
-            "type": "boolean",
-            "description": "مدرک اصلی/شاخص باشد؟ (فقط یکی می‌تواند primary باشد)",
-            "example": false,
-            "default": false
-          }
-        },
-        "required": [
-          "type",
-          "title"
-        ]
-      },
-      "UpdateCertificationDto": {
-        "type": "object",
-        "properties": {
-          "type": {
-            "type": "string",
-            "enum": [
-              "ACADEMIC",
-              "PROFESSIONAL",
-              "FEDERATION",
-              "WORKSHOP",
-              "OTHER"
-            ],
-            "description": "\n      نوع مدرک:\n      * ACADEMIC // دانشگاهی (کارشناسی، ارشد، دکتری)\n      * PROFESSIONAL // حرفه‌ای (مربیگری درجه ۱/۲/۳، CPR و...)\n      * FEDERATION // فدراسیونی (فدراسیون بدنسازی و پرورش اندام)\n      * WORKSHOP // کارگاه/دوره کوتاه‌مدت\n      * OTHER\n    "
-          },
-          "title": {
-            "type": "string",
-            "description": "عنوان مدرک",
-            "example": "کارشناسی تربیت بدنی"
-          },
-          "field": {
-            "type": "string",
-            "description": "رشته تحصیلی / تخصص",
-            "example": "تربیت بدنی و علوم ورزشی"
-          },
-          "level": {
-            "type": "string",
-            "description": "مقطع / درجه",
-            "example": "کارشناسی"
-          },
-          "issuer": {
-            "type": "string",
-            "description": "صادرکننده",
-            "example": "دانشگاه تهران / فدراسیون بدنسازی"
-          },
-          "documentUrl": {
-            "type": "string",
-            "description": "آدرس تصویر/اسکن مدرک",
-            "example": "https://cdn.example.com/cert/1.jpg"
-          },
-          "expiresAt": {
-            "type": "string",
-            "description": "تاریخ انقضا (null = بدون انقضا)",
-            "example": "2025-09-01T00:00:00.000Z",
-            "format": "date"
-          },
-          "isPrimary": {
-            "type": "boolean",
-            "description": "مدرک اصلی/شاخص باشد؟ (فقط یکی می‌تواند primary باشد)",
-            "example": false,
-            "default": false
-          }
-        }
-      },
-      "CreateAvailabilityDto": {
-        "type": "object",
-        "properties": {
-          "startTime": {
-            "type": "string",
-            "description": "شروع کلاس و حضور",
-            "example": "09:00"
-          },
-          "endTime": {
-            "type": "string",
-            "description": "پایان کلاس و حضور",
-            "example": "13:00"
-          },
-          "weekday": {
-            "type": "number",
-            "description": "ترتیب روزهای هفته از عدد 1 تا 7",
-            "example": 1,
-            "minimum": 1
-          }
-        },
-        "required": [
-          "startTime",
-          "endTime"
-        ]
-      },
-      "UpdateAvailabilityDto": {
-        "type": "object",
-        "properties": {
-          "startTime": {
-            "type": "string",
-            "description": "شروع کلاس و حضور",
-            "example": "09:00"
-          },
-          "endTime": {
-            "type": "string",
-            "description": "پایان کلاس و حضور",
-            "example": "13:00"
-          },
-          "weekday": {
-            "type": "number",
-            "description": "ترتیب روزهای هفته از عدد 1 تا 7",
-            "example": 1,
-            "minimum": 1
-          }
-        }
-      },
-      "PaginatedAchievementEntity": {
-        "type": "object",
-        "properties": {
-          "pagination": {
-            "description": "اطلاعات صفحه‌بندی",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/PaginationMetaDto"
-              }
-            ]
-          },
-          "achievement": {
-            "description": "داده‌ها",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/AchievementEntity"
-            }
-          }
-        },
-        "required": [
-          "pagination",
-          "achievement"
-        ]
-      },
-      "CreateAchievementDto": {
-        "type": "object",
-        "properties": {
-          "title": {
-            "type": "string",
-            "description": "عنوان دستاورد",
-            "example": "مدال طلای پرس سینه"
-          },
-          "type": {
-            "type": "string",
-            "enum": [
-              "MEDAL",
-              "TROPHY",
-              "TITLE",
-              "AWARD",
-              "RECORD",
-              "OTHER"
-            ],
-            "description": "\n      نوع افتخار:\n      * MEDAL // مدال قهرمانی\n      * TROPHY // جام / مقام تیمی\n      * TITLE // عنوان رسمی (مثلاً مربی سال)\n      * AWARD // جایزه همایش / فدراسیون\n      * RECORD // رکورد شخصی یا ملی\n      * OTHER\n    ",
-            "example": "OTHER"
-          },
-          "scope": {
-            "type": "string",
-            "enum": [
-              "LOCAL",
-              "NATIONAL",
-              "INTERNATIONAL",
-              "ACADEMIC",
-              "OTHER"
-            ],
-            "description": "\n      محدوده دستاورد:\n      * LOCAL // محلی\n      * NATIONAL // ملی\n      * INTERNATIONAL // بین‌المللی\n      * ACADEMIC // آکادمیک\n      * OTHER\n    ",
-            "example": "OTHER"
-          },
-          "issuer": {
-            "type": "string",
-            "description": "صادرکننده (فدراسیون، المپیک و...)",
-            "example": "فدراسیون بدنسازی و پرورش اندام"
-          },
-          "place": {
-            "type": "number",
-            "description": "رتبه کسب‌شده",
-            "example": 1,
-            "minimum": 0
-          },
-          "sortOrder": {
-            "type": "number",
-            "description": "اولویت نمایش",
-            "example": 1,
-            "minimum": 0
-          },
-          "eventName": {
-            "type": "string",
-            "description": "نام مسابقه / رویداد",
-            "example": "مسابقات کشوری پرس سینه ۱۴۰۳"
-          },
-          "description": {
-            "type": "string",
-            "description": "توضیحات",
-            "example": "مدال طلا در وزن ۸۰ کیلوگرم"
-          },
-          "documentUrl": {
-            "type": "string",
-            "description": "آدرس تصویر حکم / مدال",
-            "example": "https://cdn.example.com/achievement/medal.jpg"
-          },
-          "year": {
-            "type": "string",
-            "description": "سال کسب دستاورد",
-            "example": "2024-01-01T00:00:00.000Z",
-            "format": "date"
-          }
-        },
-        "required": [
-          "title",
-          "type",
-          "scope",
-          "year"
-        ]
-      },
-      "UpdateAchievementDto": {
-        "type": "object",
-        "properties": {
-          "title": {
-            "type": "string",
-            "description": "عنوان دستاورد",
-            "example": "مدال طلای پرس سینه"
-          },
-          "type": {
-            "type": "string",
-            "enum": [
-              "MEDAL",
-              "TROPHY",
-              "TITLE",
-              "AWARD",
-              "RECORD",
-              "OTHER"
-            ],
-            "description": "\n      نوع افتخار:\n      * MEDAL // مدال قهرمانی\n      * TROPHY // جام / مقام تیمی\n      * TITLE // عنوان رسمی (مثلاً مربی سال)\n      * AWARD // جایزه همایش / فدراسیون\n      * RECORD // رکورد شخصی یا ملی\n      * OTHER\n    ",
-            "example": "OTHER"
-          },
-          "scope": {
-            "type": "string",
-            "enum": [
-              "LOCAL",
-              "NATIONAL",
-              "INTERNATIONAL",
-              "ACADEMIC",
-              "OTHER"
-            ],
-            "description": "\n      محدوده دستاورد:\n      * LOCAL // محلی\n      * NATIONAL // ملی\n      * INTERNATIONAL // بین‌المللی\n      * ACADEMIC // آکادمیک\n      * OTHER\n    ",
-            "example": "OTHER"
-          },
-          "issuer": {
-            "type": "string",
-            "description": "صادرکننده (فدراسیون، المپیک و...)",
-            "example": "فدراسیون بدنسازی و پرورش اندام"
-          },
-          "place": {
-            "type": "number",
-            "description": "رتبه کسب‌شده",
-            "example": 1,
-            "minimum": 0
-          },
-          "sortOrder": {
-            "type": "number",
-            "description": "اولویت نمایش",
-            "example": 1,
-            "minimum": 0
-          },
-          "eventName": {
-            "type": "string",
-            "description": "نام مسابقه / رویداد",
-            "example": "مسابقات کشوری پرس سینه ۱۴۰۳"
-          },
-          "description": {
-            "type": "string",
-            "description": "توضیحات",
-            "example": "مدال طلا در وزن ۸۰ کیلوگرم"
-          },
-          "documentUrl": {
-            "type": "string",
-            "description": "آدرس تصویر حکم / مدال",
-            "example": "https://cdn.example.com/achievement/medal.jpg"
-          },
-          "year": {
-            "type": "string",
-            "description": "سال کسب دستاورد",
-            "example": "2024-01-01T00:00:00.000Z",
-            "format": "date"
-          }
-        }
       },
       "SubscriptionPlanEntity": {
         "type": "object",
@@ -25727,20 +26212,26 @@
       "CreatePlanRequestDto": {
         "type": "object",
         "properties": {
-          "coachId": {
-            "type": "string",
-            "example": "..."
-          },
           "workoutTemplateId": {
             "type": "string",
-            "example": "..."
+            "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+            "description": "آیدی برنامه‌ی ورزشی منتشرشده. اگر نباشد، فقط وقتی مجاز است که کاربر برنامه‌ی ورزشی فعال داشته باشد (درخواست «فقط غذایی»)"
+          },
+          "coachId": {
+            "type": "string",
+            "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+            "description": "آیدی مربی (از روی برنامه‌های انتخاب‌شده تعیین می‌شود، اما برای اعتبارسنجی اجباری است)"
           },
           "dietTemplateId": {
             "type": "string",
-            "example": "..."
+            "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+            "description": "آیدی برنامه‌ی غذایی منتشرشده؛ باید از همان مربی‌ی برنامه‌ی ورزشی باشد. حداقل یکی از دو برنامه الزامی است"
           },
           "images": {
-            "example": [],
+            "example": [
+              "https://cdn.example.com/body-front.jpg"
+            ],
+            "description": "حداکثر ۵ عکس (مثلاً عکس بدن) برای مربی",
             "type": "array",
             "items": {
               "type": "string"
@@ -25748,70 +26239,30 @@
           },
           "note": {
             "type": "string",
-            "example": "درخواست برنامه حجم"
+            "example": "کمردرد خفیف دارم و فقط سه روز در هفته وقت دارم",
+            "description": "توضیح برای مربی"
           }
         },
         "required": [
           "coachId"
         ]
       },
-      "PlanRequestEntity": {
+      "RejectPlanRequestDto": {
         "type": "object",
         "properties": {
-          "id": {
+          "reason": {
             "type": "string",
-            "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
-          },
-          "userId": {
-            "type": "string",
-            "example": "..."
-          },
-          "coachId": {
-            "type": "string",
-            "example": "..."
-          },
-          "workoutTemplateId": {
-            "type": "object",
-            "example": "...",
-            "nullable": true
-          },
-          "dietTemplateId": {
-            "type": "object",
-            "example": "...",
-            "nullable": true
-          },
-          "images": {
-            "example": [],
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "note": {
-            "type": "object",
-            "example": "درخواست برنامه",
-            "nullable": true
-          },
-          "commissionRate": {
-            "type": "object",
-            "example": 15,
-            "nullable": true
-          },
-          "discountAmount": {
-            "type": "object",
-            "example": 50000,
-            "nullable": true
-          },
-          "price": {
-            "type": "object",
-            "example": 500000,
-            "nullable": true
-          },
-          "originalPrice": {
-            "type": "object",
-            "example": 550000,
-            "nullable": true
-          },
+            "example": "در حال حاضر ظرفیت ندارم",
+            "description": "دلیل رد درخواست (به کاربر نمایش داده می‌شود)"
+          }
+        },
+        "required": [
+          "reason"
+        ]
+      },
+      "PlanRequestAdminDto": {
+        "type": "object",
+        "properties": {
           "status": {
             "type": "string",
             "enum": [
@@ -25822,37 +26273,90 @@
               "REJECTED",
               "CANCELLED"
             ],
-            "example": "PENDING"
+            "description": "وضعیت درخواست",
+            "example": "ACCEPTED"
+          },
+          "dietTemplateId": {
+            "type": "string",
+            "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+            "description": ""
+          },
+          "note": {
+            "type": "string",
+            "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+            "description": "توضیحات شاگرد به مربی"
           },
           "rejectionReason": {
-            "type": "object",
-            "example": null,
-            "nullable": true
-          },
-          "respondedAt": {
-            "type": "object",
-            "example": null,
-            "nullable": true
-          },
-          "createdAt": {
-            "format": "date-time",
             "type": "string",
-            "example": "2025-01-01T00:00:00.000Z"
+            "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+            "description": "توضیحات مربی به شاگرد در زمان رد شاگرد"
+          }
+        }
+      },
+      "UserPlanListItemEntity": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+          },
+          "title": {
+            "type": "string",
+            "example": "برنامه حجم ۸ هفته"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "DRAFT",
+              "ACTIVE",
+              "COMPLETED",
+              "CANCELLED"
+            ]
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "WORKOUT",
+              "DIET",
+              "ALL"
+            ]
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "COACH",
+              "SITE",
+              "AI"
+            ]
+          },
+          "startDate": {
+            "type": "object",
+            "example": "2026-11-10",
+            "nullable": true
+          },
+          "endDate": {
+            "type": "object",
+            "example": "2027-01-04",
+            "nullable": true
+          },
+          "activatedAt": {
+            "type": "object",
+            "nullable": true
           },
           "coach": {
-            "type": "object"
+            "type": "object",
+            "nullable": true,
+            "description": "برای برنامه‌های سایت/AI برابر null"
           }
         },
         "required": [
           "id",
-          "userId",
-          "coachId",
-          "images",
+          "title",
           "status",
-          "createdAt"
+          "type"
         ]
       },
-      "PaginatedPlanRequestEntity": {
+      "PaginatedUserPlanListItemEntity": {
         "type": "object",
         "properties": {
           "pagination": {
@@ -25863,57 +26367,291 @@
               }
             ]
           },
-          "requests": {
+          "plans": {
             "description": "داده‌ها",
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/PlanRequestEntity"
+              "$ref": "#/components/schemas/UserPlanListItemEntity"
             }
           }
         },
         "required": [
           "pagination",
-          "requests"
+          "plans"
         ]
       },
-      "UpdatePlanRequestStatusDto": {
-        "type": "object",
-        "properties": {
-          "status": {
-            "type": "string",
-            "enum": [
-              "PENDING",
-              "ACCEPTED",
-              "PAID",
-              "DELIVERED",
-              "REJECTED",
-              "CANCELLED"
-            ],
-            "example": "ACCEPTED"
-          },
-          "rejectionReason": {
-            "type": "string",
-            "example": "دلیل رد"
-          }
-        },
-        "required": [
-          "status"
-        ]
-      },
-      "UserPlanEntity": {
+      "CurrentUserPlanEntity": {
         "type": "object",
         "properties": {
           "id": {
             "type": "string",
             "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
           },
-          "userId": {
+          "title": {
             "type": "string",
-            "example": "..."
+            "example": "برنامه حجم ۸ هفته"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "DRAFT",
+              "ACTIVE",
+              "COMPLETED",
+              "CANCELLED"
+            ]
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "WORKOUT",
+              "DIET",
+              "ALL"
+            ]
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "COACH",
+              "SITE",
+              "AI"
+            ]
+          },
+          "startDate": {
+            "type": "object",
+            "example": "2026-11-10",
+            "nullable": true
+          },
+          "endDate": {
+            "type": "object",
+            "example": "2027-01-04",
+            "nullable": true
+          },
+          "activatedAt": {
+            "type": "object",
+            "nullable": true
+          },
+          "coach": {
+            "type": "object",
+            "nullable": true,
+            "description": "برای برنامه‌های سایت/AI برابر null"
+          },
+          "hasWorkout": {
+            "type": "boolean",
+            "example": true
+          },
+          "hasDiet": {
+            "type": "boolean",
+            "example": true
+          },
+          "currentWeek": {
+            "type": "object",
+            "example": 3,
+            "nullable": true,
+            "description": "هفته‌ی جاری برنامه (۱ = هفته‌ی اول)؛ قبل از شروع ≤ ۰"
+          },
+          "isStarted": {
+            "type": "boolean",
+            "example": true,
+            "description": "startDate ≤ امروز"
+          },
+          "isExpired": {
+            "type": "boolean",
+            "example": false,
+            "description": "endDate < امروز (در صورتی که cron هنوز نبسته)"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "status",
+          "type",
+          "hasWorkout",
+          "hasDiet",
+          "isStarted",
+          "isExpired"
+        ]
+      },
+      "CurrentUserPlanResponseEntity": {
+        "type": "object",
+        "properties": {
+          "plan": {
+            "nullable": true,
+            "description": "null اگر برنامه‌ی فعالی ندارد",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CurrentUserPlanEntity"
+              }
+            ]
+          }
+        }
+      },
+      "PartOutlineEntity": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "example": "فاز ۱"
+          },
+          "startWeek": {
+            "type": "number",
+            "example": 1
+          },
+          "endWeek": {
+            "type": "number",
+            "example": 4
+          }
+        },
+        "required": [
+          "title",
+          "startWeek",
+          "endWeek"
+        ]
+      },
+      "PartEntity": {
+        "type": "object",
+        "properties": {
+          "planId": {
+            "type": "string",
+            "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+          },
+          "currentWeek": {
+            "type": "object",
+            "example": 3,
+            "nullable": true
+          },
+          "requestedWeek": {
+            "type": "object",
+            "example": 3,
+            "nullable": true
+          },
+          "outline": {
+            "description": "فهرست همه‌ی فازها برای ناوبری",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PartOutlineEntity"
+            }
+          },
+          "phase": {
+            "type": "object",
+            "nullable": true,
+            "description": "فازی که requestedWeek را پوشش می‌دهد: { title, startWeek, endWeek, days: [...] } — شکل days مثل today.workout / today.diet. null اگر هفته خارج از بازه‌ی برنامه است"
+          }
+        },
+        "required": [
+          "planId",
+          "outline"
+        ]
+      },
+      "CoachUserPlanListItemEntity": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
           },
           "title": {
             "type": "string",
-            "example": "برنامه من"
+            "example": "برنامه حجم ۸ هفته"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "DRAFT",
+              "ACTIVE",
+              "COMPLETED",
+              "CANCELLED"
+            ]
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "WORKOUT",
+              "DIET",
+              "ALL"
+            ]
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "COACH",
+              "SITE",
+              "AI"
+            ]
+          },
+          "startDate": {
+            "type": "object",
+            "example": "2026-11-10",
+            "nullable": true
+          },
+          "endDate": {
+            "type": "object",
+            "example": "2027-01-04",
+            "nullable": true
+          },
+          "activatedAt": {
+            "type": "object",
+            "nullable": true
+          },
+          "coach": {
+            "type": "object",
+            "nullable": true,
+            "description": "برای برنامه‌های سایت/AI برابر null"
+          },
+          "requestId": {
+            "type": "object",
+            "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+            "nullable": true
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "user": {
+            "type": "object",
+            "description": "{ id, name, avatar }"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "status",
+          "type",
+          "requestId",
+          "createdAt",
+          "user"
+        ]
+      },
+      "PaginatedCoachUserPlanListItemEntity": {
+        "type": "object",
+        "properties": {
+          "pagination": {
+            "description": "اطلاعات صفحه‌بندی",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMetaDto"
+              }
+            ]
+          },
+          "plans": {
+            "description": "داده‌ها",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CoachUserPlanListItemEntity"
+            }
+          }
+        },
+        "required": [
+          "pagination",
+          "plans"
+        ]
+      },
+      "DraftResultEntity": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
           },
           "status": {
             "type": "string",
@@ -25923,16 +26661,7 @@
               "COMPLETED",
               "CANCELLED"
             ],
-            "example": "ACTIVE"
-          },
-          "source": {
-            "type": "string",
-            "enum": [
-              "COACH",
-              "SITE",
-              "AI"
-            ],
-            "example": "COACH"
+            "example": "DRAFT"
           },
           "type": {
             "type": "string",
@@ -25940,164 +26669,421 @@
               "WORKOUT",
               "DIET",
               "ALL"
-            ],
-            "example": "WORKOUT"
+            ]
           },
-          "workoutPlanId": {
-            "type": "object",
-            "example": "...",
-            "nullable": true
-          },
-          "dietPlanId": {
-            "type": "object",
-            "example": "...",
-            "nullable": true
-          },
-          "coachId": {
-            "type": "object",
-            "example": "...",
-            "nullable": true
-          },
-          "requestId": {
-            "type": "object",
-            "example": "...",
-            "nullable": true
-          },
-          "snapshotExercise": {
-            "type": "object",
-            "nullable": true,
-            "description": "snapshot تمرین (JSON)"
-          },
-          "snapshotDiet": {
-            "type": "object",
-            "nullable": true,
-            "description": "snapshot غذا (JSON)"
-          },
-          "startDate": {
-            "type": "object",
-            "example": "2025-01-01T00:00:00.000Z",
-            "nullable": true
-          },
-          "endDate": {
-            "type": "object",
-            "example": "2025-03-01T00:00:00.000Z",
-            "nullable": true
-          },
-          "activatedAt": {
-            "type": "object",
-            "example": null,
-            "nullable": true
-          },
-          "customizedAt": {
-            "format": "date-time",
-            "type": "string",
-            "example": "2025-01-01T00:00:00.000Z"
-          },
-          "createdAt": {
-            "format": "date-time",
-            "type": "string",
-            "example": "2025-01-01T00:00:00.000Z"
-          },
-          "updatedAt": {
-            "format": "date-time",
-            "type": "string",
-            "example": "2025-01-01T00:00:00.000Z"
-          },
-          "workoutPlan": {
-            "type": "object"
-          },
-          "dietPlan": {
-            "type": "object"
-          },
-          "request": {
-            "$ref": "#/components/schemas/PlanRequestEntity"
+          "created": {
+            "type": "boolean",
+            "example": true,
+            "description": "false یعنی پیش‌نویسی از قبل برای این درخواست وجود داشته (idempotent)"
           }
         },
         "required": [
           "id",
-          "userId",
-          "title",
           "status",
-          "source",
           "type",
-          "customizedAt",
-          "createdAt",
-          "updatedAt"
+          "created"
         ]
       },
-      "PaginatedUserPlanEntity": {
+      "CoachUserPlanDetailEntity": {
         "type": "object",
         "properties": {
-          "pagination": {
-            "description": "اطلاعات صفحه‌بندی",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/PaginationMetaDto"
-              }
+          "id": {
+            "type": "string",
+            "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+          },
+          "title": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "DRAFT",
+              "ACTIVE",
+              "COMPLETED",
+              "CANCELLED"
             ]
           },
-          "userPlans": {
-            "description": "داده‌ها",
+          "type": {
+            "type": "string",
+            "enum": [
+              "WORKOUT",
+              "DIET",
+              "ALL"
+            ]
+          },
+          "startDate": {
+            "type": "object",
+            "nullable": true
+          },
+          "endDate": {
+            "type": "object",
+            "nullable": true
+          },
+          "user": {
+            "type": "object",
+            "description": "{ id, name, avatar }"
+          },
+          "snapshotExercise": {
+            "type": "object",
+            "nullable": true,
+            "description": "کل snapshot ورزشی: { v, templateId, title, durationWeeks, phases:[{ title, startWeek, endWeek, days:[...] }] }. null اگر پلن بخش ورزشی ندارد"
+          },
+          "snapshotDiet": {
+            "type": "object",
+            "nullable": true,
+            "description": "کل snapshot غذایی: { v, templateId, title, durationWeeks, startDate, target, phases:[...] }. null اگر پلن بخش غذایی ندارد"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "status",
+          "type",
+          "user"
+        ]
+      },
+      "SnapshotExerciseInputDto": {
+        "type": "object",
+        "properties": {
+          "exerciseId": {
+            "type": "string",
+            "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+          },
+          "order": {
+            "type": "number",
+            "example": 1,
+            "description": "ترتیب در روز (سرور بر اساس آن مرتب و شماره‌گذاری مجدد می‌کند)"
+          },
+          "sets": {
+            "type": "number",
+            "example": 4
+          },
+          "reps": {
+            "type": "string",
+            "example": "8-10"
+          },
+          "durationSec": {
+            "type": "number",
+            "example": 45
+          },
+          "restSec": {
+            "type": "number",
+            "example": 90
+          },
+          "notes": {
+            "type": "string",
+            "example": "با وزنه‌ی سبک‌تر"
+          }
+        },
+        "required": [
+          "exerciseId",
+          "order"
+        ]
+      },
+      "SnapshotWorkoutDayInputDto": {
+        "type": "object",
+        "properties": {
+          "weekday": {
+            "type": "number",
+            "example": 0,
+            "description": "۰=شنبه … ۶=جمعه؛ در هر فاز یکتا"
+          },
+          "title": {
+            "type": "string",
+            "example": "سینه و سه‌سر"
+          },
+          "isRestDay": {
+            "type": "boolean",
+            "example": false
+          },
+          "notes": {
+            "type": "string"
+          },
+          "exercises": {
+            "description": "حداکثر ۳۰ حرکت در روز",
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/UserPlanEntity"
+              "$ref": "#/components/schemas/SnapshotExerciseInputDto"
             }
           }
         },
         "required": [
-          "pagination",
-          "userPlans"
+          "weekday",
+          "exercises"
         ]
       },
-      "CreateUserPlanDto": {
+      "SnapshotWorkoutPhaseInputDto": {
         "type": "object",
         "properties": {
           "title": {
             "type": "string",
-            "example": "برنامه من"
+            "example": "فاز ۱"
           },
-          "type": {
-            "type": "string",
-            "enum": [
-              "WORKOUT",
-              "DIET",
-              "ALL"
-            ],
-            "example": "WORKOUT"
+          "startWeek": {
+            "type": "number",
+            "example": 1
           },
-          "source": {
-            "type": "string",
-            "enum": [
-              "COACH",
-              "SITE",
-              "AI"
-            ],
-            "example": "COACH"
+          "endWeek": {
+            "type": "number",
+            "example": 4
           },
-          "workoutPlanId": {
-            "type": "string",
-            "example": "..."
-          },
-          "dietPlanId": {
-            "type": "string",
-            "example": "..."
-          },
-          "requestId": {
-            "type": "string",
-            "example": "..."
+          "days": {
+            "description": "حداکثر ۷ روز",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SnapshotWorkoutDayInputDto"
+            }
           }
         },
         "required": [
           "title",
-          "type"
+          "startWeek",
+          "endWeek",
+          "days"
         ]
       },
-      "UpdateUserPlanDto": {
+      "WorkoutSnapshotInputDto": {
+        "type": "object",
+        "properties": {
+          "phases": {
+            "description": "فازها نباید هم‌پوشانی داشته باشند",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SnapshotWorkoutPhaseInputDto"
+            }
+          }
+        },
+        "required": [
+          "phases"
+        ]
+      },
+      "SnapshotMealItemInputDto": {
+        "type": "object",
+        "properties": {
+          "foodId": {
+            "type": "string",
+            "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+          },
+          "quantityGrams": {
+            "type": "number",
+            "example": 150,
+            "description": "گرم (۰.۰۱ تا ۹۹۹۹)؛ کالری و ماکرو را سرور حساب می‌کند"
+          },
+          "notes": {
+            "type": "string",
+            "example": "پخته"
+          }
+        },
+        "required": [
+          "foodId",
+          "quantityGrams"
+        ]
+      },
+      "SnapshotMealInputDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "برای وعده‌ی موجود همان id قبلی را بفرست تا logهای کاربر معتبر بماند؛ برای وعده‌ی جدید نفرست"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "BREAKFAST",
+              "LUNCH",
+              "DINNER",
+              "SNACK"
+            ],
+            "example": "BREAKFAST"
+          },
+          "priority": {
+            "type": "string",
+            "enum": [
+              "PRIMARY",
+              "SECONDARY",
+              "TERTIARY"
+            ],
+            "example": "PRIMARY"
+          },
+          "order": {
+            "type": "number",
+            "example": 1
+          },
+          "notes": {
+            "type": "string"
+          },
+          "items": {
+            "description": "حداکثر ۲۰ آیتم در وعده",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SnapshotMealItemInputDto"
+            }
+          }
+        },
+        "required": [
+          "type",
+          "order",
+          "items"
+        ]
+      },
+      "SnapshotDietDayInputDto": {
+        "type": "object",
+        "properties": {
+          "weekday": {
+            "type": "number",
+            "example": 0,
+            "description": "۰=شنبه … ۶=جمعه؛ در هر فاز یکتا"
+          },
+          "title": {
+            "type": "string"
+          },
+          "notes": {
+            "type": "string"
+          },
+          "meals": {
+            "description": "حداکثر ۱۲ وعده در روز",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SnapshotMealInputDto"
+            }
+          }
+        },
+        "required": [
+          "weekday",
+          "meals"
+        ]
+      },
+      "SnapshotDietPhaseInputDto": {
         "type": "object",
         "properties": {
           "title": {
             "type": "string",
-            "example": "برنامه من"
+            "example": "فاز کات"
+          },
+          "startWeek": {
+            "type": "number",
+            "example": 1
+          },
+          "endWeek": {
+            "type": "number",
+            "example": 4
+          },
+          "targetCalories": {
+            "type": "number",
+            "example": 2200,
+            "description": "اگر نباشد از هدف کل برنامه استفاده می‌شود"
+          },
+          "targetProteinG": {
+            "type": "number"
+          },
+          "targetCarbsG": {
+            "type": "number"
+          },
+          "targetFatG": {
+            "type": "number"
+          },
+          "days": {
+            "description": "حداکثر ۷ روز",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SnapshotDietDayInputDto"
+            }
+          }
+        },
+        "required": [
+          "title",
+          "startWeek",
+          "endWeek",
+          "days"
+        ]
+      },
+      "DietSnapshotInputDto": {
+        "type": "object",
+        "properties": {
+          "targetCalories": {
+            "type": "number",
+            "example": 2500
+          },
+          "targetProteinG": {
+            "type": "number"
+          },
+          "targetCarbsG": {
+            "type": "number"
+          },
+          "targetFatG": {
+            "type": "number"
+          },
+          "phases": {
+            "description": "فازها نباید هم‌پوشانی داشته باشند",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SnapshotDietPhaseInputDto"
+            }
+          }
+        },
+        "required": [
+          "phases"
+        ]
+      },
+      "UpdateUserPlanSnapshotDto": {
+        "type": "object",
+        "properties": {
+          "workout": {
+            "description": "جایگزینی کامل snapshot ورزشی (فقط اگر پلن بخش ورزشی دارد)",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WorkoutSnapshotInputDto"
+              }
+            ]
+          },
+          "diet": {
+            "description": "جایگزینی کامل snapshot غذایی (فقط اگر پلن بخش غذایی دارد)",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DietSnapshotInputDto"
+              }
+            ]
+          }
+        }
+      },
+      "UpdatedEntity": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+          },
+          "updated": {
+            "type": "boolean",
+            "example": true
+          }
+        },
+        "required": [
+          "id",
+          "updated"
+        ]
+      },
+      "ActivateUserPlanDto": {
+        "type": "object",
+        "properties": {
+          "startDate": {
+            "type": "string",
+            "example": "2026-11-10",
+            "description": "تاریخ شروع (میلادی، به وقت تهران). پیش‌فرض امروز؛ نباید گذشته یا بیش از ۶۰ روز بعد باشد"
+          }
+        }
+      },
+      "ActivatedEntity": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+            "description": "برای درخواست «فقط غذایی» id پلن فعال کاربر است (نه پیش‌نویس)"
+          },
+          "status": {
+            "type": "string",
+            "example": "ACTIVE"
           },
           "type": {
             "type": "string",
@@ -26105,44 +27091,24 @@
               "WORKOUT",
               "DIET",
               "ALL"
-            ],
-            "example": "WORKOUT"
+            ]
           },
-          "source": {
+          "startDate": {
             "type": "string",
-            "enum": [
-              "COACH",
-              "SITE",
-              "AI"
-            ],
-            "example": "COACH"
+            "example": "2026-11-10"
           },
-          "workoutPlanId": {
+          "endDate": {
             "type": "string",
-            "example": "..."
-          },
-          "dietPlanId": {
-            "type": "string",
-            "example": "..."
-          },
-          "requestId": {
-            "type": "string",
-            "example": "..."
+            "example": "2027-01-04"
           }
-        }
-      },
-      "CustomizeSnapshotDto": {
-        "type": "object",
-        "properties": {
-          "snapshotExercise": {
-            "type": "object",
-            "description": "snapshot تمرین (JSON)"
-          },
-          "snapshotDiet": {
-            "type": "object",
-            "description": "snapshot غذا (JSON)"
-          }
-        }
+        },
+        "required": [
+          "id",
+          "status",
+          "type",
+          "startDate",
+          "endDate"
+        ]
       },
       "CreateUserLogDto": {
         "type": "object",

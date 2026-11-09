@@ -7,7 +7,7 @@ import { ConfigService } from '@nestjs/config';
 import pagination from '../../common/utils/pagination.js';
 import { PlanRequestStatus } from '../../generated/prisma/enums.js';
 import {
-  CreatePlanRequestDto, PlanRequestQueryDto,
+  CreatePlanRequestDto, PlanRequestAdminDto, PlanRequestQueryAdminDto, PlanRequestQueryDto,
 } from './dto/plan-request.dto.js';
 import { Num, toNum, tehranToday, tehranDayStart } from './util/plan-snapshot.util.js';
 
@@ -30,7 +30,7 @@ export class PlanRequestService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly configService: ConfigService,
-  ) {}
+  ) { }
 
   // ───────── Helpers ─────────
 
@@ -156,15 +156,15 @@ export class PlanRequestService {
     const [workout, diet, rows, active] = await Promise.all([
       workoutTemplateId
         ? this.prisma.workoutPlan.findFirst({
-            where: { id: workoutTemplateId, ...requestable },
-            select: priceSelect,
-          })
+          where: { id: workoutTemplateId, ...requestable },
+          select: priceSelect,
+        })
         : Promise.resolve(null),
       dietTemplateId
         ? this.prisma.dietPlan.findFirst({
-            where: { id: dietTemplateId, ...requestable },
-            select: priceSelect,
-          })
+          where: { id: dietTemplateId, ...requestable },
+          select: priceSelect,
+        })
         : Promise.resolve(null),
       this.prisma.planRequest.findMany({
         where: {
@@ -285,6 +285,23 @@ export class PlanRequestService {
     throw new ConflictException(`درخواست در وضعیت ${r.status} قابل لغو نیست`);
   }
 
+  async deleteMyRequests(userId: string, id: string) {
+    const { count } = await this.prisma.planRequest.deleteMany({
+      where: { id, userId, status: { in: ['PENDING', 'CANCELLED', 'ACCEPTED', 'REJECTED'] } }
+    });
+    if (count) return { id, status: 'Deleted' as const };
+
+    const r = await this.prisma.planRequest.findFirst({
+      where: { id, userId },
+      select: { status: true },
+    });
+    if (!r) throw new NotFoundException('درخواست یافت نشد');
+    if (r.status === 'PAID' || r.status === 'DELIVERED') {
+      throw new ConflictException('پس از پرداخت امکان حذف نیست؛ با پشتیبانی تماس بگیرید');
+    }
+    throw new ConflictException(`درخواست در وضعیت ${r.status} قابل حذف نیست`);
+  }
+
   // ───────── Coach ─────────
 
   async getCoachRequests(coachUserId: string, query: PlanRequestQueryDto) {
@@ -358,6 +375,8 @@ export class PlanRequestService {
                 medicalConditions: true,
                 allergies: true,
                 dietaryRestrictions: true,
+                trainingGoal: { select: { title: true } },
+                equipment: { select: { title: true } }
               },
             },
           },
@@ -460,7 +479,152 @@ export class PlanRequestService {
     if (!r) throw new NotFoundException('درخواست یافت نشد');
     throw new ConflictException(`درخواست در وضعیت ${r.status} قابل رد نیست`);
   }
+  // ───────── Admin ─────────
+  async updateAdmin(id: string, body: PlanRequestAdminDto) {
+    const req = await this.prisma.planRequest.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        status: true,
+        price: true,
+        coachId: true,
+        workoutTemplateId: true,
+        coach: { select: { status: true, isAcceptingClients: true, maxClients: true } },
+      },
+    });
+    if (!req) throw new NotFoundException('درخواست یافت نشد');
+    if (req.coach.status !== 'APPROVED') {
+      throw new BadRequestException('حساب مربی هنوز توسط ادمین تایید نشده است');
+    }
+    const respondedAt = new Date();
+    if (req.workoutTemplateId && (body.status === 'ACCEPTED' || body.status === 'PAID')) {
+      if (!req.coach.isAcceptingClients) {
+        throw new BadRequestException('پذیرش مشتری‌ی جدید در پروفایل شما غیرفعال است');
+      }
+      const ttlStart = new Date(Date.now() - ACCEPT_TTL_MS);
+      const [activePlans, inFlight] = await Promise.all([
+        this.prisma.userPlan.count({ where: { coachId: req.coachId, status: 'ACTIVE' } }),
+        this.prisma.planRequest.count({
+          where: {
+            coachId: req.coachId,
+            workoutTemplateId: { not: null },
+            OR: [{ status: 'PAID' }, { status: 'ACCEPTED', respondedAt: { gte: ttlStart } }],
+          },
+        }),
+      ]);
+      if (activePlans + inFlight >= req.coach.maxClients) {
+        throw new ConflictException('ظرفیت شاگردان شما تکمیل است');
+      }
+    }
+    if (body.status === 'PAID') {
+      await this.confirmPayment(id)
+    }
+    return this.prisma.planRequest.update({
+      where: { id },
+      data: { ...body, respondedAt }
+    })
+  }
 
+  async getAllRequestAdmin(query: PlanRequestQueryAdminDto) {
+    const { coachId, limit, order, page = 1, status } = query
+    const limitPage = this.getLimit(limit);
+    const skip = (page - 1) * limitPage;
+    const where = {
+      ...(status && status !== undefined && { status }),
+      ...(coachId && coachId !== undefined && { coachId })
+    };
+
+    const [data, count] = await Promise.all([
+      this.prisma.planRequest.findMany({
+        where, skip, take: limitPage,
+        orderBy: { createdAt: order || 'desc' },
+        select: {
+          id: true,
+          status: true,
+          note: true,
+          images: true,
+          price: true,
+          originalPrice: true,
+          discountAmount: true,
+          rejectionReason: true,
+          respondedAt: true,
+          createdAt: true,
+          workoutTemplate: { select: { id: true, title: true } },
+          dietTemplate: { select: { id: true, title: true } },
+          user: { select: { id: true, name: true, avatar: true } },
+        },
+      }),
+      this.prisma.planRequest.count({ where }),
+    ]);
+    return {
+      requests: data.map((r) => this.serialize(r)),
+      pagination: pagination(count, page, limitPage),
+    };
+  }
+
+  async getSingleRequestAdmin(id: string) {
+    const r = await this.prisma.planRequest.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        status: true,
+        note: true,
+        images: true,
+        price: true,
+        originalPrice: true,
+        discountAmount: true,
+        rejectionReason: true,
+        respondedAt: true,
+        createdAt: true,
+        workoutTemplate: { select: { id: true, title: true } },
+        dietTemplate: { select: { id: true, title: true } },
+        user: {
+          select: {
+            id: true,
+            name: true,
+            avatar: true,
+            profile: {
+              select: {
+                heightCm: true,
+                currentWeightKg: true,
+                targetWeightKg: true,
+                age: true,
+                gender: true,
+                activityLevel: true,
+                experienceLevel: true,
+                trainingLocation: true,
+                trainingDaysPerWeek: true,
+                injuries: true,
+                medicalConditions: true,
+                allergies: true,
+                dietaryRestrictions: true,
+                trainingGoal: { select: { title: true } },
+                equipment: { select: { title: true } }
+              },
+            },
+          },
+        },
+      },
+    });
+    if (!r) throw new NotFoundException('درخواست یافت نشد');
+
+    const { user, ...rest } = r;
+    const p = user.profile;
+    return {
+      ...this.serialize(rest),
+      user: {
+        id: user.id,
+        name: user.name,
+        avatar: user.avatar,
+        profile: p && {
+          ...p,
+          heightCm: p.heightCm == null ? null : toNum(p.heightCm),
+          currentWeightKg: p.currentWeightKg == null ? null : toNum(p.currentWeightKg),
+          targetWeightKg: p.targetWeightKg == null ? null : toNum(p.targetWeightKg),
+        },
+      },
+    };
+  }
   // ───────── Payment hooks (بدون route؛ از ماژول پرداخت صدا بزن) ─────────
 
   /**

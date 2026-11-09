@@ -146,6 +146,49 @@ export class CoachService {
     })
   }
 
+  async findMyData(id: string) {
+    const coach = await this.prisma.user.findUnique({
+      where: { id },
+      select: { coach: { select: { id: true } } },
+    });
+    if (!coach?.coach?.id) throw new NotFoundException('مربی یافت نشد');
+    return this.prisma.coach.findUnique({
+      where: { id: coach.coach.id },
+      select: {
+        _count: {
+          select: {
+            dietPlans: true,
+            planRequests: true,
+            workoutPlans: true,
+            userPlans: true,
+            certifications: true,
+            availabilities: true,
+            coachAchievements: true,
+            specialties: true
+          }
+        },
+        coachRating: true,
+        city: { select: { name: true } },
+        province: { select: { name: true } },
+        user: { select: { name: true, phone: true, id: true } },
+        address: { select: { title: true, id: true } },
+        id: true,
+        title: true,
+        slug: true,
+        headline: true,
+        bio: true,
+        instagram: true,
+        maxClients: true,
+        isAcceptingClients: true,
+        status: true,
+        rejectionReason: true,
+        experienceYears: true,
+        nationalId: true,
+      }
+    })
+  }
+
+
   async findAllAdmin(query: SearchAdminCoachDto) {
     const { limit, order, page = 1, cityId, isAcceptingClients, status, provinceId, search, sortBy } = query
     const limitPage = Number(limit) || Number(this.configService.get('limit.coach'))
@@ -241,7 +284,7 @@ export class CoachService {
         province: { select: { name: true } },
         media: {
           orderBy: [{ sortOrder: 'asc' }],
-          select: { id: true, url: true },
+          select: { id: true, url: true, alt: true },
         },
         address: {
           select: {
@@ -335,7 +378,7 @@ export class CoachService {
           }
         },
         workoutPlans: {
-          take: 2,
+          take: 1,
           orderBy: { avgRating: 'desc' },
           where: { isPublished: true },
           select: {
@@ -358,7 +401,7 @@ export class CoachService {
           }
         },
         dietPlans: {
-          take: 2,
+          take: 1,
           orderBy: { avgRating: 'desc' },
           where: { isPublished: true },
           select: {
@@ -446,7 +489,6 @@ export class CoachService {
 
     // حذف banner از data (چون جدا مدیریت شد)
     delete data.banner;
-
     await this.prisma.coach.update({
       where: { id },
       data,
@@ -462,7 +504,7 @@ export class CoachService {
   }
 
   async deleteDb(id: string) {
-    await this.prisma.coach.delete({ where: { id }})
+    await this.prisma.coach.delete({ where: { id } })
     return { success: true }
   }
 }

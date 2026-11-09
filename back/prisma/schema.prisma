@@ -95,8 +95,6 @@ model Profile {
   trainingLocation    TrainingLocation? @map("training_location")
   age                 DateTime?         @map("age") @db.Date
   trainingDaysPerWeek Int?              @map("training_days_per_week")
-  availableEquipment  String[]          @map("available_equipment")
-
   // سلامت و تغذیه
   injuries            String?  @map("injuries")
   medicalConditions   String?  @map("medical_conditions")

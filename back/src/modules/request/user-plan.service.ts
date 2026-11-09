@@ -17,7 +17,6 @@ import {
   tehranToday,
   toDateString,
   addDays,
-  parseDateOnly,
   weekdayOf,
   toJson,
   toNum,
@@ -31,6 +30,7 @@ import {
   type DietInput,
   type ExerciseLite,
   type FoodLite,
+  parseDateOnly,
 } from './util/plan-snapshot.util.js';
 
 type PhaseLike<D extends { weekday: number } = { weekday: number }> = {
@@ -45,7 +45,7 @@ export class UserPlanService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly configService: ConfigService,
-  ) {}
+  ) { }
 
   private getLimit(limit?: number) {
     return Math.max(1, Number(limit) || Number(this.configService.get('limit.coach')) || 10);
@@ -299,9 +299,8 @@ export class UserPlanService {
     const skip = (page - 1) * limitPage;
     const where = {
       userId,
-      status: query.status ?? { not: 'DRAFT' as const },
+      ...(query.status && query.status !== undefined && { status: query.status }),
     };
-
     const [data, count] = await Promise.all([
       this.prisma.userPlan.findMany({
         where,
@@ -373,53 +372,6 @@ export class UserPlanService {
     };
   }
 
-  async getMyToday(userId: string, dateStr?: string) {
-    const date = dateStr ? parseDateOnly(dateStr) : tehranToday();
-    const plan = await this.prisma.userPlan.findFirst({
-      where: {
-        userId,
-        status: 'ACTIVE',
-        OR: [{ endDate: null }, { endDate: { gte: date } }],
-      },
-      select: {
-        id: true,
-        type: true,
-        startDate: true,
-        snapshotExercise: true,
-        snapshotDiet: true,
-      },
-      orderBy: { activatedAt: 'desc' },
-    });
-    if (!plan) return { date: toDateString(date), workout: null, diet: null };
-
-    const week = this.currentWeek(plan.startDate, date);
-    const wd = weekdayOf(date);
-    const wSnap = plan.snapshotExercise as WorkoutSnapshot | null;
-    const dSnap = plan.snapshotDiet as DietSnapshot | null;
-
-    let workout: unknown = null;
-    if (wSnap && (plan.type === 'WORKOUT' || plan.type === 'ALL')) {
-      const phase = this.pickPhase(wSnap.phases, week);
-      const day = phase?.days?.find((d) => d.weekday === wd) ?? null;
-      workout = day
-        ? { week, phaseTitle: phase!.title, ...day }
-        : { week, phaseTitle: phase?.title ?? null, rest: true };
-    }
-
-    let diet: unknown = null;
-    if (dSnap && (plan.type === 'DIET' || plan.type === 'ALL')) {
-      const dietStart = dSnap.startDate ? parseDateOnly(dSnap.startDate) : plan.startDate;
-      const dWeek = this.currentWeek(dietStart, date);
-      const phase = this.pickPhase(dSnap.phases, dWeek);
-      const day = phase?.days?.find((d) => d.weekday === wd) ?? null;
-      diet = day
-        ? { week: dWeek, phaseTitle: phase!.title, ...day }
-        : { week: dWeek, phaseTitle: phase?.title ?? null, empty: true };
-    }
-
-    return { date: toDateString(date), planId: plan.id, workout, diet };
-  }
-
   async getMyPart(userId: string, part: 'workout' | 'diet', week?: number) {
     const plan = await this.prisma.userPlan.findFirst({
       where: { userId, status: 'ACTIVE' },
@@ -448,12 +400,44 @@ export class UserPlanService {
       | null;
     if (!snap) throw new NotFoundException('snapshot یافت نشد');
 
+    // const start =
+    //   !isWorkout && 'startDate' in snap && snap.startDate
+    //     ? parseDateOnly(snap.startDate)
+    //     : plan.startDate;
+    // const resolvedWeek = week ?? this.currentWeek(start, tehranToday());
+    // const phase = this.pickPhase(snap.phases, resolvedWeek);
+    // const outline = snap.phases.map((p) => ({
+    //   title: p.title,
+    //   startWeek: p.startWeek,
+    //   endWeek: p.endWeek,
+    // }));
+    // return {
+    //   planId: plan.id,
+    //   part,
+    //   requestedWeek: resolvedWeek,
+    //   durationWeeks: snap.durationWeeks,
+    //   outline,
+    //   phase: phase
+    //     ? {
+    //         title: phase.title,
+    //         startWeek: phase.startWeek,
+    //         endWeek: phase.endWeek,
+    //         days: phase.days,
+    //       }
+    //     : null,
+    // };
+    // /////////////////////////////////////////////
+
     const start =
       !isWorkout && 'startDate' in snap && snap.startDate
         ? parseDateOnly(snap.startDate)
         : plan.startDate;
     const resolvedWeek = week ?? this.currentWeek(start, tehranToday());
-    const phase = this.pickPhase(snap.phases, resolvedWeek);
+
+    // union phases را قبل از pickPhase جدا کن تا TS درست infer کند
+    const phase = isWorkout
+      ? this.pickPhase((snap as WorkoutSnapshot).phases, resolvedWeek)
+      : this.pickPhase((snap as DietSnapshot).phases, resolvedWeek);
 
     const outline = snap.phases.map((p) => ({
       title: p.title,
@@ -469,11 +453,11 @@ export class UserPlanService {
       outline,
       phase: phase
         ? {
-            title: phase.title,
-            startWeek: phase.startWeek,
-            endWeek: phase.endWeek,
-            days: phase.days,
-          }
+          title: phase.title,
+          startWeek: phase.startWeek,
+          endWeek: phase.endWeek,
+          days: phase.days,
+        }
         : null,
     };
   }
@@ -633,9 +617,9 @@ export class UserPlanService {
       },
     });
     if (!plan) throw new NotFoundException('برنامه یافت نشد');
-    if (plan.status !== 'DRAFT') {
-      throw new ConflictException('فقط پیش‌نویس قابل ویرایش است');
-    }
+    // if (plan.status !== 'DRAFT') {
+    //   throw new ConflictException('فقط پیش‌نویس قابل ویرایش است');
+    // }
 
     const data: {
       snapshotExercise?: unknown;
