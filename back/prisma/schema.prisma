@@ -573,7 +573,6 @@ model UserPlan {
   startDate    DateTime? @map("start_date") @db.Date
   endDate      DateTime? @map("end_date") @db.Date
   activatedAt  DateTime? @map("activated_at")
-  customizedAt DateTime  @map("customized_at")
   createdAt    DateTime  @default(now()) @map("created_at")
   updatedAt    DateTime  @updatedAt @map("updated_at")
 
