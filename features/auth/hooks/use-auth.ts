@@ -2,61 +2,101 @@
 
 import { useEffect, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
-import { getMyProfile, isLoggedIn, logoutRequest } from "@/lib/api/auth";
+import { getMyProfile, logoutRequest } from "@/lib/api/auth";
 import { mapProfileResponseToUser } from "@/lib/api/mappers/user";
 import { useUserStore } from "@/lib/store/user-store";
-import { getAccessToken, setAccessToken } from "@/lib/api/client";
+import { getAccessToken } from "@/lib/api/client";
+import {
+  clearClientSession,
+  loginPathForReason,
+  resolveSessionAction,
+} from "@/features/auth/session-gate";
 
 export const PROFILE_QUERY_KEY = ["auth", "me"] as const;
 
 export function useAuthHydration() {
   const setAuthFromBackend = useUserStore((s) => s.setAuthFromBackend);
-  const logout = useUserStore((s) => s.logout);
-  const setHasHydrated = useUserStore((s) => s.setHasHydrated);
   const hasHydrated = useUserStore((s) => s._hasHydrated);
   const queryClient = useQueryClient();
-  const didInit = useRef(false);
+  const router = useRouter();
+  const pathname = usePathname();
+  const prevRoleRef = useRef<string | null>(null);
+  const pathnameRef = useRef(pathname);
 
-  const { data, isError, isFetched } = useQuery({
+  useEffect(() => {
+    pathnameRef.current = pathname;
+  }, [pathname]);
+
+  const token = typeof window !== "undefined" ? getAccessToken() : null;
+
+  const { data, isError, isFetched, refetch } = useQuery({
     queryKey: PROFILE_QUERY_KEY,
     queryFn: getMyProfile,
-    enabled: isLoggedIn() && hasHydrated,
+    enabled: Boolean(hasHydrated && token),
     retry: false,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 8_000,
+    refetchInterval: 10_000,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
   });
 
   useEffect(() => {
-    if (!hasHydrated || didInit.current) return;
+    if (!hasHydrated || !token) return;
+    const bounce = () => {
+      if (document.visibilityState === "visible") void refetch();
+    };
+    document.addEventListener("visibilitychange", bounce);
+    window.addEventListener("focus", bounce);
+    return () => {
+      document.removeEventListener("visibilitychange", bounce);
+      window.removeEventListener("focus", bounce);
+    };
+  }, [hasHydrated, token, refetch]);
 
-    if (!getAccessToken()) {
-      setHasHydrated(true);
-      didInit.current = true;
-      return;
-    }
-
+  useEffect(() => {
+    if (!hasHydrated) return;
+    if (!getAccessToken()) return;
     if (!isFetched) return;
 
-    didInit.current = true;
-
     if (isError || !data) {
-      setAccessToken(null);
-      logout();
+      clearClientSession();
       queryClient.removeQueries({ queryKey: PROFILE_QUERY_KEY });
+      router.replace(loginPathForReason("session"));
       return;
     }
 
-    setAuthFromBackend(mapProfileResponseToUser(data));
+    const mapped = mapProfileResponseToUser(data);
+    const previousRole = prevRoleRef.current;
+    const action = resolveSessionAction({
+      user: mapped,
+      previousRole,
+      pathname: pathnameRef.current,
+    });
+
+    prevRoleRef.current = mapped.role;
+
+    if (action.type === "logout") {
+      clearClientSession();
+      queryClient.removeQueries({ queryKey: PROFILE_QUERY_KEY });
+      router.replace(loginPathForReason(action.reason));
+      return;
+    }
+
+    setAuthFromBackend(mapped);
+
+    if (action.type === "redirect") {
+      router.replace(action.href);
+    }
   }, [
     hasHydrated,
     isFetched,
     isError,
     data,
     setAuthFromBackend,
-    logout,
-    setHasHydrated,
     queryClient,
+    router,
   ]);
 }
 

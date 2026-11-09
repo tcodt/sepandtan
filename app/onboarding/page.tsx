@@ -4,6 +4,33 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { OnboardingWizard } from "@/components/onboarding/onboarding-wizard";
 import { useRequireAuth } from "@/hooks/use-require-auth";
+import { useUserStore } from "@/lib/store/user-store";
+import { getRoleMismatchRedirect } from "@/features/onboarding/utils";
+
+export function OnboardingRouteGuard({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const router = useRouter();
+  const user = useUserStore((s) => s.user);
+
+  useEffect(() => {
+    if (!user) return;
+    const href = getRoleMismatchRedirect(user, "/onboarding");
+    if (href) router.replace(href);
+  }, [user, router]);
+
+  // seller/coach/admin اصلاً UI آنبوردینگ را نبینند
+  if (user && user.role !== "trainee") {
+    return null;
+  }
+  if (user?.professionalRoleLock === "seller") {
+    return null;
+  }
+
+  return <>{children}</>;
+}
 
 export default function OnboardingPage() {
   const router = useRouter();
@@ -42,5 +69,9 @@ export default function OnboardingPage() {
     return null;
   }
 
-  return <OnboardingWizard />;
+  return (
+    <OnboardingRouteGuard>
+      <OnboardingWizard />
+    </OnboardingRouteGuard>
+  );
 }

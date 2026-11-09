@@ -510,7 +510,7 @@ export default function AdminStoresPage() {
         {
           storeId: store.id,
           source: store.source,
-          ownerId: store.ownerId,
+          ownerId: store.ownerId ?? null,
           payload: {
             status: nextStatus,
             statusReason: statusReason ?? null,
@@ -538,10 +538,9 @@ export default function AdminStoresPage() {
       return;
     }
 
-    // approve branch
     if (!pending.store.ownerId) {
       toast.error(
-        "شناسه مالک (ownerId) در این ردیف نیست؛ بعد از تأیید ممکن است نقش در Users عوض نشود.",
+        "شناسه مالک (ownerId) در این ردیف نیست؛ نقش در Users ممکن است عوض نشود.",
       );
     }
     handleUpdate(pending.store, "APPROVED");

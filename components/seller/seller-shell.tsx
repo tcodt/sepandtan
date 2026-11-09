@@ -19,6 +19,7 @@ import {
   Moon,
   X,
   ShieldCheck,
+  Truck,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -51,6 +52,7 @@ const navItems = [
   { href: "/seller", label: "نمای کلی", icon: LayoutDashboard },
   { href: "/seller/products", label: "محصولات", icon: Package },
   { href: "/seller/orders", label: "سفارش‌ها", icon: ShoppingBag },
+  { href: "/seller/shipping", label: "ارسال", icon: Truck },
   { href: "/", label: "صفحه اصلی", icon: House },
   { href: "/account", label: "حساب کاربری", icon: User },
 ] as const;
@@ -349,7 +351,7 @@ export function SellerShell({ children }: { children: React.ReactNode }) {
               <div
                 className={cn(
                   "min-h-0 flex-1 overflow-y-auto",
-                  "[scrollbar-width:thin] [scrollbar-color:transparent_transparent]",
+                  "scrollbar-thin [scrollbar-color:transparent_transparent]",
                   "hover:[scrollbar-color:rgba(148,163,184,0.35)_transparent]",
                   "[&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar]:bg-transparent",
                   "[&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-transparent",

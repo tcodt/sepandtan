@@ -1,6 +1,17 @@
 import type { PaginationMeta } from "@/features/catalog/types";
 
-export type ProductStatus = "PENDING" | "APPROVED" | "REJECTED" | string;
+/** مطابق query status در GET /products/ADMIN */
+export type BackendProductStatus =
+  | "DRAFT"
+  | "PENDING"
+  | "ACTIVE"
+  | "REJECTED"
+  | "INACTIVE"
+  | "OUT_OF_STOCK"
+  | "DELETED"
+  | "BANNED";
+
+export type ProductStatus = BackendProductStatus | "APPROVED" | string;
 
 export type ProductTable = {
   headers: string[];
@@ -41,24 +52,28 @@ export type ProductListResponse = {
   products: ProductListItem[];
 };
 
+/** مطابق enum swagger GET /products ?sort= */
+export type ProductSort =
+  | "price_asc"
+  | "price_desc"
+  | "newest"
+  | "oldest"
+  | "popular"
+  | "rating";
+
 export type ProductListFilters = {
+  /** معمولاً categoryId یا slug — با بک‌اند یکی کنید */
   category?: string;
   seller?: string;
   minPrice?: number;
   maxPrice?: number;
-  sort?:
-    | "price_asc"
-    | "price_desc"
-    | "newest"
-    | "oldest"
-    | "popular"
-    | "rating";
+  sort?: ProductSort;
   page?: number;
   limit?: number;
 };
 
 export type AdminProductFilters = {
-  status?: ProductStatus | "ALL";
+  status?: BackendProductStatus | "all" | "ALL";
   featured?: boolean;
   discountId?: string;
   search?: string;

@@ -251,10 +251,19 @@ export async function fetchAdminStores(
 }
 
 /**
- * ۱) وضعیت درخواست/فروشگاه
- * ۲) در صورت APPROVED → ارتقای role کاربر به STORE (PUT /user/{ownerId})
- *    چون PATCH فقط status درخواست را عوض می‌کند، نه role.
+ * ۱) وضعیت درخواست/فروشگاه (PATCH یا PUT)
+ * ۲) APPROVED → role = STORE
+ * ۳) REJECTED → role = USER  (تا /seller بسته شود)
+ *
+ * swagger:
+ *   PATCH /user/store/{storeId}  body: UpdateStoreByAdminDto
+ *   PUT   /user/{id}             body: UpdateUserDto { role }
  */
+export type UpdateStoreByAdminResult = {
+  roleSynced: boolean;
+  ownerId: string | null;
+};
+
 export async function updateStoreByAdmin(
   storeId: string,
   payload: UpdateStoreByAdminPayload,
@@ -262,9 +271,9 @@ export async function updateStoreByAdmin(
     source?: "store" | "request";
     ownerId?: string | null;
   },
-): Promise<void> {
+): Promise<UpdateStoreByAdminResult> {
   if (!storeId?.trim()) {
-    throw new Error("شناسه فروشگاه نامعتبر است — تأیید ممکن نیست");
+    throw new Error("شناسه فروشگاه نامعتبر است");
   }
 
   const source = options?.source ?? "request";
@@ -276,29 +285,34 @@ export async function updateStoreByAdmin(
       statusReason: payload.statusReason ?? null,
       ...(payload.status === "APPROVED"
         ? { isActive: true, isVerified: true }
-        : {}),
+        : payload.status === "REJECTED"
+          ? { isActive: false, isVerified: false }
+          : {}),
     });
   } else {
-    // PATCH /user/store/{storeId} — UpdateStoreByAdminDto
     await apiClient.patch(`/user/store/${storeId}`, {
       status: payload.status,
       statusReason: payload.statusReason ?? null,
     });
   }
 
-  // ارتقای نقش — ضروری برای دیده شدن در admin/users به‌عنوان STORE
   if (payload.status === "APPROVED") {
     if (!ownerId) {
       throw new Error(
-        "درخواست فروشگاه تأیید شد ولی شناسه کاربر (ownerId) پیدا نشد؛ نقش به‌صورت STORE ست نشد. از Users نقش را دستی STORE کنید یا پاسخ API لیست را چک کنید.",
+        "تأیید شد ولی ownerId پیدا نشد؛ نقش STORE ست نشد. از Users نقش را دستی STORE کنید.",
       );
     }
     await updateAdminUser(ownerId, { role: "STORE" });
+    return { roleSynced: true, ownerId };
   }
 
-  // رد درخواست معمولاً نقش را برنمی‌گرداند مگر سیاست محصول بگوید USER شود
-  // اگر لازم بود:
-  // if (payload.status === "REJECTED" && ownerId) {
-  //   await updateAdminUser(ownerId, { role: "USER" });
-  // }
+  if (payload.status === "REJECTED") {
+    if (!ownerId) {
+      return { roleSynced: false, ownerId: null };
+    }
+    await updateAdminUser(ownerId, { role: "USER" });
+    return { roleSynced: true, ownerId };
+  }
+
+  return { roleSynced: false, ownerId };
 }

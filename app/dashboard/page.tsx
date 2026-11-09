@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { useRequireAuth } from "@/hooks/use-require-auth";
+import { getRoleMismatchRedirect } from "@/features/onboarding/utils";
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -15,6 +16,12 @@ export default function DashboardPage() {
     blockPending: true,
     onlyTrainee: true, // اختیاری ولی واضح‌تر
   });
+
+  useEffect(() => {
+    if (!user) return;
+    const href = getRoleMismatchRedirect(user, "/dashboard");
+    if (href) router.replace(href);
+  }, [user, router]);
 
   useEffect(() => {
     if (isLoading || !isAuthenticated) return;

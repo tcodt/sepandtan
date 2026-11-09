@@ -704,16 +704,55 @@ export default function AdminUsersPage() {
       const currentLabel = ROLE_LABEL[user.role] ?? user.role;
       const nextLabel = ROLE_LABEL[newRole] ?? newRole;
 
+      const isDemoteStore = user.role === "STORE" && newRole === "USER";
+      const isPromoteStore = newRole === "STORE";
+      const isPromoteCoach = newRole === "COACH";
+      const isDemoteCoach = user.role === "COACH" && newRole === "USER";
+
+      const intent: ConfirmIntent =
+        isDemoteStore || isDemoteCoach ? "warning" : "primary";
+
       setConfirm({
         title: "تغییر نقش کاربر",
         description: (
-          <>
-            نقش «{user.name}» از «{currentLabel}» به «{nextLabel}» تغییر می‌کند.
-            آیا ادامه می‌دهید؟
-          </>
+          <span className="space-y-2 block">
+            <span className="block">
+              نقش «{user.name}» از{" "}
+              <strong className="text-foreground">{currentLabel}</strong> به{" "}
+              <strong className="text-foreground">{nextLabel}</strong> تغییر
+              می‌کند.
+            </span>
+
+            {isDemoteStore && (
+              <span className="block rounded-lg border border-amber-500/25 bg-amber-500/10 px-2.5 py-2 text-xs text-amber-900 dark:text-amber-100">
+                دسترسی پنل فروشنده پس از همگام‌سازی پروفایل قطع می‌شود. کاربر
+                نباید به onboarding تناسب‌اندام برود (قفل فروشنده حفظ می‌شود).
+              </span>
+            )}
+
+            {isPromoteStore && (
+              <span className="block rounded-lg border border-emerald-500/25 bg-emerald-500/10 px-2.5 py-2 text-xs text-emerald-900 dark:text-emerald-100">
+                اگر کاربر آنلاین باشد و روی onboarding یا dashboard باشد، به
+                مسیر <span className="font-mono">/seller</span> هدایت می‌شود.
+              </span>
+            )}
+
+            {isDemoteCoach && (
+              <span className="block rounded-lg border border-amber-500/25 bg-amber-500/10 px-2.5 py-2 text-xs text-amber-900 dark:text-amber-100">
+                دسترسی پنل مربی قطع می‌شود. قفل مربی برای جلوگیری از تبدیل به
+                فروشنده حفظ می‌شود.
+              </span>
+            )}
+
+            {isPromoteCoach && (
+              <span className="block rounded-lg border border-sky-500/25 bg-sky-500/10 px-2.5 py-2 text-xs text-sky-900 dark:text-sky-100">
+                کاربر به‌عنوان مربی علامت‌گذاری می‌شود (قفل coach).
+              </span>
+            )}
+          </span>
         ),
-        confirmLabel: "تغییر نقش",
-        intent: "primary",
+        confirmLabel: "ثبت نقش",
+        intent,
         icon: Shield,
         action: async () => {
           await updateMutation.mutateAsync(
@@ -721,8 +760,27 @@ export default function AdminUsersPage() {
             {
               onSuccess: () => {
                 const nextLock = lockFromRole(newRole);
-                if (nextLock) rememberAdminRoleLock(user.id, nextLock);
-                toast.success("نقش کاربر به‌روزرسانی شد");
+                // STORE / COACH → قفل دائمی مسیر
+                if (nextLock) {
+                  rememberAdminRoleLock(user.id, nextLock);
+                }
+                // demote به USER: قفل قبلی را پاک نکن (coach ⟂ seller)
+
+                if (isDemoteStore) {
+                  toast.success(
+                    "نقش USER شد — پنل فروشنده برای کاربر بسته می‌شود",
+                  );
+                } else if (isPromoteStore) {
+                  toast.success(
+                    "نقش STORE شد — کاربر به پنل فروشنده منتقل می‌شود",
+                  );
+                } else if (isPromoteCoach) {
+                  toast.success("نقش مربی ثبت شد");
+                } else if (isDemoteCoach) {
+                  toast.success("نقش USER شد — دسترسی مربی قطع می‌شود");
+                } else {
+                  toast.success("نقش کاربر به‌روزرسانی شد");
+                }
               },
             },
           );
@@ -757,12 +815,36 @@ export default function AdminUsersPage() {
       setConfirm({
         title: "تغییر وضعیت حساب",
         description: (
-          <>
-            وضعیت «{user.name}» از «{currentLabel}» به «{nextLabel}» تغییر
-            می‌کند. آیا ادامه می‌دهید؟
-          </>
+          <span className="space-y-2 block">
+            <span className="block">
+              وضعیت «{user.name}» از «{currentLabel}» به «{nextLabel}» تغییر
+              می‌کند.
+            </span>
+            {newStatus === "SUSPENDED" && (
+              <span className="block rounded-lg border border-amber-500/25 bg-amber-500/10 px-2.5 py-2 text-xs text-amber-900 dark:text-amber-100">
+                با همگام‌سازی پروفایل، کاربر از همه پنل‌ها خارج و به صفحه ورود
+                با پیام تعلیق هدایت می‌شود.
+              </span>
+            )}
+            {newStatus === "ACTIVE" && (
+              <span className="block text-xs text-muted-foreground">
+                حساب دوباره قابل ورود خواهد بود.
+              </span>
+            )}
+            {newStatus === "DELETED" && (
+              <span className="block rounded-lg border border-destructive/20 bg-destructive/10 px-2.5 py-2 text-xs text-destructive">
+                حذف منطقی: رکورد می‌ماند ولی ورود معمولاً مسدود است. برای حذف
+                فیزیکی از «حذف دائم» استفاده کنید.
+              </span>
+            )}
+          </span>
         ),
-        confirmLabel: "تغییر وضعیت",
+        confirmLabel:
+          newStatus === "SUSPENDED"
+            ? "تعلیق"
+            : newStatus === "ACTIVE"
+              ? "فعال‌سازی"
+              : "ثبت وضعیت",
         intent,
         icon,
         action: async () => {
@@ -770,7 +852,13 @@ export default function AdminUsersPage() {
             { id: user.id, payload: { status: newStatus } },
             {
               onSuccess: () => {
-                toast.success("وضعیت کاربر به‌روزرسانی شد");
+                if (newStatus === "SUSPENDED") {
+                  toast.success("حساب معلق شد");
+                } else if (newStatus === "ACTIVE") {
+                  toast.success("حساب فعال شد");
+                } else {
+                  toast.success("وضعیت کاربر به‌روزرسانی شد");
+                }
               },
             },
           );

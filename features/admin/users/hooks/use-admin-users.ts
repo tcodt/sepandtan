@@ -18,6 +18,7 @@ import type {
   UpdateAdminUserPayload,
 } from "../types";
 import { getErrorMessage } from "@/lib/api/client";
+import { rememberAdminRoleLock } from "@/lib/role-lock";
 
 export const adminUsersKeys = {
   all: ["admin", "users"] as const,
@@ -77,9 +78,21 @@ export function useUpdateAdminUser() {
               u.id === id
                 ? ({
                     ...u,
-                    ...payload,
-                    // password را در UI نگه نمی‌داریم
-                    ...(payload.password ? {} : {}),
+                    ...(payload.name !== undefined
+                      ? { name: payload.name }
+                      : {}),
+                    ...(payload.email !== undefined
+                      ? { email: payload.email }
+                      : {}),
+                    ...(payload.phone !== undefined
+                      ? { phone: payload.phone }
+                      : {}),
+                    ...(payload.role !== undefined
+                      ? { role: payload.role }
+                      : {}),
+                    ...(payload.status !== undefined
+                      ? { status: payload.status }
+                      : {}),
                   } as AdminUser)
                 : u,
             ),
@@ -97,8 +110,32 @@ export function useUpdateAdminUser() {
       toast.error(getErrorMessage(error, "به‌روزرسانی ناموفق بود"));
     },
 
-    onSuccess: () => {
-      toast.success("کاربر به‌روزرسانی شد");
+    onSuccess: (_data, vars) => {
+      const { id, payload } = vars;
+
+      // قفل مسیر تخصصی — مطابق قوانین پروژه
+      if (payload.role === "STORE") {
+        rememberAdminRoleLock(id, "seller");
+        toast.success(
+          "نقش فروشنده ثبت شد. کاربر حداکثر چند ثانیه دیگر به /seller هدایت می‌شود (اگر آنلاین باشد).",
+        );
+      } else if (payload.role === "COACH") {
+        rememberAdminRoleLock(id, "coach");
+        toast.success("نقش مربی ثبت شد.");
+      } else if (payload.role === "USER") {
+        // قفل قبلی را پاک نمی‌کنیم — coach ⟂ seller دائمی است
+        toast.success(
+          "نقش کاربر عادی شد. اگر فروشنده بود، پنل /seller برایش بسته می‌شود.",
+        );
+      } else if (payload.status === "SUSPENDED") {
+        toast.success("حساب معلق شد. با رفرش پروفایل از پنل‌ها خارج می‌شود.");
+      } else if (payload.status === "ACTIVE") {
+        toast.success("حساب دوباره فعال شد.");
+      } else if (payload.status === "DELETED") {
+        toast.success("وضعیت حذف منطقی ثبت شد.");
+      } else {
+        toast.success("کاربر به‌روزرسانی شد");
+      }
     },
 
     onSettled: () => {

@@ -43,23 +43,35 @@ export function useUpdateStoreByAdmin() {
         ownerId,
       }),
 
-    onSuccess: async (_data, vars) => {
+    onSuccess: async (data, vars) => {
       const status = vars.payload.status;
+      const ownerId = vars.ownerId?.trim() || null;
+      const roleSynced = data?.roleSynced === true;
 
       if (status === "APPROVED") {
-        toast.success("فروشنده تأیید شد و نقش کاربر به STORE تغییر کرد");
-        if (vars.ownerId) {
-          rememberAdminRoleLock(vars.ownerId, "seller");
-        }
+        if (ownerId) rememberAdminRoleLock(ownerId, "seller");
+        toast.success("فروشنده تأیید شد — نقش STORE و قفل seller ثبت شد");
       } else if (status === "REJECTED") {
-        toast.success("درخواست فروشنده رد شد");
+        // قفل seller می‌ماند (نمی‌تواند coach شود)
+        if (ownerId) rememberAdminRoleLock(ownerId, "seller");
+
+        if (roleSynced) {
+          toast.success(
+            "رد شد — نقش USER شد؛ پنل فروشنده پس از همگام‌سازی پروفایل بسته می‌شود",
+          );
+        } else if (ownerId) {
+          toast.success("رد شد — قفل seller ثبت شد");
+        } else {
+          toast.success(
+            "رد شد. ownerId نبود؛ نقش را از Users روی USER بگذارید",
+          );
+        }
       } else {
         toast.success("وضعیت به‌روزرسانی شد");
       }
 
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: adminStoresKeys.all }),
-        // لیست کاربران باید نقش جدید را ببیند
         queryClient.invalidateQueries({ queryKey: adminUsersKeys.all }),
       ]);
     },
