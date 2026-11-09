@@ -26,18 +26,36 @@ export class EquipmentService {
 
     // ---------- Public ----------
 
-    async getAll(query: QueryDefaultDto) {
+    async getMy(userId: string) {
+        return this.prisma.profile.findUnique({
+            where: { userId: userId }, select: {
+                equipment: {
+                    select: {
+                        id: true,
+                        slug: true,
+                        image: true,
+                        title: true,
+                    }
+                }
+            }
+        })
+    }
+
+    async getAll(title: string, query: QueryDefaultDto) {
         const { limit, page = 1 } = query;
         const limitPage = this.getLimit(limit);
         const skip = (Math.max(1, Number(page)) - 1) * limitPage;
-
+        const where = {
+            ...(title?.trim() && { title: { contains: title.trim(), mode: 'insensitive' as const } }),
+        };
         const [data, count] = await Promise.all([
             this.prisma.equipment.findMany({
+                where,
                 skip,
                 take: limitPage,
                 orderBy: { title: 'asc' },
             }),
-            this.prisma.equipment.count(),
+            this.prisma.equipment.count({ where }),
         ]);
 
         return {
@@ -46,8 +64,12 @@ export class EquipmentService {
         };
     }
 
-    async getSelector() {
+    async getSelector(title: string) {
+        const where = {
+            ...(title?.trim() && { title: { contains: title.trim(), mode: 'insensitive' as const } }),
+        };
         return this.prisma.equipment.findMany({
+            where,
             select: { id: true, title: true, image: true },
             orderBy: { title: 'asc' },
         });

@@ -11,7 +11,7 @@ import { randomBytes } from 'crypto';
 
 @Injectable()
 export class ServiceOrderService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   private d(n: number | string | Prisma.Decimal) {
     return new Prisma.Decimal(n);
@@ -135,9 +135,7 @@ export class ServiceOrderService {
     if (payable.lt(0)) payable = this.d(0);
 
     // کمیسیون: از Coach.commissionRate یا PlanRequest.commissionRate
-    let commissionRate = this.d(
-      req.commissionRate ?? req.coach.commissionRate ?? 0,
-    );
+    let commissionRate = this.d(req.coach.commissionRate);
     // اگر کد COMMISSION جدا خواستی اینجا rate را کم کن
 
     const taxRate = this.d(0); // در صورت نیاز از config
@@ -605,10 +603,10 @@ export class ServiceOrderService {
 
       const subscription = await tx.subscription.create({
         data: {
-          pricePaid:payable,
+          pricePaid: payable,
           userId,
           planId: plan.id,
-          status:'PENDING'
+          status: 'PENDING'
           // status: PENDING یا فیلدهای خودت
         },
       });

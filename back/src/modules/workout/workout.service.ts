@@ -17,7 +17,12 @@ import {
   UpdateWorkoutDayDto,
   CreateWorkoutExerciseDto,
   UpdateWorkoutExerciseDto,
+  SortOptionWorkoutPlan,
+  SearchWorkOutUser,
+  SearchWorkOutCoach,
+  SearchWorkOutAdmin,
 } from './dto/workout.dto.js';
+import { Prisma } from '../../generated/prisma/client.js';
 
 @Injectable()
 export class WorkoutService {
@@ -26,10 +31,39 @@ export class WorkoutService {
     private readonly configService: ConfigService,
   ) { }
 
+  private buildPlanOrderBy(
+    sortBy: SortOptionWorkoutPlan,
+  ): Prisma.WorkoutPlanOrderByWithRelationInput {
+    switch (sortBy) {
+      case SortOptionWorkoutPlan.OLDEST:
+        return { createdAt: 'asc' }
+      case SortOptionWorkoutPlan.NEWEST:
+        return { createdAt: 'desc' }
+      case SortOptionWorkoutPlan.MORE_PRICE:
+        return {
+          price: 'desc'
+        }
+      case SortOptionWorkoutPlan.LOW_PRICE:
+        return {
+          price: 'asc'
+        }
+      case SortOptionWorkoutPlan.MORE_RATE:
+        return {
+          avgRating: 'desc'
+        }
+      case SortOptionWorkoutPlan.LOW_RATE:
+        return {
+          avgRating: 'asc'
+        }
+      default:
+        return { createdAt: 'desc' }
+    }
+  }
+
   private getLimit(limit?: number) {
     return Math.max(
       1,
-      Number(limit) || Number(this.configService.get('limit.coach')) || 10,
+      Number(limit) || Number(this.configService.get('limit.workout')) || 10,
     );
   }
 
@@ -59,7 +93,32 @@ export class WorkoutService {
       experienceLevel: true,
       trainingLocation: true,
       trainingDaysPerWeek: true,
+      updatedAt: true,
+      dietPlan: { select: { id: true, title: true } },
       coach: { select: { id: true, title: true, slug: true } },
+      trainingGoal: { select: { id: true, title: true, logo: true } },
+    } as const;
+  }
+
+  private planSummarySelectCoach() {
+    return {
+      id: true,
+      title: true,
+      description: true,
+      coverImage: true,
+      price: true,
+      discountPrice: true,
+      discountExpired: true,
+      durationWeeks: true,
+      avgRating: true,
+      countRating: true,
+      isPublished: true,
+      gender: true,
+      experienceLevel: true,
+      trainingLocation: true,
+      trainingDaysPerWeek: true,
+      updatedAt: true,
+      dietPlan: { select: { id: true, title: true } },
       trainingGoal: { select: { id: true, title: true, logo: true } },
     } as const;
   }
@@ -74,9 +133,6 @@ export class WorkoutService {
               id: true,
               title: true,
               slug: true,
-              gif: true,
-              video: true,
-              level: true,
             },
           },
         },
@@ -111,18 +167,22 @@ export class WorkoutService {
 
   // ─── Public ───
 
-  async getPlans(query: QueryDefaultDto) {
-    const page = Math.max(1, Number(query.page) || 1);
-    const limitPage = this.getLimit(query.limit);
+  async getPlans(query: SearchWorkOutUser) {
+    const { gender, limit, page = 1, sortBy, title } = query
+    const limitPage = this.getLimit(limit);
     const skip = (page - 1) * limitPage;
-    const where = { isPublished: true };
-
+    const where = {
+      isPublished: true,
+      ...(gender && gender !== undefined && { gender }),
+      ...(title && title !== undefined && { title: { contains: title, mode: 'insensitive' as const } }),
+    };
+    const orderBy = this.buildPlanOrderBy(sortBy ?? SortOptionWorkoutPlan.MORE_RATE)
     const [data, count] = await Promise.all([
       this.prisma.workoutPlan.findMany({
         where,
         skip,
         take: limitPage,
-        orderBy: [{ avgRating: 'desc' }, { createdAt: 'desc' }],
+        orderBy: [orderBy, { createdAt: 'desc' }],
         select: this.planSummarySelect(),
       }),
       this.prisma.workoutPlan.count({ where }),
@@ -138,12 +198,13 @@ export class WorkoutService {
     const plan = await this.prisma.workoutPlan.findUnique({
       where: { id },
       select: {
+        _count: { select: { workoutPhases: true, days: true } },
         ...this.planSummarySelect(),
         note: true,
         minAge: true,
         maxAge: true,
         source: true,
-        requiredEquipment: true,
+        equipment: true,
         activityLevel: true,
         coachId: true,
         dietPlanId: true,
@@ -165,7 +226,28 @@ export class WorkoutService {
                 title: true,
                 isRestDay: true,
                 notes: true,
-                ...this.dayExerciseInclude(),
+                exercises: {
+                  select: {
+                    id: true,
+                    sets: true,
+                    order: true,
+                    reps: true,
+                    durationSec: true,
+                    notes: true,
+                    restSec: true,
+                    exercise: {
+                      select: {
+                        id: true,
+                        title: true,
+                        slug: true,
+                        level: true,
+                        coverImg: true
+                      },
+                    },
+                  },
+                  take: 3,
+                  orderBy: { order: 'asc' as const },
+                },
               },
             },
           },
@@ -181,12 +263,12 @@ export class WorkoutService {
     const plan = await this.prisma.workoutPlan.findUnique({
       where: { id },
       select: {
-        ...this.planSummarySelect(),
+        ...this.planSummarySelectCoach(),
         note: true,
         minAge: true,
         maxAge: true,
         source: true,
-        requiredEquipment: true,
+        equipment: true,
         activityLevel: true,
         coachId: true,
         dietPlanId: true,
@@ -199,18 +281,7 @@ export class WorkoutService {
             title: true,
             startWeek: true,
             endWeek: true,
-            order: true,
-            days: {
-              orderBy: { weekday: 'asc' },
-              select: {
-                id: true,
-                weekday: true,
-                title: true,
-                isRestDay: true,
-                notes: true,
-                ...this.dayExerciseInclude(),
-              },
-            },
+            order: true
           },
         },
       },
@@ -219,20 +290,26 @@ export class WorkoutService {
     return plan;
   }
 
-  async getMyPlans(userId: string, query: QueryDefaultDto) {
+  async getMyPlans(userId: string, query: SearchWorkOutCoach) {
+    const { gender, limit, page = 1, sortBy, title, isPublished } = query
     const coachId = await this.resolveCoachId(userId);
-    const page = Math.max(1, Number(query.page) || 1);
-    const limitPage = this.getLimit(query.limit);
+    const limitPage = this.getLimit(limit);
     const skip = (page - 1) * limitPage;
-    const where = { coachId };
+    const where = {
+      coachId,
+      ...(isPublished !== undefined && { isPublished }),
+      ...(gender && gender !== undefined && { gender }),
+      ...(title && title !== undefined && { title: { contains: title, mode: 'insensitive' as const } })
+    }
 
+    const orderBy = this.buildPlanOrderBy(sortBy ?? SortOptionWorkoutPlan.NEWEST)
     const [data, count] = await Promise.all([
       this.prisma.workoutPlan.findMany({
         where,
         skip,
         take: limitPage,
-        orderBy: { updatedAt: 'desc' },
-        select: this.planSummarySelect(),
+        orderBy: orderBy,
+        select: this.planSummarySelectCoach(),
       }),
       this.prisma.workoutPlan.count({ where }),
     ]);
@@ -243,16 +320,47 @@ export class WorkoutService {
     };
   }
 
+  async getAdminPlans(query: SearchWorkOutAdmin) {
+    const { gender, limit, page = 1, sortBy, title, source, isPublished, coachId } = query
+    const limitPage = this.getLimit(limit);
+    const skip = (page - 1) * limitPage;
+    const where = {
+      ...(coachId && coachId !== undefined && { coachId }),
+      ...(isPublished !== undefined && { isPublished }),
+      ...(gender && gender !== undefined && { gender }),
+      ...(source && source !== undefined && { source }),
+      ...(title && title !== undefined && { title: { contains: title, mode: 'insensitive' as const } })
+    }
+    const orderBy = this.buildPlanOrderBy(sortBy ?? SortOptionWorkoutPlan.NEWEST)
+    const [data, count] = await Promise.all([
+      this.prisma.workoutPlan.findMany({
+        where,
+        skip,
+        take: limitPage,
+        orderBy: orderBy,
+        select: this.planSummarySelect(),
+      }),
+      this.prisma.workoutPlan.count({ where }),
+    ]);
+    return {
+      workoutPlans: data,
+      pagination: pagination(count, page, limitPage),
+    };
+  }
+
   async createPlan(userId: string, dto: CreateWorkoutPlanDto) {
     const coachId = await this.resolveCoachId(userId);
-    return this.prisma.workoutPlan.create({
+    await this.prisma.workoutPlan.create({
       data: {
         ...dto,
         coachId,
         isPublished: false,
+        ...(dto.equipmentIds?.length && {
+          equipment: { connect: dto.equipmentIds.map((id) => ({ id })) },
+        })
       },
-      select: this.planSummarySelect(),
     });
+    return { success: true }
   }
 
   async updatePlan(userId: string, id: string, dto: UpdateWorkoutPlanDto) {
@@ -271,11 +379,12 @@ export class WorkoutService {
       }
     }
 
-    return this.prisma.workoutPlan.update({
+    await this.prisma.workoutPlan.update({
       where: { id },
       data: dto,
       select: this.planSummarySelect(),
     });
+    return { success: true };
   }
 
   async deletePlan(userId: string, id: string) {
@@ -292,11 +401,12 @@ export class WorkoutService {
     });
     if (!plan) throw new NotFoundException('برنامه یافت نشد');
 
-    return this.prisma.workoutPlan.update({
+    const data = await this.prisma.workoutPlan.update({
       where: { id },
       data: { isPublished: !plan.isPublished },
       select: { id: true, isPublished: true },
     });
+    return { success: true, message: !data.isPublished ? 'انتشار برنامه متوقف شد' : 'برنامه منتشر شد' }
   }
 
   private async checkPlanOwner(userId: string, planId: string) {
@@ -310,6 +420,31 @@ export class WorkoutService {
   }
 
   // ─── Phase ───
+  async getPhase(id: string) {
+    return this.prisma.workoutPhase.findUnique({
+      where: {
+        id
+      },
+      select: {
+        id: true,
+        title: true,
+        startWeek: true,
+        endWeek: true,
+        order: true,
+        days: {
+          orderBy: { weekday: 'asc' },
+          select: {
+            id: true,
+            weekday: true,
+            title: true,
+            isRestDay: true,
+            notes: true,
+            ...this.dayExerciseInclude(),
+          },
+        },
+      }
+    })
+  }
 
   async addPhase(userId: string, planId: string, dto: CreateWorkoutPhaseDto) {
     const plan = await this.checkPlanOwner(userId, planId);
@@ -331,7 +466,7 @@ export class WorkoutService {
     }
 
     try {
-      return await this.prisma.workoutPhase.create({
+      await this.prisma.workoutPhase.create({
         data: {
           planId,
           title: dto.title,
@@ -340,6 +475,7 @@ export class WorkoutService {
           order: dto.order ?? dto.startWeek,
         },
       });
+      return { success: true };
     } catch (e: any) {
       if (e?.code === 'P2002') {
         throw new ConflictException('فاز تکراری برای این startWeek');
@@ -369,10 +505,11 @@ export class WorkoutService {
       }
     }
 
-    return this.prisma.workoutPhase.update({
+    await this.prisma.workoutPhase.update({
       where: { id: phaseId },
       data: dto,
     });
+    return { success: true };
   }
 
   async deletePhase(userId: string, phaseId: string) {
@@ -414,7 +551,7 @@ export class WorkoutService {
     if (!phase) throw new BadRequestException('فاز به این برنامه تعلق ندارد');
 
     try {
-      return await this.prisma.workoutDay.create({
+      await this.prisma.workoutDay.create({
         data: {
           planId,
           workoutPhaseId: dto.workoutPhaseId,
@@ -424,6 +561,7 @@ export class WorkoutService {
           notes: dto.notes,
         },
       });
+      return { success: true };
     } catch (e: any) {
       if (e?.code === 'P2002') {
         throw new ConflictException('این روز هفته در این فاز قبلاً ثبت شده');
@@ -437,10 +575,11 @@ export class WorkoutService {
     if (dto.weekday != null) this.assertWeekday(dto.weekday);
 
     try {
-      return await this.prisma.workoutDay.update({
+      await this.prisma.workoutDay.update({
         where: { id: dayId },
         data: dto,
       });
+      return { success: true };
     } catch (e: any) {
       if (e?.code === 'P2002') {
         throw new ConflictException('weekday در این فاز تکراری است');
@@ -481,7 +620,7 @@ export class WorkoutService {
     if (!exercise) throw new BadRequestException('حرکت معتبر نیست');
 
     try {
-      return await this.prisma.workoutDayExercise.create({
+      await this.prisma.workoutDayExercise.create({
         data: {
           dayId,
           exerciseId: dto.exerciseId,
@@ -493,6 +632,7 @@ export class WorkoutService {
           notes: dto.notes,
         },
       });
+      return { success: true };
     } catch (e: any) {
       if (e?.code === 'P2002') {
         throw new ConflictException('order تکراری در این روز');
@@ -507,10 +647,11 @@ export class WorkoutService {
     dto: UpdateWorkoutExerciseDto,
   ) {
     await this.checkItemOwner(userId, itemId);
-    return this.prisma.workoutDayExercise.update({
+    await this.prisma.workoutDayExercise.update({
       where: { id: itemId },
       data: dto,
     });
+    return { success: true };
   }
 
   async deleteExercise(userId: string, itemId: string) {

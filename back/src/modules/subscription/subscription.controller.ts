@@ -2,7 +2,7 @@ import {
   Controller, Get, Post, Put, Patch, Delete, Body, Param,
   UseGuards, Query,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiOkResponse } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiOkResponse, ApiQuery } from '@nestjs/swagger';
 import { AccessTokenGuard } from '../auth/guard/access-token.guard.js';
 import { Roles } from '../auth/decorators/roles.decorator.js';
 import { CurrentUser } from '../../common/decorators/current-user.decorator.js';
@@ -14,33 +14,21 @@ import {
   SubscribePlanDto, UpdateSubscriptionStatusDto,
 } from './dto/subscription.dto.js';
 import { SubscriptionPlanEntity, SubscriptionEntity } from './entity/subscription.entity.js';
+import { SubscriptionPlanType, SubscriptionStatus } from '../../generated/prisma/enums.js';
 
 @ApiTags('Subscription')
 @Controller('subscription')
 export class SubscriptionController {
-  constructor(private readonly subscriptionService: SubscriptionService) {}
+  constructor(private readonly subscriptionService: SubscriptionService) { }
 
   // ============ Public: Plans ============
 
   @Get('plan')
   @ApiOkResponse({ type: [SubscriptionPlanEntity] })
+  @ApiQuery({ name: 'type', required: false, type: String, enum: SubscriptionPlanType, description: 'جستجو بر اساس نوع پلن' })
   @ApiOperation({ summary: 'لیست پلن‌های فعال (Public)', description: 'برای صفحه قیمت‌ها — مرتب بر اساس sortOrder و قیمت' })
-  getPlans() {
-    return this.subscriptionService.getPlans(true);
-  }
-
-  @Get('plan/slug/:slug')
-  @ApiOkResponse({ type: SubscriptionPlanEntity })
-  @ApiOperation({ summary: 'جزئیات پلن بر اساس slug (Public)' })
-  getPlanBySlug(@Param('slug') slug: string) {
-    return this.subscriptionService.getPlanBySlug(slug);
-  }
-
-  @Get('plan/:id')
-  @ApiOkResponse({ type: SubscriptionPlanEntity })
-  @ApiOperation({ summary: 'جزئیات پلن بر اساس آیدی (Public)' })
-  getPlanById(@Param('id') id: string) {
-    return this.subscriptionService.getPlanById(id);
+  getPlans(@Query('type') type: SubscriptionPlanType) {
+    return this.subscriptionService.getPlans(type);
   }
 
   // ============ User: Subscription ============
@@ -48,15 +36,23 @@ export class SubscriptionController {
   @Get('my')
   @UseGuards(AccessTokenGuard)
   @ApiOkResponse({ type: SubscriptionEntity, description: 'null اگر اشتراک فعالی نباشد' })
-  @ApiOperation({ summary: 'اشتراک فعال من (User)', description: 'برمی‌گرداند null اگر اشتراک فعالی نباشد' })
+  @ApiOperation({ summary: 'اشتراک فعال من (User)', description: 'از این فانکشن برای محدود کردن یا نمایش اطلاعات حداقلی به کاربر استفاده کن' })
   getMySubscription(@CurrentUser('id') userId: string) {
     return this.subscriptionService.getMySubscription(userId);
   }
 
-  @Get('my/all')
+  @Get('my-detail')
+  @UseGuards(AccessTokenGuard)
+  @ApiOkResponse({ type: SubscriptionEntity, description: 'null اگر اشتراک فعالی نباشد' })
+  @ApiOperation({ summary: 'اشتراک فعال من با جزئیات(User)', description: 'زمانی استفاده میشه که کاربر میره توی صفحه پلن و میخواد جزئیات کامل رو ببینه  سعی کن فقط اون زمان ازش استفاده کنی' })
+  getMySubscriptionDetail(@CurrentUser('id') userId: string) {
+    return this.subscriptionService.getMySubscriptionDetail(userId);
+  }
+
+  @Get('my-all')
   @UseGuards(AccessTokenGuard)
   @ApiOkResponse({ type: PaginatedResponse(SubscriptionEntity, 'subscriptions') })
-  @ApiOperation({ summary: 'همه اشتراک‌های من (User)', description: 'با صفحه‌بندی، شامل همه وضعیت‌ها' })
+  @ApiOperation({ summary: 'همه اشتراک‌های خریداری شده من (User)', description: 'اشتراک هایی که قبلا هم خریداری کردم داخل این قسمت نمایش داده میشه' })
   getMySubscriptions(@CurrentUser('id') userId: string, @Query() query: QueryDefaultDto) {
     return this.subscriptionService.getMySubscriptions(userId, query);
   }
@@ -88,10 +84,11 @@ export class SubscriptionController {
   @Get('admin/plan')
   @UseGuards(AccessTokenGuard)
   @Roles('ADMIN', 'SUPERADMIN')
+  @ApiQuery({ name: 'type', required: false, type: String, enum: SubscriptionPlanType, description: 'جستجو بر اساس نوع پلن' })
   @ApiOkResponse({ type: PaginatedResponse(SubscriptionPlanEntity, 'plans') })
   @ApiOperation({ summary: 'همه پلن‌ها (Admin)', description: 'شامل غیرفعال‌ها' })
-  getAllPlansAdmin(@Query() query: QueryDefaultDto) {
-    return this.subscriptionService.getAllPlansAdmin(query);
+  getAllPlansAdmin(@Query() query: QueryDefaultDto, @Query('type') type: SubscriptionPlanType) {
+    return this.subscriptionService.getAllPlansAdmin(query, type);
   }
 
   @Post('admin/plan')
@@ -124,10 +121,11 @@ export class SubscriptionController {
   @Get('admin/subscription')
   @UseGuards(AccessTokenGuard)
   @Roles('ADMIN', 'SUPERADMIN')
+  @ApiQuery({ name: 'status', required: false, type: String, enum: SubscriptionStatus, description: 'جستجو بر اساس نوع' })
   @ApiOkResponse({ type: PaginatedResponse(SubscriptionEntity, 'subscriptions') })
   @ApiOperation({ summary: 'همه اشتراک‌ها (Admin)', description: 'شامل اطلاعات پلن و کاربر' })
-  getAllSubscriptionsAdmin(@Query() query: QueryDefaultDto) {
-    return this.subscriptionService.getAllSubscriptionsAdmin(query);
+  getAllSubscriptionsAdmin(@Query() query: QueryDefaultDto, @Query('status') status: SubscriptionStatus) {
+    return this.subscriptionService.getAllSubscriptionsAdmin(query, status);
   }
 
   @Patch('admin/subscription/:id/status')

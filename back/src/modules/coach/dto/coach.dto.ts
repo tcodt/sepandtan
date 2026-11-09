@@ -71,6 +71,17 @@ export class CreateCoachDto {
     title!: string;
 
     @ApiPropertyOptional({
+        description: 'آدرس تصاویر (حداکثر 10 عکس)',
+        type: [String],
+        example: ['https://cdn.example.com/review/1.jpg'],
+    })
+    @IsOptional()
+    @IsArray()
+    @ArrayMaxSize(10, { message: 'حداکثر 10 تصویر مجاز است' })
+    @IsString({ each: true })
+    banner?: string[];
+
+    @ApiPropertyOptional({
         description: 'عنوان/تیتر مربی',
         example: 'مربی بدنسازی و تغذیه',
     })
@@ -161,6 +172,17 @@ export class UpdateCoachDto {
     nationalId?: string;
 
     @ApiPropertyOptional({
+        description: 'آدرس تصاویر (حداکثر 10 عکس)',
+        type: [String],
+        example: ['https://cdn.example.com/review/1.jpg'],
+    })
+    @IsOptional()
+    @IsArray()
+    @ArrayMaxSize(10, { message: 'حداکثر 10 تصویر مجاز است' })
+    @IsString({ each: true })
+    banner?: string[];
+
+    @ApiPropertyOptional({
         description: 'آیدی شهر',
         example: '3fa85f64-5717-4562-b3fc-2c963f66afa6',
     })
@@ -184,19 +206,21 @@ export class UpdateCoachDto {
     @IsUUID('4', { message: 'آیدی آدرس باید UUID باشد' })
     addressId?: string
 
+    @IsOptional()
     @ApiPropertyOptional({
         description: 'ویرایش اسلاگ فقط توسط ادمین',
         example: 'بدنسازی رویایی',
     })
     @IsString()
-    slug!: string;
+    slug?: string;
 
+    @IsOptional()
     @ApiPropertyOptional({
         description: 'ویرایش تایتل فقط توسط ادمین',
         example: 'بدنسازی رویایی',
     })
     @IsString()
-    title!: string;
+    title?: string;
 
     @ApiPropertyOptional({
         description: 'عنوان/تیتر مربی',
@@ -255,13 +279,14 @@ export class UpdateCoachDto {
     @ApiPropertyOptional({ example: false, description: 'پذیرش دارد یا خیر' })
     isAcceptingClients?: boolean;
 
+    @IsOptional()
     @IsIn([...Object.values(AccountStatus)])
     @ApiProperty({
         enum: [...Object.values(AccountStatus)],
         required: false,
         description: 'وضعیت مربی',
     })
-    status!: AccountStatus
+    status?: AccountStatus
 
     @ApiPropertyOptional({
         description: 'دلیل رد شدن (فقط توسط ادمین تنظیم می‌شود)',
@@ -407,12 +432,7 @@ export class SearchCoachReview extends QueryDefaultDto {
     status?: DefaultStatus | "ALL";
 
     @IsOptional()
-    @ApiProperty({ description: 'آیدی مربی', example: '' })
-    @IsUUID('4', { message: 'آیدی مربی باید UUID باشد' })
-    id?: string;
-
-    @IsOptional()
-    @ApiProperty({ description: 'آیدی مربی', example: '' })
+    @ApiProperty({ description: 'آیدی مربی', example: '', required: false })
     @IsUUID('4', { message: 'آیدی مربی باید UUID باشد' })
     coachId?: string;
 }
@@ -479,6 +499,17 @@ export class CreateAchievementDto {
     place?: number;
 
     @ApiPropertyOptional({
+        description: 'اولویت نمایش',
+        example: 1,
+        minimum: 0,
+    })
+    @IsOptional()
+    @Type(() => Number)
+    @IsInt()
+    @Min(0)
+    sortOrder?: number;
+
+    @ApiPropertyOptional({
         description: 'نام مسابقه / رویداد',
         example: 'مسابقات کشوری پرس سینه ۱۴۰۳',
     })
@@ -513,7 +544,7 @@ export class CreateAchievementDto {
     @IsDateString()
     year!: string;
 }
-export class UpdateAchievementDto extends PartialType(CreateAchievementDto) {}
+export class UpdateAchievementDto extends PartialType(CreateAchievementDto) { }
 
 
 //////// Availability ///////
@@ -544,7 +575,7 @@ export class CreateAvailabilityDto {
     @Min(1)
     weekday!: number;
 }
-export class UpdateAvailabilityDto extends PartialType(CreateAvailabilityDto) {}
+export class UpdateAvailabilityDto extends PartialType(CreateAvailabilityDto) { }
 
 
 //////// Certification ///////
@@ -570,13 +601,6 @@ export class CreateCertificationDto {
     @IsString()
     @MaxLength(200)
     title!: string;
-
-    @ApiProperty({
-        description: 'آیدی مربی حتما ارسال بشه ایدی مربی باشه نه کاربر فرق دارن اینا',
-        example: 'uuid',
-    })
-    @IsString()
-    coachId!: string;
 
     @ApiPropertyOptional({
         description: 'رشته تحصیلی / تخصص',
@@ -633,3 +657,5 @@ export class CreateCertificationDto {
     @IsBoolean()
     isPrimary?: boolean;
 }
+
+export class UpdateCertificationDto extends PartialType(CreateCertificationDto) { }

@@ -95,8 +95,8 @@ export class UserController {
     description: 'دسترسی : تمام نقش های احراز هویت شده'
   })
   @ApiBody({ type: CreateStoreDto, description: 'با ارسال اطلاعات درخواست برای فروشنده شدن توسط کاربر ایجاد میشود و ادمین باید تایید کند' })
-  requestAddStore(@Body() body: CreateStoreDto, @Query('userId') id: string) {
-    return this.userService.requestAddStore(body, id)
+  requestAddStore(@Body() body: CreateStoreDto) {
+    return this.userService.requestAddStore(body)
   }
 
   @Patch('store/:storeId')
@@ -130,8 +130,8 @@ export class UserController {
     description: 'دسترسی : تمام نقش های احراز هویت شده'
   })
   @ApiBody({ type: CreateCoachDto, description: 'با ارسال اطلاعات درخواست برای مربی شدن توسط کاربر ایجاد میشود و ادمین باید تایید کند' })
-  requestAddCoach(@Body() body: CreateCoachDto, @Query('userId') id: string) {
-    return this.userService.requestAddCoach(body, id)
+  requestAddCoach(@Body() body: CreateCoachDto) {
+    return this.userService.requestAddCoach(body)
   }
 
   @Patch('coach/:coachId')

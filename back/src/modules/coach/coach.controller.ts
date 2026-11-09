@@ -2,12 +2,12 @@
  * CoachsController - کنترلر مربی‌ها
  */
 import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards, Query, Patch } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiOkResponse } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiOkResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { AccessTokenGuard } from '../auth/guard/access-token.guard.js';
 import { Roles } from '../auth/decorators/roles.decorator.js';
 import { PaginatedResponse } from '../../common/dtos/pagination-response.dto.js';
 import { QueryDefaultDto } from '../../common/dtos/query.defualt.dto.js';
-import { ApprovedCoachReviewDto, CreateAchievementDto, CreateAvailabilityDto, CreateCertificationDto, CreateCoachDto, CreateCoachReviewDto, SearchAdminCoachDto, SearchCoachDto, SearchCoachReview, UpdateAchievementDto, UpdateAvailabilityDto, UpdateCoachDto, UpdateCoachReviewDto } from './dto/coach.dto.js';
+import { ApprovedCoachReviewDto, CreateAchievementDto, CreateAvailabilityDto, CreateCertificationDto, CreateCoachDto, CreateCoachReviewDto, SearchAdminCoachDto, SearchCoachDto, SearchCoachReview, UpdateAchievementDto, UpdateAvailabilityDto, UpdateCertificationDto, UpdateCoachDto, UpdateCoachReviewDto } from './dto/coach.dto.js';
 import { CoachService } from './coach.service.js';
 import { CurrentUser } from '../../common/decorators/current-user.decorator.js';
 import { RolePerson } from '../../generated/prisma/enums.js';
@@ -59,13 +59,6 @@ export class CoachsController {
         return this.coachsService.getForSelector();
     }
 
-    @Get('coach/:slug')
-    @ApiOkResponse({ type: CoachDetailsEntity })
-    @ApiOperation({ summary: 'جزئیات مربی بر اساس slug (Public)' })
-    async findBySlug(@Param('slug') slug: string) {
-        return this.coachsService.findBySlug(slug);
-    }
-
     @Get('coach/admin')
     @UseGuards(AccessTokenGuard)
     @Roles('ADMIN', 'SUPERADMIN')
@@ -84,15 +77,22 @@ export class CoachsController {
         return this.coachsService.findById(id);
     }
 
+    @Get('coach/:slug')
+    @ApiOkResponse({ type: CoachDetailsEntity })
+    @ApiOperation({ summary: 'جزئیات مربی بر اساس slug (Public)' })
+    async findBySlug(@Param('slug') slug: string) {
+        return this.coachsService.findBySlug(slug);
+    }
+
     @Post('coach')
     @UseGuards(AccessTokenGuard)
     @Roles('ADMIN', 'SUPERADMIN')
     @ApiOkResponse({ example: { success: true } })
-
     @ApiOperation({ summary: 'ایجاد مربی جدید (Admin)', description: 'برای زمانی که کاربر دسترسی نداشته باشد و ادمین بخواهد مستقیماً مربی اضافه کند' })
     async create(@Body() dto: CreateCoachDto) {
         return this.coachsService.create(dto);
     }
+
 
     @Put('coach/:id')
     @UseGuards(AccessTokenGuard)
@@ -110,6 +110,15 @@ export class CoachsController {
     @ApiOperation({ summary: 'حذف مربی (Admin)' })
     async delete(@Param('id') id: string) {
         return this.coachsService.delete(id);
+    }
+
+    @Delete('coach-db/:id')
+    @UseGuards(AccessTokenGuard)
+    @Roles('SUPERADMIN')
+    @ApiOkResponse({ example: { success: true } })
+    @ApiOperation({ summary: 'حذف مربی از دیتابیس بسیار حساس (Super Admin)' })
+    async deleteDb(@Param('id') id: string) {
+        return this.coachsService.deleteDb(id);
     }
 
     ///// Review /////
@@ -196,24 +205,25 @@ export class CoachsController {
     @Get('/certification/my')
     @UseGuards(AccessTokenGuard)
     @ApiOkResponse({ type: [CertificationEntity] })
-    @ApiOperation({ summary: 'لیست مدارک مربیِ لاگین‌شده (Coach)' })
+    @ApiOperation({ summary: 'لیست مدارک من (Coach)' })
     async myCertification(@CurrentUser('id') userId: string) {
         return this.certificationService.getMyCertification(userId);
     }
 
     @Get('/certification/:coachId')
     @ApiOkResponse({ type: [CertificationEntity] })
-    @ApiOperation({ summary: 'لیست مدارک تأییدشده یک مربی (Public)' })
+    @ApiOperation({ summary: 'لیست مدارک تأییدشده مربی (Public)' })
     async getCertificationCoach(@Param('coachId') coachId: string) {
         return this.certificationService.getAllCertificationCoach(coachId);
     }
 
     @Post('/certification')
     @UseGuards(AccessTokenGuard)
+    @Roles('COACH')
     @ApiOkResponse({ example: { success: true } })
-    @ApiOperation({ summary: 'ایجاد مدرک جدید (Coach/Admin)' })
-    async createCertification(@Body() body: CreateCertificationDto) {
-        return this.certificationService.createCertification(body);
+    @ApiOperation({ summary: 'ایجاد مدرک جدید (Coach)', description: 'مجاز به ساخت بیش از 10 مورد مدرک نیست' })
+    async createCertification(@Body() body: CreateCertificationDto, @CurrentUser('id') userID: string) {
+        return this.certificationService.createCertification(body, userID);
     }
 
     @Patch('/certification/admin/:id/verify')
@@ -227,16 +237,17 @@ export class CoachsController {
 
     @Put('/certification/:id')
     @UseGuards(AccessTokenGuard)
+    @Roles('COACH')
     @ApiOkResponse({ example: { success: true } })
-    @ApiOperation({ summary: 'ویرایش مدرک (Coach/Admin)' })
-    async updateCertification(@Param('id') id: string, @Body() body: CreateCertificationDto) {
-        return this.certificationService.updateCertification(id, body);
+    @ApiOperation({ summary: 'ویرایش مدرک (Coach)' })
+    async updateCertification(@Param('id') id: string, @Body() body: UpdateCertificationDto, @CurrentUser('id') userId: string) {
+        return this.certificationService.updateCertification(id, body, userId);
     }
 
     @Delete('/certification/:id')
     @UseGuards(AccessTokenGuard)
     @ApiOkResponse({ example: { success: true } })
-    @ApiOperation({ summary: 'حذف مدرک (Coach/Admin)' })
+    @ApiOperation({ summary: 'حذف مدرک (Coach)' })
     async deleteCertification(@Param('id') id: string, @CurrentUser('id') userId: string) {
         return this.certificationService.deleteCertification(id, userId);
     }
@@ -255,7 +266,7 @@ export class CoachsController {
     @UseGuards(AccessTokenGuard)
     @Roles('COACH')
     @ApiOkResponse({ example: { success: true } })
-    @ApiOperation({ summary: 'ایجاد بازه زمانی (Coach)' })
+    @ApiOperation({ summary: 'ایجاد بازه زمانی (Coach)', description: 'به تعداد روزهای هفته باید رکورد ساخته بشه و مجاز به ساخت رکورد تکراری نیست' })
     async createAvailability(@CurrentUser('id') userId: string, @Body() dto: CreateAvailabilityDto) {
         return this.availableService.createAvailable(userId, dto);
     }
@@ -338,22 +349,33 @@ export class CoachsController {
     @UseGuards(AccessTokenGuard)
     @ApiOkResponse({ type: [SpecialtyEntity] })
     @ApiOperation({ summary: 'لیست تخصص (User & Coach)' })
-    getSpecialty() {
-        return this.specialtyService.getAll();
+    @ApiQuery({ name: 'title', required: false, type: String, description: 'جستجو بر اساس عنوان تخصص' })
+    getSpecialty(@Query('title') title: string, @Query() query: QueryDefaultDto) {
+        return this.specialtyService.getAll(title, query);
     }
 
     @Get('specialty/selector')
     @UseGuards(AccessTokenGuard)
     @ApiOkResponse({ type: [SpecialtyEntity] })
     @ApiOperation({ summary: 'لیست انتخابگر تخصص (User & Coach)' })
-    selectSpecialty() {
-        return this.specialtyService.getSelector();
+    @ApiQuery({ name: 'title', required: false, type: String, description: 'جستجو بر اساس عنوان تخصص' })
+    selectSpecialty(@Query('title') title: string) {
+        return this.specialtyService.getSelector(title);
     }
 
-    @Patch('specialty/:id')
+    @Get('specialty/my')
+    @UseGuards(AccessTokenGuard)
+    @ApiOkResponse({ type: [SpecialtyEntity] })
+    @ApiOperation({ summary: 'لیست تخصص  من(Coach)' })
+    mySpecialty(@CurrentUser('id') id: string) {
+        return this.specialtyService.getMy(id);
+    }
+
+    @Patch('specialty')
     @UseGuards(AccessTokenGuard)
     @ApiOkResponse({ example: { success: true } })
-    @ApiOperation({ summary: 'ویرایش تخصص ها (User & Coach)', description: 'افزودن و آپدیت به صورت لیستی از تخصص ها' })
+    @Roles('COACH')
+    @ApiOperation({ summary: 'افزودن و ویرایش تخصص ها به مربی (Coach)', description: 'برای افزودن یا ویرایش تخصص ها به مربی باید ارایه ای از ایدی تخصص ها ارسال کنه' })
     updateSpecialty(@CurrentUser('id') userId: string, @Query() ids: ArrayIdDto) {
         return this.specialtyService.updateTable(userId, ids);
     }
@@ -363,24 +385,34 @@ export class CoachsController {
     @UseGuards(AccessTokenGuard)
     @ApiOkResponse({ type: [EquipmentEntity] })
     @ApiOperation({ summary: 'لیست تجهیزات (User & Coach)' })
-    getEquipment(@Query() query: QueryDefaultDto) {
-        return this.equipmentService.getAll(query);
+    @ApiQuery({ name: 'title', required: false, type: String, description: 'جستجو بر اساس عنوان تجهیزات' })
+    getEquipment(@Query('title') title: string, @Query() query: QueryDefaultDto) {
+        return this.equipmentService.getAll(title, query);
     }
 
     @Get('equipment/selector')
     @UseGuards(AccessTokenGuard)
     @ApiOkResponse({ type: [EquipmentEntity] })
     @ApiOperation({ summary: 'لیست انتخابگر تجهیزات (User & Coach)' })
-    selectEquipment() {
-        return this.equipmentService.getSelector();
+    @ApiQuery({ name: 'title', required: false, type: String, description: 'جستجو بر اساس عنوان تجهیزات' })
+    selectEquipment(@Query('title') title: string) {
+        return this.equipmentService.getSelector(title);
     }
 
-    @Patch('equipment/coach/:exercisesId')
+    @Get('equipment/my')
+    @UseGuards(AccessTokenGuard)
+    @ApiOkResponse({ type: [EquipmentEntity] })
+    @ApiOperation({ summary: 'لیست تجهیزات من(User)' })
+    myEquipment(@CurrentUser('id') userId: string) {
+        return this.equipmentService.getMy(userId);
+    }
+
+    @Patch('equipment')
     @UseGuards(AccessTokenGuard)
     @ApiOkResponse({ example: { success: true } })
-    @ApiOperation({ summary: 'ویرایش تجهیزات ها کاربران(User)', description: 'افزودن و آپدیت به صورت لیستی از تجهیزات ها' })
-    updateEquipmentCoach(@Param('exercisesId') exercisesId: string, @Query() ids: ArrayIdDto) {
-        return this.equipmentService.updateTableUser(exercisesId, ids);
+    @ApiOperation({ summary: 'افزودن و ویرایش تجهیزات کاربر (User)', description: 'زمانی که کاربر میخواد تجهیزاتی که داره رو ثبت بکنه تجهیزات رو بهش نمایش بده به صورت انتخابگر و اونایی که دارن رو انتخاب بکنه و بعد ایدی هاشونو به صورت لیست بفرسته' })
+    updateEquipmentCoach(@CurrentUser('id') userId: string, @Query() ids: ArrayIdDto) {
+        return this.equipmentService.updateTableUser(userId, ids);
     }
 
     ///// Exercise /////
@@ -388,22 +420,24 @@ export class CoachsController {
     @Get('exercise')
     @ApiOkResponse({ type: [ExerciseEntity] })
     @ApiOperation({ summary: 'لیست تمرین (User & Coach)' })
-    getExercise(@Query() query: SearchExerciseDto) {
-        return this.exerciseService.getAll(query);
+    @ApiQuery({ name: 'title', required: false, type: String, description: 'جستجو بر اساس عنوان تمرین' })
+    getExercise(@Query('title') title: string, @Query() query: SearchExerciseDto) {
+        return this.exerciseService.getAll(title, query);
     }
 
     @Get('exercise/selector')
     @ApiOkResponse({ type: [ExerciseEntity] })
     @ApiOperation({ summary: 'لیست تمرین انتخابگر(User & Coach)' })
-    selectExercise() {
-        return this.exerciseService.getSelector();
+    @ApiQuery({ name: 'title', required: false, type: String, description: 'جستجو بر اساس عنوان تمرین' })
+    selectExercise(@Query('title') title: string) {
+        return this.exerciseService.getSelector(title);
     }
 
-    @Get('exercise/:id')
+    @Get('exercise/:slug')
     @ApiOkResponse({ type: ExerciseEntity })
     @ApiOperation({ summary: ' تمرین تکی(User & Coach)' })
-    getOneExercise(@Param('id') id: string) {
-        return this.exerciseService.getOne(id);
+    getOneExercise(@Param('slug') slug: string) {
+        return this.exerciseService.getOne(slug);
     }
 
     /////  Food   /////
@@ -411,29 +445,24 @@ export class CoachsController {
     @Get('food')
     @ApiOkResponse({ type: [FoodEntity] })
     @ApiOperation({ summary: 'لیست غذاها (Coach & User)' })
-    getFood(@Query() query: QueryDefaultDto) {
-        return this.foodService.getAll(query);
+    @ApiQuery({ name: 'name', required: false, type: String, description: 'جستجو بر اساس نام غذاها' })
+    getFood(@Query('name') name: string, @Query() query: QueryDefaultDto) {
+        return this.foodService.getAll(name, query);
     }
 
     @Get('food/selector')
     @ApiOkResponse({ type: [FoodEntity] })
     @ApiOperation({ summary: 'لیست غذا انتخابگر(Coach & User)' })
-    selectFood() {
-        return this.foodService.getSelector();
+    @ApiQuery({ name: 'name', required: false, type: String, description: 'جستجو بر اساس نام غذاها' })
+    selectFood(@Query('name') name: string) {
+        return this.foodService.getSelector(name);
     }
-
-    @Get('food/:id')
-    @ApiOkResponse({ type: FoodEntity })
-    @ApiOperation({ summary: ' غذای تکی(Coach & User)' })
-    getOneFood(@Param('id') id: string) {
-        return this.foodService.getOne(id);
-    }
-
     /////  MuscleGroup   /////
 
     @Get('muscle-group')
     @ApiOkResponse({ type: [MuscleGroupEntity] })
     @ApiOperation({ summary: 'لیست گروه عضلانی (User & Coach)' })
+    @ApiQuery({ name: 'title', required: false, type: String, description: 'جستجو بر اساس نام انتخابگر' })
     getMuscleGroup(@Query() query: QueryDefaultDto, @Query('title') title: string) {
         return this.muscleGroupService.getAll(title, query);
     }
@@ -441,21 +470,16 @@ export class CoachsController {
     @Get('muscle-group/selector')
     @ApiOkResponse({ type: [MuscleGroupEntity] })
     @ApiOperation({ summary: 'لیست عضلانی انتخابگر(Coach & User)' })
-    selectMuscleGroup() {
-        return this.muscleGroupService.getSelector();
-    }
-
-    @Get('muscle-group/:id')
-    @ApiOkResponse({ type: MuscleGroupEntity })
-    @ApiOperation({ summary: ' عضلانی تکی(Coach & User)' })
-    getOneMuscleGroup(@Param('id') id: string) {
-        return this.muscleGroupService.getOne(id);
+    @ApiQuery({ name: 'title', required: false, type: String, description: 'جستجو بر اساس نام انتخابگر' })
+    selectMuscleGroup(@Query('title') title: string) {
+        return this.muscleGroupService.getSelector(title);
     }
 
     /////  TrainingGoal   /////
     @Get('training-goal')
     @ApiOkResponse({ type: [TrainingGoalEntity] })
     @ApiOperation({ summary: 'لیست هدف تمرینی (Coach & User)' })
+    @ApiQuery({ name: 'title', required: false, type: String, description: 'جستجو بر اساس نام هدف تمرینی' })
     getTrainingGoal(@Query() query: QueryDefaultDto, @Query('title') title: string) {
         return this.trainingGoalService.getAll(title, query);
     }
@@ -463,7 +487,8 @@ export class CoachsController {
     @Get('training-goal/selector')
     @ApiOkResponse({ type: [TrainingGoalEntity] })
     @ApiOperation({ summary: 'لیست هدف انتخابگر(Coach & User)' })
-    selectTrainingGoal() {
-        return this.trainingGoalService.getSelector();
+    @ApiQuery({ name: 'title', required: false, type: String, description: 'جستجو بر اساس نام هدف تمرینی' })
+    selectTrainingGoal(@Query('title') title: string) {
+        return this.trainingGoalService.getSelector(title);
     }
 }

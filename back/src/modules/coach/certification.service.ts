@@ -1,9 +1,10 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service.js';
-import { CreateCertificationDto } from './dto/coach.dto.js';
+import { CreateCertificationDto, UpdateCertificationDto } from './dto/coach.dto.js';
 import { ConfigService } from '@nestjs/config';
 import { QueryDefaultDto } from '../../common/dtos/query.defualt.dto.js';
 import pagination from '../../common/utils/pagination.js';
+import { RolePerson } from '../../generated/prisma/enums.js';
 
 @Injectable()
 export class CertificationService {
@@ -12,25 +13,36 @@ export class CertificationService {
         private readonly configService: ConfigService,
     ) { }
 
-    private async checkMe(id: string, coachId?: string) {
+    private async checkMe(id: string, userId: string) {
+        const coachId = await this.getCoachId(userId)
         const found = await this.prisma.certification.findFirst({
             where: { id, ...(coachId && { coachId }) },
+            include: { coach: { select: { userId: true } } }
         });
         if (!found) throw new NotFoundException('مدرک یافت نشد');
-        return found;
+        return coachId;
     }
 
-    async createCertification(dto: CreateCertificationDto) {
+    private async getCoachId(userId: string) {
+        const getCoach = await this.prisma.coach.findUnique({ where: { userId }, select: { id: true } })
+        if (!getCoach) throw new NotFoundException('مربی یافت نشد')
+        return getCoach.id
+    }
+
+    async createCertification(dto: CreateCertificationDto, userId: string) {
+        const coachId = await this.getCoachId(userId)
+        const data = await this.prisma.certification.count({ where: { coachId: coachId } })
+        if (data >= 10) throw new BadRequestException('حداکثر مجاز به ساخت  10 مورد است');
         await this.prisma.$transaction(async (tx) => {
             if (dto.isPrimary) {
                 await tx.certification.updateMany({
-                    where: { coachId: dto.coachId, isPrimary: true },
+                    where: { coachId: coachId, isPrimary: true },
                     data: { isPrimary: false },
                 });
             }
             await tx.certification.create({
                 data: {
-                    coachId: dto.coachId,
+                    coachId: coachId,
                     type: dto.type,
                     title: dto.title,
                     field: dto.field,
@@ -45,14 +57,14 @@ export class CertificationService {
         return { success: true };
     }
 
-    async updateCertification(id: string, dto: CreateCertificationDto) {
-        await this.checkMe(id, dto.coachId)
+    async updateCertification(id: string, dto: UpdateCertificationDto, userId: string) {
+        const coachId = await this.checkMe(id, userId)
         const data: any = { ...dto };
         if (dto?.expiresAt) data.expiresAt = new Date(dto?.expiresAt);
         await this.prisma.$transaction(async (tx) => {
             if (dto.isPrimary) {
                 await tx.certification.updateMany({
-                    where: { coachId: dto.coachId, isPrimary: true, id: { not: id } },
+                    where: { coachId: coachId, isPrimary: true, id: { not: id } },
                     data: { isPrimary: false },
                 });
             }
@@ -108,9 +120,7 @@ export class CertificationService {
     }
 
     async deleteCertification(id: string, userId: string) {
-        const user = await this.prisma.user.findUnique({ where: { id: userId }, select: { coach: { select: { id: true } } } })
-        if (!user?.coach?.id) throw new NotFoundException('دوباره وارد حساب خود شوید');
-        await this.checkMe(id, user.coach.id)
+        await this.checkMe(id, userId)
         await this.prisma.certification.delete({ where: { id } })
         return { success: true }
     }

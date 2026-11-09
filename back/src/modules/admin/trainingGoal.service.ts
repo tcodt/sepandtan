@@ -26,12 +26,15 @@ export class TrainingGoalService {
     // ---------- Public ----------
 
     async getAll(title: string, query: QueryDefaultDto) {
-        const where = {
-            ...(title && { title })
-        }
         const { limit, page = 1 } = query;
         const limitPage = this.getLimit(limit);
         const skip = (Math.max(1, Number(page)) - 1) * limitPage;
+
+        const where = {
+            ...(title?.trim() && {
+                title: { contains: title.trim(), mode: 'insensitive' as const },
+            }),
+        };
 
         const [data, count] = await Promise.all([
             this.prisma.trainingGoal.findMany({
@@ -40,7 +43,7 @@ export class TrainingGoalService {
                 take: limitPage,
                 orderBy: [{ sortOrder: 'asc' }, { title: 'asc' }],
             }),
-            this.prisma.trainingGoal.count(),
+            this.prisma.trainingGoal.count({ where }), // مهم
         ]);
 
         return {
@@ -49,8 +52,14 @@ export class TrainingGoalService {
         };
     }
 
-    async getSelector() {
+    async getSelector(title: string) {
+        const where = {
+            ...(title?.trim() && {
+                title: { contains: title.trim(), mode: 'insensitive' as const },
+            }),
+        };
         return this.prisma.trainingGoal.findMany({
+            where,
             select: { id: true, title: true, logo: true },
             orderBy: [{ sortOrder: 'asc' }, { title: 'asc' }],
         });

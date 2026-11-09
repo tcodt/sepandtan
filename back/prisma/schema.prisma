@@ -32,9 +32,11 @@ model User {
   referralCode    String?    @unique @map("referral_code")
   isPhoneVerified Boolean    @default(false) @map("is_phone_verified")
   isEmailVerified Boolean    @default(false) @map("is_email_verified")
-  referredAt      DateTime?  @map("referred_at")
-  createdAt       DateTime   @default(now())
-  updatedAt       DateTime   @updatedAt
+  isUsedTrial     Boolean    @default(false) @map("has_used_trial")
+
+  referredAt DateTime? @map("referred_at")
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
 
   token                Token[]
   profile              Profile?
@@ -207,16 +209,17 @@ model ServiceOrder {
 }
 
 model SubscriptionPlan {
-  id          String  @id @default(uuid())
-  slug        String  @unique @map("slug") // basic, pro, premium
-  title       String  @map("title")
-  description String? @map("description")
-
+  id            String               @id @default(uuid())
+  slug          String               @unique @map("slug") // basic, pro, premium
+  title         String               @map("title")
+  description   String?              @map("description")
+  type          SubscriptionPlanType @default(USER) @map("type") // 👈 این فیلد را اضافه کنید
+  coverImg      String?              @map("cover_img")
   // قیمت و مدت
-  price         Decimal  @map("price") @db.Decimal(12, 2)
-  originalPrice Decimal? @map("original_price") @db.Decimal(12, 2) // قیمت خط‌خورده برای نمایش تخفیف
-  durationDays  Int      @map("duration_days") // ۳۰، ۹۰، ۳۶۵
-  trialDays     Int      @default(0) @map("trial_days")
+  price         Decimal              @map("price") @db.Decimal(12, 2)
+  originalPrice Decimal?             @map("original_price") @db.Decimal(12, 2) // قیمت خط‌خورده برای نمایش تخفیف
+  durationDays  Int                  @map("duration_days") // ۳۰، ۹۰، ۳۶۵
+  trialDays     Int                  @default(0) @map("trial_days")
 
   // امکاناتی که خود برنامه چک می‌کنه (null = نامحدود)
   aiPlanLimitPerMonth Int?    @map("ai_plan_limit_per_month")
@@ -249,6 +252,7 @@ model Subscription {
 
   startsAt    DateTime? @map("starts_at")
   endsAt      DateTime? @map("ends_at")
+  trialEndsAt DateTime? @map("trial_ends_at")
   cancelledAt DateTime? @map("cancelled_at")
 
   createdAt DateTime @default(now()) @map("created_at")
@@ -282,8 +286,9 @@ model Equipment {
   image       String? @map("image")
   description String? @map("description")
 
-  exercises Exercise[]
-  profile   Profile[]
+  workoutPlans WorkoutPlan[] @relation("WorkoutPlanEquipment")
+  exercises    Exercise[]
+  profile      Profile[]
 
   @@map("equipments")
 }
@@ -405,6 +410,7 @@ model Coach {
   planRequests      PlanRequest[]
   userPlans         UserPlan[]
   serviceOrders     ServiceOrder[]
+  media             Media[]
 
   @@index([status, isAcceptingClients])
   @@index([status, provinceId, cityId])
@@ -500,48 +506,54 @@ model CoachAvailability {
   createdAt DateTime @default(now()) @map("created_at")
   coach     Coach    @relation(fields: [coachId], references: [id], onDelete: Cascade)
 
+  @@unique([coachId, weekday])
   @@index([coachId, weekday])
   @@map("coach_availabilities")
 }
 
 // لاگ به صورت روزانه توانایی اضافه کردن وزن به صورت روزانه
 model UserLog {
-  id         String   @id @default(uuid())
-  userId     String   @map("user_id") @db.Uuid
-  userPlanId String?  @map("user_plan_id") // اختیاری: بین دو برنامه هم کاربر می‌تونه وزن ثبت کنه
-  date       DateTime @db.Date // روز به وقت Asia/Tehran، نه UTC
-  weightKg   Decimal? @map("weight_kg") @db.Decimal(5, 2)
+  id          String   @id @default(uuid())
+  userId      String   @map("user_id") @db.Uuid
+  userPlanId  String?  @map("user_plan_id") // اختیاری: بین دو برنامه هم کاربر می‌تونه وزن ثبت کنه
+  date        DateTime @db.Date // روز به وقت Asia/Tehran، نه UTC
+  weightKg    Decimal? @map("weight_kg") @db.Decimal(5, 2)
+  jalaliYear  Int      @map("jalali_year")
+  jalaliMonth Int      @map("jalali_month")
 
   // ورزش
-  plannedExerciseIds String[] @default([]) @map("planned_exercise_ids") // سرور موقع ساخت ردیف پر می‌کنه
-  doneExerciseIds    String[] @default([]) @map("done_exercise_ids")
-  plannedExercises   Int      @default(0) @map("planned_exercises") // = طول آرایه (برای جمع‌زدن)
-  doneExercises      Int      @default(0) @map("done_exercises")
-  extraExercises     Json     @default("[]") @map("extra_exercises") // [{name, durationMin, caloriesBurned, note}]
-  caloriesBurned     Int?     @map("calories_burned") // تخمینی، اختیاری
+  plannedExerciseIds String[] @default([]) @map("planned_exercise_ids") // آیدی تمام تمرینات برنامه ریزی شده
+  doneExerciseIds    String[] @default([]) @map("done_exercise_ids") // تمرین های انجام شده
+  plannedExercises   Int      @default(0) @map("planned_exercises") // تمرین های برنامه ریزی شده
+  doneExercises      Int      @default(0) @map("done_exercises") // تمرین های انجام شده
+  extraExercises     Json     @default("[]") @map("extra_exercises") // [{name, durationMin, caloriesBurned, note}] تمرین ها اضافی
+  caloriesBurned     Int?     @map("calories_burned") // کالری های سوزانده شده
 
   // تغذیه
-  plannedMealIds   String[] @default([]) @map("planned_meal_ids")
-  doneMealIds      String[] @default([]) @map("done_meal_ids")
-  plannedMeals     Int      @default(0) @map("planned_meals")
-  doneMeals        Int      @default(0) @map("done_meals")
-  extraMeals       Json     @default("[]") @map("extra_meals") // [{name, calories, proteinG, carbsG, fatG}]
-  caloriesPlanned  Int?     @map("calories_planned")
-  caloriesConsumed Int?     @map("calories_consumed") // وعده‌های انجام‌شده + اضافی‌ها
-  proteinG         Int?     @map("protein_g")
-  carbsG           Int?     @map("carbs_g")
-  fatG             Int?     @map("fat_g")
+  plannedMealIds   String[] @default([]) @map("planned_meal_ids") // آیدی وعده های غذایی انجام نشده
+  doneMealIds      String[] @default([]) @map("done_meal_ids") // آیدی وعده های غذایی انجام شده
+  plannedMeals     Int      @default(0) @map("planned_meals") // برنامه های غذایی برنامه ریزی شده
+  doneMeals        Int      @default(0) @map("done_meals") // برنامه های غذایی انجام شده
+  extraMeals       Json     @default("[]") @map("extra_meals") // [{name, calories, proteinG, carbsG, fatG}] برنامه های غذایی اضافی
+  caloriesPlanned  Int?     @map("calories_planned") // کالری های برنامه ریزی شده
+  caloriesConsumed Int?     @map("calories_consumed") // کالری های مصرف شده
+  proteinG         Int?     @map("protein_g") // پروتئین ها
+  carbsG           Int?     @map("carbs_g") // کربوهیدرات ها
+  fatG             Int?     @map("fat_g") // چربی ها
 
   userNote  String? @map("user_note")
   coachNote String? @map("coach_note")
 
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  startimetAt DateTime @default(now()) @map("startimetAt")
+  endtimeAt   DateTime @default(now()) @map("endtimeAt")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
 
   user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   userPlan UserPlan? @relation(fields: [userPlanId], references: [id], onDelete: SetNull)
 
   @@unique([userId, date])
+  @@index([userId, jalaliYear, jalaliMonth])
   @@index([userPlanId])
   @@map("user_logs")
 }
@@ -591,7 +603,6 @@ model PlanRequest {
 
   images         String[]          @map("images")
   note           String?           @map("note")
-  commissionRate Decimal?          @map("commission_rate") @db.Decimal(18, 2)
   discountAmount Decimal?          @map("discount_amount") @db.Decimal(18, 2)
   price          Decimal?          @map("price") @db.Decimal(18, 2)
   originalPrice  Decimal?          @map("original_price") @db.Decimal(18, 2)
@@ -642,7 +653,6 @@ model WorkoutPlan {
   gender              Gender?           @map("gender")
   trainingLocation    TrainingLocation? @map("training_location")
   trainingDaysPerWeek Int?              @map("days_per_week")
-  requiredEquipment   String[]          @map("required_equipment")
 
   discountExpired DateTime? @map("discount_expired")
   createdAt       DateTime  @default(now()) @map("created_at")
@@ -655,6 +665,7 @@ model WorkoutPlan {
   days          WorkoutDay[]
   userPlans     UserPlan[]
   workoutPhases WorkoutPhase[]
+  equipment     Equipment[]    @relation("WorkoutPlanEquipment")
 
   @@index([coachId])
   @@index([avgRating])
@@ -1331,6 +1342,7 @@ model Media {
   reportsId       String?
   ticketMessageId String?
   returnRequestId String?
+  coachId         String?      @map("coach_id")
   size            Int?         @default(0)
   url             String       @unique
   alt             String?
@@ -1341,6 +1353,7 @@ model Media {
 
   createdAt DateTime @default(now()) @map("created_at")
 
+  coach         Coach?         @relation(fields: [coachId], references: [id], onDelete: Cascade)
   product       Product?       @relation(fields: [productId], references: [id], onDelete: Cascade)
   reports       Reports?       @relation(fields: [reportsId], references: [id])
   ticketMessage TicketMessage? @relation(fields: [ticketMessageId], references: [id])
@@ -1733,6 +1746,7 @@ enum RolePerson {
 enum SubscriptionStatus {
   PENDING // ساخته شده، منتظر پرداخت
   ACTIVE
+  TRIALING
   EXPIRED // مدتش تموم شده
   CANCELLED // کاربر لغو کرده یا ادمین باطل کرده
 }
@@ -2000,4 +2014,10 @@ enum OnBoardingStep {
   EQUIPMENT
   TRAINING_GOAL
   DONE
+}
+
+enum SubscriptionPlanType {
+  USER // پلن‌های مخصوص شاگردها (کاربران عادی)
+  COACH // پلن‌های مخصوص مربی‌ها
+  STORE // اگر بعداً بخواهید برای فروشگاه‌ها هم پلن بگذارید
 }

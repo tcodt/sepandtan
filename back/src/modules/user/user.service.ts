@@ -55,7 +55,7 @@ export class UserService {
       }),
       this.prisma.user.count({ where: searchFilter }),
     ]);
-    return { data, pagination: pagination(count, Number(page), Number(limitPage)) };
+    return { users: data, pagination: pagination(count, Number(page), Number(limitPage)) };
   }
 
   async updateUserAdmin(body: UpdateUserDto, id: string) {
@@ -300,10 +300,10 @@ export class UserService {
     }
   }
 
-  async requestAddStore(body: CreateStoreDto, id: string) {
+  async requestAddStore(body: CreateStoreDto) {
     await this.prisma.store.create({
       data: {
-        ...body, userId: id, rating: {
+        ...body, userId: body.userId, rating: {
           create: {},
         }
       }
@@ -369,10 +369,10 @@ export class UserService {
     }
   }
 
-  async requestAddCoach(body: CreateCoachDto, id: string) {
+  async requestAddCoach(body: CreateCoachDto) {
     await this.prisma.coach.create({
       data: {
-        ...body, userId: id,
+        ...body, userId: body.userId,
         coachRating: {
           create: {}
         }

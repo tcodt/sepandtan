@@ -5,7 +5,7 @@ import {
     ConflictException,
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service.js';
-import { ArrayIdDto, CreateExerciseDto, SearchExerciseDto } from './dto/admin.dto.js';
+import { ArrayIdDto, CreateExerciseDto, SearchExerciseDto, UpdateExerciseDto } from './dto/admin.dto.js';
 import { QueryDefaultDto } from '../../common/dtos/query.defualt.dto.js';
 import pagination from '../../common/utils/pagination.js';
 import { ConfigService } from '@nestjs/config';
@@ -24,22 +24,58 @@ export class ExerciseService {
         );
     }
 
+    private selectore() {
+        return {
+            slug: true,
+            title: true,
+            id: true,
+            level: true,
+            updatedAt: true,
+            coverImg: true,
+            category: {
+                where: { isActive: true },
+                select: {
+                    id: true,
+                    name: true,
+                    slug: true,
+                }
+            },
+            muscles: {
+                take: 10,
+                select: {
+                    id: true,
+                    slug: true,
+                    title: true,
+                }
+            },
+            equipment: {
+                take: 5,
+                select: {
+                    id: true,
+                    image: true,
+                    slug: true,
+                    title: true,
+                }
+            }
+        }
+    }
     // ---------- Public ----------
 
-    async getAll(query: QueryDefaultDto) {
+    async getAll(title: string, query: QueryDefaultDto) {
         const { limit, page = 1 } = query;
         const limitPage = this.getLimit(limit);
         const skip = (Math.max(1, Number(page)) - 1) * limitPage;
-
-        const where = { isActive: true };
-
+        const where = {
+            ...(title && { title: { contains: title.trim(), mode: 'insensitive' as const } }),
+            isActive: true
+        }
         const [data, count] = await Promise.all([
             this.prisma.exercise.findMany({
                 where,
                 skip,
                 take: limitPage,
+                select: this.selectore(),
                 orderBy: { createdAt: 'desc' },
-                include: { category: true, muscles: true, equipment: true },
             }),
             this.prisma.exercise.count({ where }),
         ]);
@@ -52,16 +88,29 @@ export class ExerciseService {
 
     async getOne(slug: string) {
         const data = await this.prisma.exercise.findUnique({
-            where: { slug },
-            include: { category: true, muscles: true, equipment: true },
+            where: { slug, isActive: true },
+            include: {
+                category: {
+                    select: {
+                        name: true,
+                        slug: true,
+                        id: true,
+                        ancestorIds: true,
+                    }
+                }, muscles: true, equipment: true
+            },
         });
         if (!data) throw new NotFoundException('تمرین یافت نشد');
         return data;
     }
 
-    async getSelector() {
+    async getSelector(title: string) {
+        const where = {
+            ...(title && { title: { contains: title.trim(), mode: 'insensitive' as const } }),
+            isActive: true
+        }
         return this.prisma.exercise.findMany({
-            where: { isActive: true },
+            where,
             select: { id: true, title: true, slug: true },
             orderBy: { title: 'asc' },
         });
@@ -69,22 +118,21 @@ export class ExerciseService {
 
     // ---------- Admin ----------
 
-    
     async getAllAdmin(query: SearchExerciseDto) {
         const { limit, page = 1, title, isActive } = query;
         const limitPage = this.getLimit(limit);
         const skip = (Math.max(1, Number(page)) - 1) * limitPage;
         const where = {
-            ...(title && { title }),
+            ...(title && { title: { contains: title.trim(), mode: 'insensitive' as const } }),
             ...(isActive !== undefined && { isActive })
         }
         const [data, count] = await Promise.all([
             this.prisma.exercise.findMany({
                 where,
                 skip,
+                select: this.selectore(),
                 take: limitPage,
                 orderBy: { createdAt: 'desc' },
-                include: { category: true, muscles: true, equipment: true },
             }),
             this.prisma.exercise.count({ where }),
         ]);
@@ -93,6 +141,24 @@ export class ExerciseService {
             exercise: data,
             pagination: pagination(count, page, limitPage),
         };
+    }
+
+    async getOneAdmin(slug: string) {
+        const data = await this.prisma.exercise.findUnique({
+            where: { slug },
+            include: {
+                category: {
+                    select: {
+                        name: true,
+                        slug: true,
+                        id: true,
+                        ancestorIds: true,
+                    }
+                }, muscles: true, equipment: true
+            },
+        });
+        if (!data) throw new NotFoundException('تمرین یافت نشد');
+        return data;
     }
 
     async create(dto: CreateExerciseDto) {
@@ -126,7 +192,7 @@ export class ExerciseService {
         return { success: true };
     }
 
-    async update(id: string, dto: CreateExerciseDto) {
+    async update(id: string, dto: UpdateExerciseDto) {
         const found = await this.prisma.exercise.findUnique({ where: { id } });
         if (!found) throw new NotFoundException('تمرین یافت نشد');
 
@@ -166,4 +232,10 @@ export class ExerciseService {
         return { success: true };
     }
 
+    async deleteDb(id: string) {
+        const found = await this.prisma.exercise.findUnique({ where: { id } });
+        if (!found) throw new NotFoundException('تمرین یافت نشد');
+        await this.prisma.exercise.delete({ where: { id } });
+        return { success: true };
+    }
 }

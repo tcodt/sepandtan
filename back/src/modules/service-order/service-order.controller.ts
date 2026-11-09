@@ -7,11 +7,11 @@ import { Roles } from "../auth/decorators/roles.decorator.js";
 
 @ApiTags('ServiceOrder')
 @Controller('service-order')
+@UseGuards(AccessTokenGuard)
 export class ServiceOrderController {
-  constructor(private readonly service: ServiceOrderService) {}
+  constructor(private readonly service: ServiceOrderService) { }
 
   @Post('plan/quote')
-  @UseGuards(AccessTokenGuard)
   quotePlan(
     @CurrentUser('id') userId: string,
     @Body() body: { planRequestId: string; discountCode?: string },
@@ -24,7 +24,6 @@ export class ServiceOrderController {
   }
 
   @Post('plan/pay')
-  @UseGuards(AccessTokenGuard)
   payPlan(
     @CurrentUser('id') userId: string,
     @Body()
@@ -39,13 +38,11 @@ export class ServiceOrderController {
 
   /** بعد از verify درگاه — می‌تواند داخلی/ادمین باشد */
   @Post('plan/complete')
-  @UseGuards(AccessTokenGuard)
   completePlan(@Body() body: { paymentId: string; gatewayRef: string }) {
     return this.service.completePlanPayment(body.paymentId, body.gatewayRef);
   }
 
   @Post('plan/refund')
-  @UseGuards(AccessTokenGuard)
   @Roles('ADMIN', 'SUPERADMIN')
   refundPlan(
     @Body() body: { paymentId: string; amount?: number; reason?: string },
@@ -54,7 +51,6 @@ export class ServiceOrderController {
   }
 
   @Post('subscription/pay')
-  @UseGuards(AccessTokenGuard)
   paySub(
     @CurrentUser('id') userId: string,
     @Body()
@@ -68,7 +64,6 @@ export class ServiceOrderController {
   }
 
   @Post('subscription/complete')
-  @UseGuards(AccessTokenGuard)
   completeSub(@Body() body: { paymentId: string; gatewayRef: string }) {
     return this.service.completeSubscriptionPayment(
       body.paymentId,

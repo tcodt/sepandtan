@@ -31,10 +31,11 @@ import { AdminsModule } from './modules/admin/admin.module.js';
 import { CoachModule } from './modules/coach/coach.module.js';
 import { DietModule } from './modules/diet/diet.module.js';
 import { WorkoutModule } from './modules/workout/workout.module.js';
-import { UserPlanModule } from './modules/user-plan/user-plan.module.js';
 import { SubscriptionModule } from './modules/subscription/subscription.module.js';
 import { LogModule } from './modules/log/log.module.js';
 import { SettlementQueueModule } from './modules/queues/settlement/settlement-queue.module.js';
+import { ServiceOrderModule } from './modules/service-order/service-order.module.js';
+import { PlanRequestModule } from './modules/request/plan-request.module.js';
 @Module({
   imports: [
     ThrottlerModule.forRoot([
@@ -73,11 +74,12 @@ import { SettlementQueueModule } from './modules/queues/settlement/settlement-qu
     CountryModule, //  کشور ها
     AdminsModule,
     CoachModule,
-    DietModule,
-    LogModule,
-    WorkoutModule,
-    UserPlanModule,
     SubscriptionModule,
+    WorkoutModule,
+    DietModule,
+    PlanRequestModule,
+    LogModule,
+    ServiceOrderModule
   ],
   providers: [
     {

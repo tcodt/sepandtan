@@ -15,6 +15,9 @@ import {
   CreateWorkoutExerciseDto, UpdateWorkoutExerciseDto,
   CreateWorkoutPhaseDto,
   UpdateWorkoutPhaseDto,
+  SearchWorkOutUser,
+  SearchWorkOutCoach,
+  SearchWorkOutAdmin,
 } from './dto/workout.dto.js';
 import {
   WorkoutPlanEntity, WorkoutPlanSummaryEntity,
@@ -25,41 +28,46 @@ import {
 @Controller('workout')
 export class WorkoutController {
   constructor(private readonly workoutService: WorkoutService) { }
-
-  // ============ Public ============
-
-  @Get('plan')
+  @Get('plan/admin')
+  @UseGuards(AccessTokenGuard)
+  @Roles('SUPERADMIN', 'ADMIN')
   @ApiOkResponse({ type: PaginatedResponse(WorkoutPlanSummaryEntity, 'workoutPlans') })
-  @ApiOperation({ summary: 'لیست برنامه‌های تمرینی منتشرشده (Public)', description: 'مرتب بر اساس avgRating' })
-  getPlans(@Query() query: QueryDefaultDto) {
-    return this.workoutService.getPlans(query);
+  @ApiOperation({ summary: 'لیست برنامه‌ها(Admin)' })
+  getAdminPlans(@Query() query: SearchWorkOutAdmin) {
+    return this.workoutService.getAdminPlans(query);
   }
-
-  @Get('plan/:id')
-  @ApiOkResponse({ type: WorkoutPlanEntity })
-  @ApiOperation({ summary: 'جزئیات برنامه تمرینی (Public)', description: 'شامل روزها، حرکات و اطلاعات حرکت' })
-  getPlan(@Param('id') id: string) {
-    return this.workoutService.getPlan(id);
-  }
-
   // ============ Coach: Plan ============
-
   @Get('plan/my')
   @UseGuards(AccessTokenGuard)
   @Roles('COACH')
   @ApiOkResponse({ type: PaginatedResponse(WorkoutPlanSummaryEntity, 'workoutPlans') })
   @ApiOperation({ summary: 'لیست برنامه‌های من (Coach)' })
-  getMyPlans(@CurrentUser('id') userId: string, @Query() query: QueryDefaultDto) {
+  getMyPlans(@CurrentUser('id') userId: string, @Query() query: SearchWorkOutCoach) {
     return this.workoutService.getMyPlans(userId, query);
   }
 
   @Get('plan/my/:id')
   @UseGuards(AccessTokenGuard)
-  @Roles('COACH')
+  @Roles('COACH', 'SUPERADMIN', 'ADMIN')
   @ApiOkResponse({ type: WorkoutPlanEntity })
-  @ApiOperation({ summary: 'جزئیات برنامه تمرینی (Coach)', description: 'شامل روزها، حرکات و اطلاعات حرکت' })
+  @ApiOperation({ summary: 'جزئیات برنامه تمرینی (Coach, Admin)', description: 'شامل روزها، حرکات و اطلاعات حرکت' })
   getMyPlan(@Param('id') id: string) {
     return this.workoutService.getMyPlan(id);
+  }
+
+  // ============ Public ============
+  @Get('plan')
+  @ApiOkResponse({ type: PaginatedResponse(WorkoutPlanSummaryEntity, 'workoutPlans') })
+  @ApiOperation({ summary: 'لیست برنامه‌های تمرینی منتشرشده (Public)', description: 'مرتب بر اساس avgRating' })
+  getPlans(@Query() query: SearchWorkOutUser) {
+    return this.workoutService.getPlans(query);
+  }
+
+  @Get('plan/id/:id')
+  @ApiOkResponse({ type: WorkoutPlanEntity })
+  @ApiOperation({ summary: 'جزئیات برنامه تمرینی (Public)', description: 'شامل روزها، حرکات و اطلاعات حرکت به صورت محدود مثلا فقط یه رکورد از فاز نمایش داده میشه تا 3 روز نمایش داده میشه و 3 تا حرکت در هر روز' })
+  getPlan(@Param('id') id: string) {
+    return this.workoutService.getPlan(id);
   }
 
   @Post('plan')
@@ -96,6 +104,13 @@ export class WorkoutController {
   }
 
   // ============ Coach: Phase ============
+  @Get('phase/:phaseId')
+  @UseGuards(AccessTokenGuard)
+  @Roles('COACH', 'ADMIN', 'SUPERADMIN')
+  @ApiOperation({ summary: 'نمایش تمام جزئیات تمرین در فاز یا هفته (Coach , Admin)' })
+  getPhase(@Param('phaseId') phaseId: string) {
+    return this.workoutService.getPhase(phaseId);
+  }
 
   @Post('phase/:planId')
   @UseGuards(AccessTokenGuard)

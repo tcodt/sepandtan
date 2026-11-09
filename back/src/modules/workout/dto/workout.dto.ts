@@ -22,8 +22,18 @@ import {
   Gender,
   TrainingLocation,
 } from '../../../generated/prisma/enums.js';
+import { QueryDefaultDto } from '../../../common/dtos/query.defualt.dto.js';
 
 // ---------- Plan ----------
+
+export enum SortOptionWorkoutPlan {
+  OLDEST = 'oldest',
+  NEWEST = 'newest',
+  MORE_PRICE = 'more_price',
+  LOW_PRICE = 'low_price',
+  MORE_RATE = 'more_rate',
+  LOW_RATE = 'low_rate',
+}
 export class CreateWorkoutPlanDto {
   @ApiProperty({ example: 'برنامه حجم ۸ هفته‌ای' })
   @IsString()
@@ -130,12 +140,21 @@ export class CreateWorkoutPlanDto {
   @Max(7)
   trainingDaysPerWeek?: number;
 
-  @ApiPropertyOptional({ type: [String], example: ['barbell', 'bench'] })
+  @ApiPropertyOptional({
+    description: 'آیدی رکورد ها تجهیزات (آرایه UUID)',
+    type: [String],
+    example: ['57635d56-30ab-4aae-8146-c24a2e50f3e0'],
+  })
   @IsOptional()
+  @Transform(({ value }) => {
+    if (value === undefined || value === null) return value;
+    if (typeof value === 'string') return [value];
+    return value;
+  })
   @IsArray()
-  @ArrayMaxSize(50)
-  @IsString({ each: true })
-  requiredEquipment?: string[];
+  @ArrayMaxSize(20)
+  @IsUUID('4', { each: true, message: 'هر آیتم باید یک UUID معتبر باشد' })
+  equipmentIds?: string[];
 
   @ApiPropertyOptional({ example: '2025-12-01T00:00:00.000Z' })
   @IsOptional()
@@ -148,7 +167,7 @@ export class CreateWorkoutPlanDto {
   dietPlanId?: string;
 }
 
-export class UpdateWorkoutPlanDto extends PartialType(CreateWorkoutPlanDto) {}
+export class UpdateWorkoutPlanDto extends PartialType(CreateWorkoutPlanDto) { }
 
 // ---------- Phase ----------
 export class CreateWorkoutPhaseDto {
@@ -185,7 +204,7 @@ export class CreateWorkoutPhaseDto {
   order?: number;
 }
 
-export class UpdateWorkoutPhaseDto extends PartialType(CreateWorkoutPhaseDto) {}
+export class UpdateWorkoutPhaseDto extends PartialType(CreateWorkoutPhaseDto) { }
 
 // ---------- Day ----------
 export class CreateWorkoutDayDto {
@@ -225,7 +244,7 @@ export class CreateWorkoutDayDto {
   notes?: string;
 }
 
-export class UpdateWorkoutDayDto extends PartialType(CreateWorkoutDayDto) {}
+export class UpdateWorkoutDayDto extends PartialType(CreateWorkoutDayDto) { }
 
 // ---------- Exercise Item ----------
 export class CreateWorkoutExerciseDto {
@@ -276,6 +295,56 @@ export class CreateWorkoutExerciseDto {
   notes?: string;
 }
 
-export class UpdateWorkoutExerciseDto extends PartialType(
-  CreateWorkoutExerciseDto,
-) {}
+export class UpdateWorkoutExerciseDto extends PartialType(CreateWorkoutExerciseDto) { }
+
+export class SearchWorkOutCoach extends QueryDefaultDto {
+  @ApiPropertyOptional({ description: 'نوع مرتب‌سازی', enum: SortOptionWorkoutPlan })
+  @IsOptional()
+  @IsEnum(SortOptionWorkoutPlan)
+  sortBy?: SortOptionWorkoutPlan = SortOptionWorkoutPlan.NEWEST;
+
+  @ApiPropertyOptional({ description: 'نوع جنسیت', enum: Gender })
+  @IsOptional()
+  @IsEnum(Gender)
+  gender?: Gender;
+
+  @IsOptional()
+  @Transform(({ value }) => value === 'true' || value === true)
+  @IsBoolean()
+  @ApiPropertyOptional({ example: false, description: 'وضعیت انتشار' })
+  isPublished?: boolean;
+
+  @ApiPropertyOptional({ required: false, description: 'توی تایتل پلن جستجو میشه' })
+  @IsOptional()
+  @IsString()
+  title?: string
+}
+
+export class SearchWorkOutUser extends QueryDefaultDto {
+  @ApiPropertyOptional({ description: 'نوع مرتب‌سازی', enum: SortOptionWorkoutPlan })
+  @IsOptional()
+  @IsEnum(SortOptionWorkoutPlan)
+  sortBy?: SortOptionWorkoutPlan = SortOptionWorkoutPlan.NEWEST;
+
+  @ApiPropertyOptional({ description: 'نوع جنسیت', enum: Gender })
+  @IsOptional()
+  @IsEnum(Gender)
+  gender?: Gender;
+
+  @ApiPropertyOptional({ required: false, description: 'توی تایتل پلن جستجو میشه' })
+  @IsOptional()
+  @IsString()
+  title?: string
+}
+
+export class SearchWorkOutAdmin extends SearchWorkOutCoach {
+  @ApiPropertyOptional({ required: false, description: 'آیدی مربی' })
+  @IsOptional()
+  @IsString()
+  coachId?: string
+
+  @ApiPropertyOptional({ description: 'نوع پلن', enum: PlanSource })
+  @IsOptional()
+  @IsEnum(PlanSource)
+  source?: PlanSource;
+}

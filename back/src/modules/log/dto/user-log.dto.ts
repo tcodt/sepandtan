@@ -1,17 +1,20 @@
-import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional, OmitType, PartialType } from '@nestjs/swagger';
 import {
-  IsString, IsOptional, IsDateString, IsNumber, IsArray,
-  IsUUID, IsInt, IsObject, Min, MaxLength, ArrayMaxSize,
+  IsString, IsOptional, IsNumber, IsArray, IsUUID, IsInt,
+  Min, Max, MaxLength, ArrayMaxSize, Matches,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
+const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
+const DATE_MESSAGE = 'تاریخ باید به فرمت YYYY-MM-DD باشد';
+
 // ---------- Create (بخش‌های ورزش/تغذیه/وزن همه اختیاری) ----------
 export class CreateUserLogDto {
-  @ApiProperty({ example: '2025-01-01', description: 'تاریخ (YYYY-MM-DD)' })
-  @IsDateString()
+  @ApiProperty({ example: '2026-11-07', description: 'تاریخ میلادی روز به وقت تهران (YYYY-MM-DD)' })
+  @Matches(DATE_REGEX, { message: DATE_MESSAGE })
   date!: string;
 
-  @ApiPropertyOptional({ example: '...', description: 'userPlanId اختیاری' })
+  @ApiPropertyOptional({ example: '3fa85f64-5717-4562-b3fc-2c963f66afa6', description: 'userPlanId اختیاری' })
   @IsOptional() @IsUUID('4')
   userPlanId?: string;
 
@@ -45,7 +48,10 @@ export class CreateUserLogDto {
   @IsOptional() @IsArray() @ArrayMaxSize(20)
   extraMeals?: { name: string; calories?: number; proteinG?: number; carbsG?: number; fatG?: number }[];
 
-  @ApiPropertyOptional({ example: 2000 })
+  @ApiPropertyOptional({
+    example: 2000,
+    description: 'فقط وقتی استفاده می‌شود که لاگ به برنامه وصل نباشد؛ در غیر این صورت از برنامه خوانده می‌شود',
+  })
   @IsOptional() @Type(() => Number) @IsInt() @Min(0)
   caloriesPlanned?: number;
 
@@ -70,10 +76,35 @@ export class CreateUserLogDto {
   userNote?: string;
 }
 
-export class UpdateUserLogDto extends PartialType(CreateUserLogDto) {}
+/**
+ * date و userPlanId قابل ویرایش نیستند:
+ * jalaliYear / jalaliMonth و planned* از روی همین دو مقدار ساخته می‌شوند
+ * و فقط در create محاسبه می‌شوند تا همیشه با date هماهنگ بمانند.
+ * اگر تاریخ اشتباه بود: حذف + ثبت دوباره.
+ */
+export class UpdateUserLogDto extends PartialType(
+  OmitType(CreateUserLogDto, ['date', 'userPlanId'] as const),
+) {}
 
 export class UpdateCoachNoteDto {
   @ApiProperty({ example: 'عالی بود' })
   @IsString() @MaxLength(2000)
   coachNote!: string;
+}
+
+// ---------- Stats ----------
+export class MonthlyStatsQueryDto {
+  @ApiProperty({ example: 1405, description: 'سال شمسی' })
+  @Type(() => Number) @IsInt() @Min(1300) @Max(1500)
+  year!: number;
+}
+
+export class WeeklyStatsQueryDto {
+  @ApiProperty({ example: '2026-09-01', description: 'شروع بازه (میلادی، YYYY-MM-DD)' })
+  @Matches(DATE_REGEX, { message: DATE_MESSAGE })
+  from!: string;
+
+  @ApiProperty({ example: '2026-11-07', description: 'پایان بازه (میلادی، YYYY-MM-DD) — حداکثر ۴۰۰ روز' })
+  @Matches(DATE_REGEX, { message: DATE_MESSAGE })
+  to!: string;
 }

@@ -1,4 +1,4 @@
-import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
+import { ApiProperty, ApiPropertyOptional, PartialType } from "@nestjs/swagger";
 import { Transform, Type } from "class-transformer";
 import { ArrayMaxSize, IsArray, IsBoolean, IsEnum, IsInt, IsNumber, IsObject, IsOptional, IsString, IsUUID, Matches, MaxLength, Min } from "class-validator";
 import { ExperienceLevel } from "../../../generated/prisma/enums.js";
@@ -218,6 +218,14 @@ export class CreateExerciseDto {
     coverImg?: string;
 
     @ApiPropertyOptional({
+        description: 'آیدی دسته بندی',
+        example: 'uuid',
+    })
+    @IsOptional()
+    @IsString()
+    categoryId?: string;
+
+    @ApiPropertyOptional({
         description: 'آیدی عضلات درگیر (many-to-many)',
         type: [String],
         example: ['uuid-1', 'uuid-2'],
@@ -237,6 +245,8 @@ export class CreateExerciseDto {
     @IsUUID('4', { each: true })
     equipmentIds?: string[];
 }
+
+export class UpdateExerciseDto extends PartialType(CreateExerciseDto) { }
 
 export class CreateTrainingGoalDto {
     @ApiProperty({
@@ -336,14 +346,19 @@ export class CreateMuscleGroupDto {
 
 export class ArrayIdDto {
     @ApiPropertyOptional({
-        description: 'آیدی رکورد ها (آرایه)',
+        description: 'آیدی رکوردها (آرایه UUID)',
         type: [String],
-        example: ['57635d56-30ab-4aae-8146-c24a2e50f3e0', '57635d56-30ab-4aae-8146-c24a2e50f3e0'],
+        example: ['57635d56-30ab-4aae-8146-c24a2e50f3e0'],
     })
     @IsOptional()
+    @Transform(({ value }) => {
+        if (value === undefined || value === null) return value;
+        if (typeof value === 'string') return [value];
+        return value;
+    })
     @IsArray()
     @ArrayMaxSize(20)
-    @IsString({ each: true })
+    @IsUUID('4', { each: true, message: 'هر آیتم باید یک UUID معتبر باشد' })
     ids?: string[];
 }
 
@@ -356,10 +371,11 @@ export class SearchFoodDto extends QueryDefaultDto {
 
     @IsOptional()
     @ApiProperty({
+        required: false,
         description: 'نام غذا',
     })
     @IsString()
-    name!: string;
+    name?: string;
 }
 
 export class SearchExerciseDto extends QueryDefaultDto {
@@ -372,7 +388,8 @@ export class SearchExerciseDto extends QueryDefaultDto {
     @IsOptional()
     @ApiProperty({
         description: 'نام ورزش',
+        required: false
     })
     @IsString()
-    title!: string;
+    title?: string;
 }

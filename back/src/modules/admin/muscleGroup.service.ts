@@ -30,8 +30,10 @@ export class MuscleGroupService {
         const limitPage = this.getLimit(limit);
         const skip = (Math.max(1, Number(page)) - 1) * limitPage;
         const where = {
-            ...(title && { title })
-        }
+            ...(title?.trim() && {
+                title: { contains: title.trim(), mode: 'insensitive' as const },
+            }),
+        };
         const [data, count] = await Promise.all([
             this.prisma.muscleGroup.findMany({
                 where,
@@ -48,19 +50,14 @@ export class MuscleGroupService {
         };
     }
 
-    async getOne(slug: string) {
-        const data = await this.prisma.muscleGroup.findUnique({
-            where: { slug },
-            include: {
-                _count: { select: { exercises: true } },
-            },
-        });
-        if (!data) throw new NotFoundException('گروه عضلانی یافت نشد');
-        return data;
-    }
-
-    async getSelector() {
+    async getSelector(title: string) {
+        const where = {
+            ...(title?.trim() && {
+                title: { contains: title.trim(), mode: 'insensitive' as const },
+            }),
+        };
         return this.prisma.muscleGroup.findMany({
+            where,
             select: { id: true, title: true, slug: true },
             orderBy: { title: 'asc' },
         });

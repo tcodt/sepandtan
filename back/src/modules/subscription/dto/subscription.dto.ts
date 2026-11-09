@@ -4,7 +4,7 @@ import {
   IsArray, MaxLength, Min, ArrayMaxSize, IsEnum,
 } from 'class-validator';
 import { Type, Transform } from 'class-transformer';
-import { SubscriptionStatus } from '../../../generated/prisma/enums.js';
+import { SubscriptionPlanType, SubscriptionStatus } from '../../../generated/prisma/enums.js';
 
 // ---------- Plan (Admin) ----------
 export class CreateSubscriptionPlanDto {
@@ -15,6 +15,15 @@ export class CreateSubscriptionPlanDto {
   @ApiProperty({ example: 'پلن حرفه‌ای' })
   @IsString() @MaxLength(200)
   title!: string;
+
+  @ApiPropertyOptional({ description: 'وضعیت پلن', enum: SubscriptionPlanType, required: false })
+  @IsOptional()
+  @IsEnum(SubscriptionPlanType)
+  type?: SubscriptionPlanType
+
+  @ApiPropertyOptional({ example: 'عکس پلن' })
+  @IsString()
+  coverImg?: string;
 
   @ApiPropertyOptional({ example: 'دسترسی کامل' })
   @IsOptional() @IsString() @MaxLength(2000)
@@ -73,7 +82,7 @@ export class CreateSubscriptionPlanDto {
   sortOrder?: number;
 }
 
-export class UpdateSubscriptionPlanDto extends PartialType(CreateSubscriptionPlanDto) {}
+export class UpdateSubscriptionPlanDto extends PartialType(CreateSubscriptionPlanDto) { }
 
 // ---------- Subscribe (User) ----------
 export class SubscribePlanDto {

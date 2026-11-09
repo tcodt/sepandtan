@@ -12,36 +12,38 @@ export class FoodService {
     ) { }
 
     // Public
-    async getAll(query: QueryDefaultDto) {
+    async getAll(name: string, query: QueryDefaultDto) {
         const { limit, page = 1 } = query
         const limitPage = Number(limit) || Number(this.configService.get('limit.admin'))
+        const where = {
+            ...(name?.trim() && { name: { contains: name.trim(), mode: 'insensitive' as const } }),
+            isActive: true
+        };
         const skip = (Number(page) - 1) * limitPage;
         const [data, count] = await Promise.all([
-            this.prisma.food.findMany({ where: { isActive: true }, skip, take: limitPage, orderBy: { name: 'asc' } }),
-            this.prisma.food.count({ where: { isActive: true } }),
+            this.prisma.food.findMany({ where, skip, take: limitPage, orderBy: { name: 'asc' } }),
+            this.prisma.food.count({ where }),
         ])
-
         return {
             food: data,
             pagination: pagination(count, page, limitPage)
         }
     }
 
-    async getOne(name: string) {
-        return this.prisma.food.findUnique({ where: { name } })
-    }
-
-    async getSelector() {
-        return this.prisma.food.findMany({ select: { name: true, id: true }, orderBy: { name: 'asc' } })
+    async getSelector(name: string) {
+        const where = {
+            ...(name?.trim() && { name: { contains: name.trim(), mode: 'insensitive' as const } }),
+        };
+        return this.prisma.food.findMany({ where, select: { name: true, id: true }, orderBy: { name: 'asc' } })
     }
 
     // Admin
     async getAllAdmin(query: SearchFoodDto) {
         const { limit, page = 1, name, isActive } = query
         const where = {
-            ...(name && { name }),
+            ...(name?.trim() && { name: { contains: name.trim(), mode: 'insensitive' as const } }),
             ...(isActive !== undefined && { isActive })
-        }
+        };
         const limitPage = Number(limit) || Number(this.configService.get('limit.admin'))
         const skip = (Number(page) - 1) * limitPage;
         const [data, count] = await Promise.all([

@@ -1,12 +1,51 @@
 import { Injectable, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { ArrayIdDto, CreateSpecialtyDto } from './dto/admin.dto.js';
+import { ConfigService } from '@nestjs/config';
+import { QueryDefaultDto } from '../../common/dtos/query.defualt.dto.js';
+import pagination from '../../common/utils/pagination.js';
 
 @Injectable()
 export class SpecialtyService {
-    constructor(private readonly prisma: PrismaService) { }
-    async getAll() {
-        return this.prisma.specialty.findMany({ orderBy: { title: 'asc' } })
+    constructor(
+        private readonly prisma: PrismaService,
+        private readonly configService: ConfigService,
+    ) { }
+    async getAll(title: string, query: QueryDefaultDto) {
+        const { limit, page = 1 } = query
+        const limitPage = Number(limit) || Number(this.configService.get('limit.admin'))
+        const skip = (Number(page) - 1) * limitPage;
+        const where = {
+            ...(title?.trim() && {
+                title: { contains: title.trim(), mode: 'insensitive' as const },
+            }),
+        };
+        const [data, count] = await Promise.all([
+            this.prisma.specialty.findMany({ where, orderBy: { title: 'asc' }, skip, take: limitPage }),
+            this.prisma.specialty.count({ where }),
+        ])
+        return {
+            specialty: data,
+            pagination: pagination(count, page, limitPage)
+        }
+
+    }
+
+    async getMy(userId: string) {
+        const coach = await this.prisma.coach.findUnique({
+            where: { userId }, select: {
+                id: true, specialties: {
+                    select: {
+                        id: true,
+                        slug: true,
+                        title: true,
+                    },
+                    orderBy: { title: 'asc' }
+                }
+            }
+        })
+        if (!coach) throw new NotFoundException('مربی یافت نشد')
+        return coach
     }
 
     async updateTable(userId: string, dto: ArrayIdDto) {
@@ -23,8 +62,13 @@ export class SpecialtyService {
         return { success: true };
     }
 
-    async getSelector() {
-        return this.prisma.specialty.findMany({ select: { title: true, id: true }, orderBy: { title: 'asc' } })
+    async getSelector(title: string) {
+        const where = {
+            ...(title?.trim() && {
+                title: { contains: title.trim(), mode: 'insensitive' as const },
+            }),
+        };
+        return this.prisma.specialty.findMany({ where, select: { title: true, id: true, slug: true }, orderBy: { title: 'asc' } })
     }
 
     // Admin

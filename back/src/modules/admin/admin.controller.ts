@@ -14,6 +14,7 @@ import {
   ApiTags,
   ApiBearerAuth,
   ApiOkResponse,
+  ApiQuery,
 } from '@nestjs/swagger';
 import { AccessTokenGuard } from '../auth/guard/access-token.guard.js';
 import { Roles } from '../auth/decorators/roles.decorator.js';
@@ -28,13 +29,14 @@ import { MuscleGroupService } from './muscleGroup.service.js';
 import { TrainingGoalService } from './trainingGoal.service.js';
 
 // DTOs
-import { CreateSpecialtyDto, SearchExerciseDto, SearchFoodDto } from './dto/admin.dto.js';
+import { CreateSpecialtyDto, SearchExerciseDto, SearchFoodDto, UpdateExerciseDto } from './dto/admin.dto.js';
 import { CreateEquipmentDto } from './dto/admin.dto.js';
 import { CreateExerciseDto } from './dto/admin.dto.js';
 import { CreateFoodDto } from './dto/admin.dto.js';
 import { CreateMuscleGroupDto } from './dto/admin.dto.js';
 import { CreateTrainingGoalDto } from './dto/admin.dto.js';
 import { EquipmentEntity, ExerciseEntity, FoodEntity, MuscleGroupEntity, SpecialtyEntity, TrainingGoalEntity } from './entities/admin.entity.js';
+import { PaginatedResponse } from '../../common/dtos/pagination-response.dto.js';
 
 @ApiTags('Admin')
 @ApiBearerAuth()
@@ -55,10 +57,11 @@ export class AdminController {
   // Specialty
   // ============================================================
   @Get('specialty')
-  @ApiOkResponse({ type: [SpecialtyEntity] })
+  @ApiOkResponse({ type: PaginatedResponse(SpecialtyEntity, 'specialty') })
   @ApiOperation({ summary: 'لیست تخصص (Admin)' })
-  getSpecialty() {
-    return this.specialtyService.getAll();
+  @ApiQuery({ name: 'title', required: false, type: String, description: 'جستجو بر اساس عنوان لیست تخصص' })
+  getSpecialty(@Query('title') title: string, @Query() query: QueryDefaultDto) {
+    return this.specialtyService.getAll(title, query);
   }
 
   @Post('specialty')
@@ -86,10 +89,11 @@ export class AdminController {
   // Equipment
   // ============================================================
   @Get('equipment')
-  @ApiOkResponse({ type: [EquipmentEntity] })
+  @ApiOkResponse({ type: PaginatedResponse(EquipmentEntity, 'equipment') })
   @ApiOperation({ summary: 'لیست تجهیزات (Admin)' })
-  getEquipment(@Query() query: QueryDefaultDto) {
-    return this.equipmentService.getAll(query);
+  @ApiQuery({ name: 'title', required: false, type: String, description: 'جستجو بر اساس عنوان لیست تجهیزات' })
+  getEquipment(@Query('title') title: string, @Query() query: QueryDefaultDto) {
+    return this.equipmentService.getAll(title, query);
   }
 
   @Post('equipment')
@@ -114,83 +118,14 @@ export class AdminController {
   }
 
   // ============================================================
-  // Exercise
-  // ============================================================
-  @Get('exercise')
-  @ApiOkResponse({ type: [ExerciseEntity] })
-  @ApiOperation({ summary: 'لیست تمرین (Admin)' })
-  getAllAdmin(@Query() query: SearchExerciseDto) {
-    return this.exerciseService.getAllAdmin(query);
-  }
-
-  @Post('exercise')
-  @ApiOkResponse({ example: { success: true } })
-  @ApiOperation({ summary: 'ایجاد تمرین (Admin)' })
-  createExercise(@Body() dto: CreateExerciseDto) {
-    return this.exerciseService.create(dto);
-  }
-
-  @Put('exercise/:id')
-  @ApiOkResponse({ example: { success: true } })
-  @ApiOperation({ summary: 'ویرایش تمرین (Admin)' })
-  updateExercise(@Param('id') id: string, @Body() dto: CreateExerciseDto) {
-    return this.exerciseService.update(id, dto);
-  }
-
-  @Delete('exercise/:id')
-  @ApiOkResponse({ example: { success: true } })
-  @ApiOperation({ summary: 'حذف تمرین (Admin)' })
-  deleteExercise(@Param('id') id: string) {
-    return this.exerciseService.delete(id);
-  }
-
-  // ============================================================
-  // Food
-  // ============================================================
-
-  @Get('food')
-  @ApiOkResponse({ type: [FoodEntity] })
-  @ApiOperation({ summary: 'لیست غذاها (Admin)' })
-  getAllAdminFood(@Query() query: SearchFoodDto) {
-    return this.foodService.getAllAdmin(query);
-  }
-
-  @Post('food')
-  @ApiOkResponse({ example: { success: true } })
-  @ApiOperation({ summary: 'ایجاد غذا (Admin)' })
-  createFood(@Body() dto: CreateFoodDto) {
-    return this.foodService.create(dto);
-  }
-
-  @Put('food/:id')
-  @ApiOkResponse({ example: { success: true } })
-  @ApiOperation({ summary: 'ویرایش غذا (Admin)' })
-  updateFood(@Param('id') id: string, @Body() dto: CreateFoodDto) {
-    return this.foodService.update(id, dto);
-  }
-
-  @Delete('food/:id')
-  @ApiOkResponse({ example: { success: true } })
-  @ApiOperation({ summary: 'حذف غذا (Admin)' })
-  deleteFood(@Param('id') id: string) {
-    return this.foodService.delete(id);
-  }
-
-  // ============================================================
   // MuscleGroup
   // ============================================================
   @Get('muscle-group')
-  @ApiOkResponse({ type: [MuscleGroupEntity] })
+  @ApiOkResponse({ type: PaginatedResponse(MuscleGroupEntity, 'muscleGroup') })
   @ApiOperation({ summary: 'لیست گروه عضلانی (Admin)' })
+  @ApiQuery({ name: 'title', required: false, type: String, description: 'جستجو بر اساس عنوان گروه عضلانی' })
   getAllMuscleGroup(@Query() query: QueryDefaultDto, @Query('title') title: string) {
     return this.muscleGroupService.getAll(title, query);
-  }
-
-  @Get('muscle-group/:slug')
-  @ApiOkResponse({ type: MuscleGroupEntity })
-  @ApiOperation({ summary: 'دریافت تکی گروه عضلانی (Admin)' })
-  getMuscleGroup(@Param('slug') slug: string) {
-    return this.muscleGroupService.getOne(slug);
   }
 
   @Post('muscle-group')
@@ -218,8 +153,9 @@ export class AdminController {
   // TrainingGoal
   // ============================================================
   @Get('training-goal')
-  @ApiOkResponse({ type: [TrainingGoalEntity] })
+  @ApiOkResponse({ type: PaginatedResponse(TrainingGoalEntity, 'trainingGoal') })
   @ApiOperation({ summary: 'لیست هدف تمرینی (Admin)' })
+  @ApiQuery({ name: 'title', required: false, type: String, description: 'جستجو بر اساس عنوان هدف تمرینی' })
   getTrainingGoal(@Query() query: QueryDefaultDto, @Query('title') title: string) {
     return this.trainingGoalService.getAll(title, query);
   }
@@ -243,5 +179,82 @@ export class AdminController {
   @ApiOperation({ summary: 'حذف هدف تمرینی (Admin)' })
   deleteTrainingGoal(@Param('id') id: string) {
     return this.trainingGoalService.delete(id);
+  }
+
+  // ============================================================
+  // Exercise
+  // ============================================================
+  @Get('exercise')
+  @ApiOkResponse({ type: PaginatedResponse(ExerciseEntity, 'exercise') })
+  @ApiOperation({ summary: 'لیست تمرین (Admin)' })
+  getAllAdmin(@Query() query: SearchExerciseDto) {
+    return this.exerciseService.getAllAdmin(query);
+  }
+
+  @Get('exercise/:slug')
+  @ApiOkResponse({ type: ExerciseEntity })
+  @ApiOperation({ summary: ' تمرین تکی(Admin)' })
+  getOneExercise(@Param('slug') slug: string) {
+    return this.exerciseService.getOneAdmin(slug);
+  }
+
+  @Post('exercise')
+  @ApiOkResponse({ example: { success: true } })
+  @ApiOperation({ summary: 'ایجاد تمرین (Admin)' })
+  createExercise(@Body() dto: CreateExerciseDto) {
+    return this.exerciseService.create(dto);
+  }
+
+  @Put('exercise/:id')
+  @ApiOkResponse({ example: { success: true } })
+  @ApiOperation({ summary: 'ویرایش تمرین (Admin)' })
+  updateExercise(@Param('id') id: string, @Body() dto: UpdateExerciseDto) {
+    return this.exerciseService.update(id, dto);
+  }
+
+  @Delete('exercise/:id')
+  @ApiOkResponse({ example: { success: true } })
+  @ApiOperation({ summary: 'حذف تمرین (Admin)' })
+  deleteExercise(@Param('id') id: string) {
+    return this.exerciseService.delete(id);
+  }
+
+  @Delete('exercise-db/:id')
+  @ApiOkResponse({ example: { success: true } })
+  @ApiOperation({ summary: 'حذف تمرین از دیتابیس احتیاط کنید(Admin)' })
+  deleteExerciseDb(@Param('id') id: string) {
+    return this.exerciseService.deleteDb(id);
+  }
+
+  // ============================================================
+  // Food
+  // ============================================================
+
+  @Get('food')
+  @ApiOkResponse({ type: PaginatedResponse(FoodEntity, 'food') })
+  @ApiOperation({ summary: 'لیست غذاها (Admin)' })
+  getAllAdminFood(@Query() query: SearchFoodDto) {
+    return this.foodService.getAllAdmin(query);
+  }
+
+  @Post('food')
+  @ApiOkResponse({ example: { success: true } })
+  @ApiOperation({ summary: 'ایجاد غذا (Admin)' })
+  createFood(@Body() dto: CreateFoodDto) {
+    return this.foodService.create(dto);
+  }
+
+  @Put('food/:id')
+  @ApiOkResponse({ example: { success: true } })
+  @ApiOperation({ summary: 'ویرایش غذا (Admin)' })
+  updateFood(@Param('id') id: string, @Body() dto: CreateFoodDto) {
+    return this.foodService.update(id, dto);
+  }
+
+  @Delete('food/:id')
+  @ApiOkResponse({ example: { success: true } })
+  @ApiOperation({ summary: 'حذف غذا (Admin)' })
+  deleteFood(@Param('id') id: string) {
+    return this.foodService.delete(id);
   }
 }

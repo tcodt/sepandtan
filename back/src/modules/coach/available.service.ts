@@ -6,10 +6,12 @@ import { CreateAvailabilityDto, UpdateAvailabilityDto } from './dto/coach.dto.js
 export class AvailableService {
     constructor(private readonly prisma: PrismaService) { }
 
-    async createAvailable(coachId: string, dto: CreateAvailabilityDto) {
-        const count = await this.prisma.coachAvailability.count({ where: { coachId } });
+    async createAvailable(userId: string, dto: CreateAvailabilityDto) {
+        const gatId = await this.prisma.coach.findUnique({ where: { userId }, select: { id: true } })
+        if (!gatId) throw new NotFoundException('مربی یافت نشد')
+        const count = await this.prisma.coachAvailability.count({ where: { coachId: gatId.id } });
         if (count >= 7) throw new BadRequestException('حداکثر ۷ مورد (روزهای هفته) مجاز است');
-        await this.prisma.coachAvailability.create({ data: { coachId, ...dto } });
+        await this.prisma.coachAvailability.create({ data: { coachId: gatId.id, ...dto } });
         return { success: true };
     }
 
@@ -19,15 +21,17 @@ export class AvailableService {
         return { success: true };
     }
 
-    async deleteAvailable(id: string, coachId: string) {
-        await this.checkMe(id, coachId);
+    async deleteAvailable(id: string, userId: string) {
+        await this.checkMe(id, userId);
         await this.prisma.coachAvailability.delete({ where: { id } });
         return { success: true };
     }
 
-    private async checkMe(id: string, coachId?: string) {
+    private async checkMe(id: string, userId?: string) {
+        const gatCoach = await this.prisma.coach.findUnique({ where: { userId }, select: { id: true } })
+        if (!gatCoach) throw new NotFoundException('مربی یافت نشد')
         const found = await this.prisma.coachAvailability.findFirst({
-            where: { id, ...(coachId && { coachId }) },
+            where: { id, ...(gatCoach && { coachId: gatCoach.id }) },
         });
         if (!found) throw new NotFoundException('اطلاعات یافت نشد');
     }

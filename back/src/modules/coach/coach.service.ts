@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ConflictException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { ConfigService } from '@nestjs/config';
 import pagination from '../../common/utils/pagination.js';
@@ -102,6 +102,11 @@ export class CoachService {
               activeClients: true
             },
           },
+          media: {
+            take: 1,
+            orderBy: [{ sortOrder: 'asc' }],
+            select: { id: true, url: true },
+          },
           city: {
             select: { name: true, id: true }
           },
@@ -170,6 +175,11 @@ export class CoachService {
           province: {
             select: { name: true, id: true }
           },
+          media: {
+            take: 1,
+            orderBy: [{ sortOrder: 'asc' }],
+            select: { id: true, url: true },
+          },
           id: true,
           title: true,
           slug: true,
@@ -229,6 +239,10 @@ export class CoachService {
         maxClients: true,
         city: { select: { name: true } },
         province: { select: { name: true } },
+        media: {
+          orderBy: [{ sortOrder: 'asc' }],
+          select: { id: true, url: true },
+        },
         address: {
           select: {
             id: true,
@@ -310,7 +324,7 @@ export class CoachService {
         certifications: {
           take: 1,
           orderBy: { createdAt: 'desc' },
-          where: { status: 'APPROVED', isPrimary: true },
+          where: { isVerified: true, isPrimary: true },
           select: {
             type: true,
             title: true,
@@ -371,30 +385,84 @@ export class CoachService {
   }
 
   async create(dto: CreateCoachDto) {
+    const { banner, ...rest } = dto;
     await this.prisma.coach.create({
       data: {
-        ...dto,
-        coachRating: {
-          create: {}
-        },
+        ...rest,
+        ...(banner?.length && {
+          media: { connect: banner.map((url) => ({ url })) },
+        }),
+        coachRating: { create: {} },
       },
     });
-    return { success: true }
+    return { success: true };
   }
 
   async update(id: string, dto: UpdateCoachDto, role: RolePerson, userId: string) {
+    // چک وجود مربی
+    const coach = await this.prisma.coach.findUnique({
+      where: { id },
+      select: { id: true, userId: true },
+    });
+    if (!coach) throw new NotFoundException('مربی یافت نشد');
+
+    // تفکیک فیلدهای حساس
+    const { status, commissionRate, rejectionReason, banner, ...body } = dto;
+
+    let data: any = {};
+
     if (role === 'SUPERADMIN' || role === 'ADMIN') {
-      await this.prisma.coach.update({ where: { id }, data: { ...dto } })
+      // ادمین: همه فیلدها
+      data = { ...dto };
+    } else if (role === 'COACH') {
+      // مربی: فقط اگر صاحب پروفایل است
+      if (coach.userId !== userId) {
+        throw new ForbiddenException('این پروفایل متعلق به شما نیست');
+      }
+      // مربی نمی‌تواند این فیلدها را تغییر دهد
+      data = { ...body, banner };
+    } else {
+      throw new ForbiddenException('دسترسی ندارید');
     }
-    if (role === 'COACH' && id === userId) {
-      const { status, commissionRate, rejectionReason, title, slug, ...body } = dto
-      await this.prisma.coach.update({ where: { id }, data: { ...body } })
+
+    // مدیریت بنر (اگر ارسال شده)
+    if (banner !== undefined) {
+      // حذف Mediaهای قبلی بنر و ساخت جدیدها
+      await this.prisma.$transaction(async (tx) => {
+        await tx.media.deleteMany({ where: { coachId: id, useCase: 'PRODUCT' } });
+        if (banner.length) {
+          await tx.media.createMany({
+            data: banner.map((url, i) => ({
+              coachId: id,
+              url,
+              useCase: 'PRODUCT',
+              isMain: i === 0,
+              sortOrder: i,
+            })),
+          });
+        }
+      });
     }
-    return { success: true }
+
+    // حذف banner از data (چون جدا مدیریت شد)
+    delete data.banner;
+
+    await this.prisma.coach.update({
+      where: { id },
+      data,
+      select: { id: true, slug: true, status: true, updatedAt: true },
+    });
+
+    return { success: true };
   }
 
   async delete(id: string) {
     await this.prisma.coach.update({ where: { id }, data: { status: 'DELETED' } })
+    return { success: true }
+  }
+
+  async deleteDb(id: string) {
+    await this.prisma.coach.delete({ where: { id }})
     return { success: true }
   }
 }
