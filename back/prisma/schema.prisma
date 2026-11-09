@@ -96,11 +96,11 @@ model Profile {
   age                 DateTime?         @map("age") @db.Date
   trainingDaysPerWeek Int?              @map("training_days_per_week")
   // سلامت و تغذیه
-  injuries            String?  @map("injuries")
-  medicalConditions   String?  @map("medical_conditions")
-  allergies           String[] @map("allergies")
-  dietaryRestrictions String[] @map("dietary_restrictions")
-  trainingGoalId      String?  @map("training_goal_id")
+  injuries            String?           @map("injuries")
+  medicalConditions   String?           @map("medical_conditions")
+  allergies           String[]          @map("allergies")
+  dietaryRestrictions String[]          @map("dietary_restrictions")
+  trainingGoalId      String?           @map("training_goal_id")
 
   onBoardingStep OnBoardingStep @default(PROFILE) @map("on_boarding_step")
   createdAt      DateTime       @default(now()) @map("created_at")
@@ -520,24 +520,22 @@ model UserLog {
   jalaliMonth Int      @map("jalali_month")
 
   // ورزش
-  plannedExerciseIds String[] @default([]) @map("planned_exercise_ids") // آیدی تمام تمرینات برنامه ریزی شده
-  doneExerciseIds    String[] @default([]) @map("done_exercise_ids") // تمرین های انجام شده
-  plannedExercises   Int      @default(0) @map("planned_exercises") // تمرین های برنامه ریزی شده
-  doneExercises      Int      @default(0) @map("done_exercises") // تمرین های انجام شده
-  extraExercises     Json     @default("[]") @map("extra_exercises") // [{name, durationMin, caloriesBurned, note}] تمرین ها اضافی
-  caloriesBurned     Int?     @map("calories_burned") // کالری های سوزانده شده
+  unCompletedExerciseIds String[] @default([]) @map("done_exercise_ids") // تمرین های انجام نشده
+  plannedExercises       Int      @default(0) @map("planned_exercises") // تمرین های برنامه ریزی شده
+  doneExercises          Int      @default(0) @map("done_exercises") // تمرین های انجام شده
+  extraExercises         Json     @default("[]") @map("extra_exercises") // [{name, durationMin, caloriesBurned, note}] تمرین ها اضافی
+  caloriesBurned         Int?     @map("calories_burned") // کالری های سوزانده شده
 
   // تغذیه
-  plannedMealIds   String[] @default([]) @map("planned_meal_ids") // آیدی وعده های غذایی انجام نشده
-  doneMealIds      String[] @default([]) @map("done_meal_ids") // آیدی وعده های غذایی انجام شده
-  plannedMeals     Int      @default(0) @map("planned_meals") // برنامه های غذایی برنامه ریزی شده
-  doneMeals        Int      @default(0) @map("done_meals") // برنامه های غذایی انجام شده
-  extraMeals       Json     @default("[]") @map("extra_meals") // [{name, calories, proteinG, carbsG, fatG}] برنامه های غذایی اضافی
-  caloriesPlanned  Int?     @map("calories_planned") // کالری های برنامه ریزی شده
-  caloriesConsumed Int?     @map("calories_consumed") // کالری های مصرف شده
-  proteinG         Int?     @map("protein_g") // پروتئین ها
-  carbsG           Int?     @map("carbs_g") // کربوهیدرات ها
-  fatG             Int?     @map("fat_g") // چربی ها
+  unCompletedMealIds String[] @default([]) @map("done_meal_ids") // آیدی وعده های غذایی انجام نشده
+  plannedMeals       Int      @default(0) @map("planned_meals") // برنامه های غذایی برنامه ریزی شده
+  doneMeals          Int      @default(0) @map("done_meals") // برنامه های غذایی انجام شده
+  extraMeals         Json     @default("[]") @map("extra_meals") // [{name, calories, proteinG, carbsG, fatG}] برنامه های غذایی اضافی
+  caloriesPlanned    Int?     @map("calories_planned") // کالری های برنامه ریزی شده
+  caloriesConsumed   Int?     @map("calories_consumed") // کالری های مصرف شده
+  proteinG           Int?     @map("protein_g") // پروتئین ها
+  carbsG             Int?     @map("carbs_g") // کربوهیدرات ها
+  fatG               Int?     @map("fat_g") // چربی ها
 
   userNote  String? @map("user_note")
   coachNote String? @map("coach_note")
