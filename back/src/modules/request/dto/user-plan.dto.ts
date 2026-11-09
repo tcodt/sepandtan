@@ -199,12 +199,27 @@ export class DietSnapshotInputDto {
   phases!: SnapshotDietPhaseInputDto[];
 }
 
+/** ویرایش فقط بخش ورزشی — جدا از غذایی تا آپدیت‌های هم‌زمان تداخل نکنند */
+export class UpdateWorkoutSnapshotDto {
+  @ApiProperty({ type: WorkoutSnapshotInputDto })
+  @ValidateNested() @Type(() => WorkoutSnapshotInputDto)
+  workout!: WorkoutSnapshotInputDto;
+}
+
+/** ویرایش فقط بخش غذایی */
+export class UpdateDietSnapshotDto {
+  @ApiProperty({ type: DietSnapshotInputDto })
+  @ValidateNested() @Type(() => DietSnapshotInputDto)
+  diet!: DietSnapshotInputDto;
+}
+
+/** @deprecated استفاده از endpointهای جداگانه workout/diet ترجیح داده می‌شود */
 export class UpdateUserPlanSnapshotDto {
-  @ApiPropertyOptional({ type: WorkoutSnapshotInputDto, description: 'جایگزینی کامل snapshot ورزشی (فقط اگر پلن بخش ورزشی دارد)' })
+  @ApiPropertyOptional({ type: WorkoutSnapshotInputDto, description: 'جایگزینی کامل snapshot ورزشی' })
   @IsOptional() @ValidateNested() @Type(() => WorkoutSnapshotInputDto)
   workout?: WorkoutSnapshotInputDto;
 
-  @ApiPropertyOptional({ type: DietSnapshotInputDto, description: 'جایگزینی کامل snapshot غذایی (فقط اگر پلن بخش غذایی دارد)' })
+  @ApiPropertyOptional({ type: DietSnapshotInputDto, description: 'جایگزینی کامل snapshot غذایی' })
   @IsOptional() @ValidateNested() @Type(() => DietSnapshotInputDto)
   diet?: DietSnapshotInputDto;
 }
@@ -218,6 +233,14 @@ export class ActivateUserPlanDto {
   })
   @IsOptional() @Matches(DATE_REGEX, { message: DATE_MESSAGE })
   startDate?: string;
+
+  @ApiPropertyOptional({
+    example: '2027-01-04',
+    description:
+      'تاریخ پایان اختیاری. اگر نباشد از durationWeeks اسنپ‌شات محاسبه می‌شود (start + weeks*7 - 1). باید ≥ startDate باشد.',
+  })
+  @IsOptional() @Matches(DATE_REGEX, { message: DATE_MESSAGE })
+  endDate?: string;
 }
 
 export class TodayQueryDto {
@@ -227,9 +250,18 @@ export class TodayQueryDto {
 }
 
 export class PartQueryDto {
-  @ApiPropertyOptional({ example: 3, description: 'شماره‌ی هفته‌ی برنامه؛ فازی که این هفته را پوشش می‌دهد برمی‌گردد. پیش‌فرض هفته‌ی جاری' })
+  @ApiPropertyOptional({
+    example: 3,
+    description: 'شماره‌ی هفته‌ی برنامه (۱-based). اگر نباشد از startDate محاسبه‌ی هفته‌ی جاری انجام می‌شود',
+  })
   @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(105)
   week?: number;
+}
+
+export class PhaseParamDto {
+  @ApiProperty({ example: 1, description: 'شماره‌ی فاز (۱ = فاز اول مرتب‌شده؛ مثلاً هفته‌های ۱–۳)' })
+  @Type(() => Number) @IsInt() @Min(1) @Max(52)
+  phase!: number;
 }
 
 export class UserPlanQueryDto extends QueryDefaultDto {

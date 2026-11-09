@@ -42,6 +42,23 @@ export function weekdayOf(date: Date): number {
   return (date.getUTCDay() + 1) % 7;
 }
 
+/**
+ * هفته‌ی جاری برنامه (۱-based).
+ * قبل از startDate → ۱؛ بعد از duration هم آخرین هفته را نگه می‌داریم مگر clamp=false.
+ */
+export function resolvePlanWeek(
+  startDate: Date | null | undefined,
+  today: Date,
+  durationWeeks?: number | null,
+): number {
+  if (!startDate) return 1;
+  const diff = Math.floor((today.getTime() - startDate.getTime()) / DAY_MS);
+  if (diff < 0) return 1;
+  const week = Math.floor(diff / 7) + 1;
+  if (durationWeeks && durationWeeks > 0) return Math.min(week, durationWeeks);
+  return Math.max(1, week);
+}
+
 // ═════════ Number helpers ═════════
 
 export type Num = number | { toNumber(): number };
@@ -51,7 +68,9 @@ const round1 = (n: number) => Math.round(n * 10) / 10;
 /** Prisma JSON input را بدون درگیر شدن با تایپ‌های سخت‌گیرانه‌اش می‌پذیرد */
 export const toJson = (v: unknown): any => v;
 
-// ═════════ Snapshot types (شکل JSON ذخیره‌شده در UserPlan) ═════════
+// ═════════ Snapshot types
+// ساختار سبک: ۳ فاز (مثلاً ۱–۳ / ۴–۶ / ۷–۸) — days فقط یک‌بار در هر فاز ذخیره می‌شود.
+// هرگز برای هر هفته‌ی جداگانه days را تکرار نکن؛ JSON سنگین می‌شود.
 
 export type Macros = { calories: number; proteinG: number; carbsG: number; fatG: number };
 export type Target = {
@@ -137,7 +156,14 @@ export type DietSnapshot = {
   phases: DietSnapshotPhase[];
 };
 
-// ═════════ Input shapes (ورودی ساخت/ویرایش snapshot — DTOها همین شکل را دارند) ═════════
+export type PhaseOutline = {
+  phaseNumber: number;
+  title: string;
+  startWeek: number;
+  endWeek: number;
+};
+
+// ═════════ Input shapes ═════════
 
 export interface WorkoutInput {
   phases: {
@@ -231,6 +257,48 @@ function assertPhases(
       seen.add(d.weekday);
     }
   }
+}
+
+// ═════════ Phase helpers (بدون کپی days) ═════════
+
+export function phaseOutline(
+  phases: { title: string; startWeek: number; endWeek: number }[],
+): PhaseOutline[] {
+  return [...phases]
+    .sort((a, b) => a.startWeek - b.startWeek)
+    .map((p, i) => ({
+      phaseNumber: i + 1,
+      title: p.title,
+      startWeek: p.startWeek,
+      endWeek: p.endWeek,
+    }));
+}
+
+export function pickPhaseByWeek<T extends { startWeek: number; endWeek: number }>(
+  phases: T[] | undefined,
+  week: number,
+): T | null {
+  if (!phases?.length) return null;
+  return phases.find((p) => week >= p.startWeek && week <= p.endWeek) ?? null;
+}
+
+/** phaseNumber یک‌پایه (۱ = اولین فاز مرتب‌شده بر اساس startWeek) */
+export function pickPhaseByNumber<T extends { startWeek: number; endWeek: number }>(
+  phases: T[] | undefined,
+  phaseNumber: number,
+): T | null {
+  if (!phases?.length || phaseNumber < 1) return null;
+  const sorted = [...phases].sort((a, b) => a.startWeek - b.startWeek);
+  return sorted[phaseNumber - 1] ?? null;
+}
+
+export function phaseNumberOfWeek(
+  phases: { startWeek: number; endWeek: number }[],
+  week: number,
+): number | null {
+  const sorted = [...phases].sort((a, b) => a.startWeek - b.startWeek);
+  const idx = sorted.findIndex((p) => week >= p.startWeek && week <= p.endWeek);
+  return idx >= 0 ? idx + 1 : null;
 }
 
 // ═════════ Builders ═════════
@@ -344,7 +412,6 @@ export function buildDietSnapshot(
     .sort((a, b) => a.startWeek - b.startWeek)
     .map((p) => {
       const phaseTarget = targetOf(p);
-      // هدف مؤثر = هدف فاز، و اگر نبود هدف کل برنامه (فیلد به فیلد)
       const target: Target = {
         calories: phaseTarget.calories ?? planTarget.calories,
         proteinG: phaseTarget.proteinG ?? planTarget.proteinG,
@@ -379,7 +446,6 @@ export function buildDietSnapshot(
                   };
                 });
                 return {
-                  // id پایدار: logها به همین id برای وعده‌ی برنامه‌ریزی‌شده ارجاع می‌دهند
                   id: m.id ?? randomUUID(),
                   type: m.type,
                   priority: m.priority ?? 'PRIMARY',
@@ -402,7 +468,6 @@ export function buildDietSnapshot(
               title: d.title ?? null,
               notes: d.notes ?? null,
               target,
-              // جمع روز فقط وعده‌های PRIMARY (SECONDARY/TERTIARY جایگزین‌اند)
               nutrition: sumMacros(meals.filter((m) => m.priority === 'PRIMARY').map((m) => m.nutrition)),
               meals,
             };

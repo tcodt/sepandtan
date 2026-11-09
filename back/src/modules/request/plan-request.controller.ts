@@ -69,6 +69,7 @@ export class PlanRequestController {
     return this.planRequestService.deleteMyRequests(userId, requestId);
   }
 
+
   // ============ Coach (قبل از مسیرهای پارامتری) ============
 
   @Get('coach')
@@ -138,8 +139,16 @@ export class PlanRequestController {
     return this.planRequestService.getSingleRequestAdmin(id);
   }
 
-  @Put('admin/:id')
+
+  @Delete('admin/:requestId')
   @Roles('SUPERADMIN')
+  @ApiOperation({ summary: 'حذف درخواست (Super Admin)' })
+  deleteAdminRequests(@CurrentUser('id') userId: string, @Param('requestId') requestId: string) {
+    return this.planRequestService.deleteMyRequests(userId, requestId);
+  }
+
+  @Put('admin/:id')
+  // @Roles('SUPERADMIN')
   @ApiOperation({ summary: 'ویرایش درخواست (Super Admin)', description: 'فقط سوپر ادمین مجاز به تغییر درخواست ها هستش' })
   updateAdmin(@Param('id') id: string, @Body() dto: PlanRequestAdminDto,) {
     return this.planRequestService.updateAdmin(id, dto);

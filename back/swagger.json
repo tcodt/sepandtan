@@ -13313,6 +13313,127 @@
         ]
       }
     },
+    "/plan-request/admin/{requestId}": {
+      "delete": {
+        "operationId": "PlanRequestController_deleteAdminRequests",
+        "parameters": [
+          {
+            "name": "requestId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "حذف درخواست (Super Admin)",
+        "tags": [
+          "PlanRequest"
+        ]
+      }
+    },
+    "/user-plan/admin": {
+      "get": {
+        "operationId": "UserPlanController_getPlansAdmin",
+        "parameters": [
+          {
+            "name": "order",
+            "required": false,
+            "in": "query",
+            "description": "ترتیب داده‌ها",
+            "schema": {
+              "nullable": true,
+              "example": "desc",
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ]
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "شماره صفحه",
+            "schema": {
+              "example": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "تعداد آیتم در هر صفحه",
+            "schema": {
+              "example": 10,
+              "type": "number"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "description": "فیلتر وضعیت",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "DRAFT",
+                "ACTIVE",
+                "COMPLETED",
+                "CANCELLED"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedUserPlanListItemEntity"
+                }
+              }
+            }
+          }
+        },
+        "summary": "دریافت تمام برنامه ها (Admin)",
+        "tags": [
+          "UserPlan"
+        ]
+      }
+    },
+    "/user-plan/admin/{planId}": {
+      "delete": {
+        "operationId": "UserPlanController_deletePlansAdmin",
+        "parameters": [
+          {
+            "name": "planId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "حذف برنامه ها (Super Admin)",
+        "tags": [
+          "UserPlan"
+        ]
+      }
+    },
     "/user-plan/my": {
       "get": {
         "description": "بدون snapshot و بدون پیش‌نویس‌ها. جدیدترین اول. فیلتر اختیاری status.",
@@ -13381,7 +13502,7 @@
             }
           }
         },
-        "summary": "تاریخچه‌ی برنامه‌های من (User)",
+        "summary": "۱) تاریخچه‌ی برنامه‌های من (User)",
         "tags": [
           "UserPlan"
         ]
@@ -13389,7 +13510,7 @@
     },
     "/user-plan/my/current": {
       "get": {
-        "description": "هر کاربر حداکثر یک برنامه‌ی فعال دارد که می‌تواند هم ورزشی هم غذایی باشد (hasWorkout / hasDiet). اگر ندارد { plan: null }. snapshot برنمی‌گردد (سبک)؛ محتوا را از my/today یا my/current/workout|diet بگیر.",
+        "description": "حداکثر یک برنامه‌ی فعال (hasWorkout / hasDiet / currentWeek). snapshot برنمی‌گردد.",
         "operationId": "UserPlanController_getMyCurrent",
         "parameters": [],
         "responses": {
@@ -13404,7 +13525,7 @@
             }
           }
         },
-        "summary": "برنامه‌ی فعال من — فقط متادیتا (User)",
+        "summary": "۲) برنامه‌ی فعال من — فقط متادیتا (User)",
         "tags": [
           "UserPlan"
         ]
@@ -13412,14 +13533,14 @@
     },
     "/user-plan/my/current/workout": {
       "get": {
-        "description": "فازی که هفته‌ی week را پوشش می‌دهد (پیش‌فرض هفته‌ی جاری) همراه outline همه‌ی فازها برای ناوبری. بدون برنامه‌ی ورزشی فعال → 404.",
+        "description": "هفته‌ی جاری از startDate محاسبه می‌شود (یا ?week=N). فقط فاز جاری days کامل دارد؛ outline بقیه‌ی فازها سبک است.",
         "operationId": "UserPlanController_getMyWorkout",
         "parameters": [
           {
             "name": "week",
             "required": false,
             "in": "query",
-            "description": "شماره‌ی هفته‌ی برنامه؛ فازی که این هفته را پوشش می‌دهد برمی‌گردد. پیش‌فرض هفته‌ی جاری",
+            "description": "شماره‌ی هفته‌ی برنامه (۱-based). اگر نباشد از startDate محاسبه‌ی هفته‌ی جاری انجام می‌شود",
             "schema": {
               "example": 3,
               "type": "number"
@@ -13438,7 +13559,41 @@
             }
           }
         },
-        "summary": "فاز برنامه‌ی ورزشی (User)",
+        "summary": "۳) برنامه‌ی هفتگی ورزشی من (User)",
+        "tags": [
+          "UserPlan"
+        ]
+      }
+    },
+    "/user-plan/my/current/workout/phase/{phase}": {
+      "get": {
+        "description": "روزها + حرکات همان فاز. phase=1 یعنی اولین فاز (مثلاً هفته‌های ۱–۳).",
+        "operationId": "UserPlanController_getMyWorkoutPhase",
+        "parameters": [
+          {
+            "name": "phase",
+            "required": true,
+            "in": "path",
+            "description": "شماره‌ی فاز ۱-based (۱=فاز اول)",
+            "schema": {
+              "example": 1,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PartEntity"
+                }
+              }
+            }
+          }
+        },
+        "summary": "۴) فاز ورزشی مشخص (User)",
         "tags": [
           "UserPlan"
         ]
@@ -13446,14 +13601,14 @@
     },
     "/user-plan/my/current/diet": {
       "get": {
-        "description": "مثل my/current/workout برای برنامه‌ی غذایی. بدون برنامه‌ی غذایی فعال → 404.",
+        "description": "مثل workout؛ startDate غذایی می‌تواند جدا باشد اگر بعداً اضافه شده.",
         "operationId": "UserPlanController_getMyDiet",
         "parameters": [
           {
             "name": "week",
             "required": false,
             "in": "query",
-            "description": "شماره‌ی هفته‌ی برنامه؛ فازی که این هفته را پوشش می‌دهد برمی‌گردد. پیش‌فرض هفته‌ی جاری",
+            "description": "شماره‌ی هفته‌ی برنامه (۱-based). اگر نباشد از startDate محاسبه‌ی هفته‌ی جاری انجام می‌شود",
             "schema": {
               "example": 3,
               "type": "number"
@@ -13472,7 +13627,40 @@
             }
           }
         },
-        "summary": "فاز برنامه‌ی غذایی (User)",
+        "summary": "۵) برنامه‌ی هفتگی غذایی من (User)",
+        "tags": [
+          "UserPlan"
+        ]
+      }
+    },
+    "/user-plan/my/current/diet/phase/{phase}": {
+      "get": {
+        "description": "روزها + وعده‌های همان فاز.",
+        "operationId": "UserPlanController_getMyDietPhase",
+        "parameters": [
+          {
+            "name": "phase",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "example": 1,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PartEntity"
+                }
+              }
+            }
+          }
+        },
+        "summary": "۶) فاز غذایی مشخص (User)",
         "tags": [
           "UserPlan"
         ]
@@ -13480,7 +13668,7 @@
     },
     "/user-plan/coach": {
       "get": {
-        "description": "فیلتر status=DRAFT برای پیش‌نویس‌های در حال ساخت و ACTIVE برای شاگردان فعال. بدون snapshot.",
+        "description": "فیلتر status=DRAFT | ACTIVE. بدون snapshot.",
         "operationId": "UserPlanController_getCoachPlans",
         "parameters": [
           {
@@ -13546,7 +13734,7 @@
             }
           }
         },
-        "summary": "برنامه‌های شاگردان من (Coach)",
+        "summary": "۷) برنامه‌های شاگردان من (Coach)",
         "tags": [
           "UserPlan"
         ]
@@ -13554,7 +13742,7 @@
     },
     "/user-plan/coach/from-request/{requestId}": {
       "post": {
-        "description": "فقط وقتی درخواست PAID است. snapshot از روی قالب(ها) ساخته می‌شود و پلن با وضعیت DRAFT ثبت می‌شود (کاربر نمی‌بیند). idempotent: اگر قبلاً ساخته شده باشد created=false با همان id برمی‌گردد. درخواست «فقط غذایی» پیش‌نویس جدا (type=DIET) می‌گیرد و هنگام فعال‌سازی به برنامه‌ی فعال کاربر اضافه می‌شود.",
+        "description": "snapshot از قالب‌ها ساخته می‌شود → DRAFT. idempotent. غذاییِ تنها فقط در activate به پلن ورزشی فعال merge می‌شود.",
         "operationId": "UserPlanController_createDraft",
         "parameters": [
           {
@@ -13578,7 +13766,7 @@
             }
           }
         },
-        "summary": "ساخت پیش‌نویس برنامه از درخواست پرداخت‌شده (Coach)",
+        "summary": "ساخت پیش‌نویس از درخواست PAID (Coach)",
         "tags": [
           "UserPlan"
         ]
@@ -13586,7 +13774,7 @@
     },
     "/user-plan/coach/{id}": {
       "get": {
-        "description": "برای صفحه‌ی ویرایش. snapshotها کامل برمی‌گردند (حجیم)؛ فقط هنگام ویرایش صدا بزن.",
+        "description": "برای ویرایش. outline سبک برای ناوبری؛ برای days یک فاز از GET coach/:id/workout|diet/phase/:phase استفاده کن.",
         "operationId": "UserPlanController_getCoachPlan",
         "parameters": [
           {
@@ -13610,7 +13798,169 @@
             }
           }
         },
-        "summary": "جزئیات کامل برنامه‌ی یک شاگرد با snapshot (Coach)",
+        "summary": "۹) جزئیات برنامه‌ی شاگرد با outline فازها + snapshot کامل (Coach)",
+        "tags": [
+          "UserPlan"
+        ]
+      }
+    },
+    "/user-plan/coach/{id}/workout/phase/{phase}": {
+      "get": {
+        "operationId": "UserPlanController_getCoachWorkoutPhase",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "phase",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PartEntity"
+                }
+              }
+            }
+          }
+        },
+        "summary": "فاز ورزشی شاگرد (Coach)",
+        "tags": [
+          "UserPlan"
+        ]
+      }
+    },
+    "/user-plan/coach/{id}/diet/phase/{phase}": {
+      "get": {
+        "operationId": "UserPlanController_getCoachDietPhase",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "phase",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PartEntity"
+                }
+              }
+            }
+          }
+        },
+        "summary": "فاز غذایی شاگرد (Coach)",
+        "tags": [
+          "UserPlan"
+        ]
+      }
+    },
+    "/user-plan/coach/{id}/snapshot/workout": {
+      "put": {
+        "description": "جایگزینی کامل snapshot ورزشی. title/cover حرکت از DB پر می‌شود. فازهای هم‌پوشان / weekday تکراری → 400.",
+        "operationId": "UserPlanController_updateWorkout",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateWorkoutSnapshotDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdatedEntity"
+                }
+              }
+            }
+          }
+        },
+        "summary": "۱۱) ویرایش فقط بخش ورزشی (Coach)",
+        "tags": [
+          "UserPlan"
+        ]
+      }
+    },
+    "/user-plan/coach/{id}/snapshot/diet": {
+      "put": {
+        "description": "جایگزینی کامل snapshot غذایی. کالری/ماکرو سرور حساب می‌کند. id وعده‌ها را برای log حفظ کن.",
+        "operationId": "UserPlanController_updateDiet",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateDietSnapshotDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdatedEntity"
+                }
+              }
+            }
+          }
+        },
+        "summary": "۱۰) ویرایش فقط بخش غذایی (Coach)",
         "tags": [
           "UserPlan"
         ]
@@ -13618,7 +13968,6 @@
     },
     "/user-plan/coach/{id}/snapshot": {
       "put": {
-        "description": "فقط پیش‌نویس. جایگزینی کامل workout و/یا diet. فقط id و پارامترها را بفرست؛ عنوان حرکت/غذا و کالری و ماکرو را سرور محاسبه می‌کند. برای وعده‌های موجود همان id قبلی را نگه دار. تغییرات فقط برای همین کاربر است و قالب اصلی دست‌نخورده می‌ماند. فازهای هم‌پوشان، weekday تکراری یا برنامه‌ی بدون حرکت/آیتم → 400.",
         "operationId": "UserPlanController_updateSnapshot",
         "parameters": [
           {
@@ -13652,7 +14001,7 @@
             }
           }
         },
-        "summary": "ویرایش برنامه‌ی اختصاصی شاگرد (Coach)",
+        "summary": "ویرایش ترکیبی snapshot (deprecated — از /snapshot/workout و /snapshot/diet استفاده کنید)",
         "tags": [
           "UserPlan"
         ]
@@ -13660,7 +14009,7 @@
     },
     "/user-plan/coach/{id}/activate": {
       "post": {
-        "description": "پیش‌نویس را ACTIVE می‌کند و درخواست را DELIVERED. startDate اختیاری (پیش‌فرض امروز، حداکثر ۶۰ روز بعد). برای پلن «فقط غذایی» snapshot به برنامه‌ی فعال کاربر اضافه می‌شود (type → ALL) و id برگشتی id همان برنامه‌ی فعال است. اگر کاربر هم‌اکنون برنامه‌ی فعال دارد → 409.",
+        "description": "DRAFT → ACTIVE. startDate/endDate اختیاری (پیش‌فرض: امروز و duration از snapshot). snapshot از قبل در DRAFT کپی شده. غذاییِ تنها روی پلن ورزشی فعال merge می‌شود. تداخل ACTIVE → 409.",
         "operationId": "UserPlanController_activate",
         "parameters": [
           {
@@ -13694,7 +14043,86 @@
             }
           }
         },
-        "summary": "تحویل برنامه به کاربر (Coach)",
+        "summary": "۱۲) فعال‌سازی برنامه (Coach)",
+        "tags": [
+          "UserPlan"
+        ]
+      }
+    },
+    "/user-plan/{planId}/workout/phase/{phase}": {
+      "get": {
+        "description": "برای برنامه‌های قدیمی/غیرفعال. planId + phase.",
+        "operationId": "UserPlanController_getPlanWorkoutPhase",
+        "parameters": [
+          {
+            "name": "planId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "phase",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PartEntity"
+                }
+              }
+            }
+          }
+        },
+        "summary": "فاز ورزشی یک پلن با id (User — مالک)",
+        "tags": [
+          "UserPlan"
+        ]
+      }
+    },
+    "/user-plan/{planId}/diet/phase/{phase}": {
+      "get": {
+        "operationId": "UserPlanController_getPlanDietPhase",
+        "parameters": [
+          {
+            "name": "planId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "phase",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PartEntity"
+                }
+              }
+            }
+          }
+        },
+        "summary": "فاز غذایی یک پلن با id (User — مالک)",
         "tags": [
           "UserPlan"
         ]
@@ -13702,7 +14130,7 @@
     },
     "/log": {
       "post": {
-        "description": "ترکیب وزن + ورزش + تغذیه. unique([userId, date]) — تکراری → 409. اگر userPlanId داده شود، planned* از روی برنامه محاسبه می‌شود.",
+        "description": "unique([userId, date]) → تکراری 409. unCompleted* = انجام‌نشده‌ها؛ done* = planned − unCompleted. با userPlanId، planned از snapshot (اولویت) یا قالب محاسبه می‌شود.",
         "operationId": "LogController_create",
         "parameters": [],
         "requestBody": {
@@ -13733,7 +14161,7 @@
         ]
       },
       "get": {
-        "description": "مرتب بر اساس تاریخ desc",
+        "description": "from/to اختیاری (حداکثر ۳۶۵ روز). sort: date_desc|date_asc|weight_*|done_*|calories_desc",
         "operationId": "LogController_getMyLogs",
         "parameters": [
           {
@@ -13770,6 +14198,52 @@
               "example": 10,
               "type": "number"
             }
+          },
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "description": "شروع بازه (الزامی برای coach list با فیلتر)",
+            "schema": {
+              "example": "2026-01-01",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": "2026-11-07",
+              "type": "string"
+            }
+          },
+          {
+            "name": "sort",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": "date_desc",
+              "type": "string",
+              "enum": [
+                "date_desc",
+                "date_asc",
+                "weight_desc",
+                "weight_asc",
+                "done_exercises_desc",
+                "done_meals_desc",
+                "calories_desc"
+              ]
+            }
+          },
+          {
+            "name": "userPlanId",
+            "required": false,
+            "in": "query",
+            "description": "فیلتر روی یک userPlan",
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -13792,7 +14266,6 @@
     },
     "/log/stats/monthly": {
       "get": {
-        "description": "حداکثر ۱۲ ردیف. ماه‌های بدون لاگ در خروجی نیستند.",
         "operationId": "LogController_getMonthlyStats",
         "parameters": [
           {
@@ -13826,14 +14299,13 @@
     },
     "/log/stats/weekly": {
       "get": {
-        "description": "هفته از شنبه شروع می‌شود. حداکثر بازه ۴۰۰ روز.",
         "operationId": "LogController_getWeeklyStats",
         "parameters": [
           {
             "name": "from",
             "required": true,
             "in": "query",
-            "description": "شروع بازه (میلادی، YYYY-MM-DD)",
+            "description": "شروع بازه (YYYY-MM-DD)",
             "schema": {
               "example": "2026-09-01",
               "type": "string"
@@ -13843,7 +14315,7 @@
             "name": "to",
             "required": true,
             "in": "query",
-            "description": "پایان بازه (میلادی، YYYY-MM-DD) — حداکثر ۴۰۰ روز",
+            "description": "پایان بازه — حداکثر ۳۶۵ روز",
             "schema": {
               "example": "2026-11-07",
               "type": "string"
@@ -13862,7 +14334,40 @@
             }
           }
         },
-        "summary": "آمار هفتگی در یک بازه (User)",
+        "summary": "آمار هفتگی در بازه (User) — حداکثر ۳۶۵ روز",
+        "tags": [
+          "Log"
+        ]
+      }
+    },
+    "/log/stats/yearly": {
+      "get": {
+        "operationId": "LogController_getYearlyStats",
+        "parameters": [
+          {
+            "name": "year",
+            "required": true,
+            "in": "query",
+            "description": "سال شمسی — فقط همان یک سال",
+            "schema": {
+              "example": 1405,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/YearlyStatsResponseEntity"
+                }
+              }
+            }
+          }
+        },
+        "summary": "آمار یک سال شمسی (User) — فقط همان سال",
         "tags": [
           "Log"
         ]
@@ -13870,7 +14375,6 @@
     },
     "/log/date/{date}": {
       "get": {
-        "description": "date به فرمت YYYY-MM-DD",
         "operationId": "LogController_getByDate",
         "parameters": [
           {
@@ -13894,7 +14398,7 @@
             }
           }
         },
-        "summary": "لاگ یک تاریخ خاص (User)",
+        "summary": "لاگ یک تاریخ (User)",
         "tags": [
           "Log"
         ]
@@ -13946,6 +14450,52 @@
               "example": 10,
               "type": "number"
             }
+          },
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "description": "شروع بازه (الزامی برای coach list با فیلتر)",
+            "schema": {
+              "example": "2026-01-01",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": "2026-11-07",
+              "type": "string"
+            }
+          },
+          {
+            "name": "sort",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": "date_desc",
+              "type": "string",
+              "enum": [
+                "date_desc",
+                "date_asc",
+                "weight_desc",
+                "weight_asc",
+                "done_exercises_desc",
+                "done_meals_desc",
+                "calories_desc"
+              ]
+            }
+          },
+          {
+            "name": "userPlanId",
+            "required": false,
+            "in": "query",
+            "description": "فیلتر روی یک userPlan",
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -13968,7 +14518,6 @@
     },
     "/log/{id}": {
       "put": {
-        "description": "date و userPlanId قابل ویرایش نیستند (برای تغییر تاریخ: حذف و ثبت دوباره)",
         "operationId": "LogController_update",
         "parameters": [
           {
@@ -14002,7 +14551,7 @@
             }
           }
         },
-        "summary": "ویرایش لاگ (User)",
+        "summary": "ویرایش لاگ (User) — date/userPlanId ثابت",
         "tags": [
           "Log"
         ]
@@ -14032,7 +14581,7 @@
     },
     "/log/coach/user/{userId}": {
       "get": {
-        "description": "فقط لاگ‌های برنامه‌هایی که شما مربی آن هستید",
+        "description": "from/to حداکثر ۳۶۵ روز. sortهای مختلف. فقط اگر حداقل یک UserPlan با این مربی داشته باشد.",
         "operationId": "LogController_getCoachUserLogs",
         "parameters": [
           {
@@ -14077,6 +14626,52 @@
               "example": 10,
               "type": "number"
             }
+          },
+          {
+            "name": "from",
+            "required": false,
+            "in": "query",
+            "description": "شروع بازه (الزامی برای coach list با فیلتر)",
+            "schema": {
+              "example": "2026-01-01",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": "2026-11-07",
+              "type": "string"
+            }
+          },
+          {
+            "name": "sort",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": "date_desc",
+              "type": "string",
+              "enum": [
+                "date_desc",
+                "date_asc",
+                "weight_desc",
+                "weight_asc",
+                "done_exercises_desc",
+                "done_meals_desc",
+                "calories_desc"
+              ]
+            }
+          },
+          {
+            "name": "userPlanId",
+            "required": false,
+            "in": "query",
+            "description": "فیلتر روی یک userPlan",
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -14085,13 +14680,146 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PaginatedUserLogEntity"
+                  "$ref": "#/components/schemas/PaginatedUserLogSummaryEntity"
                 }
               }
             }
           }
         },
-        "summary": "لاگ‌های یک کاربر (Coach)",
+        "summary": "لاگ‌های شاگرد (Coach)",
+        "tags": [
+          "Log"
+        ]
+      }
+    },
+    "/log/coach/user/{userId}/stats/monthly": {
+      "get": {
+        "operationId": "LogController_getCoachMonthly",
+        "parameters": [
+          {
+            "name": "userId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "year",
+            "required": true,
+            "in": "query",
+            "description": "سال شمسی",
+            "schema": {
+              "example": 1405,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MonthlyStatsResponseEntity"
+                }
+              }
+            }
+          }
+        },
+        "summary": "آمار ماهانه شاگرد (Coach)",
+        "tags": [
+          "Log"
+        ]
+      }
+    },
+    "/log/coach/user/{userId}/stats/weekly": {
+      "get": {
+        "operationId": "LogController_getCoachWeekly",
+        "parameters": [
+          {
+            "name": "userId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "required": true,
+            "in": "query",
+            "description": "شروع بازه (YYYY-MM-DD)",
+            "schema": {
+              "example": "2026-09-01",
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "required": true,
+            "in": "query",
+            "description": "پایان بازه — حداکثر ۳۶۵ روز",
+            "schema": {
+              "example": "2026-11-07",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeeklyStatsResponseEntity"
+                }
+              }
+            }
+          }
+        },
+        "summary": "آمار هفتگی شاگرد (Coach) — بازه ≤ ۳۶۵ روز",
+        "tags": [
+          "Log"
+        ]
+      }
+    },
+    "/log/coach/user/{userId}/stats/yearly": {
+      "get": {
+        "operationId": "LogController_getCoachYearly",
+        "parameters": [
+          {
+            "name": "userId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "year",
+            "required": true,
+            "in": "query",
+            "description": "سال شمسی — فقط همان یک سال",
+            "schema": {
+              "example": 1405,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/YearlyStatsResponseEntity"
+                }
+              }
+            }
+          }
+        },
+        "summary": "آمار سالانه شاگرد (Coach) — یک سال شمسی",
         "tags": [
           "Log"
         ]
@@ -14125,7 +14853,7 @@
             "description": ""
           }
         },
-        "summary": "ثبت یادداشت مربی (Coach)",
+        "summary": "یادداشت مربی روی لاگ",
         "tags": [
           "Log"
         ]
@@ -26283,12 +27011,12 @@
           },
           "note": {
             "type": "string",
-            "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+            "example": "مشتری خوبی هستی افرین",
             "description": "توضیحات شاگرد به مربی"
           },
           "rejectionReason": {
             "type": "string",
-            "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+            "example": "تایید میکنم یواشکی",
             "description": "توضیحات مربی به شاگرد در زمان رد شاگرد"
           }
         }
@@ -26489,6 +27217,11 @@
       "PartOutlineEntity": {
         "type": "object",
         "properties": {
+          "phaseNumber": {
+            "type": "number",
+            "example": 1,
+            "description": "شماره‌ی فاز ۱-based"
+          },
           "title": {
             "type": "string",
             "example": "فاز ۱"
@@ -26499,10 +27232,11 @@
           },
           "endWeek": {
             "type": "number",
-            "example": 4
+            "example": 3
           }
         },
         "required": [
+          "phaseNumber",
           "title",
           "startWeek",
           "endWeek"
@@ -26515,18 +27249,36 @@
             "type": "string",
             "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
           },
+          "part": {
+            "type": "string",
+            "enum": [
+              "workout",
+              "diet"
+            ]
+          },
           "currentWeek": {
             "type": "object",
             "example": 3,
-            "nullable": true
+            "nullable": true,
+            "description": "هفته‌ی جاری محاسبه‌شده از startDate"
           },
           "requestedWeek": {
             "type": "object",
             "example": 3,
             "nullable": true
           },
+          "phaseNumber": {
+            "type": "object",
+            "example": 1,
+            "nullable": true,
+            "description": "شماره‌ی فاز ۱-based"
+          },
+          "durationWeeks": {
+            "type": "number",
+            "example": 8
+          },
           "outline": {
-            "description": "فهرست همه‌ی فازها برای ناوبری",
+            "description": "فهرست همه‌ی فازها بدون days (سبک)",
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/PartOutlineEntity"
@@ -26535,11 +27287,13 @@
           "phase": {
             "type": "object",
             "nullable": true,
-            "description": "فازی که requestedWeek را پوشش می‌دهد: { title, startWeek, endWeek, days: [...] } — شکل days مثل today.workout / today.diet. null اگر هفته خارج از بازه‌ی برنامه است"
+            "description": "فقط فاز انتخاب‌شده با days کامل: { phaseNumber, title, startWeek, endWeek, days }. null اگر هفته/فاز خارج از بازه باشد"
           }
         },
         "required": [
           "planId",
+          "part",
+          "durationWeeks",
           "outline"
         ]
       },
@@ -26857,6 +27611,34 @@
           "phases"
         ]
       },
+      "UpdateWorkoutSnapshotDto": {
+        "type": "object",
+        "properties": {
+          "workout": {
+            "$ref": "#/components/schemas/WorkoutSnapshotInputDto"
+          }
+        },
+        "required": [
+          "workout"
+        ]
+      },
+      "UpdatedEntity": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+          },
+          "updated": {
+            "type": "boolean",
+            "example": true
+          }
+        },
+        "required": [
+          "id",
+          "updated"
+        ]
+      },
       "SnapshotMealItemInputDto": {
         "type": "object",
         "properties": {
@@ -27025,11 +27807,22 @@
           "phases"
         ]
       },
+      "UpdateDietSnapshotDto": {
+        "type": "object",
+        "properties": {
+          "diet": {
+            "$ref": "#/components/schemas/DietSnapshotInputDto"
+          }
+        },
+        "required": [
+          "diet"
+        ]
+      },
       "UpdateUserPlanSnapshotDto": {
         "type": "object",
         "properties": {
           "workout": {
-            "description": "جایگزینی کامل snapshot ورزشی (فقط اگر پلن بخش ورزشی دارد)",
+            "description": "جایگزینی کامل snapshot ورزشی",
             "allOf": [
               {
                 "$ref": "#/components/schemas/WorkoutSnapshotInputDto"
@@ -27037,7 +27830,7 @@
             ]
           },
           "diet": {
-            "description": "جایگزینی کامل snapshot غذایی (فقط اگر پلن بخش غذایی دارد)",
+            "description": "جایگزینی کامل snapshot غذایی",
             "allOf": [
               {
                 "$ref": "#/components/schemas/DietSnapshotInputDto"
@@ -27046,23 +27839,6 @@
           }
         }
       },
-      "UpdatedEntity": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
-          },
-          "updated": {
-            "type": "boolean",
-            "example": true
-          }
-        },
-        "required": [
-          "id",
-          "updated"
-        ]
-      },
       "ActivateUserPlanDto": {
         "type": "object",
         "properties": {
@@ -27070,6 +27846,11 @@
             "type": "string",
             "example": "2026-11-10",
             "description": "تاریخ شروع (میلادی، به وقت تهران). پیش‌فرض امروز؛ نباید گذشته یا بیش از ۶۰ روز بعد باشد"
+          },
+          "endDate": {
+            "type": "string",
+            "example": "2027-01-04",
+            "description": "تاریخ پایان اختیاری. اگر نباشد از durationWeeks اسنپ‌شات محاسبه می‌شود (start + weeks*7 - 1). باید ≥ startDate باشد."
           }
         }
       },
@@ -27120,14 +27901,13 @@
           },
           "userPlanId": {
             "type": "string",
-            "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-            "description": "userPlanId اختیاری"
+            "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
           },
           "weightKg": {
             "type": "number",
             "example": 75.5
           },
-          "doneExerciseIds": {
+          "unCompletedExerciseIds": {
             "example": [],
             "type": "array",
             "items": {
@@ -27149,7 +27929,7 @@
             "type": "number",
             "example": 200
           },
-          "doneMealIds": {
+          "unCompletedMealIds": {
             "example": [],
             "type": "array",
             "items": {
@@ -27171,7 +27951,7 @@
           "caloriesPlanned": {
             "type": "number",
             "example": 2000,
-            "description": "فقط وقتی استفاده می‌شود که لاگ به برنامه وصل نباشد؛ در غیر این صورت از برنامه خوانده می‌شود"
+            "description": "فقط وقتی لاگ به برنامه وصل نیست؛ وگرنه از snapshot/فاز خوانده می‌شود"
           },
           "caloriesConsumed": {
             "type": "number",
@@ -27192,6 +27972,16 @@
           "userNote": {
             "type": "string",
             "example": "احساس خوبی داشتم"
+          },
+          "startimetAt": {
+            "type": "string",
+            "example": "2026-11-07T06:30:00.000Z",
+            "description": "شروع جلسه (ISO). در schema: startimetAt"
+          },
+          "endtimeAt": {
+            "type": "string",
+            "example": "2026-11-07T08:00:00.000Z",
+            "description": "پایان جلسه (ISO). در schema: endtimeAt"
           }
         },
         "required": [
@@ -27206,44 +27996,34 @@
             "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
           },
           "userId": {
-            "type": "string",
-            "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+            "type": "string"
           },
           "userPlanId": {
             "type": "object",
-            "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
             "nullable": true
           },
           "date": {
             "format": "date-time",
             "type": "string",
             "example": "2026-11-07",
-            "description": "تاریخ میلادی (روز به وقت Asia/Tehran)"
+            "description": "روز تقویمی تهران (Date column)"
           },
           "jalaliYear": {
             "type": "number",
-            "example": 1405,
-            "description": "سال شمسی (از date محاسبه می‌شود)"
+            "example": 1405
           },
           "jalaliMonth": {
             "type": "number",
-            "example": 8,
-            "description": "ماه شمسی ۱ تا ۱۲ (آبان = ۸)"
+            "example": 8
           },
           "weightKg": {
             "type": "object",
             "example": 75.5,
-            "nullable": true
+            "nullable": true,
+            "description": "Decimal → ممکن است string برگردد"
           },
-          "plannedExerciseIds": {
-            "example": [],
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "doneExerciseIds": {
-            "example": [],
+          "unCompletedExerciseIds": {
+            "description": "تمرین‌های انجام‌نشده",
             "type": "array",
             "items": {
               "type": "string"
@@ -27258,30 +28038,14 @@
             "example": 3
           },
           "extraExercises": {
-            "type": "array",
-            "example": [
-              {
-                "name": "دویدن",
-                "durationMin": 20,
-                "caloriesBurned": 200,
-                "note": ""
-              }
-            ]
+            "type": "array"
           },
           "caloriesBurned": {
             "type": "object",
-            "example": 200,
             "nullable": true
           },
-          "plannedMealIds": {
-            "example": [],
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "doneMealIds": {
-            "example": [],
+          "unCompletedMealIds": {
+            "description": "وعده‌های انجام‌نشده",
             "type": "array",
             "items": {
               "type": "string"
@@ -27296,61 +28060,53 @@
             "example": 2
           },
           "extraMeals": {
-            "type": "array",
-            "example": [
-              {
-                "name": "سیب",
-                "calories": 95,
-                "proteinG": 0,
-                "carbsG": 25,
-                "fatG": 0
-              }
-            ]
+            "type": "array"
           },
           "caloriesPlanned": {
             "type": "object",
-            "example": 2000,
             "nullable": true
           },
           "caloriesConsumed": {
             "type": "object",
-            "example": 1800,
             "nullable": true
           },
           "proteinG": {
             "type": "object",
-            "example": 120,
             "nullable": true
           },
           "carbsG": {
             "type": "object",
-            "example": 200,
             "nullable": true
           },
           "fatG": {
             "type": "object",
-            "example": 60,
             "nullable": true
           },
           "userNote": {
             "type": "object",
-            "example": "احساس خوبی داشتم",
             "nullable": true
           },
           "coachNote": {
             "type": "object",
-            "example": "عالی",
             "nullable": true
+          },
+          "startimetAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "شروع جلسه (schema: startimetAt)"
+          },
+          "endtimeAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "پایان جلسه (schema: endtimeAt)"
           },
           "createdAt": {
             "format": "date-time",
-            "type": "string",
-            "example": "2026-11-07T00:00:00.000Z"
+            "type": "string"
           },
           "updatedAt": {
             "format": "date-time",
-            "type": "string",
-            "example": "2026-11-07T00:00:00.000Z"
+            "type": "string"
           }
         },
         "required": [
@@ -27359,13 +28115,11 @@
           "date",
           "jalaliYear",
           "jalaliMonth",
-          "plannedExerciseIds",
-          "doneExerciseIds",
+          "unCompletedExerciseIds",
           "plannedExercises",
           "doneExercises",
           "extraExercises",
-          "plannedMealIds",
-          "doneMealIds",
+          "unCompletedMealIds",
           "plannedMeals",
           "doneMeals",
           "extraMeals",
@@ -27377,38 +28131,34 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "string",
-            "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+            "type": "string"
           },
           "date": {
             "format": "date-time",
-            "type": "string",
-            "example": "2026-11-07"
+            "type": "string"
           },
           "weightKg": {
             "type": "object",
-            "example": 75.5,
             "nullable": true
           },
           "doneExercises": {
-            "type": "number",
-            "example": 3
+            "type": "number"
           },
           "plannedExercises": {
-            "type": "number",
-            "example": 5
+            "type": "number"
           },
           "doneMeals": {
-            "type": "number",
-            "example": 2
+            "type": "number"
           },
           "plannedMeals": {
-            "type": "number",
-            "example": 3
+            "type": "number"
           },
           "caloriesConsumed": {
             "type": "object",
-            "example": 1800,
+            "nullable": true
+          },
+          "userPlanId": {
+            "type": "object",
             "nullable": true
           }
         },
@@ -27450,63 +28200,46 @@
         "properties": {
           "loggedDays": {
             "type": "number",
-            "example": 24,
-            "description": "تعداد روزهایی که لاگ ثبت شده"
+            "example": 24
           },
           "avgWeightKg": {
             "type": "object",
-            "example": 75.8,
-            "nullable": true,
-            "description": "میانگین وزن (روزهای بدون وزن نادیده گرفته می‌شوند)"
+            "nullable": true
           },
           "lastWeightKg": {
             "type": "object",
-            "example": 75.2,
-            "nullable": true,
-            "description": "آخرین وزن ثبت‌شده در بازه"
+            "nullable": true
           },
           "caloriesBurned": {
-            "type": "number",
-            "example": 4200,
-            "description": "جمع کالری سوزانده‌شده"
+            "type": "number"
           },
           "avgCaloriesConsumed": {
             "type": "object",
-            "example": 1900,
-            "nullable": true,
-            "description": "میانگین روزانه کالری مصرفی"
+            "nullable": true
           },
           "doneExercises": {
-            "type": "number",
-            "example": 40
+            "type": "number"
           },
           "plannedExercises": {
-            "type": "number",
-            "example": 50
+            "type": "number"
           },
           "workoutCompletion": {
             "type": "object",
-            "example": 0.8,
-            "nullable": true,
-            "description": "sum(done)/sum(planned) — null اگر برنامه‌ای نبوده"
+            "nullable": true
           },
           "doneMeals": {
-            "type": "number",
-            "example": 60
+            "type": "number"
           },
           "plannedMeals": {
-            "type": "number",
-            "example": 72
+            "type": "number"
           },
           "mealCompletion": {
             "type": "object",
-            "example": 0.83,
             "nullable": true
           },
           "month": {
             "type": "number",
-            "example": 8,
-            "description": "ماه شمسی (۱ تا ۱۲)"
+            "example": 8
           }
         },
         "required": [
@@ -27523,11 +28256,9 @@
         "type": "object",
         "properties": {
           "year": {
-            "type": "number",
-            "example": 1405
+            "type": "number"
           },
           "months": {
-            "description": "فقط ماه‌هایی که لاگ دارند",
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/MonthlyStatEntity"
@@ -27544,63 +28275,46 @@
         "properties": {
           "loggedDays": {
             "type": "number",
-            "example": 24,
-            "description": "تعداد روزهایی که لاگ ثبت شده"
+            "example": 24
           },
           "avgWeightKg": {
             "type": "object",
-            "example": 75.8,
-            "nullable": true,
-            "description": "میانگین وزن (روزهای بدون وزن نادیده گرفته می‌شوند)"
+            "nullable": true
           },
           "lastWeightKg": {
             "type": "object",
-            "example": 75.2,
-            "nullable": true,
-            "description": "آخرین وزن ثبت‌شده در بازه"
+            "nullable": true
           },
           "caloriesBurned": {
-            "type": "number",
-            "example": 4200,
-            "description": "جمع کالری سوزانده‌شده"
+            "type": "number"
           },
           "avgCaloriesConsumed": {
             "type": "object",
-            "example": 1900,
-            "nullable": true,
-            "description": "میانگین روزانه کالری مصرفی"
+            "nullable": true
           },
           "doneExercises": {
-            "type": "number",
-            "example": 40
+            "type": "number"
           },
           "plannedExercises": {
-            "type": "number",
-            "example": 50
+            "type": "number"
           },
           "workoutCompletion": {
             "type": "object",
-            "example": 0.8,
-            "nullable": true,
-            "description": "sum(done)/sum(planned) — null اگر برنامه‌ای نبوده"
+            "nullable": true
           },
           "doneMeals": {
-            "type": "number",
-            "example": 60
+            "type": "number"
           },
           "plannedMeals": {
-            "type": "number",
-            "example": 72
+            "type": "number"
           },
           "mealCompletion": {
             "type": "object",
-            "example": 0.83,
             "nullable": true
           },
           "weekStart": {
             "type": "string",
-            "example": "2026-11-07",
-            "description": "شنبه‌ی شروع هفته (میلادی)"
+            "example": "2026-11-01"
           }
         },
         "required": [
@@ -27617,15 +28331,12 @@
         "type": "object",
         "properties": {
           "from": {
-            "type": "string",
-            "example": "2026-09-01"
+            "type": "string"
           },
           "to": {
-            "type": "string",
-            "example": "2026-11-07"
+            "type": "string"
           },
           "weeks": {
-            "description": "هفته‌ی اول و آخر ممکن است ناقص باشند",
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/WeeklyStatEntity"
@@ -27636,6 +28347,74 @@
           "from",
           "to",
           "weeks"
+        ]
+      },
+      "YearlyStatEntity": {
+        "type": "object",
+        "properties": {
+          "loggedDays": {
+            "type": "number",
+            "example": 24
+          },
+          "avgWeightKg": {
+            "type": "object",
+            "nullable": true
+          },
+          "lastWeightKg": {
+            "type": "object",
+            "nullable": true
+          },
+          "caloriesBurned": {
+            "type": "number"
+          },
+          "avgCaloriesConsumed": {
+            "type": "object",
+            "nullable": true
+          },
+          "doneExercises": {
+            "type": "number"
+          },
+          "plannedExercises": {
+            "type": "number"
+          },
+          "workoutCompletion": {
+            "type": "object",
+            "nullable": true
+          },
+          "doneMeals": {
+            "type": "number"
+          },
+          "plannedMeals": {
+            "type": "number"
+          },
+          "mealCompletion": {
+            "type": "object",
+            "nullable": true
+          },
+          "year": {
+            "type": "number",
+            "example": 1405
+          }
+        },
+        "required": [
+          "loggedDays",
+          "caloriesBurned",
+          "doneExercises",
+          "plannedExercises",
+          "doneMeals",
+          "plannedMeals",
+          "year"
+        ]
+      },
+      "YearlyStatsResponseEntity": {
+        "type": "object",
+        "properties": {
+          "year": {
+            "$ref": "#/components/schemas/YearlyStatEntity"
+          }
+        },
+        "required": [
+          "year"
         ]
       },
       "PaginatedUserLogEntity": {
@@ -27669,7 +28448,7 @@
             "type": "number",
             "example": 75.5
           },
-          "doneExerciseIds": {
+          "unCompletedExerciseIds": {
             "example": [],
             "type": "array",
             "items": {
@@ -27691,7 +28470,7 @@
             "type": "number",
             "example": 200
           },
-          "doneMealIds": {
+          "unCompletedMealIds": {
             "example": [],
             "type": "array",
             "items": {
@@ -27713,7 +28492,7 @@
           "caloriesPlanned": {
             "type": "number",
             "example": 2000,
-            "description": "فقط وقتی استفاده می‌شود که لاگ به برنامه وصل نباشد؛ در غیر این صورت از برنامه خوانده می‌شود"
+            "description": "فقط وقتی لاگ به برنامه وصل نیست؛ وگرنه از snapshot/فاز خوانده می‌شود"
           },
           "caloriesConsumed": {
             "type": "number",
@@ -27734,6 +28513,16 @@
           "userNote": {
             "type": "string",
             "example": "احساس خوبی داشتم"
+          },
+          "startimetAt": {
+            "type": "string",
+            "example": "2026-11-07T06:30:00.000Z",
+            "description": "شروع جلسه (ISO). در schema: startimetAt"
+          },
+          "endtimeAt": {
+            "type": "string",
+            "example": "2026-11-07T08:00:00.000Z",
+            "description": "پایان جلسه (ISO). در schema: endtimeAt"
           }
         }
       },

@@ -113,14 +113,14 @@ export class PlanRequestAdminDto {
   dietTemplateId?: string;
 
   @ApiPropertyOptional({
-    example: '3fa85f64-5717-4562-b3fc-2c963f66afa6',
+    example: 'مشتری خوبی هستی افرین',
     description: 'توضیحات شاگرد به مربی'
   })
   @IsOptional()
   note?: string;
 
   @ApiPropertyOptional({
-    example: '3fa85f64-5717-4562-b3fc-2c963f66afa6',
+    example: 'تایید میکنم یواشکی',
     description: 'توضیحات مربی به شاگرد در زمان رد شاگرد'
   })
   @IsOptional()

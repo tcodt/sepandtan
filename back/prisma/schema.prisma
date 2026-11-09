@@ -570,11 +570,11 @@ model UserPlan {
   snapshotExercise Json? @map("snapshot_exercise") // زمانی که مربی بخواد به صورت دستی تغییری بده
   snapshotDiet     Json? @map("snapshot_diet") // زمانی که مربی بخواد به صورت دستی تغییری بده
 
-  startDate    DateTime? @map("start_date") @db.Date
-  endDate      DateTime? @map("end_date") @db.Date
-  activatedAt  DateTime? @map("activated_at")
-  createdAt    DateTime  @default(now()) @map("created_at")
-  updatedAt    DateTime  @updatedAt @map("updated_at")
+  startDate   DateTime? @map("start_date") @db.Date
+  endDate     DateTime? @map("end_date") @db.Date
+  activatedAt DateTime? @map("activated_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
 
   user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   workoutPlan  WorkoutPlan?  @relation(fields: [workoutPlanId], references: [id], onDelete: Restrict)

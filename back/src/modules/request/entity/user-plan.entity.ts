@@ -115,21 +115,28 @@ export class TodayEntity {
 }
 
 export class PartOutlineEntity {
+  @ApiProperty({ example: 1, description: 'شماره‌ی فاز ۱-based' }) phaseNumber!: number;
   @ApiProperty({ example: 'فاز ۱' }) title!: string;
   @ApiProperty({ example: 1 }) startWeek!: number;
-  @ApiProperty({ example: 4 }) endWeek!: number;
+  @ApiProperty({ example: 3 }) endWeek!: number;
 }
 
 export class PartEntity {
   @ApiProperty({ example: UUID }) planId!: string;
-  @ApiPropertyOptional({ example: 3, nullable: true }) currentWeek!: number | null;
+  @ApiProperty({ enum: ['workout', 'diet'] }) part!: string;
+  @ApiPropertyOptional({ example: 3, nullable: true, description: 'هفته‌ی جاری محاسبه‌شده از startDate' })
+  currentWeek!: number | null;
   @ApiPropertyOptional({ example: 3, nullable: true }) requestedWeek!: number | null;
-  @ApiProperty({ type: [PartOutlineEntity], description: 'فهرست همه‌ی فازها برای ناوبری' }) outline!: PartOutlineEntity[];
+  @ApiPropertyOptional({ example: 1, nullable: true, description: 'شماره‌ی فاز ۱-based' })
+  phaseNumber!: number | null;
+  @ApiProperty({ example: 8 }) durationWeeks!: number;
+  @ApiProperty({ type: [PartOutlineEntity], description: 'فهرست همه‌ی فازها بدون days (سبک)' })
+  outline!: PartOutlineEntity[];
   @ApiPropertyOptional({
     nullable: true,
     description:
-      'فازی که requestedWeek را پوشش می‌دهد: { title, startWeek, endWeek, days: [...] } — شکل days مثل today.workout / today.diet. ' +
-      'null اگر هفته خارج از بازه‌ی برنامه است',
+      'فقط فاز انتخاب‌شده با days کامل: { phaseNumber, title, startWeek, endWeek, days }. ' +
+      'null اگر هفته/فاز خارج از بازه باشد',
   })
   phase!: Record<string, unknown> | null;
 }

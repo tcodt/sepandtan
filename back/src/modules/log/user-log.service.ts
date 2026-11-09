@@ -1,21 +1,24 @@
 import {
-  Injectable, NotFoundException, ConflictException, BadRequestException,
+  Injectable, NotFoundException, ConflictException, BadRequestException, ForbiddenException,
 } from '@nestjs/common';
 import { toJalaali } from 'jalaali-js';
+import { Prisma } from '../../generated/prisma/client.js';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { ConfigService } from '@nestjs/config';
 import pagination from '../../common/utils/pagination.js';
-import { QueryDefaultDto } from '../../common/dtos/query.defualt.dto.js';
-import { CreateUserLogDto, UpdateUserLogDto } from './dto/user-log.dto.js';
-import { MonthlyStatEntity, WeeklyStatEntity } from './entity/user-log.entity.js';
+import {
+  CreateUserLogDto, UpdateUserLogDto, LogRangeQueryDto, LogSortBy,
+} from './dto/user-log.dto.js';
+import { MonthlyStatEntity, WeeklyStatEntity, YearlyStatEntity } from './entity/user-log.entity.js';
 
 const DAY_MS = 86_400_000;
-const MAX_STATS_RANGE_DAYS = 400;
+/** سقف بازه برای لیست و آمار هفتگی — یک سال */
+const MAX_RANGE_DAYS = 365;
 
-/** فقط همین فیلدها از بیرون قابل ویرایش‌اند (جلوگیری از mass-assignment) */
 const EDITABLE_FIELDS = [
   'weightKg', 'extraExercises', 'caloriesBurned', 'extraMeals',
-  'caloriesPlanned', 'caloriesConsumed', 'proteinG', 'carbsG', 'fatG', 'userNote',
+  'caloriesPlanned', 'caloriesConsumed', 'proteinG', 'carbsG', 'fatG',
+  'userNote', 'startimetAt', 'endtimeAt',
 ] as const;
 
 type PlanContext = {
@@ -28,27 +31,35 @@ type PlanContext = {
 
 type PlannedForDay = { exerciseIds: string[]; mealIds: string[]; calories: number | null };
 
+type SnapPhase = {
+  startWeek: number;
+  endWeek: number;
+  days: Array<{
+    weekday: number;
+    isRestDay?: boolean;
+    exercises?: Array<{ exerciseId: string }>;
+    meals?: Array<{ id: string; priority?: string }>;
+    target?: { calories?: number | null };
+    nutrition?: { calories?: number };
+  }>;
+};
+
 @Injectable()
 export class UserLogService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly configService: ConfigService,
-  ) { }
+  ) {}
 
-  private getLimit(limit?: any) {
-    return Math.max(1, Number(limit) || Number(this.configService.get('limit.coach')) || 10);
+  private getLimit(limit?: number) {
+    return Math.max(1, Math.min(100, Number(limit) || Number(this.configService.get('limit.coach')) || 10));
   }
 
   // ============ Date helpers ============
 
-  /**
-   * ورودی همیشه YYYY-MM-DD است (روز تقویمی تهران).
-   * مستقیم پارس می‌شود تا به timezone سرور وابسته نباشد.
-   */
   private normalizeDate(input: string): Date {
     const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(input ?? '');
     if (!m) throw new BadRequestException('تاریخ باید به فرمت YYYY-MM-DD باشد');
-
     const [y, mo, d] = [Number(m[1]), Number(m[2]), Number(m[3])];
     const date = new Date(Date.UTC(y, mo - 1, d));
     if (date.getUTCFullYear() !== y || date.getUTCMonth() !== mo - 1 || date.getUTCDate() !== d) {
@@ -61,7 +72,6 @@ export class UserLogService {
     return d.toISOString().slice(0, 10);
   }
 
-  /** تنها نقطه‌ای که jalaliYear/jalaliMonth ساخته می‌شود */
   private toJalali(date: Date) {
     const { jy, jm } = toJalaali(
       date.getUTCFullYear(), date.getUTCMonth() + 1, date.getUTCDate(),
@@ -73,14 +83,37 @@ export class UserLogService {
     return typeof e === 'object' && e !== null && (e as { code?: string }).code === code;
   }
 
-  // ============ Planned (از روی برنامه کاربر) ============
+  /** بازه حداکثر ۳۶۵ روز؛ سالانه جداست و فقط یک سال شمسی می‌گیرد */
+  private assertRange(from: Date, to: Date) {
+    if (to < from) throw new BadRequestException('تاریخ پایان باید بعد از تاریخ شروع باشد');
+    const days = (to.getTime() - from.getTime()) / DAY_MS;
+    if (days > MAX_RANGE_DAYS) {
+      throw new BadRequestException(`حداکثر بازه‌ی مجاز ${MAX_RANGE_DAYS} روز است`);
+    }
+  }
 
-  /**
-   * فرض‌ها:
-   *  - weekday: ۰ = شنبه ... ۶ = جمعه
-   *  - شماره هفته نسبت به startDate برنامه حساب می‌شود (هفته‌ی ۱ = ۷ روز اول)
-   *  - اگر snapshot (ویرایش دستی مربی) وجود داشته باشد، فعلاً planned خالی است
-   */
+  private sortOrder(sort?: LogSortBy): Prisma.UserLogOrderByWithRelationInput {
+    switch (sort) {
+      case LogSortBy.DATE_ASC:
+        return { date: 'asc' };
+      case LogSortBy.WEIGHT_DESC:
+        return { weightKg: 'desc' };
+      case LogSortBy.WEIGHT_ASC:
+        return { weightKg: 'asc' };
+      case LogSortBy.DONE_EX_DESC:
+        return { doneExercises: 'desc' };
+      case LogSortBy.DONE_MEALS_DESC:
+        return { doneMeals: 'desc' };
+      case LogSortBy.CALORIES_DESC:
+        return { caloriesConsumed: 'desc' };
+      case LogSortBy.DATE_DESC:
+      default:
+        return { date: 'desc' };
+    }
+  }
+
+  // ============ Planned از snapshot (اولویت) یا قالب ============
+
   private async resolvePlanned(plan: PlanContext, date: Date): Promise<PlannedForDay> {
     const empty: PlannedForDay = { exerciseIds: [], mealIds: [], calories: null };
     if (!plan.startDate) return empty;
@@ -89,25 +122,62 @@ export class UserLogService {
     if (diffDays < 0) return empty;
 
     const weekNo = Math.floor(diffDays / 7) + 1;
-    const weekday = (date.getUTCDay() + 1) % 7; // JS: یکشنبه=۰ ... شنبه=۶  →  شنبه=۰ ... جمعه=۶
+    const weekday = (date.getUTCDay() + 1) % 7; // شنبه=۰ … جمعه=۶
+
+    // اولویت با snapshot — قبلاً برعکس بود و با وجود snapshot خالی برمی‌گشت
+    const fromSnap = this.plannedFromSnapshots(plan, weekNo, weekday);
+    if (fromSnap) return fromSnap;
 
     const [exerciseIds, diet] = await Promise.all([
-      this.plannedExercises(plan, weekNo, weekday),
-      this.plannedDiet(plan, weekNo, weekday),
+      this.plannedExercisesFromTemplate(plan, weekNo, weekday),
+      this.plannedDietFromTemplate(plan, weekNo, weekday),
     ]);
-
     return { exerciseIds, mealIds: diet.mealIds, calories: diet.calories };
   }
 
-  private async plannedExercises(plan: PlanContext, weekNo: number, weekday: number): Promise<string[]> {
-    // TODO: وقتی ساختار snapshotExercise مشخص شد، اینجا از آن بخوان
-    if (!plan.workoutPlanId || plan.snapshotExercise) return [];
+  private plannedFromSnapshots(
+    plan: PlanContext,
+    weekNo: number,
+    weekday: number,
+  ): PlannedForDay | null {
+    const w = plan.snapshotExercise as { phases?: SnapPhase[] } | null;
+    const d = plan.snapshotDiet as { phases?: SnapPhase[]; target?: { calories?: number | null } } | null;
+    if (!w?.phases?.length && !d?.phases?.length) return null;
 
+    let exerciseIds: string[] = [];
+    if (w?.phases?.length) {
+      const phase = w.phases.find((p) => weekNo >= p.startWeek && weekNo <= p.endWeek);
+      const day = phase?.days?.find((x) => x.weekday === weekday);
+      if (day && !day.isRestDay) {
+        exerciseIds = (day.exercises ?? []).map((e) => e.exerciseId).filter(Boolean);
+      }
+    }
+
+    let mealIds: string[] = [];
+    let calories: number | null = d?.target?.calories ?? null;
+    if (d?.phases?.length) {
+      const phase = d.phases.find((p) => weekNo >= p.startWeek && weekNo <= p.endWeek);
+      const day = phase?.days?.find((x) => x.weekday === weekday);
+      if (day) {
+        mealIds = (day.meals ?? [])
+          .filter((m) => (m.priority ?? 'PRIMARY') === 'PRIMARY')
+          .map((m) => m.id)
+          .filter(Boolean);
+        calories = day.target?.calories ?? day.nutrition?.calories ?? calories;
+      }
+    }
+
+    return { exerciseIds, mealIds, calories };
+  }
+
+  private async plannedExercisesFromTemplate(
+    plan: PlanContext, weekNo: number, weekday: number,
+  ): Promise<string[]> {
+    if (!plan.workoutPlanId) return [];
     const phase = await this.prisma.workoutPhase.findFirst({
       where: { planId: plan.workoutPlanId, startWeek: { lte: weekNo }, endWeek: { gte: weekNo } },
       select: { id: true },
     });
-
     const day = await this.prisma.workoutDay.findFirst({
       where: {
         planId: plan.workoutPlanId,
@@ -117,16 +187,13 @@ export class UserLogService {
       },
       select: { exercises: { orderBy: { order: 'asc' }, select: { exerciseId: true } } },
     });
-
     return day?.exercises.map((e) => e.exerciseId) ?? [];
   }
 
-  private async plannedDiet(
+  private async plannedDietFromTemplate(
     plan: PlanContext, weekNo: number, weekday: number,
   ): Promise<{ mealIds: string[]; calories: number | null }> {
-    // TODO: وقتی ساختار snapshotDiet مشخص شد، اینجا از آن بخوان
-    if (!plan.dietPlanId || plan.snapshotDiet) return { mealIds: [], calories: null };
-
+    if (!plan.dietPlanId) return { mealIds: [], calories: null };
     const [phase, dietPlan] = await Promise.all([
       this.prisma.dietPhase.findFirst({
         where: { planId: plan.dietPlanId, startWeek: { lte: weekNo }, endWeek: { gte: weekNo } },
@@ -137,22 +204,18 @@ export class UserLogService {
         select: { targetCalories: true },
       }),
     ]);
-
     const calories = phase?.targetCalories ?? dietPlan?.targetCalories ?? null;
     if (!phase) return { mealIds: [], calories };
-
     const day = await this.prisma.dietDay.findFirst({
       where: { dietPhaseId: phase.id, weekday },
       select: {
-        // فقط وعده‌های اصلی؛ SECONDARY/TERTIARY جایگزین هستند و نباید planned را باد کنند
         meals: { where: { priority: 'PRIMARY' }, orderBy: { order: 'asc' }, select: { id: true } },
       },
     });
-
     return { mealIds: day?.meals.map((m) => m.id) ?? [], calories };
   }
 
-  // ============ CRUD ============
+  // ============ CRUD (هم‌راستا با schema جدید) ============
 
   async create(userId: string, dto: CreateUserLogDto) {
     const date = this.normalizeDate(dto.date);
@@ -170,11 +233,19 @@ export class UserLogService {
       planned = await this.resolvePlanned(plan, date);
     }
 
-    const doneExerciseIds = [...new Set(dto.doneExerciseIds ?? [])];
-    const doneMealIds = [...new Set(dto.doneMealIds ?? [])];
+    const unCompletedExerciseIds = [...new Set(dto.unCompletedExerciseIds ?? [])];
+    const unCompletedMealIds = [...new Set(dto.unCompletedMealIds ?? [])];
+    const plannedExercises = planned.exerciseIds.length;
+    const plannedMeals = planned.mealIds.length;
+    // done = planned − uncompleted (کف ۰)
+    const doneExercises = Math.max(0, plannedExercises - unCompletedExerciseIds.length);
+    const doneMeals = Math.max(0, plannedMeals - unCompletedMealIds.length);
+
+    if (dto.startimetAt && dto.endtimeAt && new Date(dto.endtimeAt) < new Date(dto.startimetAt)) {
+      throw new BadRequestException('endtimeAt نمی‌تواند قبل از startimetAt باشد');
+    }
 
     try {
-      // بدون findUnique قبلی: unique constraint خودش تکراری را رد می‌کند (یک کوئری کمتر + بدون race)
       return await this.prisma.userLog.create({
         data: {
           userId,
@@ -183,17 +254,15 @@ export class UserLogService {
           ...this.toJalali(date),
           weightKg: dto.weightKg,
 
-          plannedExerciseIds: planned.exerciseIds,
-          doneExerciseIds,
-          plannedExercises: planned.exerciseIds.length,
-          doneExercises: doneExerciseIds.length,
+          unCompletedExerciseIds,
+          plannedExercises,
+          doneExercises,
           extraExercises: dto.extraExercises ?? [],
           caloriesBurned: dto.caloriesBurned,
 
-          plannedMealIds: planned.mealIds,
-          doneMealIds,
-          plannedMeals: planned.mealIds.length,
-          doneMeals: doneMealIds.length,
+          unCompletedMealIds,
+          plannedMeals,
+          doneMeals,
           extraMeals: dto.extraMeals ?? [],
           caloriesPlanned: planned.calories ?? dto.caloriesPlanned,
           caloriesConsumed: dto.caloriesConsumed,
@@ -202,6 +271,8 @@ export class UserLogService {
           fatG: dto.fatG,
 
           userNote: dto.userNote,
+          ...(dto.startimetAt && { startimetAt: new Date(dto.startimetAt) }),
+          ...(dto.endtimeAt && { endtimeAt: new Date(dto.endtimeAt) }),
         },
       });
     } catch (e) {
@@ -211,28 +282,35 @@ export class UserLogService {
   }
 
   async update(userId: string, id: string, dto: UpdateUserLogDto) {
-    const data: any = {};
+    const existing = await this.prisma.userLog.findFirst({
+      where: { id, userId },
+      select: { id: true, plannedExercises: true, plannedMeals: true },
+    });
+    if (!existing) throw new NotFoundException('لاگ یافت نشد یا متعلق به شما نیست');
+
+    const data: Prisma.UserLogUpdateInput = {};
     for (const key of EDITABLE_FIELDS) {
-      if (dto[key] !== undefined) data[key] = dto[key];
-    }
-    if (dto.doneExerciseIds) {
-      const ids = [...new Set(dto.doneExerciseIds)];
-      data.doneExerciseIds = ids;
-      data.doneExercises = ids.length;
-    }
-    if (dto.doneMealIds) {
-      const ids = [...new Set(dto.doneMealIds)];
-      data.doneMealIds = ids;
-      data.doneMeals = ids.length;
+      if ((dto as any)[key] !== undefined) {
+        if (key === 'startimetAt' || key === 'endtimeAt') {
+          (data as any)[key] = new Date((dto as any)[key]);
+        } else {
+          (data as any)[key] = (dto as any)[key];
+        }
+      }
     }
 
-    try {
-      // where با id + userId: مالکیت و آپدیت در یک کوئری
-      return await this.prisma.userLog.update({ where: { id, userId }, data });
-    } catch (e) {
-      if (this.hasCode(e, 'P2025')) throw new NotFoundException('لاگ یافت نشد یا متعلق به شما نیست');
-      throw e;
+    if (dto.unCompletedExerciseIds) {
+      const ids = [...new Set(dto.unCompletedExerciseIds)];
+      data.unCompletedExerciseIds = ids;
+      data.doneExercises = Math.max(0, existing.plannedExercises - ids.length);
     }
+    if (dto.unCompletedMealIds) {
+      const ids = [...new Set(dto.unCompletedMealIds)];
+      data.unCompletedMealIds = ids;
+      data.doneMeals = Math.max(0, existing.plannedMeals - ids.length);
+    }
+
+    return this.prisma.userLog.update({ where: { id }, data });
   }
 
   async delete(userId: string, id: string) {
@@ -241,7 +319,7 @@ export class UserLogService {
     return { success: true };
   }
 
-  // ============ Query ============
+  // ============ Query (User) ============
 
   async getByDate(userId: string, dateStr: string) {
     const date = this.normalizeDate(dateStr);
@@ -252,21 +330,47 @@ export class UserLogService {
     return log;
   }
 
-  async getMyLogs(userId: string, query: QueryDefaultDto) {
+  async getMyLogs(userId: string, query: LogRangeQueryDto) {
+    return this.listLogs({ userId }, query);
+  }
+
+  async getByPlan(userId: string, planId: string, query: LogRangeQueryDto) {
+    return this.listLogs({ userId, userPlanId: planId }, query);
+  }
+
+  private async listLogs(
+    baseWhere: Prisma.UserLogWhereInput,
+    query: LogRangeQueryDto,
+  ) {
     const page = Math.max(1, Number(query.page) || 1);
     const limitPage = this.getLimit(query.limit);
     const skip = (page - 1) * limitPage;
-    const where = { userId };
+
+    const where: Prisma.UserLogWhereInput = { ...baseWhere };
+    if (query.userPlanId) where.userPlanId = query.userPlanId;
+
+    if (query.from || query.to) {
+      const from = this.normalizeDate(query.from ?? query.to!);
+      const to = this.normalizeDate(query.to ?? query.from!);
+      this.assertRange(from, to);
+      where.date = { gte: from, lte: to };
+    }
 
     const [data, count] = await Promise.all([
       this.prisma.userLog.findMany({
-        where, skip, take: limitPage,
-        orderBy: { date: 'desc' },
+        where,
+        skip,
+        take: limitPage,
+        orderBy: this.sortOrder(query.sort),
         select: {
-          id: true, date: true, weightKg: true,
+          id: true, date: true, weightKg: true, userPlanId: true,
           doneExercises: true, plannedExercises: true,
           doneMeals: true, plannedMeals: true,
-          caloriesConsumed: true,
+          caloriesConsumed: true, caloriesBurned: true,
+          unCompletedExerciseIds: true, unCompletedMealIds: true,
+          userNote: true, coachNote: true,
+          startimetAt: true, endtimeAt: true,
+          jalaliYear: true, jalaliMonth: true,
         },
       }),
       this.prisma.userLog.count({ where }),
@@ -274,25 +378,8 @@ export class UserLogService {
     return { logs: data, pagination: pagination(count, page, limitPage) };
   }
 
-  async getByPlan(userId: string, planId: string, query: QueryDefaultDto) {
-    const page = Math.max(1, Number(query.page) || 1);
-    const limitPage = this.getLimit(query.limit);
-    const skip = (page - 1) * limitPage;
-    const where = { userId, userPlanId: planId };
+  // ============ Stats (User + Coach مشترک) ============
 
-    const [data, count] = await Promise.all([
-      this.prisma.userLog.findMany({
-        where, skip, take: limitPage,
-        orderBy: { date: 'desc' },
-      }),
-      this.prisma.userLog.count({ where }),
-    ]);
-    return { logs: data, pagination: pagination(count, page, limitPage) };
-  }
-
-  // ============ Stats ============
-
-  /** آمار ماهانه یک سال شمسی — از ایندکس (user_id, jalali_year, jalali_month) استفاده می‌کند */
   async getMonthlyStats(userId: string, year: number) {
     const months = await this.prisma.$queryRaw<MonthlyStatEntity[]>`
       SELECT
@@ -320,22 +407,15 @@ export class UserLogService {
     return { year, months };
   }
 
-  /**
-   * آمار هفتگی با هفته‌ی شنبه تا جمعه.
-   * date + 2 → شنبه به دوشنبه می‌رسد؛ date_trunc('week') از دوشنبه شروع می‌کند؛ بعد ۲ روز برمی‌گردیم.
-   */
   async getWeeklyStats(userId: string, fromStr: string, toStr: string) {
     const from = this.normalizeDate(fromStr);
     const to = this.normalizeDate(toStr);
-
-    if (to < from) throw new BadRequestException('تاریخ پایان باید بعد از تاریخ شروع باشد');
-    if ((to.getTime() - from.getTime()) / DAY_MS > MAX_STATS_RANGE_DAYS) {
-      throw new BadRequestException(`حداکثر بازه‌ی مجاز ${MAX_STATS_RANGE_DAYS} روز است`);
-    }
+    this.assertRange(from, to);
 
     const fromSql = this.toDateString(from);
     const toSql = this.toDateString(to);
 
+    // هفته شمسی‌محور نیست؛ هفته شنبه→جمعه (با shift برای date_trunc)
     const weeks = await this.prisma.$queryRaw<WeeklyStatEntity[]>`
       SELECT
         to_char((date_trunc('week', (date + 2)::timestamp)::date - 2), 'YYYY-MM-DD') AS "weekStart",
@@ -363,16 +443,111 @@ export class UserLogService {
     return { from: fromSql, to: toSql, weeks };
   }
 
+  /** آمار یک سال شمسی — یک ردیف aggregate */
+  async getYearlyStats(userId: string, year: number) {
+    const rows = await this.prisma.$queryRaw<YearlyStatEntity[]>`
+      SELECT
+        jalali_year                                               AS "year",
+        COUNT(*)::int                                             AS "loggedDays",
+        ROUND(AVG(weight_kg), 2)::float                           AS "avgWeightKg",
+        ((ARRAY_AGG(weight_kg ORDER BY date DESC)
+            FILTER (WHERE weight_kg IS NOT NULL))[1])::float      AS "lastWeightKg",
+        COALESCE(SUM(calories_burned), 0)::int                    AS "caloriesBurned",
+        ROUND(AVG(calories_consumed))::int                        AS "avgCaloriesConsumed",
+        COALESCE(SUM(done_exercises), 0)::int                     AS "doneExercises",
+        COALESCE(SUM(planned_exercises), 0)::int                  AS "plannedExercises",
+        ROUND(SUM(done_exercises)::numeric
+              / NULLIF(SUM(planned_exercises), 0), 4)::float      AS "workoutCompletion",
+        COALESCE(SUM(done_meals), 0)::int                         AS "doneMeals",
+        COALESCE(SUM(planned_meals), 0)::int                      AS "plannedMeals",
+        ROUND(SUM(done_meals)::numeric
+              / NULLIF(SUM(planned_meals), 0), 4)::float          AS "mealCompletion"
+      FROM user_logs
+      WHERE user_id = ${userId}::uuid
+        AND jalali_year = ${year}::int
+      GROUP BY jalali_year
+    `;
+    return {
+      year: rows[0] ?? {
+        year,
+        loggedDays: 0,
+        avgWeightKg: null,
+        lastWeightKg: null,
+        caloriesBurned: 0,
+        avgCaloriesConsumed: null,
+        doneExercises: 0,
+        plannedExercises: 0,
+        workoutCompletion: null,
+        doneMeals: 0,
+        plannedMeals: 0,
+        mealCompletion: null,
+      },
+    };
+  }
+
   // ============ Coach ============
 
-  async updateCoachNote(coachUserId: string, logId: string, coachNote: string) {
+  private async resolveCoachId(coachUserId: string): Promise<string> {
     const coach = await this.prisma.coach.findUnique({
-      where: { userId: coachUserId }, select: { id: true },
+      where: { userId: coachUserId },
+      select: { id: true },
     });
     if (!coach) throw new NotFoundException('حساب مربی یافت نشد');
+    return coach.id;
+  }
+
+  /** مربی فقط شاگردی را می‌بیند که حداقل یک UserPlan با او داشته */
+  private async assertCoachStudent(coachId: string, userId: string) {
+    const link = await this.prisma.userPlan.findFirst({
+      where: { coachId, userId },
+      select: { id: true },
+    });
+    if (!link) throw new ForbiddenException('این کاربر شاگرد شما نیست');
+  }
+
+  async getCoachUserLogs(coachUserId: string, userId: string, query: LogRangeQueryDto) {
+    const coachId = await this.resolveCoachId(coachUserId);
+    await this.assertCoachStudent(coachId, userId);
+
+    // لاگ‌های بدون plan هم اگر شاگرد باشد قابل مشاهده‌اند؛ فیلتر اختیاری روی plan مربی
+    const where: Prisma.UserLogWhereInput = { userId };
+    if (query.userPlanId) {
+      where.userPlanId = query.userPlanId;
+      where.userPlan = { coachId };
+    }
+
+    return this.listLogs(where, query);
+  }
+
+  async getCoachMonthlyStats(coachUserId: string, userId: string, year: number) {
+    const coachId = await this.resolveCoachId(coachUserId);
+    await this.assertCoachStudent(coachId, userId);
+    return this.getMonthlyStats(userId, year);
+  }
+
+  async getCoachWeeklyStats(coachUserId: string, userId: string, from: string, to: string) {
+    const coachId = await this.resolveCoachId(coachUserId);
+    await this.assertCoachStudent(coachId, userId);
+    return this.getWeeklyStats(userId, from, to);
+  }
+
+  async getCoachYearlyStats(coachUserId: string, userId: string, year: number) {
+    const coachId = await this.resolveCoachId(coachUserId);
+    await this.assertCoachStudent(coachId, userId);
+    return this.getYearlyStats(userId, year);
+  }
+
+  async updateCoachNote(coachUserId: string, logId: string, coachNote: string) {
+    const coachId = await this.resolveCoachId(coachUserId);
 
     const log = await this.prisma.userLog.findFirst({
-      where: { id: logId, userPlan: { coachId: coach.id } },
+      where: {
+        id: logId,
+        OR: [
+          { userPlan: { coachId } },
+          { user: { userPlans: { some: { coachId } } } },
+        ],
+      },
       select: { id: true },
     });
     if (!log) throw new NotFoundException('لاگ یافت نشد یا مربوط به شما نیست');
@@ -381,26 +556,5 @@ export class UserLogService {
       where: { id: logId },
       data: { coachNote },
     });
-  }
-
-  async getCoachUserLogs(coachUserId: string, userId: string, query: QueryDefaultDto) {
-    const coach = await this.prisma.coach.findUnique({
-      where: { userId: coachUserId }, select: { id: true },
-    });
-    if (!coach) throw new NotFoundException('حساب مربی یافت نشد');
-
-    const page = Math.max(1, Number(query.page) || 1);
-    const limitPage = this.getLimit(query.limit);
-    const skip = (page - 1) * limitPage;
-    const where = { userId, userPlan: { coachId: coach.id } };
-
-    const [data, count] = await Promise.all([
-      this.prisma.userLog.findMany({
-        where, skip, take: limitPage,
-        orderBy: { date: 'desc' },
-      }),
-      this.prisma.userLog.count({ where }),
-    ]);
-    return { logs: data, pagination: pagination(count, page, limitPage) };
   }
 }

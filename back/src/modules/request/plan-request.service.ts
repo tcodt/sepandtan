@@ -480,6 +480,22 @@ export class PlanRequestService {
     throw new ConflictException(`درخواست در وضعیت ${r.status} قابل رد نیست`);
   }
   // ───────── Admin ─────────
+  async deleteAdminRequests(id: string) {
+    const { count } = await this.prisma.planRequest.deleteMany({
+      where: { id, status: { in: ['PENDING', 'CANCELLED', 'ACCEPTED', 'REJECTED'] } }
+    });
+    if (count) return { id, status: 'Deleted' as const };
+    const r = await this.prisma.planRequest.findUnique({
+      where: { id },
+      select: { status: true },
+    });
+    if (!r) throw new NotFoundException('درخواست یافت نشد');
+    if (r.status === 'PAID' || r.status === 'DELIVERED') {
+      throw new ConflictException('پس از پرداخت امکان حذف نیست؛ باید وضعیت درخواست رو تغییر بدین');
+    }
+    throw new ConflictException(`درخواست در وضعیت ${r.status} قابل حذف نیست`);
+  }
+  
   async updateAdmin(id: string, body: PlanRequestAdminDto) {
     const req = await this.prisma.planRequest.findUnique({
       where: { id },
