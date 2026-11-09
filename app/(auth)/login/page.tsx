@@ -35,6 +35,19 @@ export default function LoginPage() {
   const searchParams = useSearchParams();
   const next = searchParams.get("next");
   const plan = searchParams.get("plan");
+  const reason = searchParams.get("reason");
+  const reasonMessage =
+    reason === "suspended"
+      ? "حساب شما توسط مدیریت معلق شده است."
+      : reason === "deleted"
+        ? "حساب شما حذف شده و امکان ورود نیست."
+        : reason === "seller_revoked"
+          ? "دسترسی فروشندگی شما لغو شده است. با حساب عادی وارد شوید."
+          : reason === "coach_revoked"
+            ? "دسترسی مربیگری شما لغو شده است."
+            : reason === "session"
+              ? "نشست منقضی شده؛ دوباره وارد شوید."
+              : null;
 
   const [contactType, setContactType] = useState<"email" | "phone">("email");
   const [showPassword, setShowPassword] = useState(false);
@@ -124,6 +137,14 @@ export default function LoginPage() {
         </CardHeader>
 
         <CardContent>
+          {reasonMessage && (
+            <div
+              role="alert"
+              className="mb-4 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2.5 text-sm text-amber-900 dark:text-amber-100"
+            >
+              {reasonMessage}
+            </div>
+          )}
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
             {/* انتخاب ایمیل یا موبایل */}
             <div className="space-y-2">

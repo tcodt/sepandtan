@@ -29,8 +29,15 @@ export type AuthEntities = {
   phone?: string | null;
   googleId?: string | null;
   role: BackendRole;
+  status?: BackendUserStatus;
+  /** اشکال رایج توکن */
   accessToken?: string;
   token?: string;
+  access_token?: string;
+  refreshToken?: string;
+  /** گاهی کل پاسخ داخل data است */
+  data?: AuthEntities;
+  user?: AuthEntities;
 };
 
 export type ActivityLevelBackend =

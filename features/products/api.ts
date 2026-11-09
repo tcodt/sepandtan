@@ -170,17 +170,32 @@ function mapAdminProduct(raw: unknown): AdminProductDetail | null {
   };
 }
 
+const PUBLIC_SORTS = new Set([
+  "price_asc",
+  "price_desc",
+  "newest",
+  "oldest",
+  "popular",
+  "rating",
+]);
+
+function toPublicSort(sort: ProductListFilters["sort"] | undefined): string {
+  if (sort && PUBLIC_SORTS.has(sort)) return sort;
+  return "newest";
+}
+
 /** GET /products — Public */
 export async function fetchProducts(
   filters: ProductListFilters = {},
 ): Promise<ProductListResponse> {
   const { data } = await apiClient.get("/products", {
     params: {
-      category: filters.category,
-      seller: filters.seller,
+      category: filters.category || undefined,
+      seller: filters.seller || undefined,
       minPrice: filters.minPrice,
       maxPrice: filters.maxPrice,
-      sort: filters.sort,
+      // همیشه یک مقدار معتبر swagger بفرست — نه undefined
+      sort: toPublicSort(filters.sort),
       page: filters.page ?? 1,
       limit: filters.limit ?? 12,
     },
@@ -195,7 +210,7 @@ export async function fetchProducts(
   };
 }
 
-/** GET /products/{idOrSlug} — Public detail (shape may vary) */
+/** GET /products/{idOrSlug} — Public detail */
 export async function fetchProductByIdOrSlug(
   idOrSlug: string,
 ): Promise<Record<string, unknown>> {
@@ -218,15 +233,26 @@ export async function fetchRelatedProducts(
 }
 
 /**
- * GET /products/ADMIN — Admin & Store
- * (path دقیقاً طبق swagger: /products/ADMIN)
+ * swagger GET /products/ADMIN status enum:
+ * all | DRAFT | PENDING | ACTIVE | REJECTED | INACTIVE | OUT_OF_STOCK | DELETED | BANNED
+ * UI legacy «APPROVED» → ACTIVE
  */
+function toAdminStatusParam(
+  status: AdminProductFilters["status"],
+): string | undefined {
+  if (!status || status === "ALL" || status === "all") return "all";
+  const s = String(status).toUpperCase();
+  if (s === "APPROVED") return "ACTIVE";
+  return s;
+}
+
+/** GET /products/ADMIN — Admin & Store */
 export async function fetchAdminProducts(
   filters: AdminProductFilters = {},
 ): Promise<AdminProductListResponse> {
   const { data } = await apiClient.get("/products/ADMIN", {
     params: {
-      status: filters.status,
+      status: toAdminStatusParam(filters.status),
       featured:
         typeof filters.featured === "boolean"
           ? String(filters.featured)
@@ -241,8 +267,10 @@ export async function fetchAdminProducts(
       limit: filters.limit ?? 20,
     },
   });
+
   const r = (data ?? {}) as Record<string, unknown>;
   const list = asArray(r.products ?? r.data ?? data);
+
   return {
     pagination: mapPagination(r.pagination ?? r.meta),
     products: list
@@ -264,21 +292,24 @@ export async function updateProduct(
   id: string,
   payload: UpdateProductInput,
 ): Promise<unknown> {
-  const { data } = await apiClient.put(`/products/${id}`, payload);
+  const { data } = await apiClient.put(
+    `/products/${encodeURIComponent(id)}`,
+    payload,
+  );
   return data;
 }
 
 /** DELETE /products/{id} */
 export async function deleteProduct(id: string): Promise<void> {
-  await apiClient.delete(`/products/${id}`);
+  await apiClient.delete(`/products/${encodeURIComponent(id)}`);
 }
 
 /** PATCH /products/admin/{id}/approve */
 export async function approveProduct(id: string): Promise<void> {
-  await apiClient.patch(`/products/admin/${id}/approve`);
+  await apiClient.patch(`/products/admin/${encodeURIComponent(id)}/approve`);
 }
 
 /** PATCH /products/admin/{id}/feature */
 export async function toggleProductFeature(id: string): Promise<void> {
-  await apiClient.patch(`/products/admin/${id}/feature`);
+  await apiClient.patch(`/products/admin/${encodeURIComponent(id)}/feature`);
 }

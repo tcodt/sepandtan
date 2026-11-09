@@ -71,9 +71,10 @@ export async function fetchProductReviews(
   page = 1,
   limit = 10,
 ): Promise<ProductReviewsResponse> {
-  const { data } = await apiClient.get(`/reviews/product/${productId}`, {
-    params: { page, limit },
-  });
+  const { data } = await apiClient.get(
+    `/reviews/product/${encodeURIComponent(productId)}`,
+    { params: { page, limit } },
+  );
   const r = (data ?? {}) as Record<string, unknown>;
   const list = asArray(r.reviews ?? r.data ?? data);
   return {

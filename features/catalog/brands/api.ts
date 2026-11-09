@@ -43,7 +43,7 @@ export async function fetchBrands(): Promise<Brand[]> {
     .filter((b): b is Brand => b !== null);
 }
 
-/** GET /brand/admin */
+/** GET /brand/admin → PaginatedBrandAdminEntity */
 export async function fetchBrandsAdmin(
   filters: BrandsAdminFilters = {},
 ): Promise<BrandsAdminResponse> {
@@ -62,9 +62,15 @@ export async function fetchBrandsAdmin(
   };
 }
 
-/** POST /brand */
+/** POST /brand — body BrandDto: name, slug required */
 export async function createBrand(payload: BrandInput): Promise<void> {
-  await apiClient.post("/brand", payload);
+  await apiClient.post("/brand", {
+    name: payload.name,
+    slug: payload.slug,
+    logo: payload.logo ?? null,
+    description: payload.description ?? null,
+    sortOrder: payload.sortOrder ?? 0,
+  });
 }
 
 /** PUT /brand/{id} */
@@ -72,10 +78,16 @@ export async function updateBrand(
   id: string,
   payload: BrandInput,
 ): Promise<void> {
-  await apiClient.put(`/brand/${id}`, payload);
+  await apiClient.put(`/brand/${encodeURIComponent(id)}`, {
+    name: payload.name,
+    slug: payload.slug,
+    logo: payload.logo ?? null,
+    description: payload.description ?? null,
+    sortOrder: payload.sortOrder ?? 0,
+  });
 }
 
 /** DELETE /brand/{id} */
 export async function deleteBrand(id: string): Promise<void> {
-  await apiClient.delete(`/brand/${id}`);
+  await apiClient.delete(`/brand/${encodeURIComponent(id)}`);
 }

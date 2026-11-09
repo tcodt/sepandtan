@@ -144,10 +144,10 @@ export async function updateCategory(
   id: string,
   payload: UpdateCategoryInput,
 ): Promise<void> {
-  await apiClient.put(`/categories/${id}`, payload);
+  await apiClient.put(`/categories/${encodeURIComponent(id)}`, payload);
 }
 
 /** DELETE /categories/{id} */
 export async function deleteCategory(id: string): Promise<void> {
-  await apiClient.delete(`/categories/${id}`);
+  await apiClient.delete(`/categories/${encodeURIComponent(id)}`);
 }
