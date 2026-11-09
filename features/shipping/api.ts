@@ -7,6 +7,7 @@ import type {
   StoreShippingMethod,
   UpdateStoreShippingInput,
   UpsertShippingRateInput,
+  ShippingOption,
 } from "./types";
 
 function asString(v: unknown): string | null {
@@ -198,4 +199,47 @@ export async function fetchProvinces(): Promise<ProvinceOption[]> {
   return asArray(data)
     .map(mapProvince)
     .filter((x): x is ProvinceOption => x !== null);
+}
+
+function mapShippingOption(raw: unknown): ShippingOption | null {
+  const r = (raw ?? {}) as Record<string, unknown>;
+  const id = asString(r.id);
+  const storeId =
+    asString(r.storeId) ||
+    asString((r.store as Record<string, unknown> | undefined)?.id);
+  if (!id || !storeId) return null;
+
+  const method = (r.shippingMethod ?? r.method ?? {}) as Record<
+    string,
+    unknown
+  >;
+
+  return {
+    id,
+    storeId,
+    description: asString(r.description) ?? "",
+    phrase: asString(r.phrase),
+    methodName:
+      asString(method.name) ?? asString(r.methodName) ?? asString(r.name),
+    minDays: asNumber(r.minDays) ?? 0,
+    maxDays: asNumber(r.maxDays) ?? 0,
+    defaultPrice: asNumber(r.defaultPrice) ?? asNumber(r.price) ?? 0,
+    isActive: Boolean(r.isActive ?? true),
+  };
+}
+
+/**
+ * GET /shipping/order/{provinceId}
+ * گزینه‌های ارسال قابل استفاده برای سفارش در آن استان
+ */
+export async function fetchShippingForOrder(
+  provinceId: string,
+): Promise<ShippingOption[]> {
+  if (!provinceId?.trim()) return [];
+  const { data } = await apiClient.get(
+    `/shipping/order/${encodeURIComponent(provinceId)}`,
+  );
+  return asArray(data)
+    .map(mapShippingOption)
+    .filter((x): x is ShippingOption => x !== null && x.isActive);
 }

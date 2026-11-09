@@ -3,34 +3,8 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { OnboardingWizard } from "@/components/onboarding/onboarding-wizard";
+import { OnboardingRouteGuard } from "@/components/onboarding/onboarding-route-guard";
 import { useRequireAuth } from "@/hooks/use-require-auth";
-import { useUserStore } from "@/lib/store/user-store";
-import { getRoleMismatchRedirect } from "@/features/onboarding/utils";
-
-export function OnboardingRouteGuard({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  const router = useRouter();
-  const user = useUserStore((s) => s.user);
-
-  useEffect(() => {
-    if (!user) return;
-    const href = getRoleMismatchRedirect(user, "/onboarding");
-    if (href) router.replace(href);
-  }, [user, router]);
-
-  // seller/coach/admin اصلاً UI آنبوردینگ را نبینند
-  if (user && user.role !== "trainee") {
-    return null;
-  }
-  if (user?.professionalRoleLock === "seller") {
-    return null;
-  }
-
-  return <>{children}</>;
-}
 
 export default function OnboardingPage() {
   const router = useRouter();
@@ -43,8 +17,6 @@ export default function OnboardingPage() {
 
   useEffect(() => {
     if (isLoading || !isAuthenticated || !user) return;
-
-    // اگر onboarding کامل شده → داشبورد
     if (user.onboardingStatus === "completed" || user.onboardingCompleted) {
       router.replace("/dashboard");
     }
@@ -52,13 +24,12 @@ export default function OnboardingPage() {
 
   if (isLoading || !isAuthenticated) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
       </div>
     );
   }
 
-  // فقط trainee تأییدشده با onboarding ناقص اجازه دیدن wizard را دارد
   if (
     !user ||
     user.role !== "trainee" ||

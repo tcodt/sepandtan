@@ -9,6 +9,7 @@ import {
   deleteShippingRate,
   deleteStoreShipping,
   fetchProvinces,
+  fetchShippingForOrder,
   fetchShippingMethods,
   fetchShippingRates,
   fetchStoreShippingMethods,
@@ -28,6 +29,8 @@ export const shippingKeys = {
   rates: (methodId: string) =>
     [...shippingKeys.all, "rates", methodId] as const,
   provinces: () => [...shippingKeys.all, "provinces"] as const,
+  forOrder: (provinceId: string) =>
+    [...shippingKeys.all, "for-order", provinceId] as const,
 };
 
 export function useShippingMethods() {
@@ -156,5 +159,15 @@ export function useDeleteShippingRate() {
       await qc.invalidateQueries({ queryKey: shippingKeys.rates(methodId) });
     },
     onError: (e) => toast.error(getErrorMessage(e, "حذف نرخ ناموفق بود")),
+  });
+}
+
+/** checkout: روش‌های ارسال بر اساس استان آدرس */
+export function useShippingForOrder(provinceId: string | null | undefined) {
+  return useQuery({
+    queryKey: shippingKeys.forOrder(provinceId ?? ""),
+    queryFn: () => fetchShippingForOrder(provinceId!),
+    enabled: Boolean(provinceId?.trim()),
+    staleTime: 60_000,
   });
 }

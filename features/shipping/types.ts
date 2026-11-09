@@ -58,3 +58,16 @@ export type UpsertShippingRateInput = {
   storeShippingMethodId: string;
   provinceId: string;
 };
+
+/** گزینه ارسال قابل انتخاب در checkout — از GET /shipping/order/{provinceId} */
+export type ShippingOption = {
+  id: string;
+  storeId: string;
+  description: string;
+  phrase: string | null;
+  methodName: string | null;
+  minDays: number;
+  maxDays: number;
+  defaultPrice: number;
+  isActive: boolean;
+};

@@ -126,7 +126,7 @@ export async function fetchAdminOverviewSnapshot(): Promise<AdminOverviewSnapsho
     fetchPendingCoachCount(),
     fetchAdminStores({ page: 1, limit: 50, status: "PENDING" }),
     fetchAdminProducts({ page: 1, limit: 1, status: "PENDING" }),
-    fetchAdminProducts({ page: 1, limit: 1, status: "APPROVED" }),
+    fetchAdminProducts({ page: 1, limit: 1, status: "ACTIVE" }),
     fetchAdminProducts({ page: 1, limit: 1, featured: true }),
     fetchTicketStats(),
     fetchReportStats(),
