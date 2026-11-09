@@ -33,7 +33,12 @@ import {
   type FoodLite,
 } from './util/plan-snapshot.util.js';
 
-type PhaseLike = { title: string; startWeek: number; endWeek: number; days: unknown[] };
+type PhaseLike<D extends { weekday: number } = { weekday: number }> = {
+  title: string;
+  startWeek: number;
+  endWeek: number;
+  days: D[];
+};
 
 @Injectable()
 export class UserPlanService {
@@ -257,7 +262,10 @@ export class UserPlanService {
     return buildDietSnapshot(input, { templateId, title }, map);
   }
 
-  private pickPhase(phases: PhaseLike[] | undefined, week: number): PhaseLike | null {
+  private pickPhase<D extends { weekday: number }>(
+    phases: PhaseLike<D>[] | undefined,
+    week: number,
+  ): PhaseLike<D> | null {
     if (!phases?.length) return null;
     return phases.find((p) => week >= p.startWeek && week <= p.endWeek) ?? null;
   }
@@ -392,7 +400,7 @@ export class UserPlanService {
     let workout: unknown = null;
     if (wSnap && (plan.type === 'WORKOUT' || plan.type === 'ALL')) {
       const phase = this.pickPhase(wSnap.phases, week);
-      const day = phase?.days?.find((d: { weekday: number }) => d.weekday === wd) ?? null;
+      const day = phase?.days?.find((d) => d.weekday === wd) ?? null;
       workout = day
         ? { week, phaseTitle: phase!.title, ...day }
         : { week, phaseTitle: phase?.title ?? null, rest: true };
@@ -403,7 +411,7 @@ export class UserPlanService {
       const dietStart = dSnap.startDate ? parseDateOnly(dSnap.startDate) : plan.startDate;
       const dWeek = this.currentWeek(dietStart, date);
       const phase = this.pickPhase(dSnap.phases, dWeek);
-      const day = phase?.days?.find((d: { weekday: number }) => d.weekday === wd) ?? null;
+      const day = phase?.days?.find((d) => d.weekday === wd) ?? null;
       diet = day
         ? { week: dWeek, phaseTitle: phase!.title, ...day }
         : { week: dWeek, phaseTitle: phase?.title ?? null, empty: true };
