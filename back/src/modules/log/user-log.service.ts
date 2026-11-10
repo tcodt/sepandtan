@@ -49,7 +49,7 @@ export class UserLogService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly configService: ConfigService,
-  ) {}
+  ) { }
 
   private getLimit(limit?: number) {
     return Math.max(1, Math.min(100, Number(limit) || Number(this.configService.get('limit.coach')) || 10));
@@ -336,6 +336,16 @@ export class UserLogService {
 
   async getByPlan(userId: string, planId: string, query: LogRangeQueryDto) {
     return this.listLogs({ userId, userPlanId: planId }, query);
+  }
+
+  async getPlanSummary(planId: string) {
+    return this.prisma.userLog.findMany({
+      where: { userPlanId: planId },
+      select: {
+        unCompletedExerciseIds: true, plannedExercises: true, date: true, createdAt: true,
+        unCompletedMealIds: true, plannedMeals: true
+      }
+    })
   }
 
   private async listLogs(

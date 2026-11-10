@@ -81,6 +81,7 @@ export type Target = {
 };
 
 export type WorkoutSnapshotExercise = {
+  id: string;
   exerciseId: string;
   title: string;
   cover: string | null;
@@ -176,6 +177,7 @@ export interface WorkoutInput {
       isRestDay?: boolean;
       notes?: string | null;
       exercises: {
+        id?: string
         exerciseId: string;
         order: number;
         sets?: number | null;
@@ -327,6 +329,7 @@ export function buildWorkoutSnapshot(
   assertPhases(input.phases);
 
   let rows = 0;
+  const entryIds = new Set<string>(); // 👈 بیرون از map‌ها
   const phases: WorkoutSnapshotPhase[] = [...input.phases]
     .sort((a, b) => a.startWeek - b.startWeek)
     .map((p) => ({
@@ -345,8 +348,14 @@ export function buildWorkoutSnapshot(
             .map((e, idx) => {
               const ex = exercises.get(e.exerciseId);
               if (!ex) throw new BadRequestException(`حرکت ${e.exerciseId} یافت نشد`);
+
+              const eid = e.id ?? randomUUID();
+              if (entryIds.has(eid)) throw new BadRequestException('id حرکت تکراری است');
+              entryIds.add(eid);
+
               rows++;
               return {
+                id: eid, // 👈
                 exerciseId: e.exerciseId,
                 title: ex.title,
                 cover: ex.cover,
@@ -407,7 +416,7 @@ export function buildDietSnapshot(
 
   const planTarget = targetOf(input);
   let rows = 0;
-
+  const mealIds = new Set<string>();
   const phases: DietSnapshotPhase[] = [...input.phases]
     .sort((a, b) => a.startWeek - b.startWeek)
     .map((p) => {
@@ -429,6 +438,9 @@ export function buildDietSnapshot(
             const meals: DietSnapshotMeal[] = [...d.meals]
               .sort((a, b) => a.order - b.order)
               .map((m, mIdx) => {
+                const mid = m.id ?? randomUUID();
+                if (mealIds.has(mid)) throw new BadRequestException('id وعده تکراری است');
+                mealIds.add(mid);
                 const items: DietSnapshotItem[] = m.items.map((i) => {
                   const f = foods.get(i.foodId);
                   if (!f) throw new BadRequestException(`غذا ${i.foodId} یافت نشد`);
@@ -446,7 +458,7 @@ export function buildDietSnapshot(
                   };
                 });
                 return {
-                  id: m.id ?? randomUUID(),
+                  id: mid,
                   type: m.type,
                   priority: m.priority ?? 'PRIMARY',
                   order: mIdx + 1,

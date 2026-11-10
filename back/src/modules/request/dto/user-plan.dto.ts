@@ -14,6 +14,10 @@ const DATE_MESSAGE = 'تاریخ باید به فرمت YYYY-MM-DD باشد';
 // فقط id و پارامترها را بفرست؛ title/cover حرکت را سرور از دیتابیس پر می‌کند.
 
 export class SnapshotExerciseInputDto {
+  @ApiPropertyOptional({ description: 'برای آیتم موجود همان id قبلی را بفرست تا لاگ‌های کاربر معتبر بماند؛ برای آیتم جدید نفرست' })
+  @IsOptional() @IsUUID('4')
+  id?: string;
+
   @ApiProperty({ example: '3fa85f64-5717-4562-b3fc-2c963f66afa6' })
   @IsUUID('4')
   exerciseId!: string;
@@ -249,15 +253,6 @@ export class TodayQueryDto {
   date?: string;
 }
 
-export class PartQueryDto {
-  @ApiPropertyOptional({
-    example: 3,
-    description: 'شماره‌ی هفته‌ی برنامه (۱-based). اگر نباشد از startDate محاسبه‌ی هفته‌ی جاری انجام می‌شود',
-  })
-  @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(105)
-  week?: number;
-}
-
 export class PhaseParamDto {
   @ApiProperty({ example: 1, description: 'شماره‌ی فاز (۱ = فاز اول مرتب‌شده؛ مثلاً هفته‌های ۱–۳)' })
   @Type(() => Number) @IsInt() @Min(1) @Max(52)
@@ -268,4 +263,24 @@ export class UserPlanQueryDto extends QueryDefaultDto {
   @ApiPropertyOptional({ enum: [...Object.values(PlanStatus)], description: 'فیلتر وضعیت' })
   @IsOptional() @IsEnum(PlanStatus)
   status?: PlanStatus;
+}
+
+export class PartQueryDto {
+  @ApiPropertyOptional({ example: 3, description: 'شماره‌ی هفته (۱-based). اگر نباشد هفته‌ی جاری از startDate محاسبه می‌شود' })
+  @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(105)
+  week?: number;
+
+  @ApiPropertyOptional({ example: 2, description: 'شماره‌ی فاز (۱-based). اگر بیاید روی week اولویت دارد' })
+  @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(52)
+  phase?: number;
+}
+
+export class UpdatePlanDatesDto {
+  @ApiPropertyOptional({ example: '2026-11-12', description: 'تاریخ شروع جدید (حداکثر ۱۴ روز عقب‌تر از امروز تا ۶۰ روز جلوتر)' })
+  @IsOptional() @Matches(DATE_REGEX, { message: DATE_MESSAGE })
+  startDate?: string;
+
+  @ApiPropertyOptional({ example: '2027-01-10', description: 'تاریخ پایان جدید. اگر فقط startDate بیاید، طول برنامه حفظ می‌شود' })
+  @IsOptional() @Matches(DATE_REGEX, { message: DATE_MESSAGE })
+  endDate?: string;
 }

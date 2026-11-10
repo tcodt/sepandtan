@@ -4,8 +4,25 @@ const UUID = '3fa85f64-5717-4562-b3fc-2c963f66afa6';
 const PLAN_STATUS = ['DRAFT', 'ACTIVE', 'COMPLETED', 'CANCELLED'];
 const PLAN_TYPE = ['WORKOUT', 'DIET', 'ALL'];
 
+export class LogSummaryEntity {
+  @ApiProperty({ example: 50, description: 'برنامه‌ریزی‌شده تا امروز' }) planned!: number;
+  @ApiProperty({ example: 48 }) done!: number;
+}
+
+export class CalendarDayEntity {
+  @ApiProperty({ example: '2026-11-10' }) date!: string;
+  @ApiProperty({ example: 2, description: 'هفته‌ی برنامه (۱-based)' }) week!: number;
+  @ApiProperty({ example: 0, description: '۰=شنبه … ۶=جمعه؛ برای پیدا کردن روز در phase.days' }) weekday!: number;
+  @ApiProperty({ enum: ['DONE', 'PARTIAL', 'MISSED', 'PENDING', 'EXTRA'] }) status!: string;
+  @ApiProperty({ example: 6 }) planned!: number;
+  @ApiProperty({ example: 4 }) done!: number;
+  @ApiProperty({ type: [String], description: 'idهای انجام‌نشده. برای MISSED خالی است (یعنی همه‌ی آیتم‌های آن روز)' }) uncompletedIds!: string[];
+}
+
 // ═════════ شکل روزها در snapshot ═════════
 export class SnapshotExerciseEntity {
+  @ApiPropertyOptional({ example: UUID, description: 'شناسه‌ی پایدار آیتم؛ در لاگ (unCompletedExerciseIds) از همین استفاده می‌شود. snapshotهای قدیمی ندارند → از exerciseId استفاده کن' })
+  id?: string;
   @ApiProperty({ example: UUID, description: 'برای جزئیات کامل حرکت (ویدیو، مراحل، عضلات) از endpoint حرکت‌ها با همین id استفاده کن' })
   exerciseId!: string;
   @ApiProperty({ example: 'پرس سینه' }) title!: string;
@@ -113,34 +130,6 @@ export class TodayEntity {
   @ApiPropertyOptional({ example: 2, nullable: true }) dietWeek!: number | null;
   @ApiPropertyOptional({ type: SnapshotDietDayEntity, nullable: true }) diet!: SnapshotDietDayEntity | null;
 }
-
-export class PartOutlineEntity {
-  @ApiProperty({ example: 1, description: 'شماره‌ی فاز ۱-based' }) phaseNumber!: number;
-  @ApiProperty({ example: 'فاز ۱' }) title!: string;
-  @ApiProperty({ example: 1 }) startWeek!: number;
-  @ApiProperty({ example: 3 }) endWeek!: number;
-}
-
-export class PartEntity {
-  @ApiProperty({ example: UUID }) planId!: string;
-  @ApiProperty({ enum: ['workout', 'diet'] }) part!: string;
-  @ApiPropertyOptional({ example: 3, nullable: true, description: 'هفته‌ی جاری محاسبه‌شده از startDate' })
-  currentWeek!: number | null;
-  @ApiPropertyOptional({ example: 3, nullable: true }) requestedWeek!: number | null;
-  @ApiPropertyOptional({ example: 1, nullable: true, description: 'شماره‌ی فاز ۱-based' })
-  phaseNumber!: number | null;
-  @ApiProperty({ example: 8 }) durationWeeks!: number;
-  @ApiProperty({ type: [PartOutlineEntity], description: 'فهرست همه‌ی فازها بدون days (سبک)' })
-  outline!: PartOutlineEntity[];
-  @ApiPropertyOptional({
-    nullable: true,
-    description:
-      'فقط فاز انتخاب‌شده با days کامل: { phaseNumber, title, startWeek, endWeek, days }. ' +
-      'null اگر هفته/فاز خارج از بازه باشد',
-  })
-  phase!: Record<string, unknown> | null;
-}
-
 export class DraftResultEntity {
   @ApiProperty({ example: UUID }) id!: string;
   @ApiProperty({ enum: PLAN_STATUS, example: 'DRAFT' }) status!: string;
@@ -185,4 +174,40 @@ export class ActivatedEntity {
   @ApiProperty({ enum: PLAN_TYPE }) type!: string;
   @ApiProperty({ example: '2026-11-10' }) startDate!: string;
   @ApiProperty({ example: '2027-01-04' }) endDate!: string;
+}
+
+export class PartOutlineEntity {
+  @ApiProperty({ example: 1 }) phaseNumber!: number;
+  @ApiProperty({ example: 'فاز ۱' }) title!: string;
+  @ApiProperty({ example: 1 }) startWeek!: number;
+  @ApiProperty({ example: 3 }) endWeek!: number;
+  @ApiProperty({ example: true, description: 'فاز جاری (فقط اگر برنامه شروع شده باشد)' }) isCurrent!: boolean;
+  @ApiProperty({ type: LogSummaryEntity }) summary!: LogSummaryEntity;
+}
+
+export class PartEntity {
+  @ApiProperty({ example: UUID }) planId!: string;
+  @ApiProperty({ enum: ['workout', 'diet'] }) part!: string;
+  @ApiProperty({ enum: PLAN_STATUS }) status!: string;
+  @ApiProperty({ example: true, description: 'startDate ≤ امروز' }) isStarted!: boolean;
+  @ApiProperty({ example: 3, description: 'هفته‌ی جاری (قبل از شروع = ۱، بعد از پایان = آخرین هفته)' }) currentWeek!: number;
+  @ApiProperty({ example: 3, description: 'هفته‌ای که برگشته (week یا شروع فاز)' }) requestedWeek!: number;
+  @ApiPropertyOptional({ example: 1, nullable: true }) phaseNumber!: number | null;
+  @ApiPropertyOptional({ example: 2, nullable: true, description: 'هفته‌ی چندم داخل همین فاز' }) weekInPhase!: number | null;
+  @ApiProperty({ example: 8 }) durationWeeks!: number;
+  @ApiProperty({ type: [PartOutlineEntity] }) outline!: PartOutlineEntity[];
+  @ApiProperty({ type: LogSummaryEntity, description: 'جمع کل فازها' }) summary!: LogSummaryEntity;
+  @ApiPropertyOptional({ nullable: true, description: '{ phaseNumber, title, startWeek, endWeek, days, calendar: CalendarDayEntity[] }' })
+  phase!: Record<string, unknown> | null;
+}
+
+export class StatusChangedEntity {
+  @ApiProperty({ example: UUID }) id!: string;
+  @ApiProperty({ example: 'CANCELLED' }) status!: string;
+}
+
+export class DatesUpdatedEntity {
+  @ApiProperty({ example: UUID }) id!: string;
+  @ApiProperty({ example: '2026-11-12' }) startDate!: string;
+  @ApiProperty({ example: '2027-01-10' }) endDate!: string;
 }

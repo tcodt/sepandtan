@@ -1,31 +1,23 @@
 import {
-  Controller, Get, Post, Put, Body, Param, Query, UseGuards, ParseIntPipe,
-  Delete,
+  Controller, Get, Post, Put, Patch, Delete, Body, Param, Query, UseGuards, Header,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiOkResponse, ApiParam } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiOkResponse } from '@nestjs/swagger';
 import { AccessTokenGuard } from '../auth/guard/access-token.guard.js';
 import { Roles } from '../auth/decorators/roles.decorator.js';
 import { CurrentUser } from '../../common/decorators/current-user.decorator.js';
 import { PaginatedResponse } from '../../common/dtos/pagination-response.dto.js';
 import { UserPlanService } from './user-plan.service.js';
 import {
-  ActivateUserPlanDto,
-  UpdateUserPlanSnapshotDto,
-  UpdateWorkoutSnapshotDto,
-  UpdateDietSnapshotDto,
-  UserPlanQueryDto,
-  PartQueryDto,
+  ActivateUserPlanDto, UpdateWorkoutSnapshotDto, UpdateDietSnapshotDto,
+  UpdatePlanDatesDto, UserPlanQueryDto, PartQueryDto,
 } from './dto/user-plan.dto.js';
 import {
-  UserPlanListItemEntity,
-  CurrentUserPlanResponseEntity,
-  PartEntity,
-  DraftResultEntity,
-  CoachUserPlanListItemEntity,
-  CoachUserPlanDetailEntity,
-  UpdatedEntity,
-  ActivatedEntity,
+  UserPlanListItemEntity, CurrentUserPlanResponseEntity, PartEntity, DraftResultEntity,
+  CoachUserPlanListItemEntity, CoachUserPlanDetailEntity, UpdatedEntity, ActivatedEntity,
+  StatusChangedEntity, DatesUpdatedEntity,
 } from './entity/user-plan.entity.js';
+
+const PART_CACHE = 'private, max-age=10'; // جلوگیری از درخواست‌های تکراری فرانت
 
 @ApiTags('UserPlan')
 @Controller('user-plan')
@@ -35,113 +27,51 @@ export class UserPlanController {
 
   // ═════════ Admin ═════════
   @Get('admin')
-  @Roles('SUPERADMIN', 'ADMIN')
+  // @Roles('SUPERADMIN', 'ADMIN')
   @ApiOkResponse({ type: PaginatedResponse(UserPlanListItemEntity, 'plans') })
-  @ApiOperation({ summary: 'دریافت تمام برنامه ها (Admin)' })
+  @ApiOperation({ summary: 'دریافت تمام برنامه‌ها (Admin)', description: 'همه‌ی وضعیت‌ها از جمله DRAFT؛ فیلتر اختیاری status.' })
   getPlansAdmin(@Query() query: UserPlanQueryDto) {
     return this.userPlanService.getPlansAdmin(query);
   }
 
   @Delete('admin/:planId')
-  @Roles('SUPERADMIN', 'ADMIN')
-  @ApiOperation({ summary: 'حذف برنامه ها (Super Admin)' })
-  deletePlansAdmin(@Query('planId') planId: string) {
+  // @Roles('SUPERADMIN')
+  @ApiOperation({
+    summary: 'حذف برنامه — فقط موارد اضطراری (Super Admin)',
+    description: 'لاگ‌های کاربر حذف نمی‌شوند؛ فقط از برنامه جدا می‌شوند.',
+  })
+  deletePlansAdmin(@Param('planId') planId: string) {
     return this.userPlanService.deletePlansAdmin(planId);
   }
 
   // ═════════ User ═════════
-  /** 1 — تاریخچه‌ی برنامه‌های من */
   @Get('my')
   @Roles('USER')
   @ApiOkResponse({ type: PaginatedResponse(UserPlanListItemEntity, 'plans') })
   @ApiOperation({
-    summary: '۱) تاریخچه‌ی برنامه‌های من (User)',
-    description: 'بدون snapshot و بدون پیش‌نویس‌ها. جدیدترین اول. فیلتر اختیاری status.',
+    summary: 'تاریخچه‌ی برنامه‌های من (User)',
+    description: 'بدون snapshot و بدون پیش‌نویس. فیلتر اختیاری status (مثلاً ACTIVE).',
   })
   getMyPlans(@CurrentUser('id') userId: string, @Query() query: UserPlanQueryDto) {
     return this.userPlanService.getMyPlans(userId, query);
   }
 
-  /** 2 — برنامه‌ی فعال (فقط متادیتا) */
   @Get('my/current')
   @Roles('USER')
   @ApiOkResponse({ type: CurrentUserPlanResponseEntity })
   @ApiOperation({
-    summary: '۲) برنامه‌ی فعال من — فقط متادیتا (User)',
-    description:
-      'حداکثر یک برنامه‌ی فعال (hasWorkout / hasDiet / currentWeek). snapshot برنمی‌گردد.',
+    summary: 'برنامه‌ی فعال من — فقط متادیتا (User)',
+    description: 'بدون snapshot (فقط ستون‌های سبک). از id آن برای :planId/workout و :planId/diet استفاده کن.'
   })
   getMyCurrent(@CurrentUser('id') userId: string) {
     return this.userPlanService.getMyCurrent(userId);
   }
 
-  /** 3 — برنامه‌ی هفتگی ورزشی جاری */
-  @Get('my/current/workout')
-  @Roles('USER')
-  @ApiOkResponse({ type: PartEntity })
-  @ApiOperation({
-    summary: '۳) برنامه‌ی هفتگی ورزشی من (User)',
-    description:
-      'هفته‌ی جاری از startDate محاسبه می‌شود (یا ?week=N). فقط فاز جاری days کامل دارد؛ outline بقیه‌ی فازها سبک است.',
-  })
-  getMyWorkout(@CurrentUser('id') userId: string, @Query() query: PartQueryDto) {
-    return this.userPlanService.getMyPart(userId, 'workout', query.week);
-  }
-
-  /** 4 — فاز ورزشی مشخص */
-  @Get('my/current/workout/phase/:phase')
-  @Roles('USER')
-  @ApiOkResponse({ type: PartEntity })
-  @ApiParam({ name: 'phase', example: 1, description: 'شماره‌ی فاز ۱-based (۱=فاز اول)' })
-  @ApiOperation({
-    summary: '۴) فاز ورزشی مشخص (User)',
-    description: 'روزها + حرکات همان فاز. phase=1 یعنی اولین فاز (مثلاً هفته‌های ۱–۳).',
-  })
-  getMyWorkoutPhase(
-    @CurrentUser('id') userId: string,
-    @Param('phase', ParseIntPipe) phase: number,
-  ) {
-    return this.userPlanService.getMyPhase(userId, 'workout', phase);
-  }
-
-  /** 5 — برنامه‌ی هفتگی غذایی جاری */
-  @Get('my/current/diet')
-  @Roles('USER')
-  @ApiOkResponse({ type: PartEntity })
-  @ApiOperation({
-    summary: '۵) برنامه‌ی هفتگی غذایی من (User)',
-    description: 'مثل workout؛ startDate غذایی می‌تواند جدا باشد اگر بعداً اضافه شده.',
-  })
-  getMyDiet(@CurrentUser('id') userId: string, @Query() query: PartQueryDto) {
-    return this.userPlanService.getMyPart(userId, 'diet', query.week);
-  }
-
-  /** 6 — فاز غذایی مشخص */
-  @Get('my/current/diet/phase/:phase')
-  @Roles('USER')
-  @ApiOkResponse({ type: PartEntity })
-  @ApiParam({ name: 'phase', example: 1 })
-  @ApiOperation({
-    summary: '۶) فاز غذایی مشخص (User)',
-    description: 'روزها + وعده‌های همان فاز.',
-  })
-  getMyDietPhase(
-    @CurrentUser('id') userId: string,
-    @Param('phase', ParseIntPipe) phase: number,
-  ) {
-    return this.userPlanService.getMyPhase(userId, 'diet', phase);
-  }
-
   // ═════════ Coach ═════════
-
-  /** 7 — برنامه‌های شاگردان */
   @Get('coach')
   @Roles('COACH')
   @ApiOkResponse({ type: PaginatedResponse(CoachUserPlanListItemEntity, 'plans') })
-  @ApiOperation({
-    summary: '۷) برنامه‌های شاگردان من (Coach)',
-    description: 'فیلتر status=DRAFT | ACTIVE. بدون snapshot.',
-  })
+  @ApiOperation({ summary: 'برنامه‌های شاگردان من (Coach)', description: 'پیش‌فرض بدون CANCELLED. بدون snapshot.' })
   getCoachPlans(@CurrentUser('id') coachUserId: string, @Query() query: UserPlanQueryDto) {
     return this.userPlanService.getCoachPlans(coachUserId, query);
   }
@@ -152,152 +82,100 @@ export class UserPlanController {
   @ApiOperation({
     summary: 'ساخت پیش‌نویس از درخواست PAID (Coach)',
     description:
-      'snapshot از قالب‌ها ساخته می‌شود → DRAFT. idempotent. غذاییِ تنها فقط در activate به پلن ورزشی فعال merge می‌شود.',
+      'snapshot از قالب‌ها ساخته می‌شود → DRAFT (آماده‌ی تحویل؛ ویرایش اجباری نیست و می‌توان مستقیم activate کرد). idempotent.',
   })
   createDraft(@CurrentUser('id') coachUserId: string, @Param('requestId') requestId: string) {
     return this.userPlanService.createDraft(coachUserId, requestId);
   }
 
-  /** 9 — جزئیات شاگرد */
   @Get('coach/:id')
   @Roles('COACH')
   @ApiOkResponse({ type: CoachUserPlanDetailEntity })
-  @ApiOperation({
-    summary: '۹) جزئیات برنامه‌ی شاگرد با outline فازها + snapshot کامل (Coach)',
-    description:
-      'برای ویرایش. outline سبک برای ناوبری؛ برای days یک فاز از GET coach/:id/workout|diet/phase/:phase استفاده کن.',
-  })
+  @ApiOperation({ summary: 'جزئیات کامل برنامه‌ی شاگرد برای ویرایش (Coach)', description: 'snapshot کامل ورزشی و غذایی + outline فازها.' })
   getCoachPlan(@CurrentUser('id') coachUserId: string, @Param('id') id: string) {
     return this.userPlanService.getCoachPlan(coachUserId, id);
   }
 
-  @Get('coach/:id/workout/phase/:phase')
-  @Roles('COACH')
-  @ApiOkResponse({ type: PartEntity })
-  @ApiOperation({ summary: 'فاز ورزشی شاگرد (Coach)' })
-  getCoachWorkoutPhase(
-    @CurrentUser('id') coachUserId: string,
-    @Param('id') id: string,
-    @Param('phase', ParseIntPipe) phase: number,
-  ) {
-    return this.userPlanService.getPlanPhase(
-      { userId: coachUserId, asCoach: true },
-      id,
-      'workout',
-      phase,
-    );
-  }
-
-  @Get('coach/:id/diet/phase/:phase')
-  @Roles('COACH')
-  @ApiOkResponse({ type: PartEntity })
-  @ApiOperation({ summary: 'فاز غذایی شاگرد (Coach)' })
-  getCoachDietPhase(
-    @CurrentUser('id') coachUserId: string,
-    @Param('id') id: string,
-    @Param('phase', ParseIntPipe) phase: number,
-  ) {
-    return this.userPlanService.getPlanPhase(
-      { userId: coachUserId, asCoach: true },
-      id,
-      'diet',
-      phase,
-    );
-  }
-
-  /** 11 — ویرایش ورزشی (جدا) */
   @Put('coach/:id/snapshot/workout')
   @Roles('COACH')
   @ApiOkResponse({ type: UpdatedEntity })
-  @ApiOperation({
-    summary: '۱۱) ویرایش فقط بخش ورزشی (Coach)',
-    description:
-      'جایگزینی کامل snapshot ورزشی. title/cover حرکت از DB پر می‌شود. فازهای هم‌پوشان / weekday تکراری → 400.',
-  })
-  updateWorkout(
-    @CurrentUser('id') coachUserId: string,
-    @Param('id') id: string,
-    @Body() dto: UpdateWorkoutSnapshotDto,
-  ) {
+  @ApiOperation({ summary: 'ویرایش فقط بخش ورزشی (Coach)', description: 'فقط DRAFT/ACTIVE. فازهای هم‌پوشان / weekday تکراری → 400.' })
+  updateWorkout(@CurrentUser('id') coachUserId: string, @Param('id') id: string, @Body() dto: UpdateWorkoutSnapshotDto) {
     return this.userPlanService.updateWorkoutSnapshot(coachUserId, id, dto);
   }
 
-  /** 10 — ویرایش غذایی (جدا) */
   @Put('coach/:id/snapshot/diet')
   @Roles('COACH')
   @ApiOkResponse({ type: UpdatedEntity })
-  @ApiOperation({
-    summary: '۱۰) ویرایش فقط بخش غذایی (Coach)',
-    description: 'جایگزینی کامل snapshot غذایی. کالری/ماکرو سرور حساب می‌کند. id وعده‌ها را برای log حفظ کن.',
-  })
-  updateDiet(
-    @CurrentUser('id') coachUserId: string,
-    @Param('id') id: string,
-    @Body() dto: UpdateDietSnapshotDto,
-  ) {
+  @ApiOperation({ summary: 'ویرایش فقط بخش غذایی (Coach)', description: 'فقط DRAFT/ACTIVE. id وعده‌ها را برای حفظ log بفرست.' })
+  updateDiet(@CurrentUser('id') coachUserId: string, @Param('id') id: string, @Body() dto: UpdateDietSnapshotDto) {
     return this.userPlanService.updateDietSnapshot(coachUserId, id, dto);
   }
 
-  /** سازگاری عقب‌رو — ترجیحاً از endpointهای جدا استفاده شود */
-  @Put('coach/:id/snapshot')
-  @Roles('COACH')
-  @ApiOkResponse({ type: UpdatedEntity })
-  @ApiOperation({
-    summary: 'ویرایش ترکیبی snapshot (deprecated — از /snapshot/workout و /snapshot/diet استفاده کنید)',
-  })
-  updateSnapshot(
-    @CurrentUser('id') coachUserId: string,
-    @Param('id') id: string,
-    @Body() dto: UpdateUserPlanSnapshotDto,
-  ) {
-    return this.userPlanService.updateSnapshot(coachUserId, id, dto);
-  }
-
-  /** 12 — فعال‌سازی */
   @Post('coach/:id/activate')
   @Roles('COACH')
   @ApiOkResponse({ type: ActivatedEntity })
   @ApiOperation({
-    summary: '۱۲) فعال‌سازی برنامه (Coach)',
-    description:
-      'DRAFT → ACTIVE. startDate/endDate اختیاری (پیش‌فرض: امروز و duration از snapshot). ' +
-      'snapshot از قبل در DRAFT کپی شده. غذاییِ تنها روی پلن ورزشی فعال merge می‌شود. تداخل ACTIVE → 409.',
+    summary: 'فعال‌سازی برنامه (Coach)',
+    description: 'DRAFT → ACTIVE (بدون نیاز به ویرایش). غذاییِ تنها روی پلن ورزشی فعال merge می‌شود. تداخل → 409.',
   })
-  activate(
-    @CurrentUser('id') coachUserId: string,
-    @Param('id') id: string,
-    @Body() dto: ActivateUserPlanDto,
-  ) {
+  activate(@CurrentUser('id') coachUserId: string, @Param('id') id: string, @Body() dto: ActivateUserPlanDto) {
     return this.userPlanService.activate(coachUserId, id, dto);
   }
 
-  // ─── routeهای پارامتری در انتها (بعد از مسیرهای ثابت coach/my) ───
-
-  /** فاز یک پلن مشخص (تاریخچه / مالک) */
-  @Get(':planId/workout/phase/:phase')
-  @Roles('USER')
-  @ApiOkResponse({ type: PartEntity })
-  @ApiOperation({
-    summary: 'فاز ورزشی یک پلن با id (User — مالک)',
-    description: 'برای برنامه‌های قدیمی/غیرفعال. planId + phase.',
-  })
-  getPlanWorkoutPhase(
-    @CurrentUser('id') userId: string,
-    @Param('planId') planId: string,
-    @Param('phase', ParseIntPipe) phase: number,
-  ) {
-    return this.userPlanService.getPlanPhase({ userId }, planId, 'workout', phase);
+  @Patch('coach/:id/dates')
+  @Roles('COACH')
+  @ApiOkResponse({ type: DatesUpdatedEntity })
+  @ApiOperation({ summary: 'تغییر تاریخ شروع/پایان برنامه‌ی فعال (Coach)' })
+  updateDates(@CurrentUser('id') coachUserId: string, @Param('id') id: string, @Body() dto: UpdatePlanDatesDto) {
+    return this.userPlanService.updateDates(coachUserId, id, dto);
   }
 
-  @Get(':planId/diet/phase/:phase')
-  @Roles('USER')
+  @Patch('coach/:id/cancel')
+  @Roles('COACH')
+  @ApiOkResponse({ type: StatusChangedEntity })
+  @ApiOperation({ summary: 'لغو برنامه (DRAFT/ACTIVE) (Coach)' })
+  cancel(@CurrentUser('id') coachUserId: string, @Param('id') id: string) {
+    return this.userPlanService.cancel(coachUserId, id);
+  }
+
+  // ═════════ مشترک (کاربر / مربی / ادمین) — پارامتری‌ها در انتها ═════════
+
+  @Get(':planId/workout')
+  @Roles('USER', 'COACH', 'ADMIN', 'SUPERADMIN')
+  @Header('Cache-Control', PART_CACHE)
   @ApiOkResponse({ type: PartEntity })
-  @ApiOperation({ summary: 'فاز غذایی یک پلن با id (User — مالک)' })
-  getPlanDietPhase(
-    @CurrentUser('id') userId: string,
-    @Param('planId') planId: string,
-    @Param('phase', ParseIntPipe) phase: number,
-  ) {
-    return this.userPlanService.getPlanPhase({ userId }, planId, 'diet', phase);
+  @ApiOperation({
+    summary: 'برنامه‌ی ورزشی یک پلن: هفته/فاز جاری یا مشخص (User & Admin & Coach)',
+    description: `
+    * برنامه کاربر ارسال میشه با لاگ های کاربر که برنامه را تا چه اندازه انجام داده
+    * فاز مشخص شده با جزئیات ارسال میشه یعنی شامل روز ها و ست های ورزشی و حرکات
+    * سعی کن فقط از بخش فاز استفاده کنی هفته خوب کار نمیکنه 
+    * تو باید به صورت کامل توی فرانت نمایش بدی یعنی اگر زدیم فاز 1 از هفته 1 تا 4 تو باید 4 هفته به کاربر نمایش بدی
+    * اطلاعات لاگ ها داخل summary هستش 
+    * اطلاعات لاگ فاز مشخص شده داخل calendar هستش 
+    `
+  })
+  getWorkoutPart(@Param('planId') planId: string, @Query() query: PartQueryDto) {
+    return this.userPlanService.getPlanPart(planId, 'workout', query);
+  }
+
+  @Get(':planId/diet')
+  @Roles('USER', 'COACH', 'ADMIN', 'SUPERADMIN')
+  @Header('Cache-Control', PART_CACHE)
+  @ApiOkResponse({ type: PartEntity })
+  @ApiOperation({
+    summary: 'برنامه‌ی غذایی یک پلن: هفته/فاز جاری یا مشخص (User & Admin & Coach)',
+    description: `
+    * برنامه کاربر ارسال میشه با لاگ های کاربر که برنامه را تا چه اندازه انجام داده
+    * فاز مشخص شده با جزئیات ارسال میشه یعنی شامل روز ها و ست های ورزشی و حرکات
+    * سعی کن فقط از بخش فاز استفاده کنی هفته خوب کار نمیکنه 
+    * تو باید به صورت کامل توی فرانت نمایش بدی یعنی اگر زدیم فاز 1 از هفته 1 تا 4 تو باید 4 هفته به کاربر نمایش بدی
+    * اطلاعات لاگ ها داخل summary هستش 
+    * اطلاعات لاگ فاز مشخص شده داخل calendar هستش 
+    `
+  })
+  getDietPart(@Param('planId') planId: string, @Query() query: PartQueryDto) {
+    return this.userPlanService.getPlanPart(planId, 'diet', query);
   }
 }

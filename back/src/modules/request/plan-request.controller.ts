@@ -123,9 +123,7 @@ export class PlanRequestController {
 
   @Get('admin')
   @Roles('SUPERADMIN')
-  @ApiOperation({
-    summary: ' درخواست کاربران (Super Admin)',
-  })
+  @ApiOperation({ summary: ' درخواست کاربران (Super Admin)' })
   getAdmin(@Query() query: PlanRequestQueryAdminDto) {
     return this.planRequestService.getAllRequestAdmin(query);
   }
@@ -142,7 +140,10 @@ export class PlanRequestController {
 
   @Delete('admin/:requestId')
   @Roles('SUPERADMIN')
-  @ApiOperation({ summary: 'حذف درخواست (Super Admin)' })
+  @ApiOperation({ summary: 'حذف درخواست (Super Admin)' ,description:`
+    * برای حذف یه درخواست باید اول درخواست رو روی حالت پندیگ یا اکتیو قرار بدی 
+    * بعدش بزنی پاکش کنی
+    `})
   deleteAdminRequests(@CurrentUser('id') userId: string, @Param('requestId') requestId: string) {
     return this.planRequestService.deleteMyRequests(userId, requestId);
   }

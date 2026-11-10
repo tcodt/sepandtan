@@ -1,42 +1,42 @@
 import {
-  Injectable,
-  NotFoundException,
-  BadRequestException,
-  ConflictException,
+  Injectable, NotFoundException, BadRequestException, ConflictException,
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { ConfigService } from '@nestjs/config';
 import pagination from '../../common/utils/pagination.js';
+import { OrderDirection } from '../../common/dtos/query.defualt.dto.js';
 import {
-  ActivateUserPlanDto,
-  UpdateUserPlanSnapshotDto,
-  UpdateWorkoutSnapshotDto,
-  UpdateDietSnapshotDto,
-  UserPlanQueryDto,
+  ActivateUserPlanDto, UpdateWorkoutSnapshotDto, UpdateDietSnapshotDto,
+  UpdatePlanDatesDto, UserPlanQueryDto, PartQueryDto,
 } from './dto/user-plan.dto.js';
 import {
-  tehranToday,
-  toDateString,
-  addDays,
-  toJson,
-  toNum,
-  buildWorkoutSnapshot,
-  buildDietSnapshot,
-  collectExerciseIds,
-  collectFoodIds,
-  resolvePlanWeek,
-  phaseOutline,
-  pickPhaseByWeek,
-  pickPhaseByNumber,
-  phaseNumberOfWeek,
-  type WorkoutSnapshot,
-  type DietSnapshot,
-  type WorkoutInput,
-  type DietInput,
-  type ExerciseLite,
-  type FoodLite,
-  parseDateOnly,
+  tehranToday, toDateString, addDays, toJson, toNum, buildWorkoutSnapshot, buildDietSnapshot,
+  collectExerciseIds, collectFoodIds, resolvePlanWeek, phaseOutline, parseDateOnly, DAY_MS,
+  type WorkoutSnapshot, type DietSnapshot, type WorkoutInput, type DietInput, weekdayOf,
+  type ExerciseLite, type FoodLite,
 } from './util/plan-snapshot.util.js';
+
+const MAX_LIMIT = 100;
+const MAX_START_AHEAD_DAYS = 60;
+const MAX_BACKDATE_DAYS = 14; // حداکثر عقب بردن شروعِ برنامه‌ی فعال
+const EDITABLE = ['DRAFT', 'ACTIVE'] as const;
+
+type PartDay = {
+  weekday: number;
+  isRestDay?: boolean;
+  exercises?: unknown[];
+  meals?: { priority: string }[];
+};
+type PartPhase = { title: string; startWeek: number; endWeek: number; days: PartDay[] };
+type DayLog = { planned: number; done: number; uncompletedIds: string[] };
+type CalendarEntry = {
+  date: string; week: number; weekday: number;
+  status: 'DONE' | 'PARTIAL' | 'MISSED' | 'PENDING' | 'EXTRA';
+  planned: number; done: number; uncompletedIds: string[];
+};
+
+const minDate = (a: Date, b: Date | null) => (b && b < a ? b : a);
+type PartKey = 'workout' | 'diet';
 
 @Injectable()
 export class UserPlanService {
@@ -45,25 +45,47 @@ export class UserPlanService {
     private readonly configService: ConfigService,
   ) { }
 
+  // ───────── helpers ─────────
+
   private getLimit(limit?: number) {
-    return Math.max(1, Number(limit) || Number(this.configService.get('limit.coach')) || 10);
+    const def = Number(this.configService.get('limit.userPlan')) || 10;
+    return Math.min(MAX_LIMIT, Math.max(1, Number(limit) || def)); // سقف برای جلوگیری از DoS
   }
 
-  private async resolveCoachId(userId: string): Promise<string> {
-    const coach = await this.prisma.coach.findUnique({
-      where: { userId },
-      select: { id: true },
-    });
-    if (!coach) throw new NotFoundException('حساب مربی یافت نشد');
-    return coach.id;
+  private paging(query: UserPlanQueryDto) {
+    const page = Math.max(1, Number(query.page) || 1);
+    const limit = this.getLimit(query.limit);
+    return {
+      page,
+      limit,
+      skip: (page - 1) * limit,
+      orderBy: { createdAt: query.order === OrderDirection.ASC ? ('asc' as const) : ('desc' as const) },
+    };
+  }
+
+  private dates<T extends { startDate: Date | null; endDate: Date | null }>(p: T) {
+    return {
+      ...p,
+      startDate: p.startDate ? toDateString(p.startDate) : null,
+      endDate: p.endDate ? toDateString(p.endDate) : null,
+    };
+  }
+
+  private isUniqueViolation(e: unknown) {
+    return (e as { code?: string })?.code === 'P2002';
+  }
+
+  private listSelect() {
+    return {
+      id: true, title: true, type: true, status: true, source: true,
+      startDate: true, endDate: true, activatedAt: true, createdAt: true,
+      workoutPlanId: true, dietPlanId: true, coachId: true,
+    } as const;
   }
 
   // ───────── template loaders ─────────
 
-  private async loadWorkoutTemplateInput(templateId: string): Promise<{
-    title: string;
-    input: WorkoutInput;
-  }> {
+  private async loadWorkoutTemplateInput(templateId: string): Promise<{ title: string; input: WorkoutInput }> {
     const plan = await this.prisma.workoutPlan.findUnique({
       where: { id: templateId },
       select: {
@@ -71,26 +93,13 @@ export class UserPlanService {
         workoutPhases: {
           orderBy: { order: 'asc' },
           select: {
-            title: true,
-            startWeek: true,
-            endWeek: true,
+            title: true, startWeek: true, endWeek: true,
             days: {
               select: {
-                weekday: true,
-                title: true,
-                isRestDay: true,
-                notes: true,
+                weekday: true, title: true, isRestDay: true, notes: true,
                 exercises: {
                   orderBy: { order: 'asc' },
-                  select: {
-                    exerciseId: true,
-                    order: true,
-                    sets: true,
-                    reps: true,
-                    durationSec: true,
-                    restSec: true,
-                    notes: true,
-                  },
+                  select: { exerciseId: true, order: true, sets: true, reps: true, durationSec: true, restSec: true, notes: true },
                 },
               },
             },
@@ -99,75 +108,27 @@ export class UserPlanService {
       },
     });
     if (!plan) throw new NotFoundException('قالب ورزشی یافت نشد');
-    return {
-      title: plan.title,
-      input: {
-        phases: plan.workoutPhases.map((p) => ({
-          title: p.title,
-          startWeek: p.startWeek,
-          endWeek: p.endWeek,
-          days: p.days.map((d) => ({
-            weekday: d.weekday,
-            title: d.title,
-            isRestDay: d.isRestDay,
-            notes: d.notes,
-            exercises: d.exercises.map((e) => ({
-              exerciseId: e.exerciseId,
-              order: e.order,
-              sets: e.sets,
-              reps: e.reps,
-              durationSec: e.durationSec,
-              restSec: e.restSec,
-              notes: e.notes,
-            })),
-          })),
-        })),
-      },
-    };
+    return { title: plan.title, input: { phases: plan.workoutPhases } };
   }
 
-  private async loadDietTemplateInput(templateId: string): Promise<{
-    title: string;
-    input: DietInput;
-  }> {
+  private async loadDietTemplateInput(templateId: string): Promise<{ title: string; input: DietInput }> {
     const plan = await this.prisma.dietPlan.findUnique({
       where: { id: templateId },
       select: {
-        title: true,
-        targetCalories: true,
-        targetProteinG: true,
-        targetCarbsG: true,
-        targetFatG: true,
+        title: true, targetCalories: true, targetProteinG: true, targetCarbsG: true, targetFatG: true,
         dietPhases: {
           orderBy: { order: 'asc' },
           select: {
-            title: true,
-            startWeek: true,
-            endWeek: true,
-            targetCalories: true,
-            targetProteinG: true,
-            targetCarbsG: true,
-            targetFatG: true,
+            title: true, startWeek: true, endWeek: true,
+            targetCalories: true, targetProteinG: true, targetCarbsG: true, targetFatG: true,
             days: {
               select: {
-                weekday: true,
-                title: true,
-                notes: true,
+                weekday: true, title: true, notes: true,
                 meals: {
                   orderBy: { order: 'asc' },
                   select: {
-                    id: true,
-                    type: true,
-                    priority: true,
-                    order: true,
-                    notes: true,
-                    items: {
-                      select: {
-                        foodId: true,
-                        quantityGrams: true,
-                        notes: true,
-                      },
-                    },
+                    id: true, type: true, priority: true, order: true, notes: true,
+                    items: { select: { foodId: true, quantityGrams: true, notes: true } },
                   },
                 },
               },
@@ -180,33 +141,15 @@ export class UserPlanService {
     return {
       title: plan.title,
       input: {
-        targetCalories: plan.targetCalories,
-        targetProteinG: plan.targetProteinG,
-        targetCarbsG: plan.targetCarbsG,
-        targetFatG: plan.targetFatG,
+        targetCalories: plan.targetCalories, targetProteinG: plan.targetProteinG,
+        targetCarbsG: plan.targetCarbsG, targetFatG: plan.targetFatG,
         phases: plan.dietPhases.map((p) => ({
-          title: p.title,
-          startWeek: p.startWeek,
-          endWeek: p.endWeek,
-          targetCalories: p.targetCalories,
-          targetProteinG: p.targetProteinG,
-          targetCarbsG: p.targetCarbsG,
-          targetFatG: p.targetFatG,
+          ...p,
           days: p.days.map((d) => ({
-            weekday: d.weekday,
-            title: d.title,
-            notes: d.notes,
+            ...d,
             meals: d.meals.map((m) => ({
-              id: m.id,
-              type: m.type,
-              priority: m.priority,
-              order: m.order,
-              notes: m.notes,
-              items: m.items.map((i) => ({
-                foodId: i.foodId,
-                quantityGrams: toNum(i.quantityGrams),
-                notes: i.notes,
-              })),
+              ...m,
+              items: m.items.map((i) => ({ ...i, quantityGrams: toNum(i.quantityGrams) })),
             })),
           })),
         })),
@@ -214,138 +157,77 @@ export class UserPlanService {
     };
   }
 
-  private async resolveExercisesMap(ids: string[]): Promise<Map<string, ExerciseLite>> {
+  /** onlyActive=false برای ساخت از قالب: snapshot تاریخی است و حرکتِ غیرفعال‌شده‌ی بعدی نباید ساخت را بشکند */
+  private async resolveExercisesMap(ids: string[], onlyActive = true): Promise<Map<string, ExerciseLite>> {
     if (!ids.length) return new Map();
     const rows = await this.prisma.exercise.findMany({
-      where: { id: { in: ids }, isActive: true },
+      where: { id: { in: ids }, ...(onlyActive && { isActive: true }) },
       select: { id: true, title: true, coverImg: true },
     });
     return new Map(rows.map((r) => [r.id, { title: r.title, cover: r.coverImg }]));
   }
 
-  private async resolveFoodsMap(ids: string[]): Promise<Map<string, FoodLite>> {
+  private async resolveFoodsMap(ids: string[], onlyActive = true): Promise<Map<string, FoodLite>> {
     if (!ids.length) return new Map();
     const rows = await this.prisma.food.findMany({
-      where: { id: { in: ids }, isActive: true },
-      select: {
-        id: true,
-        name: true,
-        caloriesPer100g: true,
-        proteinPer100g: true,
-        carbsPer100g: true,
-        fatPer100g: true,
-      },
+      where: { id: { in: ids }, ...(onlyActive && { isActive: true }) },
+      select: { id: true, name: true, caloriesPer100g: true, proteinPer100g: true, carbsPer100g: true, fatPer100g: true },
     });
-    return new Map(
-      rows.map((r) => [
-        r.id,
-        {
-          name: r.name,
-          caloriesPer100g: toNum(r.caloriesPer100g),
-          proteinPer100g: toNum(r.proteinPer100g),
-          carbsPer100g: toNum(r.carbsPer100g),
-          fatPer100g: toNum(r.fatPer100g),
-        },
-      ]),
-    );
+    return new Map(rows.map((r) => [r.id, {
+      name: r.name,
+      caloriesPer100g: toNum(r.caloriesPer100g),
+      proteinPer100g: toNum(r.proteinPer100g),
+      carbsPer100g: toNum(r.carbsPer100g),
+      fatPer100g: toNum(r.fatPer100g),
+    }]));
   }
 
   private async buildWorkoutFromTemplate(templateId: string): Promise<WorkoutSnapshot> {
     const { title, input } = await this.loadWorkoutTemplateInput(templateId);
-    const map = await this.resolveExercisesMap(collectExerciseIds(input));
+    const map = await this.resolveExercisesMap(collectExerciseIds(input), false);
     return buildWorkoutSnapshot(input, { templateId, title }, map);
   }
 
   private async buildDietFromTemplate(templateId: string): Promise<DietSnapshot> {
     const { title, input } = await this.loadDietTemplateInput(templateId);
-    const map = await this.resolveFoodsMap(collectFoodIds(input));
+    const map = await this.resolveFoodsMap(collectFoodIds(input), false);
     return buildDietSnapshot(input, { templateId, title }, map);
   }
 
-  private listSelect() {
-    return {
-      id: true,
-      title: true,
-      type: true,
-      status: true,
-      source: true,
-      startDate: true,
-      endDate: true,
-      activatedAt: true,
-      createdAt: true,
-      workoutPlanId: true,
-      dietPlanId: true,
-      coachId: true,
-    } as const;
-  }
-
-  /** تاریخ شروع مؤثر بخش غذایی (ممکن است بعد از ورزش اضافه شده باشد) */
-  private dietEffectiveStart(
-    planStart: Date | null,
-    snap: DietSnapshot | null,
-  ): Date | null {
-    if (snap?.startDate) {
-      try {
-        return parseDateOnly(snap.startDate);
-      } catch {
-        return planStart;
-      }
-    }
-    return planStart;
-  }
-
-  ///////////////  Admin  ///////////////
+  // ═════════ Admin ═════════
 
   async getPlansAdmin(query: UserPlanQueryDto) {
-    const page = Math.max(1, Number(query.page) || 1);
-    const limitPage = this.getLimit(query.limit);
-    const skip = (page - 1) * limitPage;
-
-    // کاربر پیش‌نویس‌ها را نمی‌بیند
-    const where = {
-      ...(query.status ? { status: query.status } : { status: { not: 'DRAFT' as const } }),
-    };
+    const { page, limit, skip, orderBy } = this.paging(query);
+    const where = query.status ? { status: query.status } : {}; // ادمین همه‌چیز را می‌بیند
 
     const [data, count] = await Promise.all([
       this.prisma.userPlan.findMany({
-        where,
-        skip,
-        take: limitPage,
-        orderBy: { createdAt: 'desc' },
+        where, skip, take: limit, orderBy,
         select: {
           ...this.listSelect(),
-          coach: { select: { id: true, title: true, slug: true } },
+          coach: { select: { id: true, title: true, slug: true, userId: true } },
+          user: { select: { id: true, name: true, avatar: true } },
         },
       }),
       this.prisma.userPlan.count({ where }),
     ]);
-
-    return {
-      plans: data,
-      pagination: pagination(count, page, limitPage),
-    };
+    return { plans: data.map((p) => this.dates(p)), pagination: pagination(count, page, limit) };
   }
 
+  /**
+   * UserLog.userPlanId و CoachReview.userPlanId هر دو onDelete: SetNull هستند؛
+   * پس حذف برنامه تاریخچه‌ی وزن/لاگ کاربر را از بین نمی‌برد و یک کوئری کافی است.
+   */
   async deletePlansAdmin(id: string) {
-    return this.prisma.$transaction(async (tx) => {
-      await tx.userLog.deleteMany({
-        where: {
-          userPlanId: id
-        }
-      })
-      await tx.userPlan.delete({ where: { id } })
-      return { sucess: true };
-    });
+    const { count } = await this.prisma.userPlan.deleteMany({ where: { id } });
+    if (!count) throw new NotFoundException('برنامه یافت نشد');
+    return { id, deleted: true as const };
   }
 
-  // ═════════ 1) تاریخچه‌ی برنامه‌های من ═════════
+  // ═════════ User ═════════
 
   async getMyPlans(userId: string, query: UserPlanQueryDto) {
-    const page = Math.max(1, Number(query.page) || 1);
-    const limitPage = this.getLimit(query.limit);
-    const skip = (page - 1) * limitPage;
-
-    // کاربر پیش‌نویس‌ها را نمی‌بیند
+    const { page, limit, skip, orderBy } = this.paging(query);
     const where = {
       userId,
       ...(query.status ? { status: query.status } : { status: { not: 'DRAFT' as const } }),
@@ -353,386 +235,286 @@ export class UserPlanService {
 
     const [data, count] = await Promise.all([
       this.prisma.userPlan.findMany({
-        where,
-        skip,
-        take: limitPage,
-        orderBy: { createdAt: 'desc' },
-        select: {
-          ...this.listSelect(),
-          coach: { select: { id: true, title: true, slug: true } },
-        },
+        where, skip, take: limit, orderBy,
+        select: { ...this.listSelect(), coach: { select: { id: true, title: true, slug: true } } },
       }),
       this.prisma.userPlan.count({ where }),
     ]);
-
-    return {
-      plans: data.map((p) => ({
-        id: p.id,
-        title: p.title,
-        status: p.status,
-        type: p.type,
-        source: p.source,
-        startDate: p.startDate ? toDateString(p.startDate) : null,
-        endDate: p.endDate ? toDateString(p.endDate) : null,
-        activatedAt: p.activatedAt,
-        coach: p.coach,
-      })),
-      pagination: pagination(count, page, limitPage),
-    };
+    return { plans: data.map((p) => this.dates(p)), pagination: pagination(count, page, limit) };
   }
 
-  // ═════════ 2) برنامه‌ی فعال من (فقط متادیتا) ═════════
-
+  /** فقط ستون‌های سبک؛ هیچ snapshotی خوانده نمی‌شود */
   async getMyCurrent(userId: string) {
     const today = tehranToday();
     const plan = await this.prisma.userPlan.findFirst({
-      where: {
-        userId,
-        status: 'ACTIVE',
-        OR: [{ endDate: null }, { endDate: { gte: today } }],
-      },
+      where: { userId, status: 'ACTIVE', OR: [{ endDate: null }, { endDate: { gte: today } }] },
       select: {
-        id: true,
-        title: true,
-        type: true,
-        status: true,
-        source: true,
-        startDate: true,
-        endDate: true,
-        activatedAt: true,
-        coachId: true,
-        snapshotExercise: true,
-        snapshotDiet: true,
+        id: true, title: true, type: true, status: true, source: true,
+        startDate: true, endDate: true, activatedAt: true,
+        workoutWeeks: true, dietWeeks: true, dietStartDate: true,
         coach: { select: { id: true, title: true, slug: true } },
       },
-      orderBy: { activatedAt: 'desc' },
     });
-
     if (!plan) return { plan: null };
 
     const hasWorkout = plan.type === 'WORKOUT' || plan.type === 'ALL';
     const hasDiet = plan.type === 'DIET' || plan.type === 'ALL';
-    const w = plan.snapshotExercise as WorkoutSnapshot | null;
-    const d = plan.snapshotDiet as DietSnapshot | null;
-
-    const isStarted = !!plan.startDate && plan.startDate <= today;
-    const isExpired = !!plan.endDate && plan.endDate < today;
-    const currentWeek = plan.startDate
-      ? resolvePlanWeek(plan.startDate, today, w?.durationWeeks ?? d?.durationWeeks)
-      : null;
+    const dietStart = plan.dietStartDate ?? plan.startDate;
+    const workoutWeek = hasWorkout && plan.startDate ? resolvePlanWeek(plan.startDate, today, plan.workoutWeeks) : null;
+    const dietWeek = hasDiet && dietStart ? resolvePlanWeek(dietStart, today, plan.dietWeeks) : null;
 
     return {
       plan: {
-        id: plan.id,
-        title: plan.title,
-        type: plan.type,
-        status: plan.status,
-        source: plan.source,
+        id: plan.id, title: plan.title, type: plan.type, status: plan.status, source: plan.source,
         startDate: plan.startDate ? toDateString(plan.startDate) : null,
         endDate: plan.endDate ? toDateString(plan.endDate) : null,
         activatedAt: plan.activatedAt,
         coach: plan.coach,
-        hasWorkout,
-        hasDiet,
-        currentWeek,
-        isStarted,
-        isExpired,
-        workoutDurationWeeks: w?.durationWeeks ?? null,
-        dietDurationWeeks: d?.durationWeeks ?? null,
+        hasWorkout, hasDiet,
+        currentWeek: workoutWeek ?? dietWeek, // سازگاری با فرانت فعلی
+        workoutWeek, dietWeek,
+        isStarted: !!plan.startDate && plan.startDate <= today,
+        isExpired: !!plan.endDate && plan.endDate < today,
+        workoutDurationWeeks: plan.workoutWeeks,
+        dietDurationWeeks: plan.dietWeeks,
       },
     };
   }
 
-  // ═════════ 3/5) برنامه‌ی هفتگی جاری (ورزشی / غذایی) ═════════
-  // هفته‌ی جاری از startDate محاسبه می‌شود؛ فقط فاز جاری days کامل دارد؛ بقیه فقط outline.
+  // ═════════ هفته/فاز یک پلن (کاربر، مربی، ادمین) ═════════
 
-  async getMyPart(userId: string, part: 'workout' | 'diet', week?: number) {
-    const plan = await this.loadActivePlanForUser(userId);
-    return this.buildPartResponse(plan, part, { week });
-  }
-
-  // ═════════ 4/6) فاز مشخص (شماره‌ی فاز ۱-based) ═════════
-
-  async getMyPhase(userId: string, part: 'workout' | 'diet', phaseNumber: number) {
-    const plan = await this.loadActivePlanForUser(userId);
-    return this.buildPartResponse(plan, part, { phaseNumber });
-  }
-
-  /** دریافت فاز یک پلن مشخص (مالک یا مربی) — برای جزئیات شاگرد / تاریخچه */
-  async getPlanPhase(
-    requester: { userId: string; asCoach?: boolean },
-    planId: string,
-    part: 'workout' | 'diet',
-    phaseNumber: number,
-  ) {
-    const plan = await this.loadPlanForRequester(requester, planId);
-    return this.buildPartResponse(plan, part, { phaseNumber });
-  }
-
-  private async loadActivePlanForUser(userId: string) {
-    const plan = await this.prisma.userPlan.findFirst({
-      where: { userId, status: 'ACTIVE' },
-      select: {
-        id: true,
-        type: true,
-        startDate: true,
-        endDate: true,
-        snapshotExercise: true,
-        snapshotDiet: true,
-      },
-      orderBy: { activatedAt: 'desc' },
-    });
-    if (!plan) throw new NotFoundException('برنامه‌ی فعالی ندارید');
-    return plan;
-  }
-
-  private async loadPlanForRequester(
-    requester: { userId: string; asCoach?: boolean },
-    planId: string,
-  ) {
-    if (requester.asCoach) {
-      const coachId = await this.resolveCoachId(requester.userId);
-      const plan = await this.prisma.userPlan.findFirst({
-        where: { id: planId, coachId },
-        select: {
-          id: true,
-          type: true,
-          startDate: true,
-          endDate: true,
-          snapshotExercise: true,
-          snapshotDiet: true,
-        },
-      });
-      if (!plan) throw new NotFoundException('برنامه یافت نشد');
-      return plan;
+  /** فقط ستون snapshotِ همان بخش خوانده می‌شود، نه هر دو */
+  private async loadPart(planId: string, part: PartKey) {
+    const base = { id: true, type: true, status: true, startDate: true, endDate: true, dietStartDate: true } as const;
+    if (part === 'workout') {
+      const p = await this.prisma.userPlan.findUnique({ where: { id: planId }, select: { ...base, snapshotExercise: true } });
+      if (!p) return null;
+      const { snapshotExercise, ...meta } = p;
+      return { meta, snap: snapshotExercise as WorkoutSnapshot | null };
     }
+    const p = await this.prisma.userPlan.findUnique({ where: { id: planId }, select: { ...base, snapshotDiet: true } });
+    if (!p) return null;
+    const { snapshotDiet, ...meta } = p;
+    return { meta, snap: snapshotDiet as DietSnapshot | null };
+  }
+  private scheduledByWeekday(phase: PartPhase, part: PartKey) {
+    const m = new Map<number, number>();
+    for (const d of phase.days) {
+      m.set(
+        d.weekday,
+        part === 'workout'
+          ? (d.isRestDay ? 0 : d.exercises?.length ?? 0)
+          : (d.meals ?? []).filter((x) => x.priority === 'PRIMARY').length,
+      );
+    }
+    return m;
+  }
+  private phaseLogView(
+    p: PartPhase, part: PartKey, start: Date, lastDay: Date, today: Date,
+    logs: Map<string, DayLog>, withCalendar: boolean,
+  ) {
+    const sched = this.scheduledByWeekday(p, part);
+    const from = addDays(start, (p.startWeek - 1) * 7);
+    const to = minDate(addDays(start, p.endWeek * 7 - 1), lastDay);
+    let planned = 0;
+    let done = 0;
+    const calendar: CalendarEntry[] = [];
 
-    const plan = await this.prisma.userPlan.findFirst({
-      where: { id: planId, userId: requester.userId, status: { not: 'DRAFT' } },
-      select: {
-        id: true,
-        type: true,
-        startDate: true,
-        endDate: true,
-        snapshotExercise: true,
-        snapshotDiet: true,
-      },
-    });
-    if (!plan) throw new NotFoundException('برنامه یافت نشد');
-    return plan;
+    for (let d = from; d <= to; d = addDays(d, 1)) {
+      const wd = weekdayOf(d);
+      const log = logs.get(toDateString(d));
+      const s = sched.get(wd) ?? 0;
+      // اگر لاگ هست، برنامه‌ریزیِ همان روزِ ثبت‌شده (تاریخی) معتبرتر از snapshotِ فعلی است
+      const dayPlanned = log ? (log.planned || s) : s;
+      const dayDone = log ? log.done : 0;
+
+      // امروز/آینده‌ی بدون لاگ هنوز «از دست رفته» نیست
+      if (log || d < today) {
+        planned += dayPlanned;
+        done += dayDone;
+      }
+
+      if (withCalendar && (dayPlanned > 0 || log)) {
+        calendar.push({
+          date: toDateString(d),
+          week: Math.floor((d.getTime() - start.getTime()) / DAY_MS / 7) + 1,
+          weekday: wd,
+          status: log
+            ? dayPlanned === 0 ? 'EXTRA' : dayDone >= dayPlanned ? 'DONE' : 'PARTIAL'
+            : d < today ? 'MISSED' : 'PENDING',
+          planned: dayPlanned,
+          done: dayDone,
+          uncompletedIds: log?.uncompletedIds ?? [],
+        });
+      }
+    }
+    return { planned, done, calendar };
   }
 
-  private buildPartResponse(
-    plan: {
-      id: string;
-      type: string;
-      startDate: Date | null;
-      snapshotExercise: unknown;
-      snapshotDiet: unknown;
-    },
-    part: 'workout' | 'diet',
-    opts: { week?: number; phaseNumber?: number },
-  ) {
+  async getPlanPart(planId: string, part: PartKey, query: PartQueryDto) {
+    // دو query موازی؛ برنامه و لاگ‌ها (بدون round-trip پشت‌سرهم)
+    const [loaded, logs] = await Promise.all([this.loadPart(planId, part), this.loadLogs(planId, part)]);
+    if (!loaded) throw new NotFoundException('برنامه یافت نشد');
+    const { meta, snap } = loaded;
 
-    const isWorkout = part === 'workout';
-    if (isWorkout && plan.type === 'DIET') {
-      throw new BadRequestException('برنامه‌ی فعال بخش ورزشی ندارد');
-    }
-    if (!isWorkout && plan.type === 'WORKOUT') {
-      throw new BadRequestException('برنامه‌ی فعال بخش غذایی ندارد');
-    }
-
-    const snap = (isWorkout ? plan.snapshotExercise : plan.snapshotDiet) as
-      | WorkoutSnapshot
-      | DietSnapshot
-      | null;
+    if (part === 'workout' && meta.type === 'DIET') throw new BadRequestException('این برنامه بخش ورزشی ندارد');
+    if (part === 'diet' && meta.type === 'WORKOUT') throw new BadRequestException('این برنامه بخش غذایی ندارد');
     if (!snap?.phases?.length) throw new NotFoundException('snapshot یافت نشد');
 
     const today = tehranToday();
-    const start = isWorkout
-      ? plan.startDate
-      : this.dietEffectiveStart(plan.startDate, snap as DietSnapshot);
-
+    const start = part === 'workout' ? meta.startDate : (meta.dietStartDate ?? meta.startDate);
+    const isStarted = !!start && start <= today;
     const currentWeek = resolvePlanWeek(start, today, snap.durationWeeks);
-    const outline = phaseOutline(snap.phases);
 
-    let resolvedWeek = opts.week ?? currentWeek;
-    let phaseNumber: number | null = opts.phaseNumber ?? null;
+    const phases = [...(snap.phases as unknown as PartPhase[])].sort((a, b) => a.startWeek - b.startWeek);
 
-    // union phases را قبل از pick جدا کن تا TS درست infer کند
-    const phase =
-      phaseNumber != null
-        ? isWorkout
-          ? pickPhaseByNumber((snap as WorkoutSnapshot).phases, phaseNumber)
-          : pickPhaseByNumber((snap as DietSnapshot).phases, phaseNumber)
-        : isWorkout
-          ? pickPhaseByWeek((snap as WorkoutSnapshot).phases, resolvedWeek)
-          : pickPhaseByWeek((snap as DietSnapshot).phases, resolvedWeek);
-
-    if (phaseNumber != null && !phase) {
-      throw new NotFoundException(`فاز ${phaseNumber} یافت نشد`);
+    let idx: number;
+    if (query.phase != null) {
+      idx = query.phase - 1;
+      if (!phases[idx]) throw new NotFoundException(`فاز ${query.phase} یافت نشد`);
+    } else {
+      idx = phases.findIndex((p) => currentWeek >= p.startWeek && currentWeek <= p.endWeek);
     }
+    const phase = idx >= 0 ? phases[idx] : null;
 
-    if (phase && phaseNumber == null) {
-      phaseNumber = phaseNumberOfWeek(snap.phases, resolvedWeek);
-    }
-    if (phase && opts.phaseNumber != null) {
-      resolvedWeek = phase.startWeek;
-    }
+    // آخرین روزی که حساب می‌شود: min(امروز، پایان برنامه)؛ قبل از شروع → هیچ
+    const lastDay = isStarted && start ? minDate(today, meta.endDate) : null;
+    const view = (p: PartPhase, withCalendar: boolean) =>
+      lastDay && start
+        ? this.phaseLogView(p, part, start, lastDay, today, logs, withCalendar)
+        : { planned: 0, done: 0, calendar: [] as CalendarEntry[] };
+
+    let totalPlanned = 0;
+    let totalDone = 0;
+    const outline = phases.map((p, i) => {
+      const v = view(p, i === idx); // تقویم فقط برای فاز انتخاب‌شده
+      totalPlanned += v.planned;
+      totalDone += v.done;
+      return {
+        phaseNumber: i + 1, title: p.title, startWeek: p.startWeek, endWeek: p.endWeek,
+        isCurrent: isStarted && currentWeek >= p.startWeek && currentWeek <= p.endWeek,
+        summary: { planned: v.planned, done: v.done },
+        calendar: v.calendar,
+      };
+    });
 
     return {
-      planId: plan.id,
+      planId: meta.id,
       part,
+      status: meta.status,
+      isStarted,
       currentWeek,
-      requestedWeek: resolvedWeek,
-      phaseNumber,
+      requestedWeek: phase ? phase.startWeek : currentWeek,
+      phaseNumber: phase ? idx + 1 : null,
+      weekInPhase: phase && isStarted && currentWeek >= phase.startWeek && currentWeek <= phase.endWeek
+        ? currentWeek - phase.startWeek + 1 : null,
       durationWeeks: snap.durationWeeks,
-      // outline سبک: فقط متادیتای فازها (بدون days) برای ناوبری
-      outline,
-      // فقط فاز انتخاب‌شده days کامل دارد
-      phase: phase
-        ? {
-          phaseNumber: phaseNumber,
-          title: phase.title,
-          startWeek: phase.startWeek,
-          endWeek: phase.endWeek,
-          days: phase.days,
-        }
-        : null,
+      summary: { planned: totalPlanned, done: totalDone },
+      // calendar را از outline بیرون می‌کشیم تا فقط داخل phase بیاید
+      outline: outline.map(({ calendar, ...o }) => o),
+      phase: phase && {
+        phaseNumber: idx + 1, title: phase.title,
+        startWeek: phase.startWeek, endWeek: phase.endWeek,
+        days: phase.days,
+        calendar: outline[idx].calendar,
+      },
     };
   }
 
-  // ═════════ 7) برنامه‌های شاگردان ═════════
+  private async loadLogs(planId: string, part: PartKey): Promise<Map<string, DayLog>> {
+    const where = { userPlanId: planId };
+    const rows: [string, DayLog][] =
+      part === 'workout'
+        ? (await this.prisma.userLog.findMany({
+          where,
+          select: { date: true, plannedExercises: true, doneExercises: true, unCompletedExerciseIds: true },
+        })).map((r) => [toDateString(r.date), {
+          planned: r.plannedExercises, done: r.doneExercises, uncompletedIds: r.unCompletedExerciseIds,
+        }] as [string, DayLog])
+        : (await this.prisma.userLog.findMany({
+          where,
+          select: { date: true, plannedMeals: true, doneMeals: true, unCompletedMealIds: true },
+        })).map((r) => [toDateString(r.date), {
+          planned: r.plannedMeals, done: r.doneMeals, uncompletedIds: r.unCompletedMealIds,
+        }] as [string, DayLog]);
+    return new Map(rows);
+  }
+
+
+  // ═════════ Coach ═════════
 
   async getCoachPlans(coachUserId: string, query: UserPlanQueryDto) {
-    const coachId = await this.resolveCoachId(coachUserId);
-    const page = Math.max(1, Number(query.page) || 1);
-    const limitPage = this.getLimit(query.limit);
-    const skip = (page - 1) * limitPage;
+    const { page, limit, skip, orderBy } = this.paging(query);
     const where = {
-      coachId,
-      ...(query.status ? { status: query.status } : { status: { not: 'CANCELLED' as const } }),
+      coach: { userId: coachUserId }, // بدون کوئری جدا برای resolveCoachId
+      ...(query.status && query.status !== undefined && { status: query.status }),
     };
 
     const [data, count] = await Promise.all([
       this.prisma.userPlan.findMany({
-        where,
-        skip,
-        take: limitPage,
-        orderBy: { createdAt: 'desc' },
+        where, skip, take: limit, orderBy,
         select: {
-          ...this.listSelect(),
-          requestId: true,
-          user: { select: { id: true, name: true, avatar: true } },
-        },
+          ...this.listSelect(), requestId: true,
+          user: { select: { id: true, name: true, avatar: true } }
+        }
       }),
-      this.prisma.userPlan.count({ where }),
+      this.prisma.userPlan.count({ where })
     ]);
-
-    return {
-      plans: data.map((p) => ({
-        ...p,
-        startDate: p.startDate ? toDateString(p.startDate) : null,
-        endDate: p.endDate ? toDateString(p.endDate) : null,
-      })),
-      pagination: pagination(count, page, limitPage),
-    };
+    return { plans: data.map((p) => this.dates(p)), pagination: pagination(count, page, limit) };
   }
 
   async createDraft(coachUserId: string, requestId: string) {
-    const coachId = await this.resolveCoachId(coachUserId);
+    const existingWhere = { requestId, coach: { userId: coachUserId }, status: { in: ['DRAFT', 'ACTIVE'] as ('DRAFT' | 'ACTIVE')[] } };
+    const existingSelect = { id: true, status: true, type: true } as const;
 
-    const existing = await this.prisma.userPlan.findFirst({
-      where: { requestId, coachId, status: { in: ['DRAFT', 'ACTIVE'] } },
-      select: { id: true, status: true, type: true },
-    });
-    if (existing) {
-      return { id: existing.id, status: existing.status, type: existing.type, created: false };
-    }
+    const existing = await this.prisma.userPlan.findFirst({ where: existingWhere, select: existingSelect });
+    if (existing) return { ...existing, created: false };
 
     const req = await this.prisma.planRequest.findFirst({
-      where: { id: requestId, coachId, status: 'PAID' },
-      select: {
-        id: true,
-        userId: true,
-        workoutTemplateId: true,
-        dietTemplateId: true,
-      },
+      where: { id: requestId, status: 'PAID', coach: { userId: coachUserId } },
+      select: { id: true, userId: true, coachId: true, workoutTemplateId: true, dietTemplateId: true },
     });
-    if (!req) {
-      throw new NotFoundException(
-        'درخواست پرداخت‌شده یافت نشد (فقط وضعیت PAID قابل ساخت پیش‌نویس است)',
-      );
-    }
-    if (!req.workoutTemplateId && !req.dietTemplateId) {
-      throw new BadRequestException('درخواست فاقد قالب برنامه است');
-    }
-    // قانون کسب‌وکار: غذاییِ تنها مجاز نیست مگر به برنامه‌ی ورزشی فعال متصل شود (در activate)
-    if (!req.workoutTemplateId && req.dietTemplateId) {
-      // اجازه می‌دهیم DRAFT از نوع DIET ساخته شود؛ activate آن را به پلن فعال merge می‌کند
-    }
+    if (!req) throw new NotFoundException('درخواست پرداخت‌شده یافت نشد (فقط وضعیت PAID قابل ساخت پیش‌نویس است)');
+    if (!req.workoutTemplateId && !req.dietTemplateId) throw new BadRequestException('درخواست فاقد قالب برنامه است');
 
-    let snapshotExercise: WorkoutSnapshot | null = null;
-    let snapshotDiet: DietSnapshot | null = null;
-    const titleParts: string[] = [];
-
-    if (req.workoutTemplateId) {
-      snapshotExercise = await this.buildWorkoutFromTemplate(req.workoutTemplateId);
-      titleParts.push(snapshotExercise.title);
-    }
-    if (req.dietTemplateId) {
-      snapshotDiet = await this.buildDietFromTemplate(req.dietTemplateId);
-      titleParts.push(snapshotDiet.title);
-    }
-
-    const type =
-      snapshotExercise && snapshotDiet ? 'ALL' : snapshotExercise ? 'WORKOUT' : 'DIET';
+    // دو snapshot هم‌زمان ساخته می‌شوند. «غذاییِ تنها» هم DRAFT می‌شود و در activate merge می‌شود.
+    const [snapshotExercise, snapshotDiet] = await Promise.all([
+      req.workoutTemplateId ? this.buildWorkoutFromTemplate(req.workoutTemplateId) : null,
+      req.dietTemplateId ? this.buildDietFromTemplate(req.dietTemplateId) : null,
+    ]);
+    const type = snapshotExercise && snapshotDiet ? 'ALL' : snapshotExercise ? 'WORKOUT' : 'DIET';
+    const title = [snapshotExercise?.title, snapshotDiet?.title].filter(Boolean).join(' + ') || 'برنامه اختصاصی';
 
     try {
       const plan = await this.prisma.userPlan.create({
         data: {
-          userId: req.userId,
-          coachId,
-          requestId: req.id,
-          workoutPlanId: req.workoutTemplateId,
-          dietPlanId: req.dietTemplateId,
-          title: titleParts.join(' + ') || 'برنامه اختصاصی',
-          status: 'DRAFT',
-          source: 'COACH',
-          type,
-          snapshotExercise: toJson(snapshotExercise),
-          snapshotDiet: toJson(snapshotDiet),
+          userId: req.userId, coachId: req.coachId, requestId: req.id,
+          workoutPlanId: req.workoutTemplateId, dietPlanId: req.dietTemplateId,
+          title, status: 'DRAFT', source: 'COACH', type,
+          // ⚠️ null برای ستون Json? در Prisma خطا می‌دهد؛ undefined = NULL دیتابیس
+          snapshotExercise: snapshotExercise ? toJson(snapshotExercise) : undefined,
+          snapshotDiet: snapshotDiet ? toJson(snapshotDiet) : undefined,
+          workoutWeeks: snapshotExercise?.durationWeeks,
+          dietWeeks: snapshotDiet?.durationWeeks,
         },
-        select: { id: true, status: true, type: true },
+        select: existingSelect,
       });
-      return { id: plan.id, status: plan.status, type: plan.type, created: true };
-    } catch (e: any) {
-      const again = await this.prisma.userPlan.findFirst({
-        where: { requestId, coachId },
-        select: { id: true, status: true, type: true },
-      });
-      if (again) {
-        return { id: again.id, status: again.status, type: again.type, created: false };
-      }
+      return { ...plan, created: true };
+    } catch (e) {
+      // ایندکس یکتای partial: درخواست هم‌زمان دیگری پیش‌نویس را ساخته است
+      if (!this.isUniqueViolation(e)) throw e;
+      const again = await this.prisma.userPlan.findFirst({ where: existingWhere, select: existingSelect });
+      if (again) return { ...again, created: false };
       throw e;
     }
   }
 
-  // ═════════ 9) جزئیات برنامه‌ی شاگرد (با outline فازها + snapshot کامل برای ویرایش) ═════════
-
   async getCoachPlan(coachUserId: string, id: string) {
-    const coachId = await this.resolveCoachId(coachUserId);
     const plan = await this.prisma.userPlan.findFirst({
-      where: { id, coachId },
+      where: { id, coach: { userId: coachUserId } },
       select: {
-        id: true,
-        title: true,
-        status: true,
-        type: true,
-        startDate: true,
-        endDate: true,
-        snapshotExercise: true,
-        snapshotDiet: true,
+        id: true, title: true, status: true, type: true, startDate: true, endDate: true,
+        snapshotExercise: true, snapshotDiet: true, // سنگین ولی عمداً: صفحه‌ی ویرایش
         user: { select: { id: true, name: true, avatar: true } },
       },
     });
@@ -740,42 +522,24 @@ export class UserPlanService {
 
     const w = plan.snapshotExercise as WorkoutSnapshot | null;
     const d = plan.snapshotDiet as DietSnapshot | null;
-
     return {
-      id: plan.id,
-      title: plan.title,
-      status: plan.status,
-      type: plan.type,
-      startDate: plan.startDate ? toDateString(plan.startDate) : null,
-      endDate: plan.endDate ? toDateString(plan.endDate) : null,
-      user: plan.user,
+      ...this.dates(plan),
       workoutOutline: w?.phases ? phaseOutline(w.phases) : [],
       dietOutline: d?.phases ? phaseOutline(d.phases) : [],
-      // snapshot کامل فقط برای صفحه‌ی ویرایش — سنگین است
-      snapshotExercise: plan.snapshotExercise,
-      snapshotDiet: plan.snapshotDiet,
     };
   }
 
-  // ═════════ 10 / 11) ویرایش جداگانه‌ی ورزشی / غذایی ═════════
-
-  async updateWorkoutSnapshot(
-    coachUserId: string,
-    id: string,
-    dto: UpdateWorkoutSnapshotDto,
-  ) {
-    const coachId = await this.resolveCoachId(coachUserId);
+  async updateWorkoutSnapshot(coachUserId: string, id: string, dto: UpdateWorkoutSnapshotDto) {
     const plan = await this.prisma.userPlan.findFirst({
-      where: { id, coachId },
-      select: { id: true, status: true, type: true, snapshotExercise: true },
+      where: { id, coach: { userId: coachUserId } },
+      select: { status: true, type: true, snapshotExercise: true },
     });
     if (!plan) throw new NotFoundException('برنامه یافت نشد');
-    if (plan.type === 'DIET') {
-      throw new BadRequestException('این برنامه بخش ورزشی ندارد');
-    }
+    if (!EDITABLE.includes(plan.status as (typeof EDITABLE)[number])) throw new ConflictException('فقط پیش‌نویس یا برنامه‌ی فعال قابل ویرایش است');
+    if (plan.type === 'DIET') throw new BadRequestException('این برنامه بخش ورزشی ندارد');
 
     const prev = plan.snapshotExercise as WorkoutSnapshot | null;
-    const map = await this.resolveExercisesMap(collectExerciseIds(dto.workout));
+    const map = await this.resolveExercisesMap(collectExerciseIds(dto.workout)); // ویرایش دستی: فقط حرکات فعال
     const built = buildWorkoutSnapshot(
       dto.workout,
       { templateId: prev?.templateId ?? null, title: prev?.title ?? 'برنامه ورزشی' },
@@ -784,25 +548,19 @@ export class UserPlanService {
 
     await this.prisma.userPlan.update({
       where: { id },
-      data: { snapshotExercise: toJson(built) },
+      data: { snapshotExercise: toJson(built), workoutWeeks: built.durationWeeks },
     });
-    return { id, updated: true, part: 'workout' as const };
+    return { id, updated: true };
   }
 
-  async updateDietSnapshot(
-    coachUserId: string,
-    id: string,
-    dto: UpdateDietSnapshotDto,
-  ) {
-    const coachId = await this.resolveCoachId(coachUserId);
+  async updateDietSnapshot(coachUserId: string, id: string, dto: UpdateDietSnapshotDto) {
     const plan = await this.prisma.userPlan.findFirst({
-      where: { id, coachId },
-      select: { id: true, status: true, type: true, snapshotDiet: true },
+      where: { id, coach: { userId: coachUserId } },
+      select: { status: true, type: true, snapshotDiet: true },
     });
     if (!plan) throw new NotFoundException('برنامه یافت نشد');
-    if (plan.type === 'WORKOUT') {
-      throw new BadRequestException('این برنامه بخش غذایی ندارد');
-    }
+    if (!EDITABLE.includes(plan.status as (typeof EDITABLE)[number])) throw new ConflictException('فقط پیش‌نویس یا برنامه‌ی فعال قابل ویرایش است');
+    if (plan.type === 'WORKOUT') throw new BadRequestException('این برنامه بخش غذایی ندارد');
 
     const prev = plan.snapshotDiet as DietSnapshot | null;
     const map = await this.resolveFoodsMap(collectFoodIds(dto.diet));
@@ -811,189 +569,179 @@ export class UserPlanService {
       { templateId: prev?.templateId ?? null, title: prev?.title ?? 'برنامه غذایی' },
       map,
     );
-    // startDate غذاییِ اضافه‌شده را حفظ کن
-    if (prev?.startDate) built.startDate = prev.startDate;
+    if (prev?.startDate) built.startDate = prev.startDate; // سازگاری؛ منبع اصلی ستون dietStartDate است
 
     await this.prisma.userPlan.update({
       where: { id },
-      data: { snapshotDiet: toJson(built) },
+      data: { snapshotDiet: toJson(built), dietWeeks: built.durationWeeks },
     });
-    return { id, updated: true, part: 'diet' as const };
-  }
-
-  /** ترکیبی (سازگاری عقب‌رو) */
-  async updateSnapshot(
-    coachUserId: string,
-    id: string,
-    dto: UpdateUserPlanSnapshotDto,
-  ) {
-    if (!dto.workout && !dto.diet) {
-      throw new BadRequestException('حداقل یکی از workout یا diet را بفرستید');
-    }
-    if (dto.workout) {
-      await this.updateWorkoutSnapshot(coachUserId, id, { workout: dto.workout });
-    }
-    if (dto.diet) {
-      await this.updateDietSnapshot(coachUserId, id, { diet: dto.diet });
-    }
     return { id, updated: true };
   }
 
-  // ═════════ 12) فعال‌سازی — کپی snapshot از قبل در DRAFT است؛ فقط تاریخ + status ═════════
+  // ═════════ فعال‌سازی ═════════
 
   async activate(coachUserId: string, id: string, dto: ActivateUserPlanDto) {
-    const coachId = await this.resolveCoachId(coachUserId);
     const today = tehranToday();
     const start = dto.startDate ? parseDateOnly(dto.startDate) : today;
     if (start < today) throw new BadRequestException('تاریخ شروع نمی‌تواند گذشته باشد');
-    if (start > addDays(today, 60)) {
-      throw new BadRequestException('تاریخ شروع حداکثر ۶۰ روز بعد مجاز است');
-    }
+    if (start > addDays(today, MAX_START_AHEAD_DAYS)) throw new BadRequestException('تاریخ شروع حداکثر ۶۰ روز بعد مجاز است');
+    console.log(coachUserId);
 
+    // بدون snapshot: طول برنامه از ستون‌های سبک می‌آید
     const plan = await this.prisma.userPlan.findFirst({
-      where: { id, coachId },
-      select: {
-        id: true,
-        userId: true,
-        status: true,
-        type: true,
-        requestId: true,
-        snapshotExercise: true,
-        snapshotDiet: true,
-      },
+      where: { id, coach: { userId: coachUserId } },
+      select: { id: true, userId: true, status: true, type: true, requestId: true, workoutWeeks: true, dietWeeks: true },
     });
     if (!plan) throw new NotFoundException('برنامه یافت نشد');
-    if (plan.status !== 'DRAFT') {
-      throw new ConflictException('فقط پیش‌نویس قابل فعال‌سازی است');
-    }
+    if (plan.status !== 'DRAFT') throw new ConflictException('فقط پیش‌نویس قابل فعال‌سازی است');
 
-    const wSnap = plan.snapshotExercise as WorkoutSnapshot | null;
-    const dSnap = plan.snapshotDiet as DietSnapshot | null;
-    const durationWeeks = Math.max(wSnap?.durationWeeks ?? 0, dSnap?.durationWeeks ?? 0, 1);
-
+    const durationWeeks = Math.max(plan.workoutWeeks ?? 0, plan.dietWeeks ?? 0, 1);
     let endDate: Date;
     if (dto.endDate) {
       endDate = parseDateOnly(dto.endDate);
-      if (endDate < start) {
-        throw new BadRequestException('تاریخ پایان نمی‌تواند قبل از شروع باشد');
-      }
+      if (endDate < start) throw new BadRequestException('تاریخ پایان نمی‌تواند قبل از شروع باشد');
     } else {
       endDate = addDays(start, durationWeeks * 7 - 1);
     }
 
-    // ─── DIET-only: merge روی برنامه‌ی ورزشی فعال ───
-    if (plan.type === 'DIET') {
-      if (!dSnap) throw new BadRequestException('snapshot غذایی خالی است');
-
-      return this.prisma.$transaction(async (tx) => {
-        const active = await tx.userPlan.findFirst({
-          where: {
-            userId: plan.userId,
-            status: 'ACTIVE',
-            OR: [{ endDate: null }, { endDate: { gte: today } }],
-          },
-          select: {
-            id: true,
-            type: true,
-            snapshotDiet: true,
-            startDate: true,
-            endDate: true,
-          },
-          orderBy: { activatedAt: 'desc' },
-        });
-        if (!active) {
-          throw new ConflictException(
-            'کاربر برنامه‌ی ورزشی فعال ندارد؛ ابتدا برنامه‌ی ورزشی را تحویل دهید',
-          );
-        }
-        if (active.snapshotDiet) {
-          throw new ConflictException('کاربر هم‌اکنون برنامه‌ی غذایی فعال دارد');
-        }
-
-        const dietWithStart: DietSnapshot = {
-          ...dSnap,
-          startDate: toDateString(start),
-        };
-
-        const updated = await tx.userPlan.update({
-          where: { id: active.id },
-          data: {
-            type: 'ALL',
-            snapshotDiet: toJson(dietWithStart),
-            endDate:
-              !active.endDate || endDate > active.endDate ? endDate : active.endDate,
-          },
-          select: { id: true, type: true, startDate: true, endDate: true },
-        });
-
-        await tx.userPlan.update({
-          where: { id: plan.id },
-          data: { status: 'COMPLETED' },
-        });
-        if (plan.requestId) {
-          await tx.planRequest.updateMany({
-            where: { id: plan.requestId, status: 'PAID' },
-            data: { status: 'DELIVERED' },
-          });
-        }
-
-        return {
-          id: updated.id,
-          status: 'ACTIVE' as const,
-          type: updated.type,
-          startDate: toDateString(updated.startDate ?? start),
-          endDate: toDateString(updated.endDate ?? endDate),
-        };
-      });
+    try {
+      return plan.type === 'DIET'
+        ? await this.activateDietOnly(plan, start, endDate, today)
+        : await this.activateFull(plan, start, endDate, today);
+    } catch (e) {
+      // ایندکس یکتای «یک ACTIVE برای هر کاربر» در رقابت هم‌زمان
+      if (this.isUniqueViolation(e)) throw new ConflictException('کاربر هم‌اکنون برنامه‌ی فعال دارد');
+      throw e;
     }
+  }
 
-    // ─── WORKOUT یا ALL ───
+  private activateFull(
+    plan: { id: string; userId: string; type: string; requestId: string | null },
+    start: Date, endDate: Date, today: Date,
+  ) {
     return this.prisma.$transaction(async (tx) => {
-      const conflict = await tx.userPlan.count({
-        where: {
-          userId: plan.userId,
-          status: 'ACTIVE',
-          id: { not: plan.id },
-          OR: [{ endDate: null }, { endDate: { gte: today } }],
-        },
-      });
-      if (conflict > 0) {
-        throw new ConflictException(
-          'کاربر هم‌اکنون برنامه‌ی فعال دارد؛ ابتدا آن را تکمیل/لغو کنید',
-        );
-      }
-
-      // بستن ACTIVEهای قبلی (race-safe با updateMany شرطی)
+      // ACTIVEهای منقضی‌شده (cron هنوز نبسته) بسته می‌شوند
       await tx.userPlan.updateMany({
-        where: { userId: plan.userId, status: 'ACTIVE' },
+        where: { userId: plan.userId, status: 'ACTIVE', endDate: { lt: today } },
         data: { status: 'COMPLETED' },
       });
+      const conflict = await tx.userPlan.count({ where: { userId: plan.userId, status: 'ACTIVE' } });
+      if (conflict > 0) throw new ConflictException('کاربر هم‌اکنون برنامه‌ی فعال دارد؛ ابتدا آن را تکمیل/لغو کنید');
 
+      // claim شرطی: فقط یک درخواست هم‌زمان برنده می‌شود
       const { count } = await tx.userPlan.updateMany({
         where: { id: plan.id, status: 'DRAFT' },
-        data: {
-          status: 'ACTIVE',
-          startDate: start,
-          endDate,
-          activatedAt: new Date(),
-        },
+        data: { status: 'ACTIVE', startDate: start, endDate, activatedAt: new Date() },
       });
       if (!count) throw new ConflictException('وضعیت برنامه هم‌زمان تغییر کرد');
 
       if (plan.requestId) {
-        await tx.planRequest.updateMany({
-          where: { id: plan.requestId, status: 'PAID' },
-          data: { status: 'DELIVERED' },
-        });
+        await tx.planRequest.updateMany({ where: { id: plan.requestId, status: 'PAID' }, data: { status: 'DELIVERED' } });
       }
+      return { id: plan.id, status: 'ACTIVE' as const, type: plan.type, startDate: toDateString(start), endDate: toDateString(endDate) };
+    });
+  }
 
+  /** غذاییِ تنها: snapshot روی پلن ورزشیِ فعال merge می‌شود */
+  private activateDietOnly(
+    plan: { id: string; userId: string; requestId: string | null; dietWeeks: number | null },
+    start: Date, endDate: Date, today: Date,
+  ) {
+    return this.prisma.$transaction(async (tx) => {
+      // ۱) claim پیش‌نویس (دوبار کلیک / هم‌زمانی)
+      const claimed = await tx.userPlan.updateMany({
+        where: { id: plan.id, status: 'DRAFT' },
+        data: { status: 'COMPLETED', startDate: start, endDate, activatedAt: new Date() },
+      });
+      if (!claimed.count) throw new ConflictException('وضعیت برنامه هم‌زمان تغییر کرد');
+
+      // ۲) پلن ورزشیِ فعال
+      const active = await tx.userPlan.findFirst({
+        where: { userId: plan.userId, status: 'ACTIVE', OR: [{ endDate: null }, { endDate: { gte: today } }] },
+        select: { id: true, type: true, endDate: true },
+      });
+      if (!active) throw new ConflictException('کاربر برنامه‌ی ورزشی فعال ندارد؛ ابتدا برنامه‌ی ورزشی را تحویل دهید');
+      if (active.type !== 'WORKOUT') throw new ConflictException('کاربر هم‌اکنون برنامه‌ی غذایی فعال دارد');
+
+      // ۳) snapshot فقط همین‌جا خوانده می‌شود
+      const draft = await tx.userPlan.findUnique({ where: { id: plan.id }, select: { snapshotDiet: true } });
+      const dSnap = draft?.snapshotDiet as DietSnapshot | null;
+      if (!dSnap) throw new BadRequestException('snapshot غذایی خالی است');
+
+      // ۴) merge شرطی؛ اگر هم‌زمان merge دیگری انجام شده باشد count = 0
+      const merged = await tx.userPlan.updateMany({
+        where: { id: active.id, type: 'WORKOUT', status: 'ACTIVE' },
+        data: {
+          type: 'ALL',
+          snapshotDiet: toJson({ ...dSnap, startDate: toDateString(start) }),
+          dietWeeks: plan.dietWeeks,
+          dietStartDate: start,
+          endDate: !active.endDate || endDate > active.endDate ? endDate : active.endDate,
+        },
+      });
+      if (!merged.count) throw new ConflictException('برنامه‌ی فعال هم‌زمان تغییر کرد');
+
+      if (plan.requestId) {
+        await tx.planRequest.updateMany({ where: { id: plan.requestId, status: 'PAID' }, data: { status: 'DELIVERED' } });
+      }
       return {
-        id: plan.id,
-        status: 'ACTIVE' as const,
-        type: plan.type,
-        startDate: toDateString(start),
-        endDate: toDateString(endDate),
+        id: active.id, status: 'ACTIVE' as const, type: 'ALL',
+        startDate: toDateString(start), endDate: toDateString(endDate),
       };
     });
+  }
+
+  // ═════════ تغییر تاریخ / لغو ═════════
+
+  async updateDates(coachUserId: string, id: string, dto: UpdatePlanDatesDto) {
+    if (!dto.startDate && !dto.endDate) throw new BadRequestException('حداقل یکی از startDate یا endDate را بفرستید');
+
+    const plan = await this.prisma.userPlan.findFirst({
+      where: { id, coach: { userId: coachUserId } },
+      select: { status: true, startDate: true, endDate: true },
+    });
+    if (!plan) throw new NotFoundException('برنامه یافت نشد');
+    // تاریخ DRAFT هنگام activate تعیین می‌شود
+    if (plan.status !== 'ACTIVE' || !plan.startDate || !plan.endDate) {
+      throw new ConflictException('فقط تاریخ برنامه‌ی فعال قابل تغییر است');
+    }
+
+    const today = tehranToday();
+    let start = plan.startDate;
+    let end = plan.endDate;
+
+    if (dto.startDate) {
+      start = parseDateOnly(dto.startDate);
+      if (start < addDays(today, -MAX_BACKDATE_DAYS)) throw new BadRequestException(`تاریخ شروع حداکثر ${MAX_BACKDATE_DAYS} روز قبل مجاز است`);
+      if (start > addDays(today, MAX_START_AHEAD_DAYS)) throw new BadRequestException('تاریخ شروع حداکثر ۶۰ روز بعد مجاز است');
+      // فقط شروع عوض شد → طول برنامه حفظ شود
+      if (!dto.endDate) end = addDays(start, Math.round((plan.endDate.getTime() - plan.startDate.getTime()) / DAY_MS));
+    }
+    if (dto.endDate) end = parseDateOnly(dto.endDate);
+
+    if (end < start) throw new BadRequestException('تاریخ پایان نمی‌تواند قبل از شروع باشد');
+    if (end < today) throw new BadRequestException('تاریخ پایان نمی‌تواند گذشته باشد (برای پایان‌دادن از لغو استفاده کنید)');
+
+    const { count } = await this.prisma.userPlan.updateMany({
+      where: { id, status: 'ACTIVE' }, // اگر هم‌زمان بسته شد، اعمال نشود
+      data: { startDate: start, endDate: end },
+    });
+    if (!count) throw new ConflictException('وضعیت برنامه هم‌زمان تغییر کرد');
+    return { id, startDate: toDateString(start), endDate: toDateString(end) };
+  }
+
+  async cancel(coachUserId: string, id: string) {
+    const { count } = await this.prisma.userPlan.updateMany({
+      where: { id, coach: { userId: coachUserId }, status: { in: [...EDITABLE] } },
+      data: { status: 'CANCELLED' },
+    });
+    if (count) return { id, status: 'CANCELLED' as const };
+
+    const p = await this.prisma.userPlan.findFirst({
+      where: { id, coach: { userId: coachUserId } },
+      select: { status: true },
+    });
+    if (!p) throw new NotFoundException('برنامه یافت نشد');
+    throw new ConflictException(`برنامه در وضعیت ${p.status} قابل لغو نیست`);
   }
 }

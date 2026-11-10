@@ -21,7 +21,7 @@ import {
 @Controller('log')
 @UseGuards(AccessTokenGuard)
 export class LogController {
-  constructor(private readonly userLogService: UserLogService) {}
+  constructor(private readonly userLogService: UserLogService) { }
 
   // ============ User ============
 
@@ -47,6 +47,34 @@ export class LogController {
   })
   getMyLogs(@CurrentUser('id') userId: string, @Query() query: LogRangeQueryDto) {
     return this.userLogService.getMyLogs(userId, query);
+  }
+
+  @Get('plan/summary/:planId')
+  @ApiOkResponse({ type: PaginatedResponse(UserLogSummaryEntity, 'logs') })
+  @ApiOperation({
+    summary: 'لیست لاگ‌های برنامه (User & Coach & Admin)',
+    description: `
+    * زمانی که میای برنامه کاربر رو بهش نمایش میدی و میخواد تمرین هاشو انجام بده این لاگ هارو بگیر
+    * بعدش با استفاده از تاریخ استارت برنامه بیا این لاگ هارو جدا بکن متناسب با تاریخ لاگ ها
+    * هماهنگ کردن روز ها و هفته های لاگ ها به عهده خودت هستش 
+    `,
+  })
+  getPlanSummary(@Param('planId') planId: string) {
+    return this.userLogService.getPlanSummary(planId);
+  }
+
+  @Get('plan/:planId')
+  @ApiOkResponse({ type: PaginatedResponse(UserLogSummaryEntity, 'logs') })
+  @ApiOperation({
+    summary: 'لیست لاگ‌های برنامه (User & Coach & Admin)',
+    description: `
+    * زمانی که میای برنامه کاربر رو بهش نمایش میدی و میخواد تمرین هاشو انجام بده این لاگ هارو بگیر
+    * بعدش با استفاده از تاریخ استارت برنامه بیا این لاگ هارو جدا بکن متناسب با تاریخ لاگ ها
+    * هماهنگ کردن روز ها و هفته های لاگ ها به عهده خودت هستش 
+    `,
+  })
+  getPlan(@Param('planId') planId: string) {
+    return this.userLogService.getPlanSummary(planId);
   }
 
   // ---- Stats قبل از مسیرهای پارامتری ----

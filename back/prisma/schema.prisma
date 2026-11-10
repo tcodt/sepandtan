@@ -109,6 +109,8 @@ model Profile {
   user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   trainingGoal TrainingGoal? @relation(fields: [trainingGoalId], references: [id])
   equipment    Equipment[]
+
+  @@map("profile")
 }
 
 model Address {
@@ -237,6 +239,7 @@ model SubscriptionPlan {
   subscriptions Subscription[]
 
   @@index([isActive, sortOrder])
+  @@map("subscription_plan")
 }
 
 model Subscription {
@@ -263,6 +266,7 @@ model Subscription {
 
   @@index([userId, status])
   @@index([status, endsAt]) // برای cron job منقضی کردن اشتراک‌ها
+  @@map("subscription")
 }
 
 //////////////// دیتایی که توسط ادمین پر میشه ///////////////////
@@ -520,14 +524,14 @@ model UserLog {
   jalaliMonth Int      @map("jalali_month")
 
   // ورزش
-  unCompletedExerciseIds String[] @default([]) @map("done_exercise_ids") // تمرین های انجام نشده
+  unCompletedExerciseIds String[] @default([]) @map("un_completed_exercise_ids") // تمرین های انجام نشده
   plannedExercises       Int      @default(0) @map("planned_exercises") // تمرین های برنامه ریزی شده
   doneExercises          Int      @default(0) @map("done_exercises") // تمرین های انجام شده
   extraExercises         Json     @default("[]") @map("extra_exercises") // [{name, durationMin, caloriesBurned, note}] تمرین ها اضافی
   caloriesBurned         Int?     @map("calories_burned") // کالری های سوزانده شده
 
   // تغذیه
-  unCompletedMealIds String[] @default([]) @map("done_meal_ids") // آیدی وعده های غذایی انجام نشده
+  unCompletedMealIds String[] @default([]) @map("un_completed_meal_ids") // آیدی وعده های غذایی انجام نشده
   plannedMeals       Int      @default(0) @map("planned_meals") // برنامه های غذایی برنامه ریزی شده
   doneMeals          Int      @default(0) @map("done_meals") // برنامه های غذایی انجام شده
   extraMeals         Json     @default("[]") @map("extra_meals") // [{name, calories, proteinG, carbsG, fatG}] برنامه های غذایی اضافی
@@ -576,6 +580,10 @@ model UserPlan {
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
 
+  workoutWeeks  Int?      @map("workout_weeks")
+  dietWeeks     Int?      @map("diet_weeks")
+  dietStartDate DateTime? @map("diet_start_date") @db.Date
+
   user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   workoutPlan  WorkoutPlan?  @relation(fields: [workoutPlanId], references: [id], onDelete: Restrict)
   dietPlan     DietPlan?     @relation(fields: [dietPlanId], references: [id], onDelete: Restrict)
@@ -586,6 +594,8 @@ model UserPlan {
 
   @@index([userId, status])
   @@index([requestId])
+  @@index([coachId, status, createdAt]) // coach list
+  @@index([userId, createdAt]) // user history
   @@map("user_plans")
 }
 
