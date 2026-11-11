@@ -6,6 +6,7 @@ import { OrderStatus, Prisma, RolePerson } from "../../generated/prisma/client.j
 import { PrismaService } from "../../prisma/prisma.service.js";
 import pagination from "../../common/utils/pagination.js";
 import { SettlementQueueService } from "../queues/settlement/settlement-queue.service.js";
+import { randomBytes } from "crypto";
 
 @Injectable()
 export class OrdersService {
@@ -17,19 +18,8 @@ export class OrdersService {
     ) { }
 
     private generateTrackingCode(prefix = 'TXN'): string {
-        const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-
-        const segment = (length: number): string => {
-            let result = '';
-
-            for (let i = 0; i < length; i++) {
-                result += chars[Math.floor(Math.random() * chars.length)];
-            }
-
-            return result;
-        };
-
-        return `${prefix}-${segment(4)}-${segment(4)}-${segment(4)}`;
+        const h = randomBytes(8).toString('hex').toUpperCase();
+        return `${prefix}-${h.slice(0, 4)}-${h.slice(4, 8)}-${h.slice(8, 12)}-${h.slice(12)}`;
     }
 
     private generateCheckoutNumber(): string {
@@ -1004,7 +994,7 @@ export class OrdersService {
     }
 }
 
-// 
+//
 // داخل سرویس return، بعد از تأیید مرجوعی
 
 // const pending = await this.prisma.walletTransaction.findMany({

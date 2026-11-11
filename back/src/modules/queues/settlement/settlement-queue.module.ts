@@ -1,4 +1,4 @@
-import { Module, forwardRef } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { BullModule } from '@nestjs/bullmq';
 import { PrismaModule } from '../../../prisma/prisma.module.js';
 import { SettlementProcessor } from './settlement.processor.js';
@@ -10,10 +10,10 @@ import { SETTLEMENT_QUEUE } from './settlement.constants.js';
     BullModule.registerQueue({
       name: SETTLEMENT_QUEUE,
       defaultJobOptions: {
-        attempts: 5,
-        backoff: { type: 'exponential', delay: 5000 },
-        removeOnComplete: { count: 2000, age: 24 * 3600 },
-        removeOnFail: { count: 5000 },
+        attempts: 3,
+        backoff: { type: 'exponential', delay: 30_000 },
+        removeOnComplete: { count: 5 },                  // قبلاً: ۲۰۰۰ تا / ۲۴ ساعت
+        removeOnFail: { count: 20, age: 7 * 24 * 3600 }, // قبلاً: ۵۰۰۰ تا
       },
     }),
     PrismaModule,

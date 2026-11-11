@@ -178,13 +178,14 @@ model ServiceOrder {
   subscriptionId String? @unique @map("subscription_id")
 
   // مبالغ نهایی (بعد از همه تخفیف‌ها) — همیشه Decimal
-  originalAmount   Decimal @map("original_amount") @db.Decimal(18, 2)
-  discountAmount   Decimal @default(0) @map("discount_amount") @db.Decimal(18, 2)
-  taxAmount        Decimal @default(0) @map("tax_amount") @db.Decimal(18, 2)
-  commissionAmount Decimal @default(0) @map("commission_amount") @db.Decimal(18, 2)
-  referralAmount   Decimal @default(0) @map("referral_amount") @db.Decimal(18, 2)
-  payableAmount    Decimal @map("payable_amount") @db.Decimal(18, 2) // پرداختی کاربر
-  coachNetAmount   Decimal @default(0) @map("coach_net_amount") @db.Decimal(18, 2)
+  originalAmount           Decimal @map("original_amount") @db.Decimal(18, 2)
+  discountAmount           Decimal @default(0) @map("discount_amount") @db.Decimal(18, 2)
+  taxAmount                Decimal @default(0) @map("tax_amount") @db.Decimal(18, 2)
+  commissionAmount         Decimal @default(0) @map("commission_amount") @db.Decimal(18, 2)
+  referralAmount           Decimal @default(0) @map("referral_amount") @db.Decimal(18, 2)
+  payableAmount            Decimal @map("payable_amount") @db.Decimal(18, 2) // پرداختی کاربر
+  coachNetAmount           Decimal @default(0) @map("coach_net_amount") @db.Decimal(18, 2)
+  commissionDiscountAmount Decimal @default(0) @map("commission_discount_amount") @db.Decimal(18, 2)
 
   discountCodeId String? @map("discount_code_id")
   /// اسنپ‌شات کامل قیمت/تخفیف/قالب‌ها
@@ -195,12 +196,13 @@ model ServiceOrder {
   createdAt  DateTime  @default(now()) @map("created_at")
   updatedAt  DateTime  @updatedAt @map("updated_at")
 
-  user         User          @relation(fields: [userId], references: [id], onDelete: Restrict)
-  coach        Coach?        @relation(fields: [coachId], references: [id], onDelete: SetNull)
-  planRequest  PlanRequest?  @relation(fields: [planRequestId], references: [id], onDelete: SetNull)
-  subscription Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
-  discountCode DiscountCode? @relation(fields: [discountCodeId], references: [id], onDelete: SetNull)
-  payments     Payment[]
+  user               User                @relation(fields: [userId], references: [id], onDelete: Restrict)
+  coach              Coach?              @relation(fields: [coachId], references: [id], onDelete: SetNull)
+  planRequest        PlanRequest?        @relation(fields: [planRequestId], references: [id], onDelete: SetNull)
+  subscription       Subscription?       @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+  discountCode       DiscountCode?       @relation(fields: [discountCodeId], references: [id], onDelete: SetNull)
+  walletTransactions WalletTransaction[]
+  payments           Payment[]
 
   @@index([userId, status])
   @@index([coachId, status])
@@ -378,12 +380,14 @@ model Coach {
   cityId     String? @map("city_id")
   addressId  String? @map("address_id")
 
-  title              String        @unique @map("title") // اسم یا نام مستعار و یا نام باشگاه
-  slug               String        @unique @map("slug")
-  headline           String?       @map("headline") // مثلا: «مربی بدنسازی و تغذیه»
-  bio                String?       @map("bio")
-  instagram          String?       @map("instagram")
-  commissionRate     Decimal       @default(0) @map("commission_rate") @db.Decimal(12, 2)
+  title          String  @unique @map("title") // اسم یا نام مستعار و یا نام باشگاه
+  slug           String  @unique @map("slug")
+  headline       String? @map("headline") // مثلا: «مربی بدنسازی و تغذیه»
+  bio            String? @map("bio")
+  instagram      String? @map("instagram")
+  commissionRate Decimal @default(0) @map("commission_rate") @db.Decimal(12, 2)
+  taxRate        Decimal @default(0) @map("tax_rate") @db.Decimal(5, 2)
+
   // ظرفیت
   maxClients         Int           @default(20) @map("max_clients")
   isAcceptingClients Boolean       @default(true) @map("is_accepting_clients")
@@ -1286,6 +1290,8 @@ model Payment {
   subscription Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: Restrict)
   serviceOrder ServiceOrder? @relation(fields: [serviceOrderId], references: [id], onDelete: Restrict)
 
+  @@unique([method, gatewayRef])
+  @@index([serviceOrderId])
   @@index([planRequestId])
   @@index([subscriptionId])
   @@index([checkoutId])
@@ -1482,6 +1488,7 @@ model WalletTransaction {
   userId          String    @map("user_id") @db.Uuid
   walletId        String    @map("wallet_id")
   orderId         String?   @map("order_id")
+  serviceOrderId  String?   @map("service_order_id")
   returnRequestId String?   @map("return_request_id")
   settlementDate  DateTime? @map("settlement_date")
   createdAt       DateTime  @default(now()) @map("created_at")
@@ -1491,6 +1498,7 @@ model WalletTransaction {
   user          User           @relation(fields: [userId], references: [id])
   order         Order?         @relation(fields: [orderId], references: [id])
   returnRequest ReturnRequest? @relation(fields: [returnRequestId], references: [id])
+  serviceOrder  ServiceOrder?  @relation(fields: [serviceOrderId], references: [id], onDelete: Restrict)
 
   @@index([userId])
   @@index([walletId])
@@ -1498,6 +1506,7 @@ model WalletTransaction {
   @@index([orderId])
   @@index([userId, createdAt])
   @@index([type, status, settlementDate])
+  @@index([serviceOrderId])
   @@map("wallet_transactions")
 }
 
@@ -1878,7 +1887,7 @@ enum WalletTransactionType {
   PURCHASE // خرید
   // واریز خودکار به فروشنده بابت تسویه‌ی یک سفارش
   SALE_SETTLEMENT
-  // کسر از کیف‌پول فروشنده بابت مرجوعی کالا
+  // کسر از کیف‌ پول فروشنده بابت مرجوعی کالا
   RETURN_DEDUCTION
   COACH_SETTLEMENT
   SERVICE_PACKAGE

@@ -14754,13 +14754,25 @@
     },
     "/service-order/plan/quote": {
       "post": {
+        "description": "فقط اطلاعات مجاز برای مشتری برمی‌گردد (بدون کمیسیون/پاداش)",
         "operationId": "ServiceOrderController_quotePlan",
         "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QuotePlanDto"
+              }
+            }
+          }
+        },
         "responses": {
           "201": {
             "description": ""
           }
         },
+        "summary": "محاسبه قیمت برنامه مربی (User)",
         "tags": [
           "ServiceOrder"
         ]
@@ -14768,41 +14780,50 @@
     },
     "/service-order/plan/pay": {
       "post": {
+        "description": "WALLET همان لحظه کامل می‌شود. درگاه/کارت: سفارش PENDING_PAYMENT ساخته یا با قیمت جدید آپدیت می‌شود",
         "operationId": "ServiceOrderController_payPlan",
         "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PayPlanDto"
+              }
+            }
+          }
+        },
         "responses": {
           "201": {
             "description": ""
           }
         },
+        "summary": "پرداخت برنامه مربی (User)",
         "tags": [
           "ServiceOrder"
         ]
       }
     },
-    "/service-order/plan/complete": {
+    "/service-order/subscription/quote": {
       "post": {
-        "operationId": "ServiceOrderController_completePlan",
+        "operationId": "ServiceOrderController_quoteSub",
         "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QuoteSubscriptionDto"
+              }
+            }
+          }
+        },
         "responses": {
           "201": {
             "description": ""
           }
         },
-        "tags": [
-          "ServiceOrder"
-        ]
-      }
-    },
-    "/service-order/plan/refund": {
-      "post": {
-        "operationId": "ServiceOrderController_refundPlan",
-        "parameters": [],
-        "responses": {
-          "201": {
-            "description": ""
-          }
-        },
+        "summary": "محاسبه قیمت اشتراک (User)",
         "tags": [
           "ServiceOrder"
         ]
@@ -14810,27 +14831,77 @@
     },
     "/service-order/subscription/pay": {
       "post": {
+        "description": "بعد از پرداخت: status=ACTIVE، startsAt و endsAt ست می‌شود",
         "operationId": "ServiceOrderController_paySub",
         "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PaySubscriptionDto"
+              }
+            }
+          }
+        },
         "responses": {
           "201": {
             "description": ""
           }
         },
+        "summary": "پرداخت اشتراک (User)",
         "tags": [
           "ServiceOrder"
         ]
       }
     },
-    "/service-order/subscription/complete": {
+    "/service-order/payment/confirm": {
       "post": {
-        "operationId": "ServiceOrderController_completeSub",
+        "description": "برای کارت‌به‌کارت یا تا زمان وصل شدن درگاه",
+        "operationId": "ServiceOrderController_confirm",
         "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmPaymentDto"
+              }
+            }
+          }
+        },
         "responses": {
           "201": {
             "description": ""
           }
         },
+        "summary": "تایید پرداخت (Admin)",
+        "tags": [
+          "ServiceOrder"
+        ]
+      }
+    },
+    "/service-order/refund": {
+      "post": {
+        "description": "فقط ثبت REFUND؛ پول کارت‌به‌کارت دستی برگردانده می‌شود و هیچ ولتی تغییر نمی‌کند",
+        "operationId": "ServiceOrderController_refund",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefundDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "summary": "ثبت استرداد (Admin)",
         "tags": [
           "ServiceOrder"
         ]
@@ -28543,6 +28614,120 @@
         },
         "required": [
           "coachNote"
+        ]
+      },
+      "QuotePlanDto": {
+        "type": "object",
+        "properties": {
+          "planRequestId": {
+            "type": "string",
+            "description": "آیدی درخواست برنامه (باید ACCEPTED باشد)"
+          },
+          "discountCode": {
+            "type": "string",
+            "description": "کد تخفیف (فقط یک کد)"
+          }
+        },
+        "required": [
+          "planRequestId"
+        ]
+      },
+      "PayPlanDto": {
+        "type": "object",
+        "properties": {
+          "planRequestId": {
+            "type": "string",
+            "description": "آیدی درخواست برنامه (باید ACCEPTED باشد)"
+          },
+          "discountCode": {
+            "type": "string",
+            "description": "کد تخفیف (فقط یک کد)"
+          },
+          "method": {
+            "type": "string",
+            "enum": [
+              "WALLET",
+              "ZARINPAL",
+              "CARD"
+            ]
+          }
+        },
+        "required": [
+          "planRequestId",
+          "method"
+        ]
+      },
+      "QuoteSubscriptionDto": {
+        "type": "object",
+        "properties": {
+          "subscriptionId": {
+            "type": "string",
+            "description": "آیدی اشتراک کاربر (TRIALING یا PENDING) که قبلاً با subscribe ساخته شده"
+          },
+          "discountCode": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "subscriptionId"
+        ]
+      },
+      "PaySubscriptionDto": {
+        "type": "object",
+        "properties": {
+          "subscriptionId": {
+            "type": "string",
+            "description": "آیدی اشتراک کاربر (TRIALING یا PENDING) که قبلاً با subscribe ساخته شده"
+          },
+          "discountCode": {
+            "type": "string"
+          },
+          "method": {
+            "type": "string",
+            "enum": [
+              "WALLET",
+              "ZARINPAL",
+              "CARD"
+            ]
+          }
+        },
+        "required": [
+          "subscriptionId",
+          "method"
+        ]
+      },
+      "ConfirmPaymentDto": {
+        "type": "object",
+        "properties": {
+          "paymentId": {
+            "type": "string"
+          },
+          "gatewayRef": {
+            "type": "string",
+            "description": "شماره پیگیری / رسید"
+          }
+        },
+        "required": [
+          "paymentId",
+          "gatewayRef"
+        ]
+      },
+      "RefundDto": {
+        "type": "object",
+        "properties": {
+          "paymentId": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "string",
+            "description": "خالی = استرداد کامل (به‌صورت رشته برای دقت اعشار)"
+          },
+          "reason": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "paymentId"
         ]
       }
     }

@@ -255,6 +255,7 @@ export class WalletService {
 
   async createMyWallet(userId: string, role: RolePerson) {
     if (role === 'SUPERADMIN') {
+      
       await this.prisma.wallet.create({
         data: {
           isPlatform: role === 'SUPERADMIN'

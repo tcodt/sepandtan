@@ -3,11 +3,15 @@ import { Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
 import { Prisma } from '../../../generated/prisma/client.js';
 import { PrismaService } from '../../../prisma/prisma.service.js';
-import { SETTLEMENT_QUEUE } from './settlement.constants.js';
+import {
+  SETTLEMENT_BATCH,
+  SETTLEMENT_MAX_BATCHES_PER_RUN,
+  SETTLEMENT_QUEUE,
+  SETTLEMENT_SCAN_JOB,
+  SETTLEMENT_USE_ORDER_PAYOUT,
+} from './settlement.constants.js';
 
-@Processor(SETTLEMENT_QUEUE, {
-  concurrency: 5, // با توجه به بار تنظیم کن
-})
+@Processor(SETTLEMENT_QUEUE, { concurrency: 1 })
 export class SettlementProcessor extends WorkerHost {
   private readonly logger = new Logger(SettlementProcessor.name);
 
@@ -15,128 +19,68 @@ export class SettlementProcessor extends WorkerHost {
     super();
   }
 
-  async process(job: Job<{ walletTransactionId?: string }>) {
-    if (job.name === 'settle-due-scan') {
-      return this.settleDueBatch(100);
-    }
-    if (job.name === 'settle-seller') {
-      const { walletTransactionId } = job.data;
-      if (!walletTransactionId) return;
-      return this.settleOne(walletTransactionId);
-    }
+  async process(job: Job) {
+    // jobهای تأخیری قدیمی (settle-seller) که هنوز در Redis مانده‌اند:
+    // scan همه را پوشش می‌دهد، پس اینجا no-op است و خودشان پاک می‌شوند.
+    if (job.name !== SETTLEMENT_SCAN_JOB) return { skipped: 'legacy' };
+    return this.settleDue();
   }
 
   /**
-   * اتمیک + idempotent: فقط PENDING + SALE_SETTLEMENT
+   * هر batch = یک statement اتمیک (همه یا هیچ):
+   *  due  : ردیف‌های سررسیدشده را قفل می‌کند. SKIP LOCKED یعنی چند instance همدیگر را بلاک نمی‌کنند
+   *  done : status را COMPLETED می‌کند، فقط PENDING (ایدمپوتنت؛ ردیف FAILED رد می‌شود)
+   *  agg  : مبلغ به تفکیک ولت جمع زده می‌شود
+   *  upd  : pending → balance، یک UPDATE برای همه ولت‌ها
    */
-  async settleOne(walletTransactionId: string) {
-    return this.prisma.$transaction(async (tx) => {
-      const row = await tx.walletTransaction.findUnique({
-        where: { id: walletTransactionId },
-        select: {
-          id: true,
-          type: true,
-          status: true,
-          amount: true,
-          walletId: true,
-          settlementDate: true,
-        },
-      });
+  async settleDue() {
+    // مبلغ خالص فروشنده: از Order.payoutAmount یا از خود ردیف تراکنش (به SETTLEMENT_USE_ORDER_PAYOUT نگاه کن)
+    const amountExpr = SETTLEMENT_USE_ORDER_PAYOUT
+      ? Prisma.sql`COALESCE(o.payout_amount, 0)`
+      : Prisma.sql`wt.amount`;
+    const joinExpr = SETTLEMENT_USE_ORDER_PAYOUT
+      ? Prisma.sql`JOIN orders o ON o.id = wt.order_id`
+      : Prisma.empty;
 
-      if (!row) {
-        this.logger.warn(`tx not found ${walletTransactionId}`);
-        return { skipped: true };
-      }
+    let total = 0;
+    for (let i = 0; i < SETTLEMENT_MAX_BATCHES_PER_RUN; i++) {
+      const [res] = await this.prisma.$queryRaw<{ settled: number }[]>`
+        WITH due AS (
+          SELECT wt.id, wt.wallet_id, ${amountExpr} AS payout
+          FROM wallet_transactions wt
+          ${joinExpr}
+          WHERE wt.type = 'SALE_SETTLEMENT'
+            AND wt.status = 'PENDING'
+            AND wt.settlement_date <= now()
+          ORDER BY wt.settlement_date
+          LIMIT ${SETTLEMENT_BATCH}::int
+          FOR UPDATE OF wt SKIP LOCKED
+        ),
+        done AS (
+          UPDATE wallet_transactions wt
+          SET status = 'COMPLETED', updated_at = now()
+          FROM due WHERE wt.id = due.id
+          RETURNING due.wallet_id, due.payout
+        ),
+        agg AS (
+          SELECT wallet_id, SUM(payout) AS amt FROM done GROUP BY wallet_id
+        ),
+        upd AS (
+          UPDATE wallets w
+          SET pending_balance = w.pending_balance - agg.amt,
+              balance = w.balance + agg.amt,
+              updated_at = now()
+          FROM agg WHERE w.id = agg.wallet_id
+          RETURNING w.id
+        )
+        SELECT (SELECT count(*) FROM done)::int AS settled`;
 
-      if (row.type !== 'SALE_SETTLEMENT') {
-        return { skipped: true, reason: 'wrong_type' };
-      }
-
-      // قبلاً settle شده
-      if (row.status === 'COMPLETED') {
-        return { skipped: true, reason: 'already_completed' };
-      }
-
-      if (row.status !== 'PENDING') {
-        return { skipped: true, reason: `status_${row.status}` };
-      }
-
-      // هنوز زود است (اسکن زودتر آمده)
-      if (row.settlementDate && row.settlementDate.getTime() > Date.now()) {
-        return { skipped: true, reason: 'too_early' };
-      }
-
-      const amount = new Prisma.Decimal(row.amount);
-      if (amount.lte(0)) {
-        await tx.walletTransaction.update({
-          where: { id: row.id },
-          data: { status: 'COMPLETED' },
-        });
-        return { skipped: true, reason: 'zero_amount' };
-      }
-
-      // فقط اگر pending کافی باشد — جلوگیری از منفی شدن
-      const moved = await tx.wallet.updateMany({
-        where: {
-          id: row.walletId,
-          pendingBalance: { gte: amount },
-        },
-        data: {
-          pendingBalance: { decrement: amount },
-          balance: { increment: amount },
-        },
-      });
-
-      if (moved.count === 0) {
-        // داده ناهماهنگ: job را fail کن تا retry شود / آلرت
-        throw new Error(
-          `insufficient pendingBalance for tx=${row.id} wallet=${row.walletId}`,
-        );
-      }
-
-      // فقط اگر هنوز PENDING باشد (double-process)
-      const updated = await tx.walletTransaction.updateMany({
-        where: { id: row.id, status: 'PENDING' },
-        data: { status: 'COMPLETED' },
-      });
-
-      if (updated.count === 0) {
-        // کس دیگری settle کرده — rollback کیف پول در همین tx با throw
-        throw new Error(`race on walletTransaction ${row.id}`);
-      }
-
-      this.logger.log(`settled ${row.id} amount=${amount.toFixed(2)}`);
-      return { success: true };
-    });
-  }
-
-  /**
-   * Safety-net: تراکنش‌های عقب‌افتاده (اگر Redis job از بین رفت)
-   * از SettlementQueueService یا یک Cron صدا بزن
-   */
-  async settleDueBatch(limit = 100) {
-    const due = await this.prisma.walletTransaction.findMany({
-      where: {
-        type: 'SALE_SETTLEMENT',
-        status: 'PENDING',
-        settlementDate: { lte: new Date() },
-      },
-      select: { id: true },
-      take: limit,
-      orderBy: { settlementDate: 'asc' },
-    });
-
-    let ok = 0;
-    let fail = 0;
-    for (const row of due) {
-      try {
-        await this.settleOne(row.id);
-        ok++;
-      } catch (e) {
-        fail++;
-        this.logger.error(`batch settle fail ${row.id}`, e);
-      }
+      const settled = res?.settled ?? 0;
+      total += settled;
+      if (settled < SETTLEMENT_BATCH) break;
     }
-    return { ok, fail, scanned: due.length };
+
+    if (total) this.logger.log(`settled ${total} seller payouts`);
+    return { settled: total };
   }
 }
