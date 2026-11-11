@@ -6,7 +6,6 @@ import { AccessTokenGuard } from '../auth/guard/access-token.guard.js';
 import { Roles } from '../auth/decorators/roles.decorator.js';
 import { CurrentUser } from '../../common/decorators/current-user.decorator.js';
 import { PaginatedResponse } from '../../common/dtos/pagination-response.dto.js';
-import { UserPlanService } from './user-plan.service.js';
 import {
   ActivateUserPlanDto, UpdateWorkoutSnapshotDto, UpdateDietSnapshotDto,
   UpdatePlanDatesDto, UserPlanQueryDto, PartQueryDto,
@@ -16,6 +15,7 @@ import {
   CoachUserPlanListItemEntity, CoachUserPlanDetailEntity, UpdatedEntity, ActivatedEntity,
   StatusChangedEntity, DatesUpdatedEntity,
 } from './entity/user-plan.entity.js';
+import { UserPlanService } from './user-plan.service.js';
 
 const PART_CACHE = 'private, max-age=10'; // جلوگیری از درخواست‌های تکراری فرانت
 

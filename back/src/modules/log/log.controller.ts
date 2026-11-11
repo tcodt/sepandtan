@@ -16,6 +16,7 @@ import {
   UserLogEntity, UserLogSummaryEntity,
   MonthlyStatsResponseEntity, WeeklyStatsResponseEntity, YearlyStatsResponseEntity,
 } from './entity/user-log.entity.js';
+import { RolePerson } from '../../generated/prisma/enums.js';
 
 @ApiTags('Log')
 @Controller('log')
@@ -31,8 +32,13 @@ export class LogController {
   @ApiOperation({
     summary: 'ثبت لاگ روزانه (User)',
     description:
-      'unique([userId, date]) → تکراری 409. unCompleted* = انجام‌نشده‌ها؛ done* = planned − unCompleted. ' +
-      'با userPlanId، planned از snapshot (اولویت) یا قالب محاسبه می‌شود.',
+      `
+    * زمان ارسال هر لاگ مختص به همون روز است و نمیتواند لاگ دیروز را امروز ثبت بکند
+    * userPlanId همون آیدی برنامه کاربر است
+    * plannedExercises که به صورت عدد وارد میشه باید تمام ورزش هایی که در روز انجام میده رو بفرستی
+    * unCompletedExerciseIds باید ایدی ورزش هایی که انجام نداده رو بفرستی که بشه فهمید کدوم هارو انجام نداده هنوز 
+    * بقیه چیزا هم مشخصه فقط این هارو اشتباه بفرستی همه چیز اشتباه میشه از سمت بک اند نزدم چک بشه
+    `
   })
   create(@CurrentUser('id') userId: string, @Body() dto: CreateUserLogDto) {
     return this.userLogService.create(userId, dto);
@@ -49,32 +55,17 @@ export class LogController {
     return this.userLogService.getMyLogs(userId, query);
   }
 
-  @Get('plan/summary/:planId')
+  @Get('dashboard')
+  @Roles('USER')
   @ApiOkResponse({ type: PaginatedResponse(UserLogSummaryEntity, 'logs') })
   @ApiOperation({
-    summary: 'لیست لاگ‌های برنامه (User & Coach & Admin)',
+    summary: 'لیست لاگ‌های برنامه (User)',
     description: `
-    * زمانی که میای برنامه کاربر رو بهش نمایش میدی و میخواد تمرین هاشو انجام بده این لاگ هارو بگیر
-    * بعدش با استفاده از تاریخ استارت برنامه بیا این لاگ هارو جدا بکن متناسب با تاریخ لاگ ها
-    * هماهنگ کردن روز ها و هفته های لاگ ها به عهده خودت هستش 
+      * از این لاگ ها برای نمودار اولیه استفاده بکن جزئیات کم دارن و برای کاربر کافی هستن
     `,
   })
-  getPlanSummary(@Param('planId') planId: string) {
-    return this.userLogService.getPlanSummary(planId);
-  }
-
-  @Get('plan/:planId')
-  @ApiOkResponse({ type: PaginatedResponse(UserLogSummaryEntity, 'logs') })
-  @ApiOperation({
-    summary: 'لیست لاگ‌های برنامه (User & Coach & Admin)',
-    description: `
-    * زمانی که میای برنامه کاربر رو بهش نمایش میدی و میخواد تمرین هاشو انجام بده این لاگ هارو بگیر
-    * بعدش با استفاده از تاریخ استارت برنامه بیا این لاگ هارو جدا بکن متناسب با تاریخ لاگ ها
-    * هماهنگ کردن روز ها و هفته های لاگ ها به عهده خودت هستش 
-    `,
-  })
-  getPlan(@Param('planId') planId: string) {
-    return this.userLogService.getPlanSummary(planId);
+  getPlanSummary(@CurrentUser('id') id: string) {
+    return this.userLogService.getPlanSummary(id);
   }
 
   // ---- Stats قبل از مسیرهای پارامتری ----
@@ -141,10 +132,10 @@ export class LogController {
   // ============ Coach ============
 
   @Get('coach/user/:userId')
-  @Roles('COACH')
+  @Roles('COACH', 'ADMIN', 'SUPERADMIN')
   @ApiOkResponse({ type: PaginatedResponse(UserLogSummaryEntity, 'logs') })
   @ApiOperation({
-    summary: 'لاگ‌های شاگرد (Coach)',
+    summary: 'لاگ‌های شاگرد (Coach,Admin)',
     description:
       'from/to حداکثر ۳۶۵ روز. sortهای مختلف. فقط اگر حداقل یک UserPlan با این مربی داشته باشد.',
   })
@@ -152,44 +143,58 @@ export class LogController {
     @CurrentUser('id') coachUserId: string,
     @Param('userId') userId: string,
     @Query() query: LogRangeQueryDto,
+    @CurrentUser('role') role: RolePerson,
   ) {
-    return this.userLogService.getCoachUserLogs(coachUserId, userId, query);
+    return this.userLogService.getCoachUserLogs(coachUserId, userId, query, role);
   }
 
   @Get('coach/user/:userId/stats/monthly')
-  @Roles('COACH')
+  @Roles('COACH', 'ADMIN', 'SUPERADMIN')
   @ApiOkResponse({ type: MonthlyStatsResponseEntity })
-  @ApiOperation({ summary: 'آمار ماهانه شاگرد (Coach)' })
+  @ApiOperation({ summary: 'آمار ماهانه شاگرد (Coach,Admin)' })
   getCoachMonthly(
     @CurrentUser('id') coachUserId: string,
     @Param('userId') userId: string,
     @Query() query: MonthlyStatsQueryDto,
+    @CurrentUser('role') role: RolePerson,
   ) {
-    return this.userLogService.getCoachMonthlyStats(coachUserId, userId, query.year);
+    return this.userLogService.getCoachMonthlyStats(coachUserId, userId, query.year, role);
   }
 
   @Get('coach/user/:userId/stats/weekly')
-  @Roles('COACH')
+  @Roles('COACH', 'ADMIN', 'SUPERADMIN')
   @ApiOkResponse({ type: WeeklyStatsResponseEntity })
-  @ApiOperation({ summary: 'آمار هفتگی شاگرد (Coach) — بازه ≤ ۳۶۵ روز' })
+  @ApiOperation({ summary: 'آمار هفتگی شاگرد (Coach,Admin) — بازه ≤ ۳۶۵ روز' })
   getCoachWeekly(
     @CurrentUser('id') coachUserId: string,
     @Param('userId') userId: string,
     @Query() query: WeeklyStatsQueryDto,
+    @CurrentUser('role') role: RolePerson,
   ) {
-    return this.userLogService.getCoachWeeklyStats(coachUserId, userId, query.from, query.to);
+    return this.userLogService.getCoachWeeklyStats(coachUserId, userId, query.from, query.to, role);
   }
 
   @Get('coach/user/:userId/stats/yearly')
-  @Roles('COACH')
+  @Roles('COACH', 'ADMIN', 'SUPERADMIN')
   @ApiOkResponse({ type: YearlyStatsResponseEntity })
-  @ApiOperation({ summary: 'آمار سالانه شاگرد (Coach) — یک سال شمسی' })
+  @ApiOperation({ summary: 'آمار سالانه شاگرد (Coach,Admin) — یک سال شمسی' })
   getCoachYearly(
     @CurrentUser('id') coachUserId: string,
     @Param('userId') userId: string,
     @Query() query: YearlyStatsQueryDto,
+    @CurrentUser('role') role: RolePerson,
   ) {
-    return this.userLogService.getCoachYearlyStats(coachUserId, userId, query.year);
+    return this.userLogService.getCoachYearlyStats(coachUserId, userId, query.year, role);
+  }
+
+
+  @Get('id/:logId')
+  @Roles('COACH', 'ADMIN', 'SUPERADMIN', 'USER')
+  @ApiOperation({
+    summary: 'دریافت جزئیات کامل یک لاگ با آیدی (User & Coach & Admin)',
+  })
+  getById(@Param('logId') logId: string) {
+    return this.userLogService.getById(logId);
   }
 
   @Patch(':id/coach-note')

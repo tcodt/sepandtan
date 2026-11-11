@@ -158,7 +158,8 @@ export class UserService {
           password: await hashPassword(body.password),
           role: body.role,
           phone: body.phone,
-          profile: { create: {} }
+          profile: { create: {} },
+          wallet: { create: {} }
         },
       });
       return { success: true }

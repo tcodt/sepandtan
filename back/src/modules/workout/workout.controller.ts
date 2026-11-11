@@ -143,7 +143,19 @@ export class WorkoutController {
   @UseGuards(AccessTokenGuard)
   @Roles('COACH')
   @ApiOkResponse({ type: WorkoutDayEntity })
-  @ApiOperation({ summary: 'افزودن روز به برنامه (Coach)', description: 'weekday تکراری → 409' })
+  @ApiOperation({ summary: 'افزودن روز به برنامه (Coach)', description: `
+    * توجه خیلی مهم اینجا کلمه 
+    * weekday 
+    * خیلی مهمه معنی روزهای هفته رو میده مربی نباید خودش وارد کنه عدد رو تو باید به طور ثابت براش بزاری ...مثلا 
+    * شنبه = 0
+    * یکشنبه = 1
+    * دوشنبه = 2
+    * سه شنبه = 3
+    * چهارشنبه = 4
+    * پنج شنبه = 5
+    * جمعه = 6
+    * اینطوری براش اماده میکنی اونم روزهایی که خواست پر میکنه بعدش بر اساس اون روز میفرستی اگر اشتباه بفرستی لاگ ها اشتباه میشه
+    ` })
   addDay(@CurrentUser('id') userId: string, @Param('planId') planId: string, @Body() dto: CreateWorkoutDayDto) {
     return this.workoutService.addDay(userId, planId, dto);
   }

@@ -33,9 +33,20 @@ type CalendarEntry = {
   date: string; week: number; weekday: number;
   status: 'DONE' | 'PARTIAL' | 'MISSED' | 'PENDING' | 'EXTRA';
   planned: number; done: number; uncompletedIds: string[];
+  isRestDay: boolean;
+};
+type PhaseView = {
+  planned: number;
+  done: number;
+  /** تعداد روزهای تمرینی فاز (بدون استراحت) — برای کل طول فاز */
+  allDays: number;
+  /** تعداد روزهایی که لاگ دارند (روز استراحتِ بدون لاگ شمرده نمی‌شود) */
+  logDays: number;
+  calendar: CalendarEntry[];
 };
 
 const minDate = (a: Date, b: Date | null) => (b && b < a ? b : a);
+const maxDate = (a: Date, b: Date) => (a > b ? a : b);
 type PartKey = 'workout' | 'diet';
 
 @Injectable()
@@ -298,57 +309,114 @@ export class UserPlanService {
     return { meta, snap: snapshotDiet as DietSnapshot | null };
   }
   private scheduledByWeekday(phase: PartPhase, part: PartKey) {
-    const m = new Map<number, number>();
+    const m = new Map<number, { planned: number; isRestDay: boolean }>();
     for (const d of phase.days) {
-      m.set(
-        d.weekday,
-        part === 'workout'
-          ? (d.isRestDay ? 0 : d.exercises?.length ?? 0)
-          : (d.meals ?? []).filter((x) => x.priority === 'PRIMARY').length,
-      );
+      const isRest = !!d.isRestDay;
+      const planned = part === 'workout'
+        ? (isRest ? 0 : d.exercises?.length ?? 0)
+        : (d.meals ?? []).filter((x) => x.priority === 'PRIMARY').length;
+      m.set(d.weekday, { planned, isRestDay: isRest });
     }
     return m;
   }
+
+  /**
+   * تعداد روزهای تمرینی قالبِ فاز (بدون استراحت) × تعداد هفته‌های فاز.
+   * مثال: ۲ روز تمرین در هفته × ۲ هفته = allDays=4
+   */
+  private countAllTrainingDays(phase: PartPhase, part: PartKey): number {
+    const weeks = Math.max(0, phase.endWeek - phase.startWeek + 1);
+    let perWeek = 0;
+    for (const d of phase.days) {
+      if (d.isRestDay) continue;
+      if (part === 'workout') {
+        if ((d.exercises?.length ?? 0) > 0) perWeek += 1;
+      } else {
+        if ((d.meals ?? []).some((x) => x.priority === 'PRIMARY')) perWeek += 1;
+      }
+    }
+    return weeks * perWeek;
+  }
+
+  /**
+   * تقویم و پیشرفت یک فاز.
+   * - بازهٔ تقویم = کل روزهای فاز (نه فقط تا امروز) تا لاگِ فردا/آینده هم دیده شود
+   * - جمع planned/done فقط تا امروز (آینده‌ی بدون لاگ MISSED نمی‌شود)
+   * - allDays = روزهای تمرینی فاز (بدون استراحت)
+   * - logDays = تعداد روزهایی که لاگ دارند و روز استراحتِ خالی نیستند
+   */
   private phaseLogView(
-    p: PartPhase, part: PartKey, start: Date, lastDay: Date, today: Date,
+    p: PartPhase, part: PartKey, start: Date, planEnd: Date | null, today: Date,
     logs: Map<string, DayLog>, withCalendar: boolean,
-  ) {
+  ): PhaseView {
     const sched = this.scheduledByWeekday(p, part);
     const from = addDays(start, (p.startWeek - 1) * 7);
-    const to = minDate(addDays(start, p.endWeek * 7 - 1), lastDay);
+    const phaseEnd = addDays(start, p.endWeek * 7 - 1);
+    const rangeEnd = minDate(phaseEnd, planEnd);
+
+    // اگر لاگی بعد از today داخل فاز هست، تقویم تا همان‌جا هم برود
+    let to = rangeEnd;
+    for (const key of logs.keys()) {
+      const ld = parseDateOnly(key);
+      if (ld >= from && ld <= rangeEnd && ld > to) to = ld;
+    }
+
     let planned = 0;
     let done = 0;
+    let logDays = 0;
     const calendar: CalendarEntry[] = [];
 
     for (let d = from; d <= to; d = addDays(d, 1)) {
-      const wd = weekdayOf(d);
-      const log = logs.get(toDateString(d));
-      const s = sched.get(wd) ?? 0;
-      // اگر لاگ هست، برنامه‌ریزیِ همان روزِ ثبت‌شده (تاریخی) معتبرتر از snapshotِ فعلی است
+      const wd = weekdayOf(d); // ۰=شنبه … ۶=جمعه (مطلقِ تقویم، نه «روزِ Nام فاز»)
+      const dateStr = toDateString(d);
+      const log = logs.get(dateStr);
+      const slot = sched.get(wd);
+      const s = slot?.planned ?? 0;
+      const isRestDay = slot?.isRestDay ?? false;
+
+      // لاگ تاریخی روی planned اولویت دارد
       const dayPlanned = log ? (log.planned || s) : s;
       const dayDone = log ? log.done : 0;
 
-      // امروز/آینده‌ی بدون لاگ هنوز «از دست رفته» نیست
-      if (log || d < today) {
-        planned += dayPlanned;
-        done += dayDone;
+      // جمع پیشرفت فقط تا امروز؛ آینده‌ی بدون لاگ را MISSED حساب نکن
+      if (log || d <= today) {
+        if (!isRestDay || dayPlanned > 0 || log) {
+          planned += dayPlanned;
+          done += dayDone;
+        }
       }
 
-      if (withCalendar && (dayPlanned > 0 || log)) {
+      if (log && (!isRestDay || dayPlanned > 0 || dayDone > 0)) {
+        logDays += 1;
+      }
+
+      // تقویم: روز تمرینی قالب یا هر روزی که لاگ دارد — استراحتِ بدون لاگ حذف
+      if (withCalendar) {
+        const isTrainingSlot = !!slot && !isRestDay;
+        if (!log && !isTrainingSlot) continue;
+
         calendar.push({
-          date: toDateString(d),
+          date: dateStr,
           week: Math.floor((d.getTime() - start.getTime()) / DAY_MS / 7) + 1,
           weekday: wd,
           status: log
-            ? dayPlanned === 0 ? 'EXTRA' : dayDone >= dayPlanned ? 'DONE' : 'PARTIAL'
-            : d < today ? 'MISSED' : 'PENDING',
+            ? (dayPlanned === 0 ? 'EXTRA' : dayDone >= dayPlanned ? 'DONE' : 'PARTIAL')
+            : (d < today ? 'MISSED' : 'PENDING'),
           planned: dayPlanned,
           done: dayDone,
           uncompletedIds: log?.uncompletedIds ?? [],
+          isRestDay,
         });
       }
     }
-    return { planned, done, calendar };
+
+    return {
+      planned,
+      done,
+      allDays: this.countAllTrainingDays(p, part),
+      logDays,
+      calendar,
+    };
   }
 
   async getPlanPart(planId: string, part: PartKey, query: PartQueryDto) {
@@ -377,26 +445,40 @@ export class UserPlanService {
     }
     const phase = idx >= 0 ? phases[idx] : null;
 
-    // آخرین روزی که حساب می‌شود: min(امروز، پایان برنامه)؛ قبل از شروع → هیچ
-    const lastDay = isStarted && start ? minDate(today, meta.endDate) : null;
-    const view = (p: PartPhase, withCalendar: boolean) =>
-      lastDay && start
-        ? this.phaseLogView(p, part, start, lastDay, today, logs, withCalendar)
-        : { planned: 0, done: 0, calendar: [] as CalendarEntry[] };
+    // قبل از شروع برنامه → view خالی
+    const view = (p: PartPhase, withCalendar: boolean): PhaseView =>
+      start
+        ? this.phaseLogView(p, part, start, meta.endDate, today, logs, withCalendar)
+        : { planned: 0, done: 0, allDays: this.countAllTrainingDays(p, part), logDays: 0, calendar: [] };
 
     let totalPlanned = 0;
     let totalDone = 0;
+    let totalAllDays = 0;
+    let totalLogDays = 0;
     const outline = phases.map((p, i) => {
       const v = view(p, i === idx); // تقویم فقط برای فاز انتخاب‌شده
       totalPlanned += v.planned;
       totalDone += v.done;
+      totalAllDays += v.allDays;
+      totalLogDays += v.logDays;
       return {
-        phaseNumber: i + 1, title: p.title, startWeek: p.startWeek, endWeek: p.endWeek,
+        phaseNumber: i + 1,
+        title: p.title,
+        startWeek: p.startWeek,
+        endWeek: p.endWeek,
         isCurrent: isStarted && currentWeek >= p.startWeek && currentWeek <= p.endWeek,
-        summary: { planned: v.planned, done: v.done },
+        isSelected: i === idx,
+        summary: {
+          planned: v.planned,
+          done: v.done,
+          allDays: v.allDays,
+          logDays: v.logDays,
+        },
         calendar: v.calendar,
       };
     });
+
+    const selected = idx >= 0 ? outline[idx] : null;
 
     return {
       planId: meta.id,
@@ -409,15 +491,24 @@ export class UserPlanService {
       weekInPhase: phase && isStarted && currentWeek >= phase.startWeek && currentWeek <= phase.endWeek
         ? currentWeek - phase.startWeek + 1 : null,
       durationWeeks: snap.durationWeeks,
-      summary: { planned: totalPlanned, done: totalDone },
+      startDate: start ? toDateString(start) : null,
+      summary: {
+        planned: totalPlanned,
+        done: totalDone,
+        allDays: totalAllDays,
+        logDays: totalLogDays,
+      },
       // calendar را از outline بیرون می‌کشیم تا فقط داخل phase بیاید
       outline: outline.map(({ calendar, ...o }) => o),
-      phase: phase && {
-        phaseNumber: idx + 1, title: phase.title,
-        startWeek: phase.startWeek, endWeek: phase.endWeek,
+      phase: phase && selected ? {
+        phaseNumber: selected.phaseNumber,
+        title: phase.title,
+        startWeek: phase.startWeek,
+        endWeek: phase.endWeek,
         days: phase.days,
-        calendar: outline[idx].calendar,
-      },
+        summary: selected.summary,
+        calendar: selected.calendar,
+      } : null,
     };
   }
 

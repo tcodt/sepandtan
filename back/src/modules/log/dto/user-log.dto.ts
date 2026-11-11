@@ -10,18 +10,34 @@ const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
 const DATE_MESSAGE = 'تاریخ باید به فرمت YYYY-MM-DD باشد';
 
 // ---------- Create ----------
+/**
+ * قرارداد فرانت:
+ * - plannedExercises / plannedMeals = تعداد تمرین/وعدهٔ برنامه‌ریزی‌شدهٔ همان روز (از userPlan)
+ * - unCompletedExerciseIds / unCompletedMealIds = idهایی که انجام نشده
+ * - done* سمت سرور = max(0, planned* - unCompleted*.length)
+ * - بک‌اند snapshot/template را برای شمارش لود نمی‌کند (بهینه برای ترافیک بالا)
+ */
 export class CreateUserLogDto {
-  @ApiProperty({ example: '2026-11-07', description: 'تاریخ میلادی روز به وقت تهران (YYYY-MM-DD)' })
+  @ApiProperty({ example: '2026-11-10', description: 'تاریخ میلادی روز به وقت تهران (YYYY-MM-DD)' })
   @Matches(DATE_REGEX, { message: DATE_MESSAGE })
   date!: string;
 
-  @ApiPropertyOptional({ example: '3fa85f64-5717-4562-b3fc-2c963f66afa6' })
+  /** شناسه UserPlan (نه exerciseId). اختیاری — بین دو برنامه هم می‌شود وزن ثبت کرد */
+  @ApiPropertyOptional({ example: 'd69eaea1-ef3d-45e1-87e9-99388fcd8bc3' })
   @IsOptional() @IsUUID('4')
   userPlanId?: string;
 
   @ApiPropertyOptional({ example: 75.5 })
   @IsOptional() @Type(() => Number) @IsNumber({ maxDecimalPlaces: 2 }) @Min(20) @Max(400)
   weightKg?: number;
+
+  /**
+   * تعداد تمرین برنامه‌ریزی‌شده همان روز (از فرانت / snapshot روز).
+   * اگر نفرستید ۰ در نظر گرفته می‌شود.
+   */
+  @ApiPropertyOptional({ example: 5, description: 'تعداد تمرین‌های برنامه در آن روز' })
+  @IsOptional() @Type(() => Number) @IsInt() @Min(0) @Max(100)
+  plannedExercises?: number;
 
   /** id تمرین‌هایی که انجام نشدند (از لیست planned همان روز) */
   @ApiPropertyOptional({ type: [String], example: [] })
@@ -39,6 +55,14 @@ export class CreateUserLogDto {
   @IsOptional() @Type(() => Number) @IsInt() @Min(0) @Max(20000)
   caloriesBurned?: number;
 
+  /**
+   * تعداد وعده برنامه‌ریزی‌شده همان روز.
+   * اگر نفرستید ۰ در نظر گرفته می‌شود.
+   */
+  @ApiPropertyOptional({ example: 4, description: 'تعداد وعده‌های برنامه در آن روز' })
+  @IsOptional() @Type(() => Number) @IsInt() @Min(0) @Max(50)
+  plannedMeals?: number;
+
   /** id وعده‌هایی که انجام نشدند */
   @ApiPropertyOptional({ type: [String], example: [] })
   @IsOptional() @IsArray() @ArrayMaxSize(50) @IsString({ each: true })
@@ -51,10 +75,7 @@ export class CreateUserLogDto {
   @IsOptional() @IsArray() @ArrayMaxSize(20)
   extraMeals?: { name: string; calories?: number; proteinG?: number; carbsG?: number; fatG?: number }[];
 
-  @ApiPropertyOptional({
-    example: 2000,
-    description: 'فقط وقتی لاگ به برنامه وصل نیست؛ وگرنه از snapshot/فاز خوانده می‌شود',
-  })
+  @ApiPropertyOptional({ example: 2000, description: 'کالری هدف روز (از برنامه یا دستی)' })
   @IsOptional() @Type(() => Number) @IsInt() @Min(0) @Max(20000)
   caloriesPlanned?: number;
 
@@ -96,6 +117,7 @@ export class CreateUserLogDto {
 /**
  * date و userPlanId قابل ویرایش نیستند.
  * برای تغییر تاریخ: حذف + ثبت دوباره.
+ * planned* را می‌توان دوباره فرستاد تا done* از نو محاسبه شود.
  */
 export class UpdateUserLogDto extends PartialType(
   OmitType(CreateUserLogDto, ['date', 'userPlanId'] as const),

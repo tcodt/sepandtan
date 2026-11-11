@@ -1340,7 +1340,6 @@ model ReturnItem {
 }
 
 // عکس و برند و دسته و علاقه مندی و رنگ
-
 model Media {
   id              String       @id @default(uuid())
   productId       String?      @map("product_id")
@@ -1444,22 +1443,33 @@ model WishlistItem {
 // کیف پول و تراکنش و بانک
 model Wallet {
   id              String  @id @default(uuid())
-  userId          String  @unique @map("user_id") @db.Uuid
+  userId          String? @unique @map("user_id") @db.Uuid
+  // موجودی حساب اصلی ولت
   balance         Decimal @default(0) @db.Decimal(18, 2)
+  // موجودی حساب در حال واریز برای زمانی که خریدار چیزی رو خریده ولی خب باید اون دروه مرجوعی کالا بگذره بعدش واریز بشه به حساب فروشنده که میشه بالانس کاربردی برای مربی نداره یا کاربر بیشتر برای فروشنده و ادمین کاربردی هستش
   pendingBalance  Decimal @default(0) @map("pending_balance") @db.Decimal(18, 2)
+  // پول در حال برداشت وقتی که مربی یا فروشنده درخواست وجه میکنن باید کل حساب بالانس خالی بشه و وارد این بخش بشه توی یه تراکنش بعدش که ادمین واریز کرد میاد تراکنش رو تایید میزنه واین بخش هم خالی میشه
   withdrawBalance Decimal @default(0) @map("withdraw_balance") @db.Decimal(18, 2)
+  // برای زمانی که محصولی خریداری شده و کاربر میخواد مرجوعی بکنه ادمین میاد اون تراکنش خرید رو به فروزن تغییر میده اینطوری پول فروشنده با بقیه حساب یکی نمیشه تا تعیین تکلیف بشه
   frozenBalance   Decimal @default(0) @map("frozen_balance") @db.Decimal(18, 2)
   isPlatform      Boolean @default(false) @map("is_platform")
 
   bankAccountId String?             @map("bank_account_id")
   updatedAt     DateTime            @updatedAt @map("updated_at")
   createdAt     DateTime            @default(now()) @map("created_at")
-  user          User                @relation(fields: [userId], references: [id], onDelete: Restrict)
+  user          User?               @relation(fields: [userId], references: [id], onDelete: Restrict)
   transactions  WalletTransaction[]
   bankAccounts  BankAccount[]
 
+  @@index([isPlatform])
   @@map("wallets")
 }
+
+// کاربرد ولت برای پلتفرم متفاوته اینجا توضیح میدم
+// balance حساب سیستم یعنی کمیسیون + مالیات + فروش هوش مصنوعی
+// pendingBalance فقط مالیات
+// withdrawBalance جمع تمام تخفیف های سیستم
+// frozenBalance حساب تمام واریزی های سیستم یعنی: فروش مربی + فروش فروشنده + فروش هوش مصنوعی جمع تمام واریزی ها به حساب
 
 model WalletTransaction {
   id           String                  @id @default(uuid())

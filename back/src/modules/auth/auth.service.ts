@@ -63,7 +63,8 @@ export class AuthService {
           googleId: google?.googleId ?? null,
           isEmailVerified: Boolean(google), // ایمیلِ تاییدشده‌ی گوگل
           password: !google && body.password ? await hashPassword(body.password) : null,
-          profile: { create: {} }
+          profile: { create: {} },
+          wallet: { create: {} }
         },
       });
       return this.toAuthEntity(user);

@@ -118,6 +118,7 @@ export class WalletService {
       });
     });
   }
+
   async failTransaction(id: string, description?: string) {
     return this.prisma.$transaction(async tx => {
       const transaction = await tx.walletTransaction.findUnique({ where: { id } });
@@ -178,7 +179,7 @@ export class WalletService {
       if (!wallet || wallet.isPlatform) {
         throw new BadRequestException('کیف پول فروشنده یافت نشد');
       }
-      
+
       if (wallet.withdrawBalance) {
         throw new BadRequestException('یک درخواست برداشت در حال بررسی دارید');
       }
@@ -205,6 +206,7 @@ export class WalletService {
       return transaction;
     });
   }
+
   async approveWithdrawal(id: string, description?: string) {
     return this.prisma.$transaction(async tx => {
       const transaction = await tx.walletTransaction.findUnique({ where: { id } })
@@ -252,24 +254,38 @@ export class WalletService {
   }
 
   async createMyWallet(userId: string, role: RolePerson) {
-    await this.prisma.wallet.create({
-      data: {
-        userId,
-        isPlatform: role === 'SUPERADMIN'
-      }
-    })
+    if (role === 'SUPERADMIN') {
+      await this.prisma.wallet.create({
+        data: {
+          isPlatform: role === 'SUPERADMIN'
+        }
+      })
+    } else {
+      await this.prisma.wallet.create({
+        data: {
+          userId,
+        }
+      })
+    }
     return { succee: true }
   }
 
   async getMyWallet(userId: string, role: RolePerson) {
     const data = await this.prisma.wallet.findUnique({ where: { userId } })
     if (!data?.id) {
-      return this.prisma.wallet.create({
-        data: {
-          userId,
-          isPlatform: role === 'SUPERADMIN'
-        }
-      })
+      if (role === 'SUPERADMIN') {
+        return this.prisma.wallet.create({
+          data: {
+            isPlatform: true
+          }
+        })
+      } else {
+        return this.prisma.wallet.create({
+          data: {
+            userId,
+          }
+        })
+      }
     } else {
       return data
     }
