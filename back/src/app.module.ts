@@ -50,6 +50,7 @@ import { PlanRequestModule } from './modules/request/plan-request.module.js';
     ConfigModules,
     DiscountQueueModule,
     SettlementQueueModule,
+    SubscriptionModule,
     AuthModule, // ورود
     UserModule, // کاربران
     AddressesModule, // آدرس

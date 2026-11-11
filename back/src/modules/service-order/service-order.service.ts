@@ -425,9 +425,11 @@ export class ServiceOrderService {
     for (const [id, o] of [...ops].sort(byId)) {
       if (o.debit.gt(0)) {
         // کسر اتمیک شرطی: بدون read-then-write → ضد overspend همزمان
+
         const r = await tx.wallet.updateMany({ where: { id, balance: { gte: o.debit } }, data: { balance: { decrement: o.debit } } });
         if (!r.count) throw new BadRequestException('موجودی کیف پول کافی نیست');
       } else if (o.credit.gt(0)) {
+
         await tx.wallet.update({ where: { id }, data: { balance: { increment: o.credit } } });
       }
     }
@@ -459,11 +461,12 @@ export class ServiceOrderService {
     if (p.type === 'PLAN') {
       await tx.planRequest.update({ where: { id: p.planRequestId! }, data: { status: 'PAID' } });
     } else {
-      const now = new Date(); // شروع و پایان از لحظه پرداخت
-      await tx.subscription.update({
-        where: { id: p.subscriptionId! },
+      const now = new Date();
+      const r = await tx.subscription.updateMany({
+        where: { id: p.subscriptionId!, status: { in: ['TRIALING', 'PENDING'] } },
         data: { status: 'ACTIVE', startsAt: now, endsAt: new Date(now.getTime() + p.durationDays! * DAY_MS), pricePaid: p.gross },
       });
+      if (!r.count) throw new ConflictException('اشتراک دیگر قابل فعال‌سازی نیست');
     }
 
     // 5) ولت پلتفرم: آخرین قفل (hot row)، بدون هیچ تراکنشی

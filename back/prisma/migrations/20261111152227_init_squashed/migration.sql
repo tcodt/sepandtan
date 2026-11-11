@@ -1,29 +1,17 @@
-/*
-  Warnings:
-
-  - The values [CONTRACTOR] on the enum `RolePerson` will be removed. If these variants are still used in the database, this will fail.
-  - You are about to drop the column `createdAt` on the `tokens` table. All the data in the column will be lost.
-  - You are about to drop the column `ipAddress` on the `tokens` table. All the data in the column will be lost.
-  - You are about to drop the column `tokenHash` on the `tokens` table. All the data in the column will be lost.
-  - You are about to drop the column `userId` on the `tokens` table. All the data in the column will be lost.
-  - A unique constraint covering the columns `[token_hash]` on the table `tokens` will be added. If there are existing duplicate values, this will fail.
-  - A unique constraint covering the columns `[googleId]` on the table `users` will be added. If there are existing duplicate values, this will fail.
-  - A unique constraint covering the columns `[phone]` on the table `users` will be added. If there are existing duplicate values, this will fail.
-  - Added the required column `token_hash` to the `tokens` table without a default value. This is not possible if the table is not empty.
-  - Added the required column `user_id` to the `tokens` table without a default value. This is not possible if the table is not empty.
-
-*/
 -- CreateEnum
-CREATE TYPE "SubscriptionStatus" AS ENUM ('PENDING', 'ACTIVE', 'EXPIRED', 'CANCELLED');
+CREATE TYPE "StatusProduct" AS ENUM ('DRAFT', 'PENDING', 'ACTIVE', 'REJECTED', 'INACTIVE', 'OUT_OF_STOCK', 'DELETED', 'BANNED');
+
+-- CreateEnum
+CREATE TYPE "RolePerson" AS ENUM ('USER', 'ADMIN', 'SUPERADMIN', 'AUTHOR', 'COACH', 'STORE');
+
+-- CreateEnum
+CREATE TYPE "SubscriptionStatus" AS ENUM ('PENDING', 'ACTIVE', 'TRIALING', 'EXPIRED', 'CANCELLED');
 
 -- CreateEnum
 CREATE TYPE "UserStatus" AS ENUM ('ACTIVE', 'SUSPENDED', 'DELETED');
 
 -- CreateEnum
-CREATE TYPE "Gender" AS ENUM ('MALE', 'FEMALE', 'OTHER');
-
--- CreateEnum
-CREATE TYPE "Goal" AS ENUM ('WEIGHT_LOSS', 'MUSCLE_GAIN', 'FITNESS');
+CREATE TYPE "Gender" AS ENUM ('MALE', 'FEMALE', 'BOTH', 'OTHER');
 
 -- CreateEnum
 CREATE TYPE "ActivityLevel" AS ENUM ('SEDENTARY', 'LIGHT', 'MODERATE', 'ACTIVE', 'VERY_ACTIVE');
@@ -38,13 +26,16 @@ CREATE TYPE "TrainingLocation" AS ENUM ('HOME', 'GYM', 'BOTH');
 CREATE TYPE "OtpPurpose" AS ENUM ('REGISTER', 'LOGIN', 'RESET_PASSWORD');
 
 -- CreateEnum
+CREATE TYPE "BusinessType" AS ENUM ('LEGAL', 'INDIVIDUAL');
+
+-- CreateEnum
 CREATE TYPE "DefaultStatus" AS ENUM ('PENDING', 'APPROVED', 'REJECTED');
 
 -- CreateEnum
 CREATE TYPE "OrderStatus" AS ENUM ('PENDING', 'CONFIRMED', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED', 'RETURNED');
 
 -- CreateEnum
-CREATE TYPE "StatusDiscount" AS ENUM ('PLATFORM', 'STORE', 'COMMISSION', 'PRODUCT');
+CREATE TYPE "StatusDiscount" AS ENUM ('PLATFORM', 'STORE', 'COMMISSION', 'PRODUCT', 'COACH', 'PLAN');
 
 -- CreateEnum
 CREATE TYPE "PaymentStatus" AS ENUM ('PENDING', 'PAID', 'REFUNDED', 'FAILED');
@@ -62,7 +53,7 @@ CREATE TYPE "ReturnStatus" AS ENUM ('REQUESTED', 'APPROVED', 'REJECTED', 'ITEM_R
 CREATE TYPE "RefundMethod" AS ENUM ('WALLET', 'ORIGINAL_PAYMENT');
 
 -- CreateEnum
-CREATE TYPE "WalletTransactionType" AS ENUM ('DEPOSIT', 'WITHDRAW', 'COMMISSION', 'TAX', 'REFUND', 'PURCHASE', 'SALE_SETTLEMENT', 'RETURN_DEDUCTION', 'COACH_SETTLEMENT', 'SERVICE_PACKAGE');
+CREATE TYPE "WalletTransactionType" AS ENUM ('DEPOSIT', 'WITHDRAW', 'COMMISSION', 'TAX', 'REFUND', 'PURCHASE', 'SALE_SETTLEMENT', 'RETURN_DEDUCTION', 'COACH_SETTLEMENT', 'SERVICE_PACKAGE', 'REFERRAL_BONUS');
 
 -- CreateEnum
 CREATE TYPE "WalletTransactionStatus" AS ENUM ('PENDING', 'COMPLETED', 'FAILED');
@@ -77,16 +68,16 @@ CREATE TYPE "TicketStatus" AS ENUM ('PENDING', 'WAITING', 'RESOLVED', 'CLOSED');
 CREATE TYPE "TicketPriority" AS ENUM ('LOW', 'MEDIUM', 'HIGH', 'URGENT', 'CRITICAL');
 
 -- CreateEnum
-CREATE TYPE "MediaUseCase" AS ENUM ('AVATAR', 'PRODUCT', 'POST', 'ATTACHMENT', 'THUMBNAIL', 'WATERMARK', 'REPORTS', 'MAINS');
+CREATE TYPE "MediaUseCase" AS ENUM ('AVATAR', 'PRODUCT', 'POST', 'ATTACHMENT', 'THUMBNAIL', 'WATERMARK', 'REPORTS', 'MAINS', 'REVIEW');
 
 -- CreateEnum
-CREATE TYPE "TypeMedia" AS ENUM ('VIDEO', 'IMAGE', 'VOICE', 'FILE', 'BANNER', 'AVATAR');
+CREATE TYPE "TypeMedia" AS ENUM ('VIDEO', 'IMAGE', 'VOICE', 'FILE', 'OTHER');
 
 -- CreateEnum
 CREATE TYPE "ReportsStatus" AS ENUM ('PENDING', 'RESOLVED', 'CLOSED');
 
 -- CreateEnum
-CREATE TYPE "AccountStatus" AS ENUM ('PENDING', 'APPROVED', 'REJECTED', 'SUSPENDED');
+CREATE TYPE "AccountStatus" AS ENUM ('PENDING', 'APPROVED', 'REJECTED', 'SUSPENDED', 'DELETED');
 
 -- CreateEnum
 CREATE TYPE "PlanStatus" AS ENUM ('DRAFT', 'ACTIVE', 'COMPLETED', 'CANCELLED');
@@ -103,73 +94,79 @@ CREATE TYPE "PlanSource" AS ENUM ('COACH', 'SITE', 'AI');
 -- CreateEnum
 CREATE TYPE "MealType" AS ENUM ('BREAKFAST', 'LUNCH', 'DINNER', 'SNACK');
 
--- AlterEnum
-BEGIN;
-CREATE TYPE "RolePerson_new" AS ENUM ('USER', 'ADMIN', 'SUPERADMIN', 'AUTHOR', 'COACH', 'STORE');
-ALTER TABLE "public"."users" ALTER COLUMN "role" DROP DEFAULT;
-ALTER TABLE "users" ALTER COLUMN "role" TYPE "RolePerson_new" USING ("role"::text::"RolePerson_new");
-ALTER TYPE "RolePerson" RENAME TO "RolePerson_old";
-ALTER TYPE "RolePerson_new" RENAME TO "RolePerson";
-DROP TYPE "public"."RolePerson_old";
-ALTER TABLE "users" ALTER COLUMN "role" SET DEFAULT 'USER';
-COMMIT;
+-- CreateEnum
+CREATE TYPE "CertificationType" AS ENUM ('ACADEMIC', 'PROFESSIONAL', 'FEDERATION', 'WORKSHOP', 'OTHER');
 
--- DropForeignKey
-ALTER TABLE "tokens" DROP CONSTRAINT "tokens_userId_fkey";
+-- CreateEnum
+CREATE TYPE "ReactionType" AS ENUM ('LIKE', 'DISLIKE');
 
--- DropIndex
-DROP INDEX "tokens_tokenHash_key";
+-- CreateEnum
+CREATE TYPE "AchievementType" AS ENUM ('MEDAL', 'TROPHY', 'TITLE', 'AWARD', 'RECORD', 'OTHER');
 
--- DropIndex
-DROP INDEX "tokens_userId_idx";
+-- CreateEnum
+CREATE TYPE "AchievementScope" AS ENUM ('LOCAL', 'NATIONAL', 'INTERNATIONAL', 'ACADEMIC', 'OTHER');
 
--- DropIndex
-DROP INDEX "users_phone_idx";
+-- CreateEnum
+CREATE TYPE "ServiceOrderType" AS ENUM ('PLAN', 'SUBSCRIPTION');
 
--- AlterTable
-ALTER TABLE "tokens" DROP COLUMN "createdAt",
-DROP COLUMN "ipAddress",
-DROP COLUMN "tokenHash",
-DROP COLUMN "userId",
-ADD COLUMN     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-ADD COLUMN     "ip_address" TEXT,
-ADD COLUMN     "token_hash" TEXT NOT NULL,
-ADD COLUMN     "user_id" UUID NOT NULL;
+-- CreateEnum
+CREATE TYPE "ServiceOrderStatus" AS ENUM ('PENDING_PAYMENT', 'PAID', 'PARTIALLY_REFUNDED', 'REFUNDED', 'CANCELLED', 'FAILED');
 
--- AlterTable
-ALTER TABLE "users" ADD COLUMN     "isEmailVerified" BOOLEAN NOT NULL DEFAULT false,
-ADD COLUMN     "isPhoneVerified" BOOLEAN NOT NULL DEFAULT false,
-ADD COLUMN     "status" "UserStatus" NOT NULL DEFAULT 'ACTIVE',
-ALTER COLUMN "email" DROP NOT NULL;
+-- CreateEnum
+CREATE TYPE "OnBoardingStep" AS ENUM ('PROFILE', 'EQUIPMENT', 'TRAINING_GOAL', 'DONE');
+
+-- CreateEnum
+CREATE TYPE "SubscriptionPlanType" AS ENUM ('USER', 'COACH', 'STORE');
 
 -- CreateTable
-CREATE TABLE "Profile" (
+CREATE TABLE "users" (
+    "id" UUID NOT NULL,
+    "referred_by_id" UUID,
+    "email" TEXT,
+    "name" TEXT NOT NULL,
+    "avatar" TEXT,
+    "password" TEXT,
+    "googleId" TEXT,
+    "phone" TEXT,
+    "role" "RolePerson" NOT NULL DEFAULT 'USER',
+    "status" "UserStatus" NOT NULL DEFAULT 'ACTIVE',
+    "referral_code" TEXT,
+    "is_phone_verified" BOOLEAN NOT NULL DEFAULT false,
+    "is_email_verified" BOOLEAN NOT NULL DEFAULT false,
+    "has_used_trial" BOOLEAN NOT NULL DEFAULT false,
+    "referred_at" TIMESTAMP(3),
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "users_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "profile" (
     "id" TEXT NOT NULL,
     "user_id" UUID NOT NULL,
     "avatar" TEXT,
     "first_name" TEXT,
     "last_name" TEXT,
-    "height_cm" DOUBLE PRECISION,
-    "current_weight_kg" DOUBLE PRECISION,
-    "target_weight_kg" DOUBLE PRECISION,
-    "goal" "Goal",
+    "height_cm" DECIMAL(7,2),
+    "current_weight_kg" DECIMAL(7,2),
+    "target_weight_kg" DECIMAL(7,2),
     "activity_level" "ActivityLevel",
     "experience_level" "ExperienceLevel",
     "gender" "Gender",
     "training_location" "TrainingLocation",
     "age" DATE,
     "training_days_per_week" INTEGER,
-    "available_equipment" TEXT[],
     "injuries" TEXT,
     "medical_conditions" TEXT,
     "allergies" TEXT[],
     "dietary_restrictions" TEXT[],
     "training_goal_id" TEXT,
-    "onboarding_completed" BOOLEAN NOT NULL DEFAULT false,
+    "on_boarding_step" "OnBoardingStep" NOT NULL DEFAULT 'PROFILE',
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
 
-    CONSTRAINT "Profile_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "profile_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -178,8 +175,8 @@ CREATE TABLE "addresses" (
     "title" TEXT,
     "full_name" TEXT NOT NULL,
     "phone" TEXT NOT NULL,
-    "provinceId" TEXT NOT NULL,
-    "cityId" TEXT NOT NULL,
+    "province_id" TEXT NOT NULL,
+    "city_id" TEXT NOT NULL,
     "address" TEXT NOT NULL,
     "postal_code" TEXT,
     "is_default" BOOLEAN NOT NULL DEFAULT false,
@@ -188,6 +185,19 @@ CREATE TABLE "addresses" (
     "user_id" UUID NOT NULL,
 
     CONSTRAINT "addresses_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "tokens" (
+    "id" SERIAL NOT NULL,
+    "token_hash" TEXT NOT NULL,
+    "user_id" UUID NOT NULL,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "device" TEXT,
+    "ip_address" TEXT,
+    "expired_date" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "tokens_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -205,11 +215,40 @@ CREATE TABLE "otp_codes" (
 );
 
 -- CreateTable
-CREATE TABLE "SubscriptionPlan" (
+CREATE TABLE "service_orders" (
+    "id" TEXT NOT NULL,
+    "type" "ServiceOrderType" NOT NULL,
+    "status" "ServiceOrderStatus" NOT NULL DEFAULT 'PENDING_PAYMENT',
+    "user_id" UUID NOT NULL,
+    "coach_id" TEXT,
+    "plan_request_id" TEXT,
+    "subscription_id" TEXT,
+    "original_amount" DECIMAL(18,2) NOT NULL,
+    "discount_amount" DECIMAL(18,2) NOT NULL DEFAULT 0,
+    "tax_amount" DECIMAL(18,2) NOT NULL DEFAULT 0,
+    "commission_amount" DECIMAL(18,2) NOT NULL DEFAULT 0,
+    "referral_amount" DECIMAL(18,2) NOT NULL DEFAULT 0,
+    "payable_amount" DECIMAL(18,2) NOT NULL,
+    "coach_net_amount" DECIMAL(18,2) NOT NULL DEFAULT 0,
+    "commission_discount_amount" DECIMAL(18,2) NOT NULL DEFAULT 0,
+    "discount_code_id" TEXT,
+    "snapshot" JSONB NOT NULL,
+    "paid_at" TIMESTAMP(3),
+    "refunded_at" TIMESTAMP(3),
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "service_orders_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "subscription_plan" (
     "id" TEXT NOT NULL,
     "slug" TEXT NOT NULL,
     "title" TEXT NOT NULL,
     "description" TEXT,
+    "type" "SubscriptionPlanType" NOT NULL DEFAULT 'USER',
+    "cover_img" TEXT,
     "price" DECIMAL(12,2) NOT NULL,
     "original_price" DECIMAL(12,2),
     "duration_days" INTEGER NOT NULL,
@@ -225,11 +264,11 @@ CREATE TABLE "SubscriptionPlan" (
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
 
-    CONSTRAINT "SubscriptionPlan_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "subscription_plan_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
-CREATE TABLE "Subscription" (
+CREATE TABLE "subscription" (
     "id" TEXT NOT NULL,
     "user_id" UUID NOT NULL,
     "plan_id" TEXT NOT NULL,
@@ -237,11 +276,12 @@ CREATE TABLE "Subscription" (
     "pricePaid" DECIMAL(12,2) NOT NULL,
     "starts_at" TIMESTAMP(3),
     "ends_at" TIMESTAMP(3),
+    "trial_ends_at" TIMESTAMP(3),
     "cancelled_at" TIMESTAMP(3),
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
 
-    CONSTRAINT "Subscription_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "subscription_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -258,7 +298,7 @@ CREATE TABLE "equipments" (
     "id" TEXT NOT NULL,
     "slug" TEXT NOT NULL,
     "title" TEXT NOT NULL,
-    "image" TEXT NOT NULL,
+    "image" TEXT,
     "description" TEXT,
 
     CONSTRAINT "equipments_pkey" PRIMARY KEY ("id")
@@ -272,13 +312,15 @@ CREATE TABLE "exercises" (
     "description" TEXT,
     "notic" TEXT[],
     "step_action" TEXT[],
-    "category" TEXT,
+    "category_id" TEXT,
     "level" "ExperienceLevel" NOT NULL DEFAULT 'BEGINNER',
     "duration_min" INTEGER,
     "calories_min" INTEGER,
     "calories_max" INTEGER,
     "gif_url" TEXT,
     "video_url" TEXT,
+    "extra_data" JSONB,
+    "cover_img" TEXT,
     "is_active" BOOLEAN NOT NULL DEFAULT true,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
@@ -290,13 +332,13 @@ CREATE TABLE "exercises" (
 CREATE TABLE "foods" (
     "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
-    "category" TEXT,
-    "calories_per_100g" DOUBLE PRECISION NOT NULL,
-    "protein_per_100g" DOUBLE PRECISION NOT NULL DEFAULT 0,
-    "carbs_per_100g" DOUBLE PRECISION NOT NULL DEFAULT 0,
-    "fat_per_100g" DOUBLE PRECISION NOT NULL DEFAULT 0,
+    "calories_per_100g" DECIMAL(6,2) NOT NULL DEFAULT 0,
+    "protein_per_100g" DECIMAL(6,2) NOT NULL DEFAULT 0,
+    "carbs_per_100g" DECIMAL(6,2) NOT NULL DEFAULT 0,
+    "fat_per_100g" DECIMAL(6,2) NOT NULL DEFAULT 0,
     "is_active" BOOLEAN NOT NULL DEFAULT true,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "foods_pkey" PRIMARY KEY ("id")
 );
@@ -306,6 +348,7 @@ CREATE TABLE "specialties" (
     "id" TEXT NOT NULL,
     "slug" TEXT NOT NULL,
     "title" TEXT NOT NULL,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "specialties_pkey" PRIMARY KEY ("id")
 );
@@ -314,8 +357,9 @@ CREATE TABLE "specialties" (
 CREATE TABLE "training_goal" (
     "id" TEXT NOT NULL,
     "title" TEXT NOT NULL,
-    "logo" TEXT NOT NULL,
-    "description" TEXT NOT NULL,
+    "logo" TEXT,
+    "description" TEXT,
+    "sort_order" INTEGER DEFAULT 0,
 
     CONSTRAINT "training_goal_pkey" PRIMARY KEY ("id")
 );
@@ -324,21 +368,22 @@ CREATE TABLE "training_goal" (
 CREATE TABLE "coaches" (
     "id" TEXT NOT NULL,
     "user_id" UUID NOT NULL,
+    "province_id" TEXT,
+    "national_id" TEXT,
+    "city_id" TEXT,
+    "address_id" TEXT,
+    "title" TEXT NOT NULL,
+    "slug" TEXT NOT NULL,
     "headline" TEXT,
     "bio" TEXT,
-    "experience_years" INTEGER NOT NULL DEFAULT 0,
-    "national_id" TEXT,
     "instagram" TEXT,
-    "address" TEXT,
     "commission_rate" DECIMAL(12,2) NOT NULL DEFAULT 0,
-    "province_id" TEXT,
-    "city_id" TEXT,
+    "tax_rate" DECIMAL(5,2) NOT NULL DEFAULT 0,
     "max_clients" INTEGER NOT NULL DEFAULT 20,
     "is_accepting_clients" BOOLEAN NOT NULL DEFAULT true,
     "status" "AccountStatus" NOT NULL DEFAULT 'PENDING',
     "rejection_reason" TEXT,
-    "rating_avg" DOUBLE PRECISION NOT NULL DEFAULT 0,
-    "rating_count" INTEGER NOT NULL DEFAULT 0,
+    "experience_years" DATE,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
 
@@ -346,17 +391,59 @@ CREATE TABLE "coaches" (
 );
 
 -- CreateTable
-CREATE TABLE "certifications" (
+CREATE TABLE "coach_ratings" (
+    "id" TEXT NOT NULL,
+    "coach_id" TEXT NOT NULL,
+    "avg_coach_rating" DECIMAL(3,2) NOT NULL DEFAULT 0,
+    "coach_rating_total" DECIMAL(18,2) NOT NULL DEFAULT 0,
+    "total_reviews" INTEGER NOT NULL DEFAULT 0,
+    "avg_plan_rating" DECIMAL(3,2) NOT NULL DEFAULT 0,
+    "plan_rating_total" DECIMAL(18,2) NOT NULL DEFAULT 0,
+    "avg_diet_rating" DECIMAL(3,2) NOT NULL DEFAULT 0,
+    "diet_rating_total" DECIMAL(18,2) NOT NULL DEFAULT 0,
+    "completed_clients" INTEGER NOT NULL DEFAULT 0,
+    "active_clients" INTEGER NOT NULL DEFAULT 0,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "coach_ratings_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "coach_achievements" (
     "id" TEXT NOT NULL,
     "coach_id" TEXT NOT NULL,
     "title" TEXT NOT NULL,
+    "type" "AchievementType" NOT NULL DEFAULT 'MEDAL',
+    "scope" "AchievementScope" NOT NULL DEFAULT 'NATIONAL',
     "issuer" TEXT,
-    "issued_at" DATE,
-    "expires_at" DATE,
+    "place" INTEGER,
+    "event_name" TEXT,
+    "description" TEXT,
     "document_url" TEXT,
     "is_verified" BOOLEAN NOT NULL DEFAULT false,
-    "verified_at" TIMESTAMP(3),
+    "year" TIMESTAMP(3) NOT NULL,
+    "sort_order" INTEGER NOT NULL DEFAULT 0,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "coach_achievements_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "certifications" (
+    "id" TEXT NOT NULL,
+    "coach_id" TEXT NOT NULL,
+    "type" "CertificationType" NOT NULL,
+    "title" TEXT NOT NULL,
+    "field" TEXT,
+    "level" TEXT,
+    "issuer" TEXT,
+    "document_url" TEXT,
+    "is_primary" BOOLEAN NOT NULL DEFAULT false,
+    "is_verified" BOOLEAN NOT NULL DEFAULT false,
+    "expires_at" DATE,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "certifications_pkey" PRIMARY KEY ("id")
 );
@@ -368,50 +455,42 @@ CREATE TABLE "coach_availabilities" (
     "weekday" INTEGER NOT NULL,
     "start_time" TEXT NOT NULL,
     "end_time" TEXT NOT NULL,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "coach_availabilities_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
-CREATE TABLE "plan_requests" (
+CREATE TABLE "user_logs" (
     "id" TEXT NOT NULL,
     "user_id" UUID NOT NULL,
-    "coach_id" TEXT NOT NULL,
-    "workout_template_id" TEXT,
-    "diet_template_id" TEXT,
-    "note" TEXT,
-    "price" DECIMAL(18,2),
-    "original_price" DECIMAL(18,2),
-    "status" "PlanRequestStatus" NOT NULL DEFAULT 'PENDING',
-    "rejection_reason" TEXT,
-    "responded_at" TIMESTAMP(3),
-    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-    CONSTRAINT "plan_requests_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "UserLog" (
-    "id" TEXT NOT NULL,
-    "Weight" DECIMAL(18,2) DEFAULT 0,
-    "all_exercises" INTEGER,
-    "done_exercises" INTEGER,
-    "all_diet" INTEGER,
-    "done_diet" INTEGER,
-    "calories_consumed" DECIMAL(18,2) DEFAULT 0,
-    "Calories_absorbed" DECIMAL(18,2) DEFAULT 0,
-    "note" TEXT,
-    "note_coach" TEXT,
-    "uncompleted_exercises" JSONB,
-    "uncompleted_diet" JSONB,
-    "extra_diet" JSONB,
-    "extra_exercises" JSONB,
-    "user_plan_id" TEXT NOT NULL,
-    "user_id" UUID NOT NULL,
+    "user_plan_id" TEXT,
+    "date" DATE NOT NULL,
+    "weight_kg" DECIMAL(5,2),
+    "jalali_year" INTEGER NOT NULL,
+    "jalali_month" INTEGER NOT NULL,
+    "un_completed_exercise_ids" TEXT[] DEFAULT ARRAY[]::TEXT[],
+    "planned_exercises" INTEGER NOT NULL DEFAULT 0,
+    "done_exercises" INTEGER NOT NULL DEFAULT 0,
+    "extra_exercises" JSONB NOT NULL DEFAULT '[]',
+    "calories_burned" INTEGER,
+    "un_completed_meal_ids" TEXT[] DEFAULT ARRAY[]::TEXT[],
+    "planned_meals" INTEGER NOT NULL DEFAULT 0,
+    "done_meals" INTEGER NOT NULL DEFAULT 0,
+    "extra_meals" JSONB NOT NULL DEFAULT '[]',
+    "calories_planned" INTEGER,
+    "calories_consumed" INTEGER,
+    "protein_g" INTEGER,
+    "carbs_g" INTEGER,
+    "fat_g" INTEGER,
+    "user_note" TEXT,
+    "coach_note" TEXT,
+    "startimetAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "endtimeAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
 
-    CONSTRAINT "UserLog_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "user_logs_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -426,41 +505,65 @@ CREATE TABLE "user_plans" (
     "request_id" TEXT,
     "diet_plan_id" TEXT,
     "coach_id" TEXT,
-    "snapshot_version" INTEGER,
     "snapshot_exercise" JSONB,
     "snapshot_diet" JSONB,
     "start_date" DATE,
     "end_date" DATE,
     "activated_at" TIMESTAMP(3),
-    "customized_at" TIMESTAMP(3) NOT NULL,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
+    "workout_weeks" INTEGER,
+    "diet_weeks" INTEGER,
+    "diet_start_date" DATE,
 
     CONSTRAINT "user_plans_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
+CREATE TABLE "plan_requests" (
+    "id" TEXT NOT NULL,
+    "user_id" UUID NOT NULL,
+    "coach_id" TEXT NOT NULL,
+    "workout_template_id" TEXT,
+    "diet_template_id" TEXT,
+    "images" TEXT[],
+    "note" TEXT,
+    "discount_amount" DECIMAL(18,2),
+    "price" DECIMAL(18,2),
+    "original_price" DECIMAL(18,2),
+    "status" "PlanRequestStatus" NOT NULL DEFAULT 'PENDING',
+    "rejection_reason" TEXT,
+    "responded_at" TIMESTAMP(3),
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "plan_requests_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "workout_plans" (
     "id" TEXT NOT NULL,
+    "coach_id" TEXT,
+    "diet_plan_id" TEXT,
+    "cover_image" TEXT[],
     "title" TEXT NOT NULL,
     "description" TEXT,
     "price" DECIMAL(18,2) NOT NULL DEFAULT 0,
     "discount_price" DECIMAL(18,2),
-    "diet_plan_id" TEXT,
-    "goal" "Goal",
+    "is_published" BOOLEAN NOT NULL DEFAULT false,
+    "min_age" INTEGER,
+    "max_age" INTEGER,
+    "note" TEXT,
+    "count_rating" INTEGER NOT NULL DEFAULT 0,
+    "total_rating" INTEGER NOT NULL DEFAULT 0,
+    "avg_rating" DECIMAL(3,2) NOT NULL DEFAULT 0,
+    "duration_weeks" INTEGER,
+    "source" "PlanSource" NOT NULL DEFAULT 'COACH',
+    "training_goal_id" TEXT,
     "activity_level" "ActivityLevel",
     "level" "ExperienceLevel",
     "gender" "Gender",
     "training_location" "TrainingLocation",
     "days_per_week" INTEGER,
-    "required_equipment" TEXT[],
-    "is_published" BOOLEAN NOT NULL DEFAULT false,
-    "min_age" INTEGER,
-    "max_age" INTEGER,
-    "note" TEXT,
-    "duration_weeks" INTEGER,
-    "source" "PlanSource" NOT NULL DEFAULT 'COACH',
-    "coach_id" TEXT,
     "discount_expired" TIMESTAMP(3),
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
@@ -469,9 +572,22 @@ CREATE TABLE "workout_plans" (
 );
 
 -- CreateTable
+CREATE TABLE "workout_phases" (
+    "id" TEXT NOT NULL,
+    "plan_id" TEXT NOT NULL,
+    "title" TEXT NOT NULL,
+    "start_week" INTEGER NOT NULL,
+    "end_week" INTEGER NOT NULL,
+    "order" INTEGER NOT NULL,
+
+    CONSTRAINT "workout_phases_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "workout_days" (
     "id" TEXT NOT NULL,
     "plan_id" TEXT NOT NULL,
+    "workout_phase_id" TEXT,
     "day_index" INTEGER NOT NULL,
     "title" TEXT,
     "is_rest_day" BOOLEAN NOT NULL DEFAULT false,
@@ -498,19 +614,23 @@ CREATE TABLE "workout_day_exercises" (
 -- CreateTable
 CREATE TABLE "diet_plans" (
     "id" TEXT NOT NULL,
+    "coach_id" TEXT,
+    "cover_image" TEXT[],
     "title" TEXT NOT NULL,
     "description" TEXT,
     "price" DECIMAL(18,2) NOT NULL DEFAULT 0,
     "discount_price" DECIMAL(18,2),
-    "goal" "Goal",
+    "count_rating" INTEGER NOT NULL DEFAULT 0,
+    "total_rating" INTEGER NOT NULL DEFAULT 0,
+    "avg_rating" DECIMAL(3,2) NOT NULL DEFAULT 0,
+    "is_published" BOOLEAN NOT NULL DEFAULT false,
+    "source" "PlanSource" NOT NULL DEFAULT 'COACH',
+    "training_goal_id" TEXT,
     "target_calories" INTEGER,
     "target_protein_g" INTEGER,
     "target_carbs_g" INTEGER,
     "target_fat_g" INTEGER,
     "duration_weeks" INTEGER,
-    "is_published" BOOLEAN NOT NULL DEFAULT false,
-    "source" "PlanSource" NOT NULL DEFAULT 'COACH',
-    "coach_id" TEXT,
     "discount_expired" TIMESTAMP(3),
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
@@ -519,10 +639,27 @@ CREATE TABLE "diet_plans" (
 );
 
 -- CreateTable
+CREATE TABLE "diet_phases" (
+    "id" TEXT NOT NULL,
+    "plan_id" TEXT NOT NULL,
+    "title" TEXT NOT NULL,
+    "start_week" INTEGER NOT NULL,
+    "end_week" INTEGER NOT NULL,
+    "order" INTEGER NOT NULL,
+    "target_calories" INTEGER,
+    "target_protein_g" INTEGER,
+    "target_carbs_g" INTEGER,
+    "target_fat_g" INTEGER,
+
+    CONSTRAINT "diet_phases_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "diet_days" (
     "id" TEXT NOT NULL,
     "plan_id" TEXT NOT NULL,
-    "day_index" INTEGER NOT NULL,
+    "diet_phase_id" TEXT NOT NULL,
+    "weekday" INTEGER NOT NULL,
     "title" TEXT,
     "notes" TEXT,
 
@@ -546,7 +683,7 @@ CREATE TABLE "diet_meal_items" (
     "id" TEXT NOT NULL,
     "meal_id" TEXT NOT NULL,
     "food_id" TEXT NOT NULL,
-    "quantity_grams" DOUBLE PRECISION NOT NULL,
+    "quantity_grams" DECIMAL(6,2) NOT NULL,
     "notes" TEXT,
 
     CONSTRAINT "diet_meal_items_pkey" PRIMARY KEY ("id")
@@ -561,11 +698,11 @@ CREATE TABLE "stores" (
     "logo" TEXT,
     "banner" TEXT,
     "description" TEXT,
-    "business_type" TEXT,
+    "business_type" "BusinessType" NOT NULL DEFAULT 'INDIVIDUAL',
     "national_id" TEXT,
     "economic_code" TEXT,
     "commission_rate" DECIMAL(12,2) NOT NULL DEFAULT 0,
-    "status" "DefaultStatus" NOT NULL DEFAULT 'PENDING',
+    "status" "AccountStatus" NOT NULL DEFAULT 'PENDING',
     "status_reason" TEXT,
     "is_active" BOOLEAN NOT NULL DEFAULT false,
     "is_verified" BOOLEAN NOT NULL DEFAULT false,
@@ -623,7 +760,7 @@ CREATE TABLE "products" (
     "original_price" DECIMAL(12,2),
     "min_Price" DECIMAL(12,2),
     "discount_percent" TEXT,
-    "status" "DefaultStatus" NOT NULL DEFAULT 'PENDING',
+    "status" "StatusProduct" NOT NULL DEFAULT 'DRAFT',
     "is_featured" BOOLEAN NOT NULL DEFAULT false,
     "view_count" INTEGER NOT NULL DEFAULT 0,
     "sale_count" INTEGER NOT NULL DEFAULT 0,
@@ -635,7 +772,7 @@ CREATE TABLE "products" (
     "country_id" TEXT,
     "category_id" TEXT NOT NULL,
     "brand_id" TEXT,
-    "store_id" TEXT,
+    "store_id" TEXT NOT NULL,
 
     CONSTRAINT "products_pkey" PRIMARY KEY ("id")
 );
@@ -720,17 +857,36 @@ CREATE TABLE "store_reviews" (
 -- CreateTable
 CREATE TABLE "coach_reviews" (
     "id" TEXT NOT NULL,
-    "planRequestId" TEXT NOT NULL,
+    "coach_id" TEXT NOT NULL,
+    "author_id" UUID NOT NULL,
+    "user_plan_id" TEXT,
+    "images" TEXT[],
+    "coach_rating" INTEGER NOT NULL,
+    "plan_rating" INTEGER NOT NULL,
+    "diet_rating" INTEGER NOT NULL,
+    "body" TEXT,
+    "is_anonymous" BOOLEAN NOT NULL DEFAULT false,
+    "verified" BOOLEAN NOT NULL DEFAULT false,
     "status" "DefaultStatus" NOT NULL DEFAULT 'PENDING',
-    "coachId" TEXT NOT NULL,
-    "authorId" UUID NOT NULL,
-    "comment" TEXT,
-    "rating" INTEGER NOT NULL,
     "answer_review" TEXT,
+    "answered_at" TIMESTAMP(3),
+    "like_count" INTEGER NOT NULL DEFAULT 0,
+    "dislike_count" INTEGER NOT NULL DEFAULT 0,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "coach_reviews_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "reactions" (
+    "id" TEXT NOT NULL,
+    "user_id" UUID NOT NULL,
+    "review_id" TEXT NOT NULL,
+    "type" "ReactionType" NOT NULL,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "reactions_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -741,7 +897,6 @@ CREATE TABLE "orders" (
     "shipping_cost" DECIMAL(12,2) NOT NULL DEFAULT 0,
     "shipping_name" TEXT,
     "store_name" TEXT NOT NULL,
-    "store_name_en" TEXT NOT NULL,
     "commission" DECIMAL(12,2) NOT NULL,
     "commission_amount" DECIMAL(12,2) NOT NULL DEFAULT 0,
     "subtotal" DECIMAL(13,2) NOT NULL,
@@ -837,6 +992,7 @@ CREATE TABLE "payments" (
     "gateway_ref" TEXT,
     "authority" TEXT,
     "error_message" TEXT,
+    "service_order_id" TEXT,
     "checkout_id" TEXT,
     "plan_request_id" TEXT,
     "subscription_id" TEXT,
@@ -883,17 +1039,19 @@ CREATE TABLE "return_items" (
 -- CreateTable
 CREATE TABLE "media" (
     "id" TEXT NOT NULL,
-    "url" TEXT NOT NULL,
-    "alt" TEXT,
-    "use_case" "MediaUseCase" NOT NULL DEFAULT 'PRODUCT',
-    "sort_order" INTEGER NOT NULL DEFAULT 0,
-    "type" "TypeMedia" NOT NULL,
-    "is_main" BOOLEAN NOT NULL DEFAULT false,
-    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "product_id" TEXT,
     "reportsId" TEXT,
     "ticketMessageId" TEXT,
     "returnRequestId" TEXT,
+    "coach_id" TEXT,
+    "size" INTEGER DEFAULT 0,
+    "url" TEXT NOT NULL,
+    "alt" TEXT,
+    "use_case" "MediaUseCase" NOT NULL DEFAULT 'PRODUCT',
+    "sort_order" INTEGER NOT NULL DEFAULT 0,
+    "type" "TypeMedia" NOT NULL DEFAULT 'OTHER',
+    "is_main" BOOLEAN NOT NULL DEFAULT false,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "media_pkey" PRIMARY KEY ("id")
 );
@@ -964,7 +1122,7 @@ CREATE TABLE "wishlist_items" (
 -- CreateTable
 CREATE TABLE "wallets" (
     "id" TEXT NOT NULL,
-    "user_id" UUID NOT NULL,
+    "user_id" UUID,
     "balance" DECIMAL(18,2) NOT NULL DEFAULT 0,
     "pending_balance" DECIMAL(18,2) NOT NULL DEFAULT 0,
     "withdraw_balance" DECIMAL(18,2) NOT NULL DEFAULT 0,
@@ -988,6 +1146,7 @@ CREATE TABLE "wallet_transactions" (
     "user_id" UUID NOT NULL,
     "wallet_id" TEXT NOT NULL,
     "order_id" TEXT,
+    "service_order_id" TEXT,
     "return_request_id" TEXT,
     "settlement_date" TIMESTAMP(3),
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -1037,6 +1196,14 @@ CREATE TABLE "discount_codes" (
 );
 
 -- CreateTable
+CREATE TABLE "discount_code_coaches" (
+    "discount_code_id" TEXT NOT NULL,
+    "coach_id" TEXT NOT NULL,
+
+    CONSTRAINT "discount_code_coaches_pkey" PRIMARY KEY ("discount_code_id","coach_id")
+);
+
+-- CreateTable
 CREATE TABLE "discount_code_stores" (
     "discountCodeId" TEXT NOT NULL,
     "storeId" TEXT NOT NULL,
@@ -1059,7 +1226,6 @@ CREATE TABLE "discount_code_usages" (
 CREATE TABLE "provinces" (
     "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
-    "name_en" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -1070,7 +1236,6 @@ CREATE TABLE "provinces" (
 CREATE TABLE "cities" (
     "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
-    "name_en" TEXT,
     "provinceId" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
@@ -1125,7 +1290,6 @@ CREATE TABLE "reports" (
 CREATE TABLE "shipping_methods" (
     "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
-    "name_en" TEXT,
     "is_free_method" BOOLEAN NOT NULL DEFAULT false,
     "is_active" BOOLEAN NOT NULL DEFAULT true,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -1139,7 +1303,6 @@ CREATE TABLE "store_shipping_methods" (
     "id" TEXT NOT NULL,
     "is_active" BOOLEAN NOT NULL DEFAULT true,
     "description" TEXT,
-    "description_en" TEXT,
     "phrase" TEXT,
     "min_days" INTEGER NOT NULL,
     "max_days" INTEGER NOT NULL,
@@ -1166,11 +1329,27 @@ CREATE TABLE "store_shipping_rates" (
 );
 
 -- CreateTable
+CREATE TABLE "_WorkoutPlanEquipment" (
+    "A" TEXT NOT NULL,
+    "B" TEXT NOT NULL,
+
+    CONSTRAINT "_WorkoutPlanEquipment_AB_pkey" PRIMARY KEY ("A","B")
+);
+
+-- CreateTable
 CREATE TABLE "_EquipmentToExercise" (
     "A" TEXT NOT NULL,
     "B" TEXT NOT NULL,
 
     CONSTRAINT "_EquipmentToExercise_AB_pkey" PRIMARY KEY ("A","B")
+);
+
+-- CreateTable
+CREATE TABLE "_EquipmentToProfile" (
+    "A" TEXT NOT NULL,
+    "B" TEXT NOT NULL,
+
+    CONSTRAINT "_EquipmentToProfile_AB_pkey" PRIMARY KEY ("A","B")
 );
 
 -- CreateTable
@@ -1198,25 +1377,73 @@ CREATE TABLE "_AttributeDefinitionToCategory" (
 );
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Profile_user_id_key" ON "Profile"("user_id");
+CREATE UNIQUE INDEX "users_email_key" ON "users"("email");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "users_googleId_key" ON "users"("googleId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "users_phone_key" ON "users"("phone");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "users_referral_code_key" ON "users"("referral_code");
+
+-- CreateIndex
+CREATE INDEX "users_name_idx" ON "users"("name");
+
+-- CreateIndex
+CREATE INDEX "users_role_idx" ON "users"("role");
+
+-- CreateIndex
+CREATE INDEX "users_referral_code_idx" ON "users"("referral_code");
+
+-- CreateIndex
+CREATE INDEX "users_referred_by_id_idx" ON "users"("referred_by_id");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "profile_user_id_key" ON "profile"("user_id");
 
 -- CreateIndex
 CREATE INDEX "addresses_user_id_idx" ON "addresses"("user_id");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "tokens_token_hash_key" ON "tokens"("token_hash");
+
+-- CreateIndex
+CREATE INDEX "tokens_user_id_idx" ON "tokens"("user_id");
+
+-- CreateIndex
 CREATE INDEX "otp_codes_target_purpose_idx" ON "otp_codes"("target", "purpose");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "SubscriptionPlan_slug_key" ON "SubscriptionPlan"("slug");
+CREATE UNIQUE INDEX "service_orders_plan_request_id_key" ON "service_orders"("plan_request_id");
 
 -- CreateIndex
-CREATE INDEX "SubscriptionPlan_is_active_sort_order_idx" ON "SubscriptionPlan"("is_active", "sort_order");
+CREATE UNIQUE INDEX "service_orders_subscription_id_key" ON "service_orders"("subscription_id");
 
 -- CreateIndex
-CREATE INDEX "Subscription_user_id_status_idx" ON "Subscription"("user_id", "status");
+CREATE INDEX "service_orders_user_id_status_idx" ON "service_orders"("user_id", "status");
 
 -- CreateIndex
-CREATE INDEX "Subscription_status_ends_at_idx" ON "Subscription"("status", "ends_at");
+CREATE INDEX "service_orders_coach_id_status_idx" ON "service_orders"("coach_id", "status");
+
+-- CreateIndex
+CREATE INDEX "service_orders_type_status_idx" ON "service_orders"("type", "status");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "subscription_plan_slug_key" ON "subscription_plan"("slug");
+
+-- CreateIndex
+CREATE INDEX "subscription_plan_is_active_sort_order_idx" ON "subscription_plan"("is_active", "sort_order");
+
+-- CreateIndex
+CREATE INDEX "subscription_user_id_status_idx" ON "subscription"("user_id", "status");
+
+-- CreateIndex
+CREATE INDEX "subscription_status_ends_at_idx" ON "subscription"("status", "ends_at");
+
+-- CreateIndex
+CREATE INDEX "subscription_status_trial_ends_at_idx" ON "subscription"("status", "trial_ends_at");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "muscle_groups_slug_key" ON "muscle_groups"("slug");
@@ -1228,7 +1455,10 @@ CREATE UNIQUE INDEX "equipments_slug_key" ON "equipments"("slug");
 CREATE UNIQUE INDEX "exercises_slug_key" ON "exercises"("slug");
 
 -- CreateIndex
-CREATE INDEX "exercises_category_level_idx" ON "exercises"("category", "level");
+CREATE INDEX "exercises_category_id_level_idx" ON "exercises"("category_id", "level");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "foods_name_key" ON "foods"("name");
 
 -- CreateIndex
 CREATE INDEX "foods_name_idx" ON "foods"("name");
@@ -1240,22 +1470,64 @@ CREATE UNIQUE INDEX "specialties_slug_key" ON "specialties"("slug");
 CREATE UNIQUE INDEX "coaches_user_id_key" ON "coaches"("user_id");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "coaches_title_key" ON "coaches"("title");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "coaches_slug_key" ON "coaches"("slug");
+
+-- CreateIndex
+CREATE INDEX "coaches_status_is_accepting_clients_idx" ON "coaches"("status", "is_accepting_clients");
+
+-- CreateIndex
+CREATE INDEX "coaches_status_province_id_city_id_idx" ON "coaches"("status", "province_id", "city_id");
+
+-- CreateIndex
+CREATE INDEX "coaches_title_headline_idx" ON "coaches"("title", "headline");
+
+-- CreateIndex
 CREATE INDEX "coaches_status_idx" ON "coaches"("status");
 
 -- CreateIndex
-CREATE INDEX "coaches_rating_avg_idx" ON "coaches"("rating_avg");
+CREATE UNIQUE INDEX "coach_ratings_coach_id_key" ON "coach_ratings"("coach_id");
+
+-- CreateIndex
+CREATE INDEX "coach_ratings_avg_coach_rating_idx" ON "coach_ratings"("avg_coach_rating");
+
+-- CreateIndex
+CREATE INDEX "coach_ratings_avg_plan_rating_idx" ON "coach_ratings"("avg_plan_rating");
+
+-- CreateIndex
+CREATE INDEX "coach_ratings_total_reviews_idx" ON "coach_ratings"("total_reviews");
+
+-- CreateIndex
+CREATE INDEX "coach_achievements_coach_id_idx" ON "coach_achievements"("coach_id");
+
+-- CreateIndex
+CREATE INDEX "coach_achievements_coach_id_is_verified_idx" ON "coach_achievements"("coach_id", "is_verified");
+
+-- CreateIndex
+CREATE INDEX "coach_achievements_year_idx" ON "coach_achievements"("year");
 
 -- CreateIndex
 CREATE INDEX "certifications_coach_id_idx" ON "certifications"("coach_id");
 
 -- CreateIndex
+CREATE INDEX "certifications_coach_id_type_idx" ON "certifications"("coach_id", "type");
+
+-- CreateIndex
 CREATE INDEX "coach_availabilities_coach_id_weekday_idx" ON "coach_availabilities"("coach_id", "weekday");
 
 -- CreateIndex
-CREATE INDEX "plan_requests_coach_id_status_idx" ON "plan_requests"("coach_id", "status");
+CREATE UNIQUE INDEX "coach_availabilities_coach_id_weekday_key" ON "coach_availabilities"("coach_id", "weekday");
 
 -- CreateIndex
-CREATE INDEX "plan_requests_user_id_status_idx" ON "plan_requests"("user_id", "status");
+CREATE INDEX "user_logs_user_id_jalali_year_jalali_month_idx" ON "user_logs"("user_id", "jalali_year", "jalali_month");
+
+-- CreateIndex
+CREATE INDEX "user_logs_user_plan_id_idx" ON "user_logs"("user_plan_id");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "user_logs_user_id_date_key" ON "user_logs"("user_id", "date");
 
 -- CreateIndex
 CREATE INDEX "user_plans_user_id_status_idx" ON "user_plans"("user_id", "status");
@@ -1264,16 +1536,55 @@ CREATE INDEX "user_plans_user_id_status_idx" ON "user_plans"("user_id", "status"
 CREATE INDEX "user_plans_request_id_idx" ON "user_plans"("request_id");
 
 -- CreateIndex
+CREATE INDEX "user_plans_coach_id_status_created_at_idx" ON "user_plans"("coach_id", "status", "created_at");
+
+-- CreateIndex
+CREATE INDEX "user_plans_user_id_created_at_idx" ON "user_plans"("user_id", "created_at");
+
+-- CreateIndex
+CREATE INDEX "plan_requests_coach_id_status_idx" ON "plan_requests"("coach_id", "status");
+
+-- CreateIndex
+CREATE INDEX "plan_requests_user_id_status_idx" ON "plan_requests"("user_id", "status");
+
+-- CreateIndex
 CREATE INDEX "workout_plans_coach_id_idx" ON "workout_plans"("coach_id");
 
 -- CreateIndex
-CREATE INDEX "workout_plans_is_published_idx" ON "workout_plans"("is_published");
+CREATE INDEX "workout_plans_avg_rating_idx" ON "workout_plans"("avg_rating");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "workout_days_plan_id_day_index_key" ON "workout_days"("plan_id", "day_index");
+CREATE INDEX "workout_plans_is_published_avg_rating_idx" ON "workout_plans"("is_published", "avg_rating");
 
 -- CreateIndex
-CREATE INDEX "workout_day_exercises_day_id_order_idx" ON "workout_day_exercises"("day_id", "order");
+CREATE INDEX "workout_plans_training_goal_id_idx" ON "workout_plans"("training_goal_id");
+
+-- CreateIndex
+CREATE INDEX "workout_plans_source_is_published_idx" ON "workout_plans"("source", "is_published");
+
+-- CreateIndex
+CREATE INDEX "workout_phases_plan_id_order_idx" ON "workout_phases"("plan_id", "order");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "workout_phases_plan_id_start_week_key" ON "workout_phases"("plan_id", "start_week");
+
+-- CreateIndex
+CREATE INDEX "workout_days_plan_id_idx" ON "workout_days"("plan_id");
+
+-- CreateIndex
+CREATE INDEX "workout_days_workout_phase_id_idx" ON "workout_days"("workout_phase_id");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "workout_days_workout_phase_id_day_index_key" ON "workout_days"("workout_phase_id", "day_index");
+
+-- CreateIndex
+CREATE INDEX "workout_day_exercises_day_id_idx" ON "workout_day_exercises"("day_id");
+
+-- CreateIndex
+CREATE INDEX "workout_day_exercises_exercise_id_idx" ON "workout_day_exercises"("exercise_id");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "workout_day_exercises_day_id_order_key" ON "workout_day_exercises"("day_id", "order");
 
 -- CreateIndex
 CREATE INDEX "diet_plans_coach_id_idx" ON "diet_plans"("coach_id");
@@ -1282,13 +1593,34 @@ CREATE INDEX "diet_plans_coach_id_idx" ON "diet_plans"("coach_id");
 CREATE INDEX "diet_plans_is_published_idx" ON "diet_plans"("is_published");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "diet_days_plan_id_day_index_key" ON "diet_days"("plan_id", "day_index");
+CREATE INDEX "diet_plans_is_published_avg_rating_idx" ON "diet_plans"("is_published", "avg_rating");
+
+-- CreateIndex
+CREATE INDEX "diet_plans_source_is_published_idx" ON "diet_plans"("source", "is_published");
+
+-- CreateIndex
+CREATE INDEX "diet_phases_plan_id_order_idx" ON "diet_phases"("plan_id", "order");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "diet_phases_plan_id_start_week_key" ON "diet_phases"("plan_id", "start_week");
+
+-- CreateIndex
+CREATE INDEX "diet_days_plan_id_idx" ON "diet_days"("plan_id");
+
+-- CreateIndex
+CREATE INDEX "diet_days_diet_phase_id_idx" ON "diet_days"("diet_phase_id");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "diet_days_diet_phase_id_weekday_key" ON "diet_days"("diet_phase_id", "weekday");
 
 -- CreateIndex
 CREATE INDEX "diet_meals_day_id_order_idx" ON "diet_meals"("day_id", "order");
 
 -- CreateIndex
 CREATE INDEX "diet_meal_items_meal_id_idx" ON "diet_meal_items"("meal_id");
+
+-- CreateIndex
+CREATE INDEX "diet_meal_items_food_id_idx" ON "diet_meal_items"("food_id");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "stores_owner_id_key" ON "stores"("owner_id");
@@ -1396,10 +1728,22 @@ CREATE INDEX "store_reviews_status_idx" ON "store_reviews"("status");
 CREATE UNIQUE INDEX "store_reviews_user_id_store_id_key" ON "store_reviews"("user_id", "store_id");
 
 -- CreateIndex
-CREATE INDEX "coach_reviews_coachId_idx" ON "coach_reviews"("coachId");
+CREATE INDEX "coach_reviews_coach_id_status_idx" ON "coach_reviews"("coach_id", "status");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "coach_reviews_coachId_authorId_key" ON "coach_reviews"("coachId", "authorId");
+CREATE INDEX "coach_reviews_author_id_idx" ON "coach_reviews"("author_id");
+
+-- CreateIndex
+CREATE INDEX "coach_reviews_created_at_idx" ON "coach_reviews"("created_at");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "coach_reviews_coach_id_author_id_key" ON "coach_reviews"("coach_id", "author_id");
+
+-- CreateIndex
+CREATE INDEX "reactions_review_id_type_idx" ON "reactions"("review_id", "type");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "reactions_user_id_review_id_key" ON "reactions"("user_id", "review_id");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "orders_order_number_key" ON "orders"("order_number");
@@ -1435,6 +1779,12 @@ CREATE UNIQUE INDEX "checkouts_checkout_number_key" ON "checkouts"("checkout_num
 CREATE INDEX "checkouts_user_id_idx" ON "checkouts"("user_id");
 
 -- CreateIndex
+CREATE INDEX "checkouts_payment_status_status_created_at_idx" ON "checkouts"("payment_status", "status", "created_at");
+
+-- CreateIndex
+CREATE INDEX "payments_service_order_id_idx" ON "payments"("service_order_id");
+
+-- CreateIndex
 CREATE INDEX "payments_plan_request_id_idx" ON "payments"("plan_request_id");
 
 -- CreateIndex
@@ -1442,6 +1792,9 @@ CREATE INDEX "payments_subscription_id_idx" ON "payments"("subscription_id");
 
 -- CreateIndex
 CREATE INDEX "payments_checkout_id_idx" ON "payments"("checkout_id");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "payments_method_gateway_ref_key" ON "payments"("method", "gateway_ref");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "return_requests_request_number_key" ON "return_requests"("request_number");
@@ -1495,6 +1848,9 @@ CREATE UNIQUE INDEX "wishlist_items_user_id_product_id_key" ON "wishlist_items"(
 CREATE UNIQUE INDEX "wallets_user_id_key" ON "wallets"("user_id");
 
 -- CreateIndex
+CREATE INDEX "wallets_is_platform_idx" ON "wallets"("is_platform");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "wallet_transactions_tracking_code_key" ON "wallet_transactions"("tracking_code");
 
 -- CreateIndex
@@ -1511,6 +1867,12 @@ CREATE INDEX "wallet_transactions_order_id_idx" ON "wallet_transactions"("order_
 
 -- CreateIndex
 CREATE INDEX "wallet_transactions_user_id_created_at_idx" ON "wallet_transactions"("user_id", "created_at");
+
+-- CreateIndex
+CREATE INDEX "wallet_transactions_type_status_settlement_date_idx" ON "wallet_transactions"("type", "status", "settlement_date");
+
+-- CreateIndex
+CREATE INDEX "wallet_transactions_service_order_id_idx" ON "wallet_transactions"("service_order_id");
 
 -- CreateIndex
 CREATE INDEX "bank_accounts_user_id_idx" ON "bank_accounts"("user_id");
@@ -1564,6 +1926,9 @@ CREATE INDEX "ticket_messages_createdAt_idx" ON "ticket_messages"("createdAt");
 CREATE INDEX "reports_status_idx" ON "reports"("status");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "shipping_methods_name_key" ON "shipping_methods"("name");
+
+-- CreateIndex
 CREATE INDEX "shipping_methods_is_active_idx" ON "shipping_methods"("is_active");
 
 -- CreateIndex
@@ -1582,7 +1947,13 @@ CREATE INDEX "store_shipping_rates_provinceId_idx" ON "store_shipping_rates"("pr
 CREATE UNIQUE INDEX "store_shipping_rates_storeShippingMethodId_provinceId_key" ON "store_shipping_rates"("storeShippingMethodId", "provinceId");
 
 -- CreateIndex
+CREATE INDEX "_WorkoutPlanEquipment_B_index" ON "_WorkoutPlanEquipment"("B");
+
+-- CreateIndex
 CREATE INDEX "_EquipmentToExercise_B_index" ON "_EquipmentToExercise"("B");
+
+-- CreateIndex
+CREATE INDEX "_EquipmentToProfile_B_index" ON "_EquipmentToProfile"("B");
 
 -- CreateIndex
 CREATE INDEX "_ExerciseToMuscleGroup_B_index" ON "_ExerciseToMuscleGroup"("B");
@@ -1593,41 +1964,50 @@ CREATE INDEX "_CoachToSpecialty_B_index" ON "_CoachToSpecialty"("B");
 -- CreateIndex
 CREATE INDEX "_AttributeDefinitionToCategory_B_index" ON "_AttributeDefinitionToCategory"("B");
 
--- CreateIndex
-CREATE UNIQUE INDEX "tokens_token_hash_key" ON "tokens"("token_hash");
-
--- CreateIndex
-CREATE INDEX "tokens_user_id_idx" ON "tokens"("user_id");
-
--- CreateIndex
-CREATE UNIQUE INDEX "users_googleId_key" ON "users"("googleId");
-
--- CreateIndex
-CREATE UNIQUE INDEX "users_phone_key" ON "users"("phone");
+-- AddForeignKey
+ALTER TABLE "users" ADD CONSTRAINT "users_referred_by_id_fkey" FOREIGN KEY ("referred_by_id") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Profile" ADD CONSTRAINT "Profile_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "profile" ADD CONSTRAINT "profile_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Profile" ADD CONSTRAINT "Profile_training_goal_id_fkey" FOREIGN KEY ("training_goal_id") REFERENCES "training_goal"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "profile" ADD CONSTRAINT "profile_training_goal_id_fkey" FOREIGN KEY ("training_goal_id") REFERENCES "training_goal"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "addresses" ADD CONSTRAINT "addresses_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "addresses" ADD CONSTRAINT "addresses_provinceId_fkey" FOREIGN KEY ("provinceId") REFERENCES "provinces"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "addresses" ADD CONSTRAINT "addresses_province_id_fkey" FOREIGN KEY ("province_id") REFERENCES "provinces"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "addresses" ADD CONSTRAINT "addresses_cityId_fkey" FOREIGN KEY ("cityId") REFERENCES "cities"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "addresses" ADD CONSTRAINT "addresses_city_id_fkey" FOREIGN KEY ("city_id") REFERENCES "cities"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "tokens" ADD CONSTRAINT "tokens_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Subscription" ADD CONSTRAINT "Subscription_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "service_orders" ADD CONSTRAINT "service_orders_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Subscription" ADD CONSTRAINT "Subscription_plan_id_fkey" FOREIGN KEY ("plan_id") REFERENCES "SubscriptionPlan"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "service_orders" ADD CONSTRAINT "service_orders_coach_id_fkey" FOREIGN KEY ("coach_id") REFERENCES "coaches"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "service_orders" ADD CONSTRAINT "service_orders_plan_request_id_fkey" FOREIGN KEY ("plan_request_id") REFERENCES "plan_requests"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "service_orders" ADD CONSTRAINT "service_orders_subscription_id_fkey" FOREIGN KEY ("subscription_id") REFERENCES "subscription"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "service_orders" ADD CONSTRAINT "service_orders_discount_code_id_fkey" FOREIGN KEY ("discount_code_id") REFERENCES "discount_codes"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "subscription" ADD CONSTRAINT "subscription_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "subscription" ADD CONSTRAINT "subscription_plan_id_fkey" FOREIGN KEY ("plan_id") REFERENCES "subscription_plan"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "exercises" ADD CONSTRAINT "exercises_category_id_fkey" FOREIGN KEY ("category_id") REFERENCES "categories"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "coaches" ADD CONSTRAINT "coaches_province_id_fkey" FOREIGN KEY ("province_id") REFERENCES "provinces"("id") ON DELETE SET NULL ON UPDATE CASCADE;
@@ -1639,28 +2019,25 @@ ALTER TABLE "coaches" ADD CONSTRAINT "coaches_city_id_fkey" FOREIGN KEY ("city_i
 ALTER TABLE "coaches" ADD CONSTRAINT "coaches_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "coaches" ADD CONSTRAINT "coaches_address_id_fkey" FOREIGN KEY ("address_id") REFERENCES "addresses"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "coach_ratings" ADD CONSTRAINT "coach_ratings_coach_id_fkey" FOREIGN KEY ("coach_id") REFERENCES "coaches"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "coach_achievements" ADD CONSTRAINT "coach_achievements_coach_id_fkey" FOREIGN KEY ("coach_id") REFERENCES "coaches"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "certifications" ADD CONSTRAINT "certifications_coach_id_fkey" FOREIGN KEY ("coach_id") REFERENCES "coaches"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "coach_availabilities" ADD CONSTRAINT "coach_availabilities_coach_id_fkey" FOREIGN KEY ("coach_id") REFERENCES "coaches"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "plan_requests" ADD CONSTRAINT "plan_requests_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "user_logs" ADD CONSTRAINT "user_logs_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "plan_requests" ADD CONSTRAINT "plan_requests_coach_id_fkey" FOREIGN KEY ("coach_id") REFERENCES "coaches"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "plan_requests" ADD CONSTRAINT "plan_requests_workout_template_id_fkey" FOREIGN KEY ("workout_template_id") REFERENCES "workout_plans"("id") ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "plan_requests" ADD CONSTRAINT "plan_requests_diet_template_id_fkey" FOREIGN KEY ("diet_template_id") REFERENCES "diet_plans"("id") ON DELETE SET NULL ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "UserLog" ADD CONSTRAINT "UserLog_user_plan_id_fkey" FOREIGN KEY ("user_plan_id") REFERENCES "user_plans"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "UserLog" ADD CONSTRAINT "UserLog_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "user_logs" ADD CONSTRAINT "user_logs_user_plan_id_fkey" FOREIGN KEY ("user_plan_id") REFERENCES "user_plans"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "user_plans" ADD CONSTRAINT "user_plans_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -1678,13 +2055,34 @@ ALTER TABLE "user_plans" ADD CONSTRAINT "user_plans_request_id_fkey" FOREIGN KEY
 ALTER TABLE "user_plans" ADD CONSTRAINT "user_plans_coach_id_fkey" FOREIGN KEY ("coach_id") REFERENCES "coaches"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "plan_requests" ADD CONSTRAINT "plan_requests_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "plan_requests" ADD CONSTRAINT "plan_requests_coach_id_fkey" FOREIGN KEY ("coach_id") REFERENCES "coaches"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "plan_requests" ADD CONSTRAINT "plan_requests_workout_template_id_fkey" FOREIGN KEY ("workout_template_id") REFERENCES "workout_plans"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "plan_requests" ADD CONSTRAINT "plan_requests_diet_template_id_fkey" FOREIGN KEY ("diet_template_id") REFERENCES "diet_plans"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "workout_plans" ADD CONSTRAINT "workout_plans_training_goal_id_fkey" FOREIGN KEY ("training_goal_id") REFERENCES "training_goal"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "workout_plans" ADD CONSTRAINT "workout_plans_coach_id_fkey" FOREIGN KEY ("coach_id") REFERENCES "coaches"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "workout_plans" ADD CONSTRAINT "workout_plans_diet_plan_id_fkey" FOREIGN KEY ("diet_plan_id") REFERENCES "diet_plans"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "workout_phases" ADD CONSTRAINT "workout_phases_plan_id_fkey" FOREIGN KEY ("plan_id") REFERENCES "workout_plans"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "workout_days" ADD CONSTRAINT "workout_days_plan_id_fkey" FOREIGN KEY ("plan_id") REFERENCES "workout_plans"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "workout_days" ADD CONSTRAINT "workout_days_workout_phase_id_fkey" FOREIGN KEY ("workout_phase_id") REFERENCES "workout_phases"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "workout_day_exercises" ADD CONSTRAINT "workout_day_exercises_day_id_fkey" FOREIGN KEY ("day_id") REFERENCES "workout_days"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -1696,7 +2094,16 @@ ALTER TABLE "workout_day_exercises" ADD CONSTRAINT "workout_day_exercises_exerci
 ALTER TABLE "diet_plans" ADD CONSTRAINT "diet_plans_coach_id_fkey" FOREIGN KEY ("coach_id") REFERENCES "coaches"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "diet_plans" ADD CONSTRAINT "diet_plans_training_goal_id_fkey" FOREIGN KEY ("training_goal_id") REFERENCES "training_goal"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "diet_phases" ADD CONSTRAINT "diet_phases_plan_id_fkey" FOREIGN KEY ("plan_id") REFERENCES "diet_plans"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "diet_days" ADD CONSTRAINT "diet_days_plan_id_fkey" FOREIGN KEY ("plan_id") REFERENCES "diet_plans"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "diet_days" ADD CONSTRAINT "diet_days_diet_phase_id_fkey" FOREIGN KEY ("diet_phase_id") REFERENCES "diet_phases"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "diet_meals" ADD CONSTRAINT "diet_meals_day_id_fkey" FOREIGN KEY ("day_id") REFERENCES "diet_days"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -1720,6 +2127,9 @@ ALTER TABLE "stores" ADD CONSTRAINT "stores_owner_id_fkey" FOREIGN KEY ("owner_i
 ALTER TABLE "store_ratings" ADD CONSTRAINT "store_ratings_seller_id_fkey" FOREIGN KEY ("seller_id") REFERENCES "stores"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "products" ADD CONSTRAINT "products_store_id_fkey" FOREIGN KEY ("store_id") REFERENCES "stores"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "products" ADD CONSTRAINT "products_brand_id_fkey" FOREIGN KEY ("brand_id") REFERENCES "brands"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -1727,9 +2137,6 @@ ALTER TABLE "products" ADD CONSTRAINT "products_country_id_fkey" FOREIGN KEY ("c
 
 -- AddForeignKey
 ALTER TABLE "products" ADD CONSTRAINT "products_category_id_fkey" FOREIGN KEY ("category_id") REFERENCES "categories"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "products" ADD CONSTRAINT "products_store_id_fkey" FOREIGN KEY ("store_id") REFERENCES "stores"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "product_variants" ADD CONSTRAINT "product_variants_discount_id_fkey" FOREIGN KEY ("discount_id") REFERENCES "discount_codes"("id") ON DELETE SET NULL ON UPDATE CASCADE;
@@ -1762,13 +2169,19 @@ ALTER TABLE "store_reviews" ADD CONSTRAINT "store_reviews_user_id_fkey" FOREIGN 
 ALTER TABLE "store_reviews" ADD CONSTRAINT "store_reviews_store_id_fkey" FOREIGN KEY ("store_id") REFERENCES "stores"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "coach_reviews" ADD CONSTRAINT "coach_reviews_coachId_fkey" FOREIGN KEY ("coachId") REFERENCES "coaches"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "coach_reviews" ADD CONSTRAINT "coach_reviews_coach_id_fkey" FOREIGN KEY ("coach_id") REFERENCES "coaches"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "coach_reviews" ADD CONSTRAINT "coach_reviews_authorId_fkey" FOREIGN KEY ("authorId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "coach_reviews" ADD CONSTRAINT "coach_reviews_author_id_fkey" FOREIGN KEY ("author_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "coach_reviews" ADD CONSTRAINT "coach_reviews_planRequestId_fkey" FOREIGN KEY ("planRequestId") REFERENCES "plan_requests"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "coach_reviews" ADD CONSTRAINT "coach_reviews_user_plan_id_fkey" FOREIGN KEY ("user_plan_id") REFERENCES "user_plans"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "reactions" ADD CONSTRAINT "reactions_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "reactions" ADD CONSTRAINT "reactions_review_id_fkey" FOREIGN KEY ("review_id") REFERENCES "coach_reviews"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "orders" ADD CONSTRAINT "orders_checkout_id_fkey" FOREIGN KEY ("checkout_id") REFERENCES "checkouts"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -1822,7 +2235,10 @@ ALTER TABLE "payments" ADD CONSTRAINT "payments_checkout_id_fkey" FOREIGN KEY ("
 ALTER TABLE "payments" ADD CONSTRAINT "payments_plan_request_id_fkey" FOREIGN KEY ("plan_request_id") REFERENCES "plan_requests"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "payments" ADD CONSTRAINT "payments_subscription_id_fkey" FOREIGN KEY ("subscription_id") REFERENCES "Subscription"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "payments" ADD CONSTRAINT "payments_subscription_id_fkey" FOREIGN KEY ("subscription_id") REFERENCES "subscription"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "payments" ADD CONSTRAINT "payments_service_order_id_fkey" FOREIGN KEY ("service_order_id") REFERENCES "service_orders"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "return_requests" ADD CONSTRAINT "return_requests_order_id_fkey" FOREIGN KEY ("order_id") REFERENCES "orders"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -1835,6 +2251,9 @@ ALTER TABLE "return_items" ADD CONSTRAINT "return_items_return_request_id_fkey" 
 
 -- AddForeignKey
 ALTER TABLE "return_items" ADD CONSTRAINT "return_items_order_item_id_fkey" FOREIGN KEY ("order_item_id") REFERENCES "order_items"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "media" ADD CONSTRAINT "media_coach_id_fkey" FOREIGN KEY ("coach_id") REFERENCES "coaches"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "media" ADD CONSTRAINT "media_product_id_fkey" FOREIGN KEY ("product_id") REFERENCES "products"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -1873,6 +2292,9 @@ ALTER TABLE "wallet_transactions" ADD CONSTRAINT "wallet_transactions_order_id_f
 ALTER TABLE "wallet_transactions" ADD CONSTRAINT "wallet_transactions_return_request_id_fkey" FOREIGN KEY ("return_request_id") REFERENCES "return_requests"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "wallet_transactions" ADD CONSTRAINT "wallet_transactions_service_order_id_fkey" FOREIGN KEY ("service_order_id") REFERENCES "service_orders"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "bank_accounts" ADD CONSTRAINT "bank_accounts_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -1880,6 +2302,12 @@ ALTER TABLE "bank_accounts" ADD CONSTRAINT "bank_accounts_wallet_id_fkey" FOREIG
 
 -- AddForeignKey
 ALTER TABLE "discount_codes" ADD CONSTRAINT "discount_codes_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "discount_code_coaches" ADD CONSTRAINT "discount_code_coaches_discount_code_id_fkey" FOREIGN KEY ("discount_code_id") REFERENCES "discount_codes"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "discount_code_coaches" ADD CONSTRAINT "discount_code_coaches_coach_id_fkey" FOREIGN KEY ("coach_id") REFERENCES "coaches"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "discount_code_stores" ADD CONSTRAINT "discount_code_stores_discountCodeId_fkey" FOREIGN KEY ("discountCodeId") REFERENCES "discount_codes"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -1918,10 +2346,22 @@ ALTER TABLE "store_shipping_rates" ADD CONSTRAINT "store_shipping_rates_storeShi
 ALTER TABLE "store_shipping_rates" ADD CONSTRAINT "store_shipping_rates_provinceId_fkey" FOREIGN KEY ("provinceId") REFERENCES "provinces"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "_WorkoutPlanEquipment" ADD CONSTRAINT "_WorkoutPlanEquipment_A_fkey" FOREIGN KEY ("A") REFERENCES "equipments"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "_WorkoutPlanEquipment" ADD CONSTRAINT "_WorkoutPlanEquipment_B_fkey" FOREIGN KEY ("B") REFERENCES "workout_plans"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "_EquipmentToExercise" ADD CONSTRAINT "_EquipmentToExercise_A_fkey" FOREIGN KEY ("A") REFERENCES "equipments"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "_EquipmentToExercise" ADD CONSTRAINT "_EquipmentToExercise_B_fkey" FOREIGN KEY ("B") REFERENCES "exercises"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "_EquipmentToProfile" ADD CONSTRAINT "_EquipmentToProfile_A_fkey" FOREIGN KEY ("A") REFERENCES "equipments"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "_EquipmentToProfile" ADD CONSTRAINT "_EquipmentToProfile_B_fkey" FOREIGN KEY ("B") REFERENCES "profile"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "_ExerciseToMuscleGroup" ADD CONSTRAINT "_ExerciseToMuscleGroup_A_fkey" FOREIGN KEY ("A") REFERENCES "exercises"("id") ON DELETE CASCADE ON UPDATE CASCADE;

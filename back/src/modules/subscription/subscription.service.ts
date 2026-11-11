@@ -18,6 +18,17 @@ export class SubscriptionService {
     private readonly configService: ConfigService,
   ) { }
 
+  private activeWhere(userId: string, now = new Date()) {
+    return {
+      userId,
+      OR: [
+        { status: 'ACTIVE' as const, endsAt: { gt: now } },
+        { status: 'TRIALING' as const, trialEndsAt: { gt: now } },
+      ],
+    };
+  }
+
+
   private getLimit(limit?: any) {
     return Math.max(1, Number(limit) || Number(this.configService.get('limit.subscription')) || 10);
   }
@@ -99,9 +110,7 @@ export class SubscriptionService {
       where: { id: dto.planId },
     });
     if (!plan || !plan.isActive) throw new NotFoundException('پلن یافت نشد یا غیرفعال است');
-    const active = await this.prisma.subscription.findFirst({
-      where: { userId, status: { in: ['ACTIVE', 'TRIALING'] }, endsAt: { gt: new Date() } },
-    });
+    const active = await this.prisma.subscription.findFirst({ where: this.activeWhere(userId) });
     if (active) throw new ConflictException('شما یک اشتراک فعال دارید — ابتدا آن را لغو کنید');
     const now = new Date();
     const isEligibleForTrial = !user.isUsedTrial && plan.trialDays > 0;
@@ -110,27 +119,20 @@ export class SubscriptionService {
       trialEnds = new Date(now.getTime() + plan.trialDays * 24 * 60 * 60 * 1000);
     }
     if (isEligibleForTrial) {
-      await this.prisma.user.update({
-        where: { id: userId },
-        data: { isUsedTrial: true },
-      });
-      await this.prisma.subscription.create({
-        data: {
-          userId,
-          planId: plan.id,
-          status: 'TRIALING',
-          pricePaid: plan.price,
-          trialEndsAt: trialEnds,
-        }
+      await this.prisma.$transaction(async (tx) => {
+        // شرط در WHERE → از چند درخواست هم‌زمان فقط یکی برنده می‌شود
+        const claimed = await tx.user.updateMany({
+          where: { id: userId, isUsedTrial: false },
+          data: { isUsedTrial: true },
+        });
+        if (!claimed.count) throw new ConflictException('دوره رایگان قبلاً استفاده شده');
+        await tx.subscription.create({
+          data: { userId, planId: plan.id, status: 'TRIALING', pricePaid: plan.price, trialEndsAt: trialEnds },
+        });
       });
     } else {
       await this.prisma.subscription.create({
-        data: {
-          userId,
-          planId: plan.id,
-          status: 'PENDING',
-          pricePaid: plan.price,
-        },
+        data: { userId, planId: plan.id, status: 'PENDING', pricePaid: plan.price },
       });
     }
     return {
@@ -154,7 +156,7 @@ export class SubscriptionService {
 
   async getMySubscription(userId: string) {
     const sub = await this.prisma.subscription.findFirst({
-      where: { userId, status: { in: ['ACTIVE', 'TRIALING'] } },
+      where: this.activeWhere(userId),
       select: {
         id: true,
         userId: true,

@@ -365,6 +365,472 @@
         ]
       }
     },
+    "/subscription/plan": {
+      "get": {
+        "description": "برای صفحه قیمت‌ها — مرتب بر اساس sortOrder و قیمت",
+        "operationId": "SubscriptionController_getPlans",
+        "parameters": [
+          {
+            "name": "type",
+            "required": false,
+            "in": "query",
+            "description": "جستجو بر اساس نوع پلن",
+            "schema": {
+              "enum": [
+                "USER",
+                "COACH",
+                "STORE"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SubscriptionPlanEntity"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "لیست پلن‌های فعال (Public)",
+        "tags": [
+          "Subscription"
+        ]
+      }
+    },
+    "/subscription/my": {
+      "get": {
+        "description": "از این فانکشن برای محدود کردن یا نمایش اطلاعات حداقلی به کاربر استفاده کن",
+        "operationId": "SubscriptionController_getMySubscription",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "null اگر اشتراک فعالی نباشد",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubscriptionEntity"
+                }
+              }
+            }
+          }
+        },
+        "summary": "اشتراک فعال من (User)",
+        "tags": [
+          "Subscription"
+        ]
+      }
+    },
+    "/subscription/my-detail": {
+      "get": {
+        "description": "زمانی استفاده میشه که کاربر میره توی صفحه پلن و میخواد جزئیات کامل رو ببینه  سعی کن فقط اون زمان ازش استفاده کنی",
+        "operationId": "SubscriptionController_getMySubscriptionDetail",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "null اگر اشتراک فعالی نباشد",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubscriptionEntity"
+                }
+              }
+            }
+          }
+        },
+        "summary": "اشتراک فعال من با جزئیات(User)",
+        "tags": [
+          "Subscription"
+        ]
+      }
+    },
+    "/subscription/my-all": {
+      "get": {
+        "description": "اشتراک هایی که قبلا هم خریداری کردم داخل این قسمت نمایش داده میشه",
+        "operationId": "SubscriptionController_getMySubscriptions",
+        "parameters": [
+          {
+            "name": "order",
+            "required": false,
+            "in": "query",
+            "description": "ترتیب داده‌ها",
+            "schema": {
+              "nullable": true,
+              "example": "desc",
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ]
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "شماره صفحه",
+            "schema": {
+              "example": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "تعداد آیتم در هر صفحه",
+            "schema": {
+              "example": 10,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedSubscriptionEntity"
+                }
+              }
+            }
+          }
+        },
+        "summary": "همه اشتراک‌های خریداری شده من (User)",
+        "tags": [
+          "Subscription"
+        ]
+      }
+    },
+    "/subscription/subscribe": {
+      "post": {
+        "description": "\n      - اگر پلن trialDays داشته باشد → وضعیت ACTIVE فوری\n      - اگر trialDays = 0 → وضعیت PENDING و نیاز به پرداخت\n      - اگر اشتراک فعال قبلی داشته باشید → خطای 409\n      - خروجی: subscription + trialEndsAt + paymentRequired + message\n    ",
+        "operationId": "SubscriptionController_subscribe",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubscribePlanDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "summary": "اشتراک جدید (User)",
+        "tags": [
+          "Subscription"
+        ]
+      }
+    },
+    "/subscription/my/{id}/cancel": {
+      "patch": {
+        "operationId": "SubscriptionController_cancelMySubscription",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "لغو اشتراک من (User)",
+        "tags": [
+          "Subscription"
+        ]
+      }
+    },
+    "/subscription/admin/plan": {
+      "get": {
+        "description": "شامل غیرفعال‌ها",
+        "operationId": "SubscriptionController_getAllPlansAdmin",
+        "parameters": [
+          {
+            "name": "order",
+            "required": false,
+            "in": "query",
+            "description": "ترتیب داده‌ها",
+            "schema": {
+              "nullable": true,
+              "example": "desc",
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ]
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "شماره صفحه",
+            "schema": {
+              "example": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "تعداد آیتم در هر صفحه",
+            "schema": {
+              "example": 10,
+              "type": "number"
+            }
+          },
+          {
+            "name": "type",
+            "required": false,
+            "in": "query",
+            "description": "جستجو بر اساس نوع پلن",
+            "schema": {
+              "enum": [
+                "USER",
+                "COACH",
+                "STORE"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedSubscriptionPlanEntity"
+                }
+              }
+            }
+          }
+        },
+        "summary": "همه پلن‌ها (Admin)",
+        "tags": [
+          "Subscription"
+        ]
+      },
+      "post": {
+        "operationId": "SubscriptionController_createPlan",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateSubscriptionPlanDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubscriptionPlanEntity"
+                }
+              }
+            }
+          }
+        },
+        "summary": "ایجاد پلن (Admin)",
+        "tags": [
+          "Subscription"
+        ]
+      }
+    },
+    "/subscription/admin/plan/{id}": {
+      "put": {
+        "operationId": "SubscriptionController_updatePlan",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateSubscriptionPlanDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "ویرایش پلن (Admin)",
+        "tags": [
+          "Subscription"
+        ]
+      },
+      "delete": {
+        "description": "اگر اشتراک فعال داشته باشد، خطا می‌دهد",
+        "operationId": "SubscriptionController_deletePlan",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "حذف پلن (Admin)",
+        "tags": [
+          "Subscription"
+        ]
+      }
+    },
+    "/subscription/admin/subscription": {
+      "get": {
+        "description": "شامل اطلاعات پلن و کاربر",
+        "operationId": "SubscriptionController_getAllSubscriptionsAdmin",
+        "parameters": [
+          {
+            "name": "order",
+            "required": false,
+            "in": "query",
+            "description": "ترتیب داده‌ها",
+            "schema": {
+              "nullable": true,
+              "example": "desc",
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ]
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "شماره صفحه",
+            "schema": {
+              "example": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "تعداد آیتم در هر صفحه",
+            "schema": {
+              "example": 10,
+              "type": "number"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "description": "جستجو بر اساس نوع",
+            "schema": {
+              "enum": [
+                "PENDING",
+                "ACTIVE",
+                "TRIALING",
+                "EXPIRED",
+                "CANCELLED"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedSubscriptionEntity"
+                }
+              }
+            }
+          }
+        },
+        "summary": "همه اشتراک‌ها (Admin)",
+        "tags": [
+          "Subscription"
+        ]
+      }
+    },
+    "/subscription/admin/subscription/{id}/status": {
+      "patch": {
+        "description": "PENDING/ACTIVE/EXPIRED/CANCELLED",
+        "operationId": "SubscriptionController_updateSubscriptionStatus",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateSubscriptionStatusDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "تغییر وضعیت اشتراک (Admin)",
+        "tags": [
+          "Subscription"
+        ]
+      }
+    },
     "/user/profile": {
       "get": {
         "description": "دسترسی : تمام نقش های احراز هویت شده",
@@ -10498,472 +10964,6 @@
         ]
       }
     },
-    "/subscription/plan": {
-      "get": {
-        "description": "برای صفحه قیمت‌ها — مرتب بر اساس sortOrder و قیمت",
-        "operationId": "SubscriptionController_getPlans",
-        "parameters": [
-          {
-            "name": "type",
-            "required": false,
-            "in": "query",
-            "description": "جستجو بر اساس نوع پلن",
-            "schema": {
-              "enum": [
-                "USER",
-                "COACH",
-                "STORE"
-              ],
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/SubscriptionPlanEntity"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "summary": "لیست پلن‌های فعال (Public)",
-        "tags": [
-          "Subscription"
-        ]
-      }
-    },
-    "/subscription/my": {
-      "get": {
-        "description": "از این فانکشن برای محدود کردن یا نمایش اطلاعات حداقلی به کاربر استفاده کن",
-        "operationId": "SubscriptionController_getMySubscription",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "null اگر اشتراک فعالی نباشد",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SubscriptionEntity"
-                }
-              }
-            }
-          }
-        },
-        "summary": "اشتراک فعال من (User)",
-        "tags": [
-          "Subscription"
-        ]
-      }
-    },
-    "/subscription/my-detail": {
-      "get": {
-        "description": "زمانی استفاده میشه که کاربر میره توی صفحه پلن و میخواد جزئیات کامل رو ببینه  سعی کن فقط اون زمان ازش استفاده کنی",
-        "operationId": "SubscriptionController_getMySubscriptionDetail",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "null اگر اشتراک فعالی نباشد",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SubscriptionEntity"
-                }
-              }
-            }
-          }
-        },
-        "summary": "اشتراک فعال من با جزئیات(User)",
-        "tags": [
-          "Subscription"
-        ]
-      }
-    },
-    "/subscription/my-all": {
-      "get": {
-        "description": "اشتراک هایی که قبلا هم خریداری کردم داخل این قسمت نمایش داده میشه",
-        "operationId": "SubscriptionController_getMySubscriptions",
-        "parameters": [
-          {
-            "name": "order",
-            "required": false,
-            "in": "query",
-            "description": "ترتیب داده‌ها",
-            "schema": {
-              "nullable": true,
-              "example": "desc",
-              "type": "string",
-              "enum": [
-                "asc",
-                "desc"
-              ]
-            }
-          },
-          {
-            "name": "page",
-            "required": false,
-            "in": "query",
-            "description": "شماره صفحه",
-            "schema": {
-              "example": 1,
-              "type": "number"
-            }
-          },
-          {
-            "name": "limit",
-            "required": false,
-            "in": "query",
-            "description": "تعداد آیتم در هر صفحه",
-            "schema": {
-              "example": 10,
-              "type": "number"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PaginatedSubscriptionEntity"
-                }
-              }
-            }
-          }
-        },
-        "summary": "همه اشتراک‌های خریداری شده من (User)",
-        "tags": [
-          "Subscription"
-        ]
-      }
-    },
-    "/subscription/subscribe": {
-      "post": {
-        "description": "\n      - اگر پلن trialDays داشته باشد → وضعیت ACTIVE فوری\n      - اگر trialDays = 0 → وضعیت PENDING و نیاز به پرداخت\n      - اگر اشتراک فعال قبلی داشته باشید → خطای 409\n      - خروجی: subscription + trialEndsAt + paymentRequired + message\n    ",
-        "operationId": "SubscriptionController_subscribe",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SubscribePlanDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": ""
-          }
-        },
-        "summary": "اشتراک جدید (User)",
-        "tags": [
-          "Subscription"
-        ]
-      }
-    },
-    "/subscription/my/{id}/cancel": {
-      "patch": {
-        "operationId": "SubscriptionController_cancelMySubscription",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "summary": "لغو اشتراک من (User)",
-        "tags": [
-          "Subscription"
-        ]
-      }
-    },
-    "/subscription/admin/plan": {
-      "get": {
-        "description": "شامل غیرفعال‌ها",
-        "operationId": "SubscriptionController_getAllPlansAdmin",
-        "parameters": [
-          {
-            "name": "order",
-            "required": false,
-            "in": "query",
-            "description": "ترتیب داده‌ها",
-            "schema": {
-              "nullable": true,
-              "example": "desc",
-              "type": "string",
-              "enum": [
-                "asc",
-                "desc"
-              ]
-            }
-          },
-          {
-            "name": "page",
-            "required": false,
-            "in": "query",
-            "description": "شماره صفحه",
-            "schema": {
-              "example": 1,
-              "type": "number"
-            }
-          },
-          {
-            "name": "limit",
-            "required": false,
-            "in": "query",
-            "description": "تعداد آیتم در هر صفحه",
-            "schema": {
-              "example": 10,
-              "type": "number"
-            }
-          },
-          {
-            "name": "type",
-            "required": false,
-            "in": "query",
-            "description": "جستجو بر اساس نوع پلن",
-            "schema": {
-              "enum": [
-                "USER",
-                "COACH",
-                "STORE"
-              ],
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PaginatedSubscriptionPlanEntity"
-                }
-              }
-            }
-          }
-        },
-        "summary": "همه پلن‌ها (Admin)",
-        "tags": [
-          "Subscription"
-        ]
-      },
-      "post": {
-        "operationId": "SubscriptionController_createPlan",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateSubscriptionPlanDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SubscriptionPlanEntity"
-                }
-              }
-            }
-          }
-        },
-        "summary": "ایجاد پلن (Admin)",
-        "tags": [
-          "Subscription"
-        ]
-      }
-    },
-    "/subscription/admin/plan/{id}": {
-      "put": {
-        "operationId": "SubscriptionController_updatePlan",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateSubscriptionPlanDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "summary": "ویرایش پلن (Admin)",
-        "tags": [
-          "Subscription"
-        ]
-      },
-      "delete": {
-        "description": "اگر اشتراک فعال داشته باشد، خطا می‌دهد",
-        "operationId": "SubscriptionController_deletePlan",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "summary": "حذف پلن (Admin)",
-        "tags": [
-          "Subscription"
-        ]
-      }
-    },
-    "/subscription/admin/subscription": {
-      "get": {
-        "description": "شامل اطلاعات پلن و کاربر",
-        "operationId": "SubscriptionController_getAllSubscriptionsAdmin",
-        "parameters": [
-          {
-            "name": "order",
-            "required": false,
-            "in": "query",
-            "description": "ترتیب داده‌ها",
-            "schema": {
-              "nullable": true,
-              "example": "desc",
-              "type": "string",
-              "enum": [
-                "asc",
-                "desc"
-              ]
-            }
-          },
-          {
-            "name": "page",
-            "required": false,
-            "in": "query",
-            "description": "شماره صفحه",
-            "schema": {
-              "example": 1,
-              "type": "number"
-            }
-          },
-          {
-            "name": "limit",
-            "required": false,
-            "in": "query",
-            "description": "تعداد آیتم در هر صفحه",
-            "schema": {
-              "example": 10,
-              "type": "number"
-            }
-          },
-          {
-            "name": "status",
-            "required": false,
-            "in": "query",
-            "description": "جستجو بر اساس نوع",
-            "schema": {
-              "enum": [
-                "PENDING",
-                "ACTIVE",
-                "TRIALING",
-                "EXPIRED",
-                "CANCELLED"
-              ],
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PaginatedSubscriptionEntity"
-                }
-              }
-            }
-          }
-        },
-        "summary": "همه اشتراک‌ها (Admin)",
-        "tags": [
-          "Subscription"
-        ]
-      }
-    },
-    "/subscription/admin/subscription/{id}/status": {
-      "patch": {
-        "description": "PENDING/ACTIVE/EXPIRED/CANCELLED",
-        "operationId": "SubscriptionController_updateSubscriptionStatus",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateSubscriptionStatusDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "summary": "تغییر وضعیت اشتراک (Admin)",
-        "tags": [
-          "Subscription"
-        ]
-      }
-    },
     "/workout/plan/admin": {
       "get": {
         "operationId": "WorkoutController_getAdminPlans",
@@ -15404,6 +15404,480 @@
           }
         }
       },
+      "SubscriptionPlanEntity": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+          },
+          "slug": {
+            "type": "string",
+            "example": "pro",
+            "description": "شناسه یکتای پلن"
+          },
+          "title": {
+            "type": "string",
+            "example": "پلن حرفه‌ای"
+          },
+          "description": {
+            "type": "object",
+            "example": "دسترسی کامل به مربی و AI",
+            "nullable": true
+          },
+          "price": {
+            "type": "number",
+            "example": 299000,
+            "description": "قیمت فعلی (ریال)"
+          },
+          "originalPrice": {
+            "type": "object",
+            "example": 399000,
+            "nullable": true,
+            "description": "قیمت خط‌خورده برای نمایش تخفیف"
+          },
+          "durationDays": {
+            "type": "number",
+            "example": 30,
+            "description": "مدت (روز)"
+          },
+          "trialDays": {
+            "type": "number",
+            "example": 7,
+            "description": "روزهای آزمایشی رایگان"
+          },
+          "aiPlanLimitPerMonth": {
+            "type": "object",
+            "example": 10,
+            "nullable": true,
+            "description": "محدودیت پلن AI در ماه (null = نامحدود)"
+          },
+          "aiChatLimitPerDay": {
+            "type": "object",
+            "example": 50,
+            "nullable": true,
+            "description": "محدودیت چت AI روزانه (null = نامحدود)"
+          },
+          "canRequestCoach": {
+            "type": "boolean",
+            "example": true,
+            "description": "امکان درخواست مربی"
+          },
+          "canTrackProgress": {
+            "type": "boolean",
+            "example": true,
+            "description": "امکان پیگیری پیشرفت"
+          },
+          "features": {
+            "example": [
+              "مربی اختصاصی",
+              "پلن AI نامحدود"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "isPopular": {
+            "type": "boolean",
+            "example": true,
+            "description": "نشان «محبوب‌ترین»"
+          },
+          "isActive": {
+            "type": "boolean",
+            "example": true
+          },
+          "sortOrder": {
+            "type": "number",
+            "example": 1
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2025-01-01T00:00:00.000Z"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2025-01-01T00:00:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "slug",
+          "title",
+          "price",
+          "durationDays",
+          "trialDays",
+          "canRequestCoach",
+          "canTrackProgress",
+          "features",
+          "isPopular",
+          "isActive",
+          "sortOrder",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "SubscriptionEntity": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+          },
+          "userId": {
+            "type": "string",
+            "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+          },
+          "planId": {
+            "type": "string",
+            "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "ACTIVE",
+              "EXPIRED",
+              "CANCELLED"
+            ],
+            "example": "ACTIVE",
+            "description": "PENDING=منتظر پرداخت، ACTIVE=فعال، EXPIRED=منقضی، CANCELLED=لغو شده"
+          },
+          "pricePaid": {
+            "type": "number",
+            "example": 299000,
+            "description": "قیمت پرداخت‌شده (snapshot لحظه خرید)"
+          },
+          "startsAt": {
+            "type": "object",
+            "example": "2025-01-01T00:00:00.000Z",
+            "nullable": true
+          },
+          "endsAt": {
+            "type": "object",
+            "example": "2025-02-01T00:00:00.000Z",
+            "nullable": true
+          },
+          "cancelledAt": {
+            "type": "object",
+            "example": null,
+            "nullable": true
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2025-01-01T00:00:00.000Z"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2025-01-01T00:00:00.000Z"
+          },
+          "plan": {
+            "$ref": "#/components/schemas/SubscriptionPlanEntity"
+          }
+        },
+        "required": [
+          "id",
+          "userId",
+          "planId",
+          "status",
+          "pricePaid",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "PaginationMetaDto": {
+        "type": "object",
+        "properties": {
+          "nextPage": {
+            "type": "object",
+            "example": 2,
+            "description": "صفحه بعد",
+            "nullable": true
+          },
+          "prevPage": {
+            "type": "object",
+            "example": 1,
+            "description": "صفحه قبل",
+            "nullable": true
+          },
+          "total": {
+            "type": "number",
+            "example": 100,
+            "description": "تعداد کل آیتم‌ها"
+          }
+        },
+        "required": [
+          "nextPage",
+          "prevPage",
+          "total"
+        ]
+      },
+      "PaginatedSubscriptionEntity": {
+        "type": "object",
+        "properties": {
+          "pagination": {
+            "description": "اطلاعات صفحه‌بندی",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMetaDto"
+              }
+            ]
+          },
+          "subscriptions": {
+            "description": "داده‌ها",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SubscriptionEntity"
+            }
+          }
+        },
+        "required": [
+          "pagination",
+          "subscriptions"
+        ]
+      },
+      "SubscribePlanDto": {
+        "type": "object",
+        "properties": {
+          "planId": {
+            "type": "string",
+            "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+            "description": "آیدی پلن موردنظر"
+          }
+        },
+        "required": [
+          "planId"
+        ]
+      },
+      "PaginatedSubscriptionPlanEntity": {
+        "type": "object",
+        "properties": {
+          "pagination": {
+            "description": "اطلاعات صفحه‌بندی",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMetaDto"
+              }
+            ]
+          },
+          "plans": {
+            "description": "داده‌ها",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SubscriptionPlanEntity"
+            }
+          }
+        },
+        "required": [
+          "pagination",
+          "plans"
+        ]
+      },
+      "CreateSubscriptionPlanDto": {
+        "type": "object",
+        "properties": {
+          "slug": {
+            "type": "string",
+            "example": "pro",
+            "description": "شناسه یکتا (slug)"
+          },
+          "title": {
+            "type": "string",
+            "example": "پلن حرفه‌ای"
+          },
+          "type": {
+            "type": "string",
+            "description": "وضعیت پلن",
+            "enum": [
+              "USER",
+              "COACH",
+              "STORE"
+            ]
+          },
+          "coverImg": {
+            "type": "string",
+            "example": "عکس پلن"
+          },
+          "description": {
+            "type": "string",
+            "example": "دسترسی کامل"
+          },
+          "price": {
+            "type": "number",
+            "example": 299000
+          },
+          "originalPrice": {
+            "type": "number",
+            "example": 399000
+          },
+          "durationDays": {
+            "type": "number",
+            "example": 30
+          },
+          "trialDays": {
+            "type": "number",
+            "example": 7
+          },
+          "aiPlanLimitPerMonth": {
+            "type": "number",
+            "example": 10,
+            "description": "null = نامحدود"
+          },
+          "aiChatLimitPerDay": {
+            "type": "number",
+            "example": 50,
+            "description": "null = نامحدود"
+          },
+          "canRequestCoach": {
+            "type": "boolean",
+            "example": true
+          },
+          "canTrackProgress": {
+            "type": "boolean",
+            "example": true
+          },
+          "features": {
+            "example": [
+              "مربی اختصاصی",
+              "AI نامحدود"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "isPopular": {
+            "type": "boolean",
+            "example": false
+          },
+          "isActive": {
+            "type": "boolean",
+            "example": true
+          },
+          "sortOrder": {
+            "type": "number",
+            "example": 1
+          }
+        },
+        "required": [
+          "slug",
+          "title",
+          "price",
+          "durationDays",
+          "features"
+        ]
+      },
+      "UpdateSubscriptionPlanDto": {
+        "type": "object",
+        "properties": {
+          "slug": {
+            "type": "string",
+            "example": "pro",
+            "description": "شناسه یکتا (slug)"
+          },
+          "title": {
+            "type": "string",
+            "example": "پلن حرفه‌ای"
+          },
+          "type": {
+            "type": "string",
+            "description": "وضعیت پلن",
+            "enum": [
+              "USER",
+              "COACH",
+              "STORE"
+            ]
+          },
+          "coverImg": {
+            "type": "string",
+            "example": "عکس پلن"
+          },
+          "description": {
+            "type": "string",
+            "example": "دسترسی کامل"
+          },
+          "price": {
+            "type": "number",
+            "example": 299000
+          },
+          "originalPrice": {
+            "type": "number",
+            "example": 399000
+          },
+          "durationDays": {
+            "type": "number",
+            "example": 30
+          },
+          "trialDays": {
+            "type": "number",
+            "example": 7
+          },
+          "aiPlanLimitPerMonth": {
+            "type": "number",
+            "example": 10,
+            "description": "null = نامحدود"
+          },
+          "aiChatLimitPerDay": {
+            "type": "number",
+            "example": 50,
+            "description": "null = نامحدود"
+          },
+          "canRequestCoach": {
+            "type": "boolean",
+            "example": true
+          },
+          "canTrackProgress": {
+            "type": "boolean",
+            "example": true
+          },
+          "features": {
+            "example": [
+              "مربی اختصاصی",
+              "AI نامحدود"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "isPopular": {
+            "type": "boolean",
+            "example": false
+          },
+          "isActive": {
+            "type": "boolean",
+            "example": true
+          },
+          "sortOrder": {
+            "type": "number",
+            "example": 1
+          }
+        }
+      },
+      "UpdateSubscriptionStatusDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "ACTIVE",
+              "TRIALING",
+              "EXPIRED",
+              "CANCELLED"
+            ],
+            "example": "ACTIVE",
+            "description": "PENDING/ACTIVE/EXPIRED/CANCELLED"
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
       "TrainingGoalSummaryDto": {
         "type": "object",
         "properties": {
@@ -15848,33 +16322,6 @@
         "required": [
           "onBoardingStep",
           "id"
-        ]
-      },
-      "PaginationMetaDto": {
-        "type": "object",
-        "properties": {
-          "nextPage": {
-            "type": "object",
-            "example": 2,
-            "description": "صفحه بعد",
-            "nullable": true
-          },
-          "prevPage": {
-            "type": "object",
-            "example": 1,
-            "description": "صفحه قبل",
-            "nullable": true
-          },
-          "total": {
-            "type": "number",
-            "example": 100,
-            "description": "تعداد کل آیتم‌ها"
-          }
-        },
-        "required": [
-          "nextPage",
-          "prevPage",
-          "total"
         ]
       },
       "PaginatedUserProfileResponseDto": {
@@ -24337,453 +24784,6 @@
           "coachRating",
           "planRating",
           "dietRating"
-        ]
-      },
-      "SubscriptionPlanEntity": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
-          },
-          "slug": {
-            "type": "string",
-            "example": "pro",
-            "description": "شناسه یکتای پلن"
-          },
-          "title": {
-            "type": "string",
-            "example": "پلن حرفه‌ای"
-          },
-          "description": {
-            "type": "object",
-            "example": "دسترسی کامل به مربی و AI",
-            "nullable": true
-          },
-          "price": {
-            "type": "number",
-            "example": 299000,
-            "description": "قیمت فعلی (ریال)"
-          },
-          "originalPrice": {
-            "type": "object",
-            "example": 399000,
-            "nullable": true,
-            "description": "قیمت خط‌خورده برای نمایش تخفیف"
-          },
-          "durationDays": {
-            "type": "number",
-            "example": 30,
-            "description": "مدت (روز)"
-          },
-          "trialDays": {
-            "type": "number",
-            "example": 7,
-            "description": "روزهای آزمایشی رایگان"
-          },
-          "aiPlanLimitPerMonth": {
-            "type": "object",
-            "example": 10,
-            "nullable": true,
-            "description": "محدودیت پلن AI در ماه (null = نامحدود)"
-          },
-          "aiChatLimitPerDay": {
-            "type": "object",
-            "example": 50,
-            "nullable": true,
-            "description": "محدودیت چت AI روزانه (null = نامحدود)"
-          },
-          "canRequestCoach": {
-            "type": "boolean",
-            "example": true,
-            "description": "امکان درخواست مربی"
-          },
-          "canTrackProgress": {
-            "type": "boolean",
-            "example": true,
-            "description": "امکان پیگیری پیشرفت"
-          },
-          "features": {
-            "example": [
-              "مربی اختصاصی",
-              "پلن AI نامحدود"
-            ],
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "isPopular": {
-            "type": "boolean",
-            "example": true,
-            "description": "نشان «محبوب‌ترین»"
-          },
-          "isActive": {
-            "type": "boolean",
-            "example": true
-          },
-          "sortOrder": {
-            "type": "number",
-            "example": 1
-          },
-          "createdAt": {
-            "format": "date-time",
-            "type": "string",
-            "example": "2025-01-01T00:00:00.000Z"
-          },
-          "updatedAt": {
-            "format": "date-time",
-            "type": "string",
-            "example": "2025-01-01T00:00:00.000Z"
-          }
-        },
-        "required": [
-          "id",
-          "slug",
-          "title",
-          "price",
-          "durationDays",
-          "trialDays",
-          "canRequestCoach",
-          "canTrackProgress",
-          "features",
-          "isPopular",
-          "isActive",
-          "sortOrder",
-          "createdAt",
-          "updatedAt"
-        ]
-      },
-      "SubscriptionEntity": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
-          },
-          "userId": {
-            "type": "string",
-            "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
-          },
-          "planId": {
-            "type": "string",
-            "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
-          },
-          "status": {
-            "type": "string",
-            "enum": [
-              "PENDING",
-              "ACTIVE",
-              "EXPIRED",
-              "CANCELLED"
-            ],
-            "example": "ACTIVE",
-            "description": "PENDING=منتظر پرداخت، ACTIVE=فعال، EXPIRED=منقضی، CANCELLED=لغو شده"
-          },
-          "pricePaid": {
-            "type": "number",
-            "example": 299000,
-            "description": "قیمت پرداخت‌شده (snapshot لحظه خرید)"
-          },
-          "startsAt": {
-            "type": "object",
-            "example": "2025-01-01T00:00:00.000Z",
-            "nullable": true
-          },
-          "endsAt": {
-            "type": "object",
-            "example": "2025-02-01T00:00:00.000Z",
-            "nullable": true
-          },
-          "cancelledAt": {
-            "type": "object",
-            "example": null,
-            "nullable": true
-          },
-          "createdAt": {
-            "format": "date-time",
-            "type": "string",
-            "example": "2025-01-01T00:00:00.000Z"
-          },
-          "updatedAt": {
-            "format": "date-time",
-            "type": "string",
-            "example": "2025-01-01T00:00:00.000Z"
-          },
-          "plan": {
-            "$ref": "#/components/schemas/SubscriptionPlanEntity"
-          }
-        },
-        "required": [
-          "id",
-          "userId",
-          "planId",
-          "status",
-          "pricePaid",
-          "createdAt",
-          "updatedAt"
-        ]
-      },
-      "PaginatedSubscriptionEntity": {
-        "type": "object",
-        "properties": {
-          "pagination": {
-            "description": "اطلاعات صفحه‌بندی",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/PaginationMetaDto"
-              }
-            ]
-          },
-          "subscriptions": {
-            "description": "داده‌ها",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/SubscriptionEntity"
-            }
-          }
-        },
-        "required": [
-          "pagination",
-          "subscriptions"
-        ]
-      },
-      "SubscribePlanDto": {
-        "type": "object",
-        "properties": {
-          "planId": {
-            "type": "string",
-            "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-            "description": "آیدی پلن موردنظر"
-          }
-        },
-        "required": [
-          "planId"
-        ]
-      },
-      "PaginatedSubscriptionPlanEntity": {
-        "type": "object",
-        "properties": {
-          "pagination": {
-            "description": "اطلاعات صفحه‌بندی",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/PaginationMetaDto"
-              }
-            ]
-          },
-          "plans": {
-            "description": "داده‌ها",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/SubscriptionPlanEntity"
-            }
-          }
-        },
-        "required": [
-          "pagination",
-          "plans"
-        ]
-      },
-      "CreateSubscriptionPlanDto": {
-        "type": "object",
-        "properties": {
-          "slug": {
-            "type": "string",
-            "example": "pro",
-            "description": "شناسه یکتا (slug)"
-          },
-          "title": {
-            "type": "string",
-            "example": "پلن حرفه‌ای"
-          },
-          "type": {
-            "type": "string",
-            "description": "وضعیت پلن",
-            "enum": [
-              "USER",
-              "COACH",
-              "STORE"
-            ]
-          },
-          "coverImg": {
-            "type": "string",
-            "example": "عکس پلن"
-          },
-          "description": {
-            "type": "string",
-            "example": "دسترسی کامل"
-          },
-          "price": {
-            "type": "number",
-            "example": 299000
-          },
-          "originalPrice": {
-            "type": "number",
-            "example": 399000
-          },
-          "durationDays": {
-            "type": "number",
-            "example": 30
-          },
-          "trialDays": {
-            "type": "number",
-            "example": 7
-          },
-          "aiPlanLimitPerMonth": {
-            "type": "number",
-            "example": 10,
-            "description": "null = نامحدود"
-          },
-          "aiChatLimitPerDay": {
-            "type": "number",
-            "example": 50,
-            "description": "null = نامحدود"
-          },
-          "canRequestCoach": {
-            "type": "boolean",
-            "example": true
-          },
-          "canTrackProgress": {
-            "type": "boolean",
-            "example": true
-          },
-          "features": {
-            "example": [
-              "مربی اختصاصی",
-              "AI نامحدود"
-            ],
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "isPopular": {
-            "type": "boolean",
-            "example": false
-          },
-          "isActive": {
-            "type": "boolean",
-            "example": true
-          },
-          "sortOrder": {
-            "type": "number",
-            "example": 1
-          }
-        },
-        "required": [
-          "slug",
-          "title",
-          "price",
-          "durationDays",
-          "features"
-        ]
-      },
-      "UpdateSubscriptionPlanDto": {
-        "type": "object",
-        "properties": {
-          "slug": {
-            "type": "string",
-            "example": "pro",
-            "description": "شناسه یکتا (slug)"
-          },
-          "title": {
-            "type": "string",
-            "example": "پلن حرفه‌ای"
-          },
-          "type": {
-            "type": "string",
-            "description": "وضعیت پلن",
-            "enum": [
-              "USER",
-              "COACH",
-              "STORE"
-            ]
-          },
-          "coverImg": {
-            "type": "string",
-            "example": "عکس پلن"
-          },
-          "description": {
-            "type": "string",
-            "example": "دسترسی کامل"
-          },
-          "price": {
-            "type": "number",
-            "example": 299000
-          },
-          "originalPrice": {
-            "type": "number",
-            "example": 399000
-          },
-          "durationDays": {
-            "type": "number",
-            "example": 30
-          },
-          "trialDays": {
-            "type": "number",
-            "example": 7
-          },
-          "aiPlanLimitPerMonth": {
-            "type": "number",
-            "example": 10,
-            "description": "null = نامحدود"
-          },
-          "aiChatLimitPerDay": {
-            "type": "number",
-            "example": 50,
-            "description": "null = نامحدود"
-          },
-          "canRequestCoach": {
-            "type": "boolean",
-            "example": true
-          },
-          "canTrackProgress": {
-            "type": "boolean",
-            "example": true
-          },
-          "features": {
-            "example": [
-              "مربی اختصاصی",
-              "AI نامحدود"
-            ],
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "isPopular": {
-            "type": "boolean",
-            "example": false
-          },
-          "isActive": {
-            "type": "boolean",
-            "example": true
-          },
-          "sortOrder": {
-            "type": "number",
-            "example": 1
-          }
-        }
-      },
-      "UpdateSubscriptionStatusDto": {
-        "type": "object",
-        "properties": {
-          "status": {
-            "type": "string",
-            "enum": [
-              "PENDING",
-              "ACTIVE",
-              "TRIALING",
-              "EXPIRED",
-              "CANCELLED"
-            ],
-            "example": "ACTIVE",
-            "description": "PENDING/ACTIVE/EXPIRED/CANCELLED"
-          }
-        },
-        "required": [
-          "status"
         ]
       },
       "WorkoutPlanSummaryEntity": {

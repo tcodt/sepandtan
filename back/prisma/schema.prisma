@@ -267,7 +267,8 @@ model Subscription {
   serviceOrder ServiceOrder?
 
   @@index([userId, status])
-  @@index([status, endsAt]) // برای cron job منقضی کردن اشتراک‌ها
+  @@index([status, endsAt])
+  @@index([status, trialEndsAt])
   @@map("subscription")
 }
 
