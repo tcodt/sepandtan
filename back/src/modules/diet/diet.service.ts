@@ -326,8 +326,7 @@ export class DietService {
     const orderBy = this.buildPlanOrderBy(sortBy ?? SortOptionDietPlan.MORE_RATE)
     const [data, count] = await Promise.all([
       this.prisma.dietPlan.findMany({
-        where: {
-        }, skip, take: limitPage,
+        where, skip, take: limitPage,
         orderBy: [orderBy, { createdAt: 'desc' }],
         select: this.planSummarySelect(),
       }),

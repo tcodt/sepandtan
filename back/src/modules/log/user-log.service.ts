@@ -249,7 +249,7 @@ export class UserLogService {
     })
     if (!getPlan?.id) throw new ForbiddenException('کاربر پلن فعال ندارد')
     return this.prisma.userLog.findMany({
-      where: { userPlanId: 'd69eaea1-ef3d-45e1-87e9-99388fcd8bc3' },
+      where: { userPlanId: getPlan.id },
       select: {
         doneExercises: true, plannedExercises: true, date: true, weightKg: true, id: true,
         doneMeals: true, plannedMeals: true, caloriesBurned: true
