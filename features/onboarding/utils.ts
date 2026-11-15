@@ -1,5 +1,18 @@
 import type { UserProfile } from "@/lib/types/plan";
 
+/** مسیرهایی که فقط برای trainee (بدون قفل حرفه‌ای) معنا دارند */
+const TRAINEE_FITNESS_PREFIXES = [
+  "/onboarding",
+  "/dashboard",
+  "/role-selection",
+] as const;
+
+function pathStartsWithAny(path: string, prefixes: readonly string[]): boolean {
+  return prefixes.some(
+    (p) => path === p || path.startsWith(`${p}/`) || path.startsWith(p),
+  );
+}
+
 export function needsOnboarding(user: UserProfile | null | undefined): boolean {
   if (!user) return false;
   if (user.role !== "trainee") return false;
@@ -9,7 +22,7 @@ export function needsOnboarding(user: UserProfile | null | undefined): boolean {
   ) {
     return false;
   }
-  return !user.onboardingCompleted;
+  return !(user.onboardingCompleted || user.onboardingStatus === "completed");
 }
 
 export function getHomePathForRole(role: UserProfile["role"]): string {
@@ -32,17 +45,20 @@ export function getCanonicalPathForUser(user: UserProfile): string {
   if (user.role === "admin") return "/admin";
 
   if (user.role === "coach") {
-    if (user.roleStatus && user.roleStatus !== "approved")
+    if (user.roleStatus && user.roleStatus !== "approved") {
       return "/role-pending";
+    }
     return "/coach";
   }
 
   if (user.role === "seller") {
-    if (user.roleStatus && user.roleStatus !== "approved")
+    if (user.roleStatus && user.roleStatus !== "approved") {
       return "/role-pending";
+    }
     return "/seller";
   }
 
+  // trainee با قفل سابق فروشنده/مربی — نه onboarding
   if (user.professionalRoleLock === "seller") {
     return "/dashboard?notice=seller_revoked";
   }
@@ -69,55 +85,92 @@ export function getPostRegisterRedirect(user: UserProfile): string {
   return "/role-selection";
 }
 
-/** مسیر اشتباه نسبت به نقش فعلی سرور */
+/**
+ * اگر کاربر روی path اشتباه نسبت به نقش سرور باشد → مسیر درست
+ * null = مجاز است بماند
+ */
 export function getRoleMismatchRedirect(
   user: UserProfile,
   pathname: string,
 ): string | null {
   const path = pathname.split("?")[0] || pathname;
 
+  // مسیرهای عمومی مارکت / سایت
   if (
+    path === "/" ||
     path.startsWith("/login") ||
     path.startsWith("/register") ||
     path.startsWith("/store") ||
-    path === "/" ||
+    path.startsWith("/cart") ||
+    path.startsWith("/wishlist") ||
+    path.startsWith("/account") ||
+    path.startsWith("/settings") ||
+    path.startsWith("/about") ||
+    path.startsWith("/contact") ||
     path.startsWith("/products")
   ) {
-    return null;
+    // account برای همه نقش‌ها مجاز است
+    // استثنا: پایین‌تر برای seller روی fitness چک می‌شود
   }
 
   if (user.accountStatus === "SUSPENDED" || user.accountStatus === "DELETED") {
     return getCanonicalPathForUser(user);
   }
 
+  const onTraineeFitness = pathStartsWithAny(path, TRAINEE_FITNESS_PREFIXES);
+
+  // —— Seller تأییدشده: پنل خودش؛ نه dashboard/onboarding ——
   if (user.role === "seller" && user.roleStatus === "approved") {
     if (
-      path.startsWith("/onboarding") ||
-      path.startsWith("/dashboard") ||
-      path.startsWith("/role-selection") ||
-      path.startsWith("/role-pending")
+      onTraineeFitness ||
+      path.startsWith("/role-pending") ||
+      path.startsWith("/coach")
     ) {
       return "/seller";
     }
   }
 
+  // —— Seller pending ——
+  if (
+    user.role === "seller" &&
+    user.roleStatus &&
+    user.roleStatus !== "approved"
+  ) {
+    if (onTraineeFitness || path.startsWith("/seller")) {
+      return "/role-pending";
+    }
+  }
+
+  // —— Coach تأییدشده ——
   if (user.role === "coach" && user.roleStatus === "approved") {
     if (
-      path.startsWith("/onboarding") ||
-      path.startsWith("/dashboard") ||
-      path.startsWith("/role-selection") ||
+      onTraineeFitness ||
+      path.startsWith("/role-pending") ||
       path.startsWith("/seller")
     ) {
       return "/coach";
     }
   }
 
+  // —— Coach pending ——
+  if (
+    user.role === "coach" &&
+    user.roleStatus &&
+    user.roleStatus !== "approved"
+  ) {
+    if (onTraineeFitness || path.startsWith("/coach")) {
+      return "/role-pending";
+    }
+  }
+
+  // —— Admin ——
   if (user.role === "admin") {
-    if (path.startsWith("/onboarding") || path.startsWith("/seller")) {
+    if (path.startsWith("/onboarding") || path.startsWith("/role-selection")) {
       return "/admin";
     }
   }
 
+  // —— دسترسی به پنل فروشنده بدون نقش ——
   if (
     path.startsWith("/seller") &&
     user.role !== "seller" &&
@@ -126,6 +179,7 @@ export function getRoleMismatchRedirect(
     return "/login?reason=seller_revoked";
   }
 
+  // —— دسترسی به پنل مربی بدون نقش ——
   if (
     path.startsWith("/coach") &&
     user.role !== "coach" &&
@@ -134,12 +188,21 @@ export function getRoleMismatchRedirect(
     return "/login?reason=coach_revoked";
   }
 
+  // —— Trainee با قفل seller: onboarding ممنوع ——
   if (
     user.role === "trainee" &&
     user.professionalRoleLock === "seller" &&
     path.startsWith("/onboarding")
   ) {
     return "/dashboard?notice=seller_revoked";
+  }
+
+  if (
+    user.role === "trainee" &&
+    user.professionalRoleLock === "coach" &&
+    path.startsWith("/onboarding")
+  ) {
+    return "/dashboard?notice=coach_revoked";
   }
 
   return null;

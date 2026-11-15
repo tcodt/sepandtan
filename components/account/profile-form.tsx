@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
@@ -43,8 +43,15 @@ import {
 import { getErrorMessage } from "@/lib/api/client";
 import { cn } from "@/lib/utils";
 
-const profileSchema = z.object({
+/* -------------------------------------------------------------------------- */
+/* Schemas                                                                    */
+/* -------------------------------------------------------------------------- */
+
+const identitySchema = z.object({
   name: z.string().min(2, "نام باید حداقل ۲ کاراکتر باشد"),
+});
+
+const traineeSchema = identitySchema.extend({
   gender: z.enum(["male", "female"]),
   age: z
     .number({ message: "سن معتبر نیست" })
@@ -75,35 +82,40 @@ const profileSchema = z.object({
   ]),
 });
 
-type ProfileFormValues = z.infer<typeof profileSchema>;
+type IdentityFormValues = z.infer<typeof identitySchema>;
+type TraineeFormValues = z.infer<typeof traineeSchema>;
+
+/* -------------------------------------------------------------------------- */
+/* Options                                                                    */
+/* -------------------------------------------------------------------------- */
 
 const activityOptions = [
   {
-    value: "sedentary",
+    value: "sedentary" as const,
     label: "کم‌تحرک",
     icon: Clock,
     description: "نشسته و بدون فعالیت",
   },
   {
-    value: "light",
+    value: "light" as const,
     label: "سبک",
     icon: Footprints,
     description: "پیاده‌روی روزانه",
   },
   {
-    value: "moderate",
+    value: "moderate" as const,
     label: "متوسط",
     icon: Heart,
     description: "ورزش ۳-۲ بار در هفته",
   },
   {
-    value: "active",
+    value: "active" as const,
     label: "فعال",
     icon: Flame,
     description: "ورزش ۵-۴ بار در هفته",
   },
   {
-    value: "very_active",
+    value: "very_active" as const,
     label: "بسیار فعال",
     icon: Zap,
     description: "ورزش روزانه",
@@ -111,57 +123,184 @@ const activityOptions = [
 ] as const;
 
 const equipmentOptions = [
-  { value: "home", label: "خانه", icon: Home, description: "بدون تجهیزات" },
   {
-    value: "gym",
+    value: "home" as const,
+    label: "خانه",
+    icon: Home,
+    description: "بدون تجهیزات",
+  },
+  {
+    value: "gym" as const,
     label: "باشگاه",
     icon: Building2,
     description: "تجهیزات کامل",
   },
-  { value: "both", label: "هر دو", icon: RefreshCw, description: "ترکیبی" },
+  {
+    value: "both" as const,
+    label: "هر دو",
+    icon: RefreshCw,
+    description: "ترکیبی",
+  },
 ] as const;
 
 const goalOptions = [
   {
-    value: "lose_weight",
+    value: "lose_weight" as const,
     label: "کاهش وزن",
     icon: Weight,
     description: "کاهش چربی و وزن",
   },
   {
-    value: "build_muscle",
+    value: "build_muscle" as const,
     label: "افزایش عضله",
     icon: Dumbbell,
     description: "حجم و قدرت",
   },
   {
-    value: "maintain",
+    value: "maintain" as const,
     label: "حفظ تناسب",
     icon: Brain,
     description: "تناسب اندام پایدار",
   },
   {
-    value: "endurance",
+    value: "endurance" as const,
     label: "استقامت",
     icon: Heart,
     description: "افزایش استقامت",
   },
   {
-    value: "general_fitness",
+    value: "general_fitness" as const,
     label: "آمادگی عمومی",
     icon: Activity,
     description: "سلامت عمومی",
   },
 ] as const;
 
-export function ProfileForm() {
+/* -------------------------------------------------------------------------- */
+/* Shared contact field                                                       */
+/* -------------------------------------------------------------------------- */
+
+function ContactReadonly() {
+  const user = useUserStore((s) => s.user);
+  return (
+    <div className="space-y-2">
+      <Label>اطلاعات تماس</Label>
+      <Input
+        className="h-11 cursor-not-allowed bg-muted/50"
+        value={user?.email || user?.phone || ""}
+        disabled
+        dir={user?.email ? "ltr" : "rtl"}
+      />
+      <p className="text-[11px] text-muted-foreground">
+        برای تغییر ایمیل یا موبایل با پشتیبانی تماس بگیرید
+      </p>
+    </div>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/* Identity-only (seller / coach / admin)                                     */
+/* -------------------------------------------------------------------------- */
+
+function IdentityProfileForm() {
   const user = useUserStore((s) => s.user);
   const updateProfile = useUserStore((s) => s.updateProfile);
   const setAuthFromBackend = useUserStore((s) => s.setAuthFromBackend);
   const [isSaving, setIsSaving] = useState(false);
 
-  const form = useForm<ProfileFormValues>({
-    resolver: zodResolver(profileSchema),
+  const form = useForm<IdentityFormValues>({
+    resolver: zodResolver(identitySchema),
+    defaultValues: {
+      name: user?.name ?? "",
+    },
+  });
+
+  // ✅ Destructure errors once — silences follow-up compiler warnings
+  const {
+    formState: { errors },
+  } = form;
+
+  useEffect(() => {
+    if (!user) return;
+    form.reset({ name: user.name ?? "" });
+  }, [user, form]);
+
+  const onSubmit = async (data: IdentityFormValues) => {
+    if (!user) return;
+    setIsSaving(true);
+    try {
+      const nameParts = data.name.trim().split(/\s+/);
+      const firstName = nameParts[0] ?? data.name;
+      const lastName = nameParts.slice(1).join(" ") || undefined;
+
+      const res = await updateMyProfile({ firstName, lastName });
+      const mapped = mapProfileResponseToUser(res);
+      setAuthFromBackend({
+        ...mapped,
+        name: data.name.trim(),
+      });
+      updateProfile({ name: data.name.trim() });
+      toast.success("پروفایل در سرور ذخیره شد");
+    } catch (err) {
+      toast.error(getErrorMessage(err, "ذخیره پروفایل ناموفق بود"));
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const busy = isSaving || form.formState.isSubmitting;
+
+  return (
+    <form
+      onSubmit={form.handleSubmit(onSubmit)}
+      className="space-y-5 sm:space-y-6"
+    >
+      <div className="space-y-2">
+        <Label
+          htmlFor="name"
+          className="flex items-center gap-2 text-sm font-medium"
+        >
+          <User className="h-4 w-4 text-muted-foreground" />
+          نام و نام خانوادگی
+        </Label>
+        <Input
+          id="name"
+          className="h-11"
+          {...form.register("name")}
+          placeholder="نام خود را وارد کنید"
+          disabled={busy}
+        />
+        {errors.name && (
+          <p className="text-sm text-destructive">{errors.name.message}</p>
+        )}
+      </div>
+
+      <ContactReadonly />
+
+      <Button type="submit" className="w-full gap-2" disabled={busy}>
+        {busy ? (
+          <Loader2 className="h-4 w-4 animate-spin" />
+        ) : (
+          <Save className="h-4 w-4" />
+        )}
+        ذخیره تغییرات
+      </Button>
+    </form>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/* Trainee (onboarding fields)                                                */
+/* -------------------------------------------------------------------------- */
+
+function TraineeProfileForm() {
+  const user = useUserStore((s) => s.user);
+  const updateProfile = useUserStore((s) => s.updateProfile);
+  const setAuthFromBackend = useUserStore((s) => s.setAuthFromBackend);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const form = useForm<TraineeFormValues>({
+    resolver: zodResolver(traineeSchema),
     defaultValues: {
       name: user?.name ?? "",
       gender: user?.bodyInfo?.gender ?? "male",
@@ -173,6 +312,23 @@ export function ProfileForm() {
       goal: user?.goal ?? "general_fitness",
     },
   });
+
+  // ✅ Destructure errors once
+  const {
+    formState: { errors },
+  } = form;
+
+  // ✅ useWatch replaces all form.watch(...) calls
+  const selectedGender = useWatch({ control: form.control, name: "gender" });
+  const selectedActivityLevel = useWatch({
+    control: form.control,
+    name: "activityLevel",
+  });
+  const selectedEquipment = useWatch({
+    control: form.control,
+    name: "equipment",
+  });
+  const selectedGoal = useWatch({ control: form.control, name: "goal" });
 
   useEffect(() => {
     if (!user) return;
@@ -188,7 +344,7 @@ export function ProfileForm() {
     });
   }, [user, form]);
 
-  const onSubmit = async (data: ProfileFormValues) => {
+  const onSubmit = async (data: TraineeFormValues) => {
     if (!user) return;
     setIsSaving(true);
 
@@ -240,10 +396,6 @@ export function ProfileForm() {
       setIsSaving(false);
     }
   };
-  const selectedGender = form.watch("gender");
-  const selectedActivityLevel = form.watch("activityLevel");
-  const selectedEquipment = form.watch("equipment");
-  const selectedGoal = form.watch("goal");
 
   const busy = isSaving || form.formState.isSubmitting;
 
@@ -252,7 +404,6 @@ export function ProfileForm() {
       onSubmit={form.handleSubmit(onSubmit)}
       className="space-y-5 sm:space-y-6"
     >
-      {/* نام */}
       <div className="space-y-2">
         <Label
           htmlFor="name"
@@ -268,38 +419,25 @@ export function ProfileForm() {
           placeholder="نام خود را وارد کنید"
           disabled={busy}
         />
-        {form.formState.errors.name && (
-          <p className="text-sm text-destructive">
-            {form.formState.errors.name.message}
-          </p>
+        {errors.name && (
+          <p className="text-sm text-destructive">{errors.name.message}</p>
         )}
       </div>
 
-      {/* تماس (فقط نمایش) */}
-      <div className="space-y-2">
-        <Label>اطلاعات تماس</Label>
-        <Input
-          className="h-11 cursor-not-allowed bg-muted/50"
-          value={user?.email || user?.phone || ""}
-          disabled
-          dir={user?.email ? "ltr" : "rtl"}
-        />
-        <p className="text-[11px] text-muted-foreground">
-          برای تغییر ایمیل یا موبایل با پشتیبانی تماس بگیرید
-        </p>
-      </div>
+      <ContactReadonly />
 
-      {/* جنسیت */}
       <div className="space-y-2">
         <Label className="flex items-center gap-2">
           <User className="h-4 w-4 text-muted-foreground" />
           جنسیت
         </Label>
         <div className="grid grid-cols-2 gap-2">
-          {[
-            { value: "male" as const, label: "مرد" },
-            { value: "female" as const, label: "زن" },
-          ].map((item) => (
+          {(
+            [
+              { value: "male" as const, label: "مرد" },
+              { value: "female" as const, label: "زن" },
+            ] as const
+          ).map((item) => (
             <button
               key={item.value}
               type="button"
@@ -320,7 +458,6 @@ export function ProfileForm() {
         </div>
       </div>
 
-      {/* سن / قد / وزن */}
       <div className="space-y-2">
         <Label className="flex items-center gap-2">
           <Ruler className="h-4 w-4 text-muted-foreground" />
@@ -342,10 +479,8 @@ export function ProfileForm() {
               disabled={busy}
               {...form.register("age", { valueAsNumber: true })}
             />
-            {form.formState.errors.age && (
-              <p className="text-xs text-destructive">
-                {form.formState.errors.age.message}
-              </p>
+            {errors.age && (
+              <p className="text-xs text-destructive">{errors.age.message}</p>
             )}
           </div>
           <div className="space-y-1.5">
@@ -363,9 +498,9 @@ export function ProfileForm() {
               disabled={busy}
               {...form.register("height", { valueAsNumber: true })}
             />
-            {form.formState.errors.height && (
+            {errors.height && (
               <p className="text-xs text-destructive">
-                {form.formState.errors.height.message}
+                {errors.height.message}
               </p>
             )}
           </div>
@@ -384,16 +519,15 @@ export function ProfileForm() {
               disabled={busy}
               {...form.register("weight", { valueAsNumber: true })}
             />
-            {form.formState.errors.weight && (
+            {errors.weight && (
               <p className="text-xs text-destructive">
-                {form.formState.errors.weight.message}
+                {errors.weight.message}
               </p>
             )}
           </div>
         </div>
       </div>
 
-      {/* سطح فعالیت */}
       <div className="space-y-2">
         <Label className="flex items-center gap-2">
           <Activity className="h-4 w-4 text-muted-foreground" />
@@ -424,23 +558,14 @@ export function ProfileForm() {
                   <div
                     className={cn(
                       "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg",
-                      isSelected
-                        ? "bg-primary/20 text-primary"
-                        : "bg-muted text-muted-foreground",
+                      isSelected ? "bg-primary/15" : "bg-muted",
                     )}
                   >
                     <Icon className="h-4 w-4" />
                   </div>
-                  <div className="min-w-0 flex-1">
-                    <p
-                      className={cn(
-                        "text-sm font-medium",
-                        isSelected ? "text-primary" : "text-foreground",
-                      )}
-                    >
-                      {item.label}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
+                  <div>
+                    <p className="text-sm font-medium">{item.label}</p>
+                    <p className="text-[11px] text-muted-foreground">
                       {item.description}
                     </p>
                   </div>
@@ -451,11 +576,10 @@ export function ProfileForm() {
         </div>
       </div>
 
-      {/* امکانات */}
       <div className="space-y-2">
         <Label className="flex items-center gap-2">
           <Dumbbell className="h-4 w-4 text-muted-foreground" />
-          امکانات تمرینی
+          محل تمرین
         </Label>
         <div className="grid grid-cols-3 gap-2">
           {equipmentOptions.map((item) => {
@@ -474,42 +598,22 @@ export function ProfileForm() {
                 className={cn(
                   "rounded-xl border p-3 text-center transition-all",
                   isSelected
-                    ? "border-primary bg-primary/10 text-primary shadow-sm shadow-primary/10"
+                    ? "border-primary bg-primary/10 text-primary shadow-sm"
                     : "border-border bg-background hover:border-primary/30 hover:bg-muted",
                 )}
               >
-                <div
-                  className={cn(
-                    "mx-auto mb-1.5 flex h-8 w-8 items-center justify-center rounded-lg",
-                    isSelected
-                      ? "bg-primary/20 text-primary"
-                      : "bg-muted text-muted-foreground",
-                  )}
-                >
-                  <Icon className="h-4 w-4" />
-                </div>
-                <p
-                  className={cn(
-                    "text-xs font-medium",
-                    isSelected ? "text-primary" : "text-foreground",
-                  )}
-                >
-                  {item.label}
-                </p>
-                <p className="text-[10px] text-muted-foreground">
-                  {item.description}
-                </p>
+                <Icon className="mx-auto mb-1 h-4 w-4" />
+                <p className="text-xs font-medium">{item.label}</p>
               </button>
             );
           })}
         </div>
       </div>
 
-      {/* هدف */}
       <div className="space-y-2">
         <Label className="flex items-center gap-2">
           <Target className="h-4 w-4 text-muted-foreground" />
-          هدف اصلی
+          هدف
         </Label>
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
           {goalOptions.map((item) => {
@@ -526,31 +630,15 @@ export function ProfileForm() {
                 className={cn(
                   "rounded-xl border p-3 text-right transition-all",
                   isSelected
-                    ? "border-primary bg-primary/10 text-primary shadow-sm shadow-primary/10"
+                    ? "border-primary bg-primary/10 text-primary shadow-sm"
                     : "border-border bg-background hover:border-primary/30 hover:bg-muted",
                 )}
               >
                 <div className="flex items-start gap-3">
-                  <div
-                    className={cn(
-                      "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg",
-                      isSelected
-                        ? "bg-primary/20 text-primary"
-                        : "bg-muted text-muted-foreground",
-                    )}
-                  >
-                    <Icon className="h-4 w-4" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p
-                      className={cn(
-                        "text-sm font-medium",
-                        isSelected ? "text-primary" : "text-foreground",
-                      )}
-                    >
-                      {item.label}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
+                  <Icon className="mt-0.5 h-4 w-4 shrink-0" />
+                  <div>
+                    <p className="text-sm font-medium">{item.label}</p>
+                    <p className="text-[11px] text-muted-foreground">
                       {item.description}
                     </p>
                   </div>
@@ -561,23 +649,28 @@ export function ProfileForm() {
         </div>
       </div>
 
-      <Button
-        type="submit"
-        className="h-11 w-full gap-2 text-base font-semibold shadow-lg shadow-primary/20 sm:h-12"
-        disabled={busy}
-      >
+      <Button type="submit" className="w-full gap-2" disabled={busy}>
         {busy ? (
-          <>
-            <Loader2 className="h-4 w-4 animate-spin" />
-            در حال ذخیره...
-          </>
+          <Loader2 className="h-4 w-4 animate-spin" />
         ) : (
-          <>
-            <Save className="h-4 w-4" />
-            ذخیره تغییرات
-          </>
+          <Save className="h-4 w-4" />
         )}
+        ذخیره تغییرات
       </Button>
     </form>
   );
+}
+
+/* -------------------------------------------------------------------------- */
+/* Public                                                                     */
+/* -------------------------------------------------------------------------- */
+
+export function ProfileForm() {
+  const role = useUserStore((s) => s.user?.role);
+
+  if (role === "trainee") {
+    return <TraineeProfileForm />;
+  }
+
+  return <IdentityProfileForm />;
 }

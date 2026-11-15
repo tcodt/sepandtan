@@ -11,9 +11,7 @@ type Options = {
   requireOnboarding?: boolean;
   onlyTrainee?: boolean;
   blockPending?: boolean;
-  /** مربی را از صفحات trainee دور کن */
   blockCoach?: boolean;
-  /** فروشنده را از صفحات trainee دور کن */
   blockSeller?: boolean;
   allowedRoles?: UserRole[];
   redirectToLogin?: string;
@@ -61,14 +59,7 @@ export function useRequireAuth(options: Options = {}) {
         return;
       }
 
-      if (blockPending && user.roleStatus && user.roleStatus !== "approved") {
-        // ادمین/کاربر عادی معمولاً approved هستند؛ coach/seller pending اینجا می‌مانند
-        if (user.role === "coach" || user.role === "seller") {
-          router.replace(redirectToRolePending);
-          return;
-        }
-      }
-
+      // 1) تعلیق / حذف
       if (
         user.accountStatus === "SUSPENDED" ||
         user.accountStatus === "DELETED"
@@ -83,20 +74,56 @@ export function useRequireAuth(options: Options = {}) {
         return;
       }
 
-      if (blockPending && user.roleStatus && user.roleStatus !== "approved") {
-        if (user.role === "coach" || user.role === "seller") {
-          router.replace(redirectToRolePending);
+      // 2) coach/seller در انتظار تأیید
+      if (
+        blockPending &&
+        (user.role === "coach" || user.role === "seller") &&
+        user.roleStatus &&
+        user.roleStatus !== "approved"
+      ) {
+        router.replace(redirectToRolePending);
+        return;
+      }
+
+      // 3) صفحه فقط trainee
+      if (onlyTrainee) {
+        if (user.role === "seller") {
+          router.replace(
+            user.roleStatus === "approved"
+              ? redirectToSeller
+              : redirectToRolePending,
+          );
+          return;
+        }
+        if (user.role === "coach") {
+          router.replace(
+            user.roleStatus === "approved"
+              ? redirectToCoach
+              : redirectToRolePending,
+          );
+          return;
+        }
+        if (user.role === "admin") {
+          router.replace("/admin");
+          return;
+        }
+        if (user.role !== "trainee") {
+          router.replace(getHomePathForRole(user.role));
           return;
         }
       }
 
+      // 4) بلاک صریح نقش
       if (blockCoach && user.role === "coach") {
         router.replace(redirectToCoach);
         return;
       }
-
       if (blockSeller && user.role === "seller") {
-        router.replace(redirectToSeller);
+        router.replace(
+          user.roleStatus === "approved"
+            ? redirectToSeller
+            : redirectToRolePending,
+        );
         return;
       }
 
@@ -105,11 +132,18 @@ export function useRequireAuth(options: Options = {}) {
         return;
       }
 
-      if (onlyTrainee && user.role !== "trainee") {
-        router.replace(getHomePathForRole(user.role));
+      // 5) قفل حرفه‌ای → onboarding نده
+      if (
+        requireOnboarding &&
+        user.role === "trainee" &&
+        (user.professionalRoleLock === "seller" ||
+          user.professionalRoleLock === "coach")
+      ) {
+        router.replace(redirectToDashboard);
         return;
       }
 
+      // 6) onboarding ناقص
       if (
         requireOnboarding &&
         user.role === "trainee" &&
@@ -149,7 +183,6 @@ export function useRequireAuth(options: Options = {}) {
     isAuthenticated: !!isAuthenticated && !!user,
     user,
     ready: mounted && hasHydrated,
-    /** alias سازگار با layoutهای قدیمی */
     isReady: mounted && hasHydrated,
   };
 }

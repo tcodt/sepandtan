@@ -1,108 +1,68 @@
 "use client";
 
-import Link from "next/link";
-import { useParams } from "next/navigation";
-import { Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { useCheckoutDetail, usePayCheckout } from "@/features/orders/hooks";
+import { useEffect } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { Loader2, AlertTriangle } from "lucide-react";
+
+import { CheckoutDetailScreen } from "@/components/store/checkout-detail-screen";
 import { useRequireAuth } from "@/hooks/use-require-auth";
+import { Button } from "@/components/ui/button";
 
 export default function StoreOrderDetailPage() {
+  const router = useRouter();
   const { isLoading: authLoading, isAuthenticated } = useRequireAuth({
     requireOnboarding: false,
   });
   const params = useParams<{ id: string }>();
   const id = params?.id ?? "";
-  const pay = usePayCheckout();
 
-  const { data, isLoading, isError } = useCheckoutDetail(
-    id,
-    isAuthenticated && Boolean(id),
-  );
+  // Missing ID → back to orders list (can happen with malformed URLs)
+  useEffect(() => {
+    if (!authLoading && isAuthenticated && !id) {
+      router.replace("/account/orders");
+    }
+  }, [authLoading, isAuthenticated, id, router]);
 
-  if (authLoading || isLoading) {
+  if (authLoading) {
     return (
-      <div className="flex min-h-[40vh] items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div
+        role="status"
+        aria-live="polite"
+        className="flex min-h-[60vh] flex-col items-center justify-center gap-3 bg-muted/30 px-4 dark:bg-background"
+      >
+        <Loader2
+          className="h-7 w-7 animate-spin text-primary sm:h-8 sm:w-8"
+          aria-hidden="true"
+        />
+        <p className="text-center text-xs text-muted-foreground sm:text-sm">
+          در حال بارگذاری…
+        </p>
       </div>
     );
   }
 
   if (!isAuthenticated) return null;
 
-  if (isError || !data) {
+  if (!id) {
     return (
-      <div className="max-w-lg mx-auto px-4 py-16 text-center space-y-4">
-        <p className="text-muted-foreground">سفارش پیدا نشد</p>
-        <Button asChild variant="outline">
-          <Link href="/store">فروشگاه</Link>
-        </Button>
+      <div className="flex min-h-[60vh] items-center justify-center px-4">
+        <div className="flex max-w-md flex-col items-center gap-3 text-center">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-destructive/20 bg-destructive/10">
+            <AlertTriangle
+              className="h-6 w-6 text-destructive"
+              aria-hidden="true"
+            />
+          </div>
+          <p className="text-sm text-muted-foreground">
+            شناسه سفارش نامعتبر است.
+          </p>
+          <Button asChild variant="outline" className="mt-1">
+            <a href="/account/orders">بازگشت به سفارش‌ها</a>
+          </Button>
+        </div>
       </div>
     );
   }
 
-  return (
-    <div className="max-w-2xl mx-auto px-4 py-10 space-y-6">
-      <div>
-        <h1 className="text-xl font-bold">سفارش ثبت شد</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          شماره تسویه:{" "}
-          <span className="font-medium text-foreground">
-            {data.checkoutNumber || data.id}
-          </span>
-        </p>
-      </div>
-
-      <div className="rounded-2xl border border-border p-4 space-y-2 text-sm">
-        <div className="flex justify-between">
-          <span className="text-muted-foreground">وضعیت پرداخت</span>
-          <span>{data.paymentStatus}</span>
-        </div>
-        <div className="flex justify-between">
-          <span className="text-muted-foreground">مبلغ</span>
-          <span className="tabular-nums font-semibold">
-            {Number(data.totalAmount).toLocaleString("fa-IR")} تومان
-          </span>
-        </div>
-        <div className="flex justify-between">
-          <span className="text-muted-foreground">روش پرداخت</span>
-          <span>{data.paymentMethod ?? "—"}</span>
-        </div>
-      </div>
-
-      {data.orders?.length > 0 && (
-        <div className="space-y-3">
-          <h2 className="text-sm font-semibold">سفارش‌های فروشگاه‌ها</h2>
-          {data.orders.map((o) => (
-            <div
-              key={o.id}
-              className="rounded-xl border border-border p-3 text-sm space-y-1"
-            >
-              <p className="font-medium">{o.storeName}</p>
-              <p className="text-xs text-muted-foreground">
-                {o.orderNumber} · {o.status}
-              </p>
-              <p className="tabular-nums">
-                {Number(o.totalPrice).toLocaleString("fa-IR")} تومان
-              </p>
-            </div>
-          ))}
-        </div>
-      )}
-
-      <div className="flex gap-2">
-        {data.paymentStatus === "PENDING" && (
-          <Button disabled={pay.isPending} onClick={() => pay.mutate(data.id)}>
-            {pay.isPending ? "در حال پرداخت..." : "پرداخت مجدد"}
-          </Button>
-        )}
-        <Button asChild>
-          <Link href="/store">ادامه خرید</Link>
-        </Button>
-        <Button asChild variant="outline">
-          <Link href="/cart">سبد خرید</Link>
-        </Button>
-      </div>
-    </div>
-  );
+  return <CheckoutDetailScreen checkoutId={id} />;
 }

@@ -59,7 +59,7 @@ export type UpsertShippingRateInput = {
   provinceId: string;
 };
 
-/** گزینه ارسال قابل انتخاب در checkout — از GET /shipping/order/{provinceId} */
+/** گزینه ارسال در checkout — GET /shipping/order/{provinceId} */
 export type ShippingOption = {
   id: string;
   storeId: string;
