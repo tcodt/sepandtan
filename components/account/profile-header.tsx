@@ -83,11 +83,12 @@ export function ProfileHeader() {
         <span>عضو از {memberSince}</span>
       </div>
 
-      {user?.subscriptionStatus && (
+      {/* فقط trainee — اشتراک فیتنس */}
+      {user?.role === "trainee" && user?.subscriptionStatus && (
         <div className="flex items-center gap-1.5 text-xs">
           <span
             className={cn(
-              "px-2.5 py-0.5 rounded-full font-medium",
+              "rounded-full px-2.5 py-0.5 font-medium",
               badge.className,
             )}
           >

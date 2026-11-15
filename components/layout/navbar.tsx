@@ -7,19 +7,11 @@ import { useState } from "react";
 import {
   Flame,
   UserRound,
-  CircleUserRound,
   ShoppingCart,
-  Settings,
+  Heart,
   LogOut,
-  LayoutDashboard,
   Menu,
   X,
-  Home,
-  Store,
-  Dumbbell,
-  Sparkles,
-  Info,
-  Mail,
 } from "lucide-react";
 
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -40,99 +32,87 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ModeToggle } from "@/components/common/mode-toggle";
-import { LogoutDialog } from "../common/logout-dialog";
+import { LogoutDialog } from "@/components/common/logout-dialog";
 import { useUserStore } from "@/lib/store/user-store";
 import { useCart } from "@/features/cart/hooks";
+import { useWishlistIds } from "@/features/wishlist/hooks";
+import {
+  getAccountMenuLinks,
+  getMobileNavLinks,
+  getNavbarLinks,
+  showCartAction,
+  showWishlistAction,
+  type NavContext,
+  type ResolvedNavItem,
+} from "@/features/auth/nav-config";
 import { cn } from "@/lib/utils";
 
 /* -------------------------------------------------------------------------- */
-/* Config                                                                     */
+/* Helpers                                                                    */
 /* -------------------------------------------------------------------------- */
-
-const navLinks = [
-  { href: "/", label: "خانه", icon: Home },
-  { href: "/store", label: "فروشگاه", icon: Store },
-  { href: "/workouts", label: "حرکات", icon: Dumbbell },
-  { href: "/ai", label: "هوش مصنوعی", icon: Sparkles },
-  { href: "/about", label: "درباره ما", icon: Info },
-  { href: "/contact", label: "تماس با ما", icon: Mail },
-];
-
-function getDashboardHref(role?: string) {
-  if (role === "admin") return "/admin";
-  if (role === "coach") return "/coach";
-  if (role === "seller") return "/seller";
-  return "/dashboard";
-}
 
 function isLinkActive(pathname: string, href: string) {
   if (href === "/") return pathname === "/";
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
+function useNavContext(): NavContext {
+  const hasHydrated = useUserStore((s) => s._hasHydrated);
+  const user = useUserStore((s) => s.user);
+  const isAuthenticated = useUserStore((s) => s.isAuthenticated);
+  const loggedIn = hasHydrated && isAuthenticated && !!user;
+
+  return {
+    user: loggedIn ? user : null,
+    isAuthenticated: loggedIn,
+  };
+}
+
 /* -------------------------------------------------------------------------- */
-/* Shared account menu items                                                  */
+/* Account menu                                                               */
 /* -------------------------------------------------------------------------- */
 
 function AccountMenuItems({
+  items,
   cartCount,
-  userRole,
+  wishlistCount,
   onNavigate,
 }: {
+  items: ResolvedNavItem[];
   cartCount: number;
-  userRole?: string;
+  wishlistCount: number;
   onNavigate?: () => void;
 }) {
   return (
     <>
-      <DropdownMenuItem asChild>
-        <Link
-          href={getDashboardHref(userRole)}
-          className="flex items-center gap-2"
-          onClick={onNavigate}
-        >
-          <LayoutDashboard className="h-4 w-4" aria-hidden="true" />
-          داشبورد
-        </Link>
-      </DropdownMenuItem>
-      <DropdownMenuItem asChild>
-        <Link
-          href="/account"
-          className="flex items-center gap-2"
-          onClick={onNavigate}
-        >
-          <CircleUserRound className="h-4 w-4" aria-hidden="true" />
-          حساب کاربری
-        </Link>
-      </DropdownMenuItem>
-      <DropdownMenuItem asChild>
-        <Link
-          href="/cart"
-          className="flex items-center gap-2"
-          onClick={onNavigate}
-        >
-          <ShoppingCart className="h-4 w-4" aria-hidden="true" />
-          سبد خرید
-          {cartCount > 0 && (
-            <Badge
-              variant="secondary"
-              className="ms-auto h-5 px-1.5 text-[10px] tabular-nums"
+      {items.map((item) => {
+        const Icon = item.icon;
+        let badge: number | null = null;
+        if (item.badge === "cart" && cartCount > 0) badge = cartCount;
+        if (item.badge === "wishlist" && wishlistCount > 0)
+          badge = wishlistCount;
+
+        return (
+          <DropdownMenuItem key={item.id} asChild>
+            <Link
+              href={item.href}
+              className="flex items-center gap-2"
+              onClick={onNavigate}
             >
-              {cartCount.toLocaleString("fa-IR")}
-            </Badge>
-          )}
-        </Link>
-      </DropdownMenuItem>
-      <DropdownMenuItem asChild>
-        <Link
-          href="/settings"
-          className="flex items-center gap-2"
-          onClick={onNavigate}
-        >
-          <Settings className="h-4 w-4" aria-hidden="true" />
-          تنظیمات
-        </Link>
-      </DropdownMenuItem>
+              <Icon className="h-4 w-4" aria-hidden="true" />
+              <span className="flex-1">{item.label}</span>
+              {badge != null && (
+                <Badge
+                  variant="secondary"
+                  className="ms-auto h-5 px-1.5 text-[10px] tabular-nums"
+                >
+                  {badge.toLocaleString("fa-IR")}
+                </Badge>
+              )}
+            </Link>
+          </DropdownMenuItem>
+        );
+      })}
       <DropdownMenuSeparator />
       <LogoutDialog>
         <button
@@ -158,19 +138,25 @@ export default function Navbar() {
   const hasHydrated = useUserStore((s) => s._hasHydrated);
   const user = useUserStore((s) => s.user);
   const isAuthenticated = useUserStore((s) => s.isAuthenticated);
-
   const loggedIn = hasHydrated && isAuthenticated && !!user;
 
-  const { data: cart } = useCart(loggedIn);
+  const ctx = useNavContext();
+  const navbarLinks = getNavbarLinks(ctx);
+  const mobileLinks = getMobileNavLinks(ctx);
+  const accountLinks = getAccountMenuLinks(ctx);
+  const canShowCart = showCartAction(ctx);
+  const canShowWishlist = showWishlistAction(ctx);
+
+  const { data: cart } = useCart(loggedIn && canShowCart);
   const cartCount = cart?.totalItems ?? 0;
 
+  const { data: wishlistIds } = useWishlistIds(loggedIn && canShowWishlist);
+  const wishlistCount = wishlistIds?.length ?? 0;
+
   return (
-    // `isolate` creates a stacking context so the header's z-40 can't be
-    // pierced by children with z-index, and `backdrop-blur` doesn't break
-    // paint ordering in Safari.
     <header className="sticky top-0 isolate z-40 w-full border-b border-border bg-background/80 backdrop-blur-md">
       <nav className="mx-auto flex h-16 max-w-6xl items-center gap-2 px-4 sm:gap-3 sm:px-6">
-        {/* --------------------------- Mobile menu trigger ------------------- */}
+        {/* --------------------------- Mobile menu --------------------------- */}
         <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
           <SheetTrigger asChild>
             <Button
@@ -189,7 +175,6 @@ export default function Navbar() {
             className="flex w-[85vw] max-w-xs flex-col gap-0 p-0 sm:w-72"
             showCloseButton={false}
           >
-            {/* Header */}
             <SheetHeader className="shrink-0 border-b border-border px-4 py-3 text-start">
               <div className="flex items-center gap-2.5">
                 <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-muted">
@@ -217,14 +202,13 @@ export default function Navbar() {
               </div>
             </SheetHeader>
 
-            {/* Nav links */}
             <nav className="min-h-0 flex-1 overflow-y-auto p-2">
               <ul className="space-y-1">
-                {navLinks.map((link) => {
+                {mobileLinks.map((link) => {
                   const Icon = link.icon;
                   const active = isLinkActive(pathname, link.href);
                   return (
-                    <li key={link.href}>
+                    <li key={link.id}>
                       <SheetClose asChild>
                         <Link
                           href={link.href}
@@ -240,7 +224,20 @@ export default function Navbar() {
                             className="h-4 w-4 shrink-0"
                             aria-hidden="true"
                           />
-                          {link.label}
+                          <span className="flex-1">{link.label}</span>
+                          {link.badge === "cart" && cartCount > 0 && (
+                            <Badge
+                              variant={active ? "secondary" : "secondary"}
+                              className="h-5 px-1.5 text-[10px] tabular-nums"
+                            >
+                              {cartCount.toLocaleString("fa-IR")}
+                            </Badge>
+                          )}
+                          {link.badge === "wishlist" && wishlistCount > 0 && (
+                            <Badge className="h-5 px-1.5 text-[10px] tabular-nums">
+                              {wishlistCount.toLocaleString("fa-IR")}
+                            </Badge>
+                          )}
                         </Link>
                       </SheetClose>
                     </li>
@@ -249,13 +246,12 @@ export default function Navbar() {
               </ul>
             </nav>
 
-            {/* Auth footer */}
             <div className="shrink-0 border-t border-border p-3">
               {!hasHydrated ? (
                 <div className="h-10 animate-pulse rounded-lg bg-muted" />
               ) : loggedIn ? (
-                <div className="space-y-1">
-                  <div className="mb-2 flex items-center gap-2 rounded-lg border border-border bg-muted/40 px-3 py-2">
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/40 px-3 py-2">
                     <UserRound
                       className="h-4 w-4 shrink-0 text-muted-foreground"
                       aria-hidden="true"
@@ -264,24 +260,6 @@ export default function Navbar() {
                       {user.name}
                     </span>
                   </div>
-                  <SheetClose asChild>
-                    <Link
-                      href={getDashboardHref(user?.role)}
-                      className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm hover:bg-muted"
-                    >
-                      <LayoutDashboard className="h-4 w-4" aria-hidden="true" />
-                      داشبورد
-                    </Link>
-                  </SheetClose>
-                  <SheetClose asChild>
-                    <Link
-                      href="/account"
-                      className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm hover:bg-muted"
-                    >
-                      <CircleUserRound className="h-4 w-4" aria-hidden="true" />
-                      حساب کاربری
-                    </Link>
-                  </SheetClose>
                   <LogoutDialog>
                     <button
                       type="button"
@@ -334,12 +312,12 @@ export default function Navbar() {
           </span>
         </Link>
 
-        {/* ------------------------------ Desktop nav ------------------------- */}
+        {/* --------------------------- Desktop nav ---------------------------- */}
         <ul className="hidden flex-1 items-center gap-0.5 lg:flex">
-          {navLinks.map((link) => {
+          {navbarLinks.map((link) => {
             const active = isLinkActive(pathname, link.href);
             return (
-              <li key={link.href}>
+              <li key={link.id}>
                 <Link
                   href={link.href}
                   aria-current={active ? "page" : undefined}
@@ -364,12 +342,34 @@ export default function Navbar() {
           })}
         </ul>
 
-        {/* ------------------------------ Actions ----------------------------- */}
+        {/* ----------------------------- Actions ------------------------------ */}
         <div className="ms-auto flex items-center gap-1 sm:gap-2">
           <ModeToggle />
 
-          {/* Cart */}
-          {loggedIn && (
+          {canShowWishlist && (
+            <Button
+              asChild
+              variant="ghost"
+              size="icon"
+              className="relative h-9 w-9 rounded-full"
+            >
+              <Link
+                href="/wishlist"
+                aria-label={`علاقه‌مندی‌ها (${wishlistCount})`}
+              >
+                <Heart className="h-4 w-4" />
+                {wishlistCount > 0 && (
+                  <span className="absolute -inset-e-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold text-primary-foreground tabular-nums">
+                    {wishlistCount > 99
+                      ? "۹۹+"
+                      : wishlistCount.toLocaleString("fa-IR")}
+                  </span>
+                )}
+              </Link>
+            </Button>
+          )}
+
+          {canShowCart && (
             <Button
               asChild
               variant="ghost"
@@ -387,7 +387,6 @@ export default function Navbar() {
             </Button>
           )}
 
-          {/* Auth — desktop */}
           {!hasHydrated ? (
             <div className="hidden h-8 w-24 animate-pulse rounded-full bg-muted md:block" />
           ) : loggedIn ? (
@@ -413,8 +412,12 @@ export default function Navbar() {
                   </span>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-52">
-                <AccountMenuItems cartCount={cartCount} userRole={user.role} />
+              <DropdownMenuContent align="end" className="w-56">
+                <AccountMenuItems
+                  items={accountLinks}
+                  cartCount={cartCount}
+                  wishlistCount={wishlistCount}
+                />
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
@@ -440,7 +443,6 @@ export default function Navbar() {
             </>
           )}
 
-          {/* Account — mobile-only compact button */}
           {hasHydrated && loggedIn && (
             <DropdownMenu dir="rtl">
               <DropdownMenuTrigger asChild>
@@ -462,8 +464,12 @@ export default function Navbar() {
                   )}
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-52">
-                <AccountMenuItems cartCount={cartCount} userRole={user.role} />
+              <DropdownMenuContent align="end" className="w-56">
+                <AccountMenuItems
+                  items={accountLinks}
+                  cartCount={cartCount}
+                  wishlistCount={wishlistCount}
+                />
               </DropdownMenuContent>
             </DropdownMenu>
           )}

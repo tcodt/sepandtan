@@ -66,10 +66,22 @@ function formatToman(n: number) {
   return `${n.toLocaleString("fa-IR")} تومان`;
 }
 
-function formatMoneyString(value: string | number) {
-  const n = typeof value === "number" ? value : Number(value);
-  if (!Number.isFinite(n)) return String(value);
-  return formatToman(n);
+/**
+ * Compare two ShippingSelection objects by storeId → option.id + note.
+ * Used so the sync effect can bail out when nothing changed.
+ */
+function isSameSelection(a: ShippingSelection, b: ShippingSelection) {
+  const aKeys = Object.keys(a);
+  const bKeys = Object.keys(b);
+  if (aKeys.length !== bKeys.length) return false;
+  for (const key of aKeys) {
+    const av = a[key];
+    const bv = b[key];
+    if (!av || !bv) return false;
+    if (av.option?.id !== bv.option?.id) return false;
+    if ((av.note ?? "") !== (bv.note ?? "")) return false;
+  }
+  return true;
 }
 
 export function StoreCheckoutScreen() {
@@ -120,7 +132,15 @@ export function StoreCheckoutScreen() {
     return map;
   }, [shippingOptions]);
 
+  // store idهای پایدار برای وابستگی effect
+  const storeIdsKey = useMemo(
+    () => (cart?.stores ?? []).map((s) => s.storeId).join("|"),
+    [cart?.stores],
+  );
+
   // وقتی گزینه‌ها عوض شد، انتخاب‌های نامعتبر را پاک کن و در صورت تک‌گزینه، انتخاب خودکار
+  // نکته مهم: اگر خروجی با قبلی یکسان بود، همان prev را برگردان تا React bail out کند
+  // و حلقه بی‌نهایت setState → render → effect از بین برود.
   useEffect(() => {
     if (!cart) return;
     setShippingByStore((prev) => {
@@ -131,14 +151,21 @@ export function StoreCheckoutScreen() {
         if (current && options.some((o) => o.id === current.option.id)) {
           next[store.storeId] = current;
         } else if (options.length === 1) {
-          next[store.storeId] = { option: options[0], note: "" };
+          next[store.storeId] = {
+            option: options[0],
+            note: current?.note ?? "",
+          };
         }
       }
+      // ← bail-out critical
+      if (isSameSelection(prev, next)) return prev;
       return next;
     });
-  }, [cart, shippingByStoreId]);
+    // وابستگی پایدار به‌جای شیء cart (که ممکن است هر رندر رفرنس تازه بگیرد)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [storeIdsKey, shippingByStoreId]);
 
-  const stores = cart?.stores ?? [];
+  const stores = useMemo(() => cart?.stores ?? [], [cart?.stores]);
   const isEmpty = !cart || cart.totalItems === 0 || stores.length === 0;
 
   const shippingTotal = useMemo(() => {
@@ -378,13 +405,17 @@ export function StoreCheckoutScreen() {
                           onValueChange={(id) => {
                             const opt = options.find((o) => o.id === id);
                             if (!opt) return;
-                            setShippingByStore((prev) => ({
-                              ...prev,
-                              [store.storeId]: {
-                                option: opt,
-                                note: prev[store.storeId]?.note ?? "",
-                              },
-                            }));
+                            setShippingByStore((prev) => {
+                              const existing = prev[store.storeId];
+                              if (existing?.option.id === opt.id) return prev;
+                              return {
+                                ...prev,
+                                [store.storeId]: {
+                                  option: opt,
+                                  note: existing?.note ?? "",
+                                },
+                              };
+                            });
                           }}
                           className="space-y-2"
                         >
@@ -435,14 +466,18 @@ export function StoreCheckoutScreen() {
                           rows={2}
                           value={selected?.note ?? ""}
                           onChange={(e) =>
-                            setShippingByStore((prev) => ({
-                              ...prev,
-                              [store.storeId]: {
-                                option:
-                                  prev[store.storeId]?.option ?? options[0],
-                                note: e.target.value,
-                              },
-                            }))
+                            setShippingByStore((prev) => {
+                              const existing = prev[store.storeId];
+                              if (!existing) return prev;
+                              if (existing.note === e.target.value) return prev;
+                              return {
+                                ...prev,
+                                [store.storeId]: {
+                                  ...existing,
+                                  note: e.target.value,
+                                },
+                              };
+                            })
                           }
                           placeholder="توضیحات اختیاری..."
                           className="resize-none text-sm"
