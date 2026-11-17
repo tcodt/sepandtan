@@ -4,21 +4,24 @@
     "type": "split",
     "children": [
       {
-        "id": "5972ec64184db75d",
+        "id": "8172c5e0b13f5a58",
         "type": "tabs",
         "children": [
           {
-            "id": "7b1781cbc29d3e61",
+            "id": "1affbd9c7a057f59",
             "type": "leaf",
             "state": {
-              "type": "markdown",
+              "type": "canvas",
               "state": {
-                "file": "file:C:/Users/Reza/Downloads/SepandTan Flow/مستندسازی کامل فلوی سپندتن.md",
-                "mode": "source",
-                "source": false
+                "file": "معرفی سایت/نمایش.canvas",
+                "viewState": {
+                  "x": 4742.684848070136,
+                  "y": 392.3956615787555,
+                  "zoom": -2.0553313917231435
+                }
               },
-              "icon": "lucide-file",
-              "title": "مستندسازی کامل فلوی سپندتن"
+              "icon": "lucide-layout-dashboard",
+              "title": "نمایش"
             }
           }
         ]
@@ -83,7 +86,7 @@
       }
     ],
     "direction": "horizontal",
-    "width": 300
+    "width": 200
   },
   "right": {
     "id": "f2045ba9e404f4df",
@@ -172,9 +175,7 @@
             "type": "leaf",
             "state": {
               "type": "file-properties",
-              "state": {
-                "file": "file:C:/Users/Reza/Downloads/SepandTan Flow/مستندسازی کامل فلوی سپندتن.md"
-              },
+              "state": {},
               "icon": "lucide-info",
               "title": "File properties"
             }
@@ -184,7 +185,8 @@
       }
     ],
     "direction": "horizontal",
-    "width": 271.0999755859375
+    "width": 271.0999755859375,
+    "collapsed": true
   },
   "left-ribbon": {
     "hiddenItems": {
@@ -197,19 +199,50 @@
       "bases:Create new base": false
     }
   },
-  "active": "7b1781cbc29d3e61",
+  "active": "1affbd9c7a057f59",
   "lastOpenFiles": [
+    "معرفی سایت/مربی/ثبت نام مربی.md",
+    "معرفی سایت/کاربر/کد معرف.md",
+    "معرفی سایت/کاربر/کاربر.md",
+    "معرفی سایت/کاربر/پرداخت برنامه.md",
+    "معرفی سایت/کاربر/نمایش برنامه ها.md",
+    "معرفی سایت/کاربر/سبد خرید.md",
+    "معرفی سایت/کاربر/درخواست برنامه.md",
+    "معرفی سایت/کاربر/ثبت گزارش.md",
+    "معرفی سایت/کاربر/ثبت نام.md",
+    "معرفی سایت/کاربر/ثبت سفارش.md",
+    "معرفی سایت/کاربر/تایید ایمیل یا شماره تلفن.md",
+    "معرفی سایت/کاربر/افزودن به علاقه مندی محصولات.md",
+    "معرفی سایت/کاربر/اشتراک.md",
+    "معرفی سایت/کاربر/on boarding.md",
+    "معرفی سایت/کاربر",
+    "معرفی سایت/مربی/نظرات مربی.md",
+    "معرفی سایت/مربی/مربی.md",
+    "معرفی سایت/مربی/مدارک مربی.md",
+    "معرفی سایت/مربی/ساعت کاری مربی.md",
+    "معرفی سایت/مربی/برنامه ورزشی.md",
+    "معرفی سایت/مربی/برنامه غذایی.md",
+    "معرفی سایت/مربی/افتخارات و دستاورد مربی.md",
+    "معرفی سایت/مربی",
+    "معرفی سایت/فروشنده/نظرات محصولات.md",
+    "معرفی سایت/فروشنده/نظرات فروشنده.md",
+    "معرفی سایت/فروشنده/محصولات.md",
+    "معرفی سایت/فروشنده/فروشنده.md",
+    "معرفی سایت/فروشنده/روش ارسال.md",
+    "معرفی سایت/فروشنده",
+    "معرفی سایت/ادمین",
+    "معرفی سایت/نمایش.canvas",
+    "معرفی سایت/public",
+    "معرفی سایت",
+    "تیت",
+    "Untitled 1",
+    "ادمین",
     "Untitled.base",
     "Untitled 2.canvas",
     "Untitled 5.canvas",
     "Untitled.canvas",
-    "ورود و ثبت نام.md",
-    "Welcome.md",
     "Untitled 4.canvas",
-    "Untitled.md",
-    "2026-11-07.md",
     "Untitled 3.canvas",
-    "Untitled 1.canvas",
-    "Untitled"
+    "Untitled 1.canvas"
   ]
 }

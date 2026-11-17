@@ -374,12 +374,13 @@ model TrainingGoal {
 //////////////// دیتایی که توسط ادمین پر میشه ///////////////////
 // مربی
 model Coach {
-  id         String  @id @default(uuid())
-  userId     String  @unique @map("user_id") @db.Uuid
-  provinceId String? @map("province_id")
-  nationalId String? @map("national_id") // کد ملی یا آیدی ملی
-  cityId     String? @map("city_id")
-  addressId  String? @map("address_id")
+  id         String   @id @default(uuid())
+  userId     String   @unique @map("user_id") @db.Uuid
+  provinceId String?  @map("province_id")
+  nationalId String?  @map("national_id") // کد ملی یا آیدی ملی
+  cityId     String?  @map("city_id")
+  addressId  String?  @map("address_id")
+  banner     String[] @map("banner")
 
   title          String  @unique @map("title") // اسم یا نام مستعار و یا نام باشگاه
   slug           String  @unique @map("slug")
