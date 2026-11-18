@@ -20,23 +20,30 @@ function asBoolean(v: unknown): boolean {
 
 function mapPagination(raw: unknown): AdminUsersResponse["pagination"] {
   const r = (raw ?? {}) as Record<string, unknown>;
-  const next =
-    typeof r.nextPage === "number"
-      ? r.nextPage
-      : r.nextPage == null
-        ? null
-        : Number(r.nextPage);
-  const prev =
-    typeof r.prevPage === "number"
-      ? r.prevPage
-      : r.prevPage == null
-        ? null
-        : Number(r.prevPage);
-  const total = typeof r.total === "number" ? r.total : Number(r.total) || 0;
+  const num = (v: unknown): number | null => {
+    if (typeof v === "number" && Number.isFinite(v)) return v;
+    if (v == null || v === "") return null;
+    const n = Number(v);
+    return Number.isFinite(n) ? n : null;
+  };
+
+  const total = num(r.total) ?? num(r.totalItems) ?? num(r.totalCount) ?? 0;
+  let next = num(r.nextPage);
+  let prev = num(r.prevPage);
+  const page = num(r.page) ?? num(r.currentPage);
+  const totalPages = num(r.totalPages) ?? num(r.pageCount);
+
+  if (next == null && page != null && totalPages != null && page < totalPages) {
+    next = page + 1;
+  }
+  if (prev == null && page != null && page > 1) {
+    prev = page - 1;
+  }
+
   return {
-    nextPage: Number.isFinite(next as number) ? (next as number) : null,
-    prevPage: Number.isFinite(prev as number) ? (prev as number) : null,
-    total: Number.isFinite(total) ? total : 0,
+    nextPage: next,
+    prevPage: prev,
+    total,
   };
 }
 
@@ -84,6 +91,28 @@ function normalizeUsersResponse(raw: unknown): AdminUsersResponse {
   };
 }
 
+/** فقط فیلدهای مجاز UpdateUserDto، بدون رشته خالی */
+function sanitizeUserPayload(
+  payload: UpdateAdminUserPayload,
+): Record<string, unknown> {
+  const body: Record<string, unknown> = {};
+  if (payload.name != null && String(payload.name).trim()) {
+    body.name = String(payload.name).trim();
+  }
+  if (payload.email != null && String(payload.email).trim()) {
+    body.email = String(payload.email).trim();
+  }
+  if (payload.phone != null && String(payload.phone).trim()) {
+    body.phone = String(payload.phone).trim();
+  }
+  if (payload.password != null && String(payload.password).length > 0) {
+    body.password = payload.password;
+  }
+  if (payload.role) body.role = payload.role;
+  if (payload.status) body.status = payload.status;
+  return body;
+}
+
 /** GET /user */
 export async function fetchAdminUsers(
   filters: AdminUsersFilters = {},
@@ -108,33 +137,33 @@ export async function fetchAdminUsers(
 export async function createAdminUser(
   payload: CreateAdminUserPayload,
 ): Promise<void> {
-  await apiClient.post("/user", payload);
+  const body = sanitizeUserPayload(payload);
+  if (!body.name && !body.phone && !body.email) {
+    throw new Error("حداقل نام یا تماس برای ساخت کاربر لازم است");
+  }
+  await apiClient.post("/user", body);
 }
 
-/**
- * PUT /user/{id}
- * swagger: Update All Users by Super Admin — body = UpdateUserDto
- * پاسخ نمونه: { success: true }
- */
+/** PUT /user/{id} — UpdateUserDto */
 export async function updateAdminUser(
   id: string,
   payload: UpdateAdminUserPayload,
 ): Promise<void> {
   if (!id?.trim()) throw new Error("شناسه کاربر نامعتبر است");
-  await apiClient.put(`/user/${encodeURIComponent(id)}`, payload);
+  const body = sanitizeUserPayload(payload);
+  if (Object.keys(body).length === 0) {
+    throw new Error("هیچ فیلدی برای به‌روزرسانی ارسال نشده");
+  }
+  await apiClient.put(`/user/${encodeURIComponent(id)}`, body);
 }
 
-/**
- * DELETE /user/{id}
- * swagger: delete user with ID by Super Admin
- * حذف فیزیکی از DB — بدون soft-fallback
- */
+/** DELETE /user/{id} — Super Admin */
 export async function deleteAdminUser(id: string): Promise<void> {
   if (!id?.trim()) throw new Error("شناسه کاربر نامعتبر است");
   await apiClient.delete(`/user/${encodeURIComponent(id)}`);
 }
 
-/** حذف منطقی = فقط status=DELETED (رکورد می‌ماند، لاگین معمولاً بلاک) */
+/** Soft delete = status DELETED */
 export async function softDeleteAdminUser(id: string): Promise<void> {
   await updateAdminUser(id, { status: "DELETED" });
 }

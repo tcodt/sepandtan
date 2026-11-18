@@ -255,8 +255,9 @@ export function mapOnboardingToUpdateProfileDto(input: {
   equipment: Equipment;
   goal?: Goal;
   targetWeight?: number;
+  trainingGoalId?: string;
 }): UpdateProfileDto {
-  const { bodyInfo, equipment, targetWeight } = input;
+  const { bodyInfo, equipment, targetWeight, trainingGoalId } = input;
   const birthYear = new Date().getFullYear() - bodyInfo.age;
   const ageDate = `${birthYear}-01-01`;
 
@@ -268,5 +269,6 @@ export function mapOnboardingToUpdateProfileDto(input: {
     activityLevel: toBackendActivity(bodyInfo.activityLevel),
     trainingLocation: toBackendLocation(equipment),
     age: ageDate,
+    ...(trainingGoalId ? { trainingGoalId } : {}),
   };
 }

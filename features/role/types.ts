@@ -3,10 +3,14 @@ export type CreateCoachPayload = {
   headline?: string;
   bio?: string;
   maxClients?: number;
-  experienceYears?: string;
+  experienceYears?: string | number;
   nationalId?: string;
   instagram?: string;
   address?: string;
+  /** Display title — defaults to user name */
+  title?: string;
+  /** URL slug — auto-generated if omitted */
+  slug?: string;
 };
 
 export type CreateStorePayload = {

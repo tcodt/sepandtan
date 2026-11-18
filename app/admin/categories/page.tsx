@@ -9,7 +9,6 @@ import {
   Plus,
   Pencil,
   Trash2,
-  Tags,
   RefreshCw,
   FolderTree,
   Folder,
@@ -289,7 +288,7 @@ export default function AdminCategoriesPage() {
         <div className="min-w-0">
           <h1 className="flex items-center gap-2 text-xl font-bold tracking-tight text-foreground sm:text-2xl">
             <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
-              <Tags className="h-4 w-4" aria-hidden="true" />
+              <FolderTree className="h-4 w-4" aria-hidden="true" />
             </span>
             دسته‌بندی‌ها
           </h1>

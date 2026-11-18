@@ -1,52 +1,53 @@
 "use client";
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
+import { getErrorMessage } from "@/lib/api/client";
+import { PROFILE_QUERY_KEY } from "@/features/auth/hooks/use-auth";
+import { useUserStore } from "@/lib/store/user-store";
+import { mapProfileResponseToUser } from "@/lib/api/mappers/user";
 import {
-  saveOnboardingToBackend,
+  completeOnboardingOnBackend,
+  fetchTrainingGoals,
+  resolveTrainingGoalId,
   type CompleteOnboardingPayload,
 } from "../api";
-import { mapProfileResponseToUser } from "@/lib/api/mappers/user";
-import { getErrorMessage } from "@/lib/api/client";
-import { useUserStore } from "@/lib/store/user-store";
 
-const PROFILE_QUERY_KEY = ["auth", "me"] as const;
+export function useTrainingGoals() {
+  return useQuery({
+    queryKey: ["catalog", "training-goals"],
+    queryFn: fetchTrainingGoals,
+    staleTime: 5 * 60_000,
+  });
+}
 
 export function useCompleteOnboarding() {
+  const qc = useQueryClient();
   const setAuthFromBackend = useUserStore((s) => s.setAuthFromBackend);
-  const completeOnboardingLocal = useUserStore((s) => s.completeOnboarding);
-  const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (payload: CompleteOnboardingPayload) =>
-      saveOnboardingToBackend(payload),
-    onSuccess: (profileRes, variables) => {
-      const user = mapProfileResponseToUser(profileRes);
+    mutationFn: async (payload: CompleteOnboardingPayload) => {
+      let trainingGoalId = payload.trainingGoalId;
+      if (!trainingGoalId) {
+        try {
+          const goals = await fetchTrainingGoals();
+          trainingGoalId = resolveTrainingGoalId(payload.goal, goals);
+        } catch {
+          // catalog optional
+        }
+      }
 
-      // اگر بک‌اند هنوز body را برنگرداند، محلی کامل کن
-      const ensured: typeof user = {
-        ...user,
-        bodyInfo: user.bodyInfo ?? variables.bodyInfo,
-        equipment: user.equipment ?? variables.equipment,
-        goal: variables.goal,
-        targetWeight: variables.targetWeight ?? user.targetWeight,
-        onboardingCompleted: true,
-        onboardingStatus: "completed",
-        currentOnboardingStep: 0,
-        currentPlanId: variables.currentPlanId ?? user.currentPlanId ?? null,
-      };
-
-      setAuthFromBackend(ensured);
-      queryClient.setQueryData(PROFILE_QUERY_KEY, profileRes);
-
-      completeOnboardingLocal({
-        bodyInfo: variables.bodyInfo,
-        equipment: variables.equipment,
-        goal: variables.goal,
-        currentPlanId: variables.currentPlanId ?? "",
-        targetWeight: variables.targetWeight,
+      return completeOnboardingOnBackend({
+        ...payload,
+        trainingGoalId,
       });
+    },
+    onSuccess: (profile) => {
+      const mapped = mapProfileResponseToUser(profile);
+      setAuthFromBackend(mapped);
+      void qc.invalidateQueries({ queryKey: PROFILE_QUERY_KEY });
+      toast.success("اطلاعات ذخیره شد");
     },
     onError: (error) => {
       toast.error(getErrorMessage(error, "ذخیره اطلاعات ناموفق بود"));

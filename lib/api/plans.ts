@@ -1,15 +1,6 @@
-import type {
-  Plan,
-  PlanDay,
-  BodyInfo,
-  Equipment,
-  Goal,
-} from "@/lib/types/plan";
-import { generatePlan } from "@/lib/plan/generate-plan";
-import { completeUserOnboarding } from "./users";
+import type { Plan, PlanDay } from "@/lib/types/plan";
 import { db } from "./db";
 import { createId, delay } from "./client";
-import { createPlanAccessForPlan } from "./access";
 
 export async function getPlanById(id: string): Promise<Plan> {
   await delay();
@@ -45,36 +36,6 @@ export async function createPlan(plan: Plan): Promise<Plan> {
 
   db.plans.push(saved);
   return structuredClone(saved);
-}
-
-export async function generateAndSavePlan(input: {
-  userId: string;
-  bodyInfo: BodyInfo;
-  equipment: Equipment;
-  goal: Goal;
-  targetWeight?: number;
-}): Promise<{ plan: Plan; userId: string }> {
-  const plan = generatePlan(input);
-  const saved = await createPlan(plan);
-
-  // برنامه رایگان آنبوردینگ → Access فعال ۳۰ روزه
-  await createPlanAccessForPlan({
-    userId: input.userId,
-    plan: saved,
-    durationDays: 30,
-    pricePaid: 0,
-    status: "active",
-  });
-
-  await completeUserOnboarding(input.userId, {
-    bodyInfo: input.bodyInfo,
-    equipment: input.equipment,
-    goal: input.goal,
-    currentPlanId: saved.id,
-    targetWeight: input.targetWeight,
-  });
-
-  return { plan: saved, userId: input.userId };
 }
 
 export function getCurrentDayNumber(plan: Plan, today = new Date()): number {

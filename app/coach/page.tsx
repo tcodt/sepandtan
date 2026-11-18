@@ -19,14 +19,14 @@ import { StatsCards } from "@/components/coach/stats-cards";
 import { RequestCard } from "@/components/coach/request-card";
 import { CoachEmptyState } from "@/components/coach/empty-states";
 import { useUserStore } from "@/lib/store/user-store";
-import { db } from "@/lib/api/db";
 import {
   getClientRelationsForCoach,
   getCoachPlans,
+  getCoachCollaborationRequests,
 } from "@/lib/api/coach-plans";
+import { getOrCreateCoachProfileForUser } from "@/lib/api/coaches";
 import type { CollaborationRequest } from "@/lib/types/coach";
 import { cn } from "@/lib/utils";
-import { getOrCreateCoachProfileForUser } from "@/lib/api/coaches";
 
 export default function CoachDashboardPage() {
   const user = useUserStore((s) => s.user);
@@ -47,26 +47,53 @@ export default function CoachDashboardPage() {
     setLoading(true);
 
     try {
-      const coach = await getOrCreateCoachProfileForUser({
-        userId: user.id,
-        name: user.name,
-        avatarUrl: user.avatarUrl,
-      });
-      setCoachMissing(false);
+      // 1) Coach profile — hard requirement
+      let coach;
+      try {
+        coach = await getOrCreateCoachProfileForUser({
+          userId: user.id,
+          name: user.name,
+          avatarUrl: user.avatarUrl,
+        });
+        setCoachMissing(false);
+      } catch (err) {
+        console.error("coach profile", err);
+        setCoachMissing(true);
+        setStats({
+          pendingRequests: 0,
+          activeClients: 0,
+          draftPlans: 0,
+          publishedPlans: 0,
+        });
+        setPendingRequests([]);
+        return;
+      }
 
-      const [relations, plans] = await Promise.all([
-        getClientRelationsForCoach(coach.id),
-        getCoachPlans(coach.id),
-      ]);
+      // 2) Parallel secondary data — soft failures
+      const [relationsResult, plansResult, requestsResult] =
+        await Promise.allSettled([
+          getClientRelationsForCoach(coach.id),
+          getCoachPlans(coach.id),
+          getCoachCollaborationRequests(),
+        ]);
 
-      const pending = db.collaborationRequests.filter(
-        (r) => r.coachId === coach.id && r.status === "pending",
-      );
+      const relations =
+        relationsResult.status === "fulfilled" ? relationsResult.value : [];
+      const plans = plansResult.status === "fulfilled" ? plansResult.value : [];
+      const requests =
+        requestsResult.status === "fulfilled" ? requestsResult.value : [];
 
-      const pendingWithName = pending.map((r) => {
-        const client = db.users.find((u) => u.id === r.userId);
-        return { ...r, clientName: client?.name };
-      });
+      if (relationsResult.status === "rejected") {
+        console.warn("relations", relationsResult.reason);
+      }
+      if (plansResult.status === "rejected") {
+        console.warn("plans (still local/fake)", plansResult.reason);
+      }
+      if (requestsResult.status === "rejected") {
+        console.warn("plan-requests", requestsResult.reason);
+      }
+
+      const pending = requests.filter((r) => r.status === "pending");
 
       setStats({
         pendingRequests: pending.length,
@@ -74,16 +101,15 @@ export default function CoachDashboardPage() {
         draftPlans: plans.filter((p) => p.status === "draft").length,
         publishedPlans: plans.filter((p) => p.status === "published").length,
       });
-      setPendingRequests(pendingWithName.slice(0, 3));
-    } catch (err) {
-      console.error(err);
+      setPendingRequests(pending.slice(0, 3));
     } finally {
       setLoading(false);
     }
   }, [user?.avatarUrl, user?.id, user?.name]);
 
   useEffect(() => {
-    loadData();
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void loadData();
   }, [loadData]);
 
   const hasAnyData =
@@ -94,7 +120,6 @@ export default function CoachDashboardPage() {
 
   const firstName = user?.name?.split(" ")[0] ?? "مربی";
 
-  /** Primary + secondary actions — "ساخت برنامه" only appears once now. */
   const quickActions = [
     {
       href: "/coach/requests",
@@ -130,7 +155,6 @@ export default function CoachDashboardPage() {
 
   return (
     <div className="space-y-6 sm:space-y-7 max-w-4xl mx-auto">
-      {/* ============ Hero ============ */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
@@ -154,9 +178,7 @@ export default function CoachDashboardPage() {
             asChild
             className={cn(
               "gap-2 h-11 px-5 font-semibold w-full sm:w-auto",
-              // LIGHT: warm shadow under orange
               "shadow-sm shadow-primary/20 hover:shadow-md hover:shadow-primary/25",
-              // DARK: glow
               "dark:shadow-none dark:hover:shadow-lg dark:hover:shadow-primary/30",
             )}
           >
@@ -168,15 +190,12 @@ export default function CoachDashboardPage() {
         </motion.div>
       </div>
 
-      {/* ============ Empty state (early, when there's nothing yet) ============ */}
       {showEmpty ? (
         <CoachEmptyState type="dashboard" />
       ) : (
         <>
-          {/* ============ Stats ============ */}
           <StatsCards stats={stats} loading={loading} />
 
-          {/* ============ Quick actions ============ */}
           {!loading && (
             <section className="space-y-3">
               <SectionHeading>دسترسی سریع</SectionHeading>
@@ -200,7 +219,6 @@ export default function CoachDashboardPage() {
             </section>
           )}
 
-          {/* ============ Pending requests ============ */}
           {!loading && pendingRequests.length > 0 && (
             <section className="space-y-4">
               <div className="flex items-center justify-between gap-3">
@@ -212,9 +230,7 @@ export default function CoachDashboardPage() {
                     variant="outline"
                     className={cn(
                       "text-[10px] h-5 border",
-                      // LIGHT: readable amber
                       "bg-amber-500/10 text-amber-700 border-amber-500/25",
-                      // DARK
                       "dark:bg-amber-500/10 dark:text-amber-300 dark:border-amber-500/25",
                     )}
                   >
@@ -239,15 +255,13 @@ export default function CoachDashboardPage() {
                   <RequestCard
                     key={req.id}
                     request={req}
-                    clientName={req.clientName}
-                    onDone={loadData}
+                    onChanged={loadData}
                   />
                 ))}
               </div>
             </section>
           )}
 
-          {/* ============ Nudge: clients but no plans ============ */}
           {!loading &&
             stats.activeClients > 0 &&
             stats.publishedPlans === 0 &&
@@ -260,9 +274,7 @@ export default function CoachDashboardPage() {
                 <Card
                   className={cn(
                     "rounded-2xl overflow-hidden",
-                    // LIGHT: soft orange panel + visible border
                     "bg-primary/5 border-primary/20 shadow-sm shadow-primary/10",
-                    // DARK
                     "dark:bg-primary/5 dark:border-primary/20 dark:shadow-none",
                   )}
                 >
@@ -311,9 +323,6 @@ export default function CoachDashboardPage() {
   );
 }
 
-/* =============================================================
-   Section heading — consistent visual level
-   ============================================================= */
 function SectionHeading({
   children,
   className,
@@ -333,9 +342,6 @@ function SectionHeading({
   );
 }
 
-/* =============================================================
-   Quick action card — 3 items now (removed duplicate "ساخت برنامه")
-   ============================================================= */
 function QuickActionCard({
   action,
 }: {
@@ -354,17 +360,14 @@ function QuickActionCard({
       <Card
         className={cn(
           "relative h-full rounded-2xl overflow-hidden transition-all duration-300",
-          // LIGHT: real card + soft elevation
           "bg-card border-border shadow-sm shadow-foreground/4",
           "hover:border-primary/40 hover:shadow-md hover:shadow-primary/10",
           "hover:-translate-y-0.5",
-          // DARK: glass
           "dark:bg-card/60 dark:border-white/10 dark:backdrop-blur-md",
           "dark:shadow-none dark:hover:border-primary/40",
           "dark:hover:bg-white/5",
         )}
       >
-        {/* Arrow accent — appears on hover, top-left in RTL */}
         <span
           className={cn(
             "absolute top-3 left-3",
@@ -378,14 +381,11 @@ function QuickActionCard({
         </span>
 
         <CardContent className="p-3.5 sm:p-4 space-y-3">
-          {/* Icon + badge */}
           <div className="flex items-start justify-between">
             <div
               className={cn(
                 "w-9 h-9 rounded-xl flex items-center justify-center transition-colors",
-                // LIGHT: strong orange presence
                 "bg-primary/10 text-primary ring-1 ring-primary/20",
-                // DARK
                 "dark:bg-primary/15 dark:ring-primary/20",
               )}
             >
@@ -396,9 +396,7 @@ function QuickActionCard({
               <Badge
                 className={cn(
                   "h-5 min-w-5 px-1.5 text-[10px] border",
-                  // LIGHT: readable amber badge
                   "bg-amber-500/10 text-amber-700 border-amber-500/25",
-                  // DARK
                   "dark:bg-amber-500/20 dark:text-amber-300 dark:border-amber-500/25",
                 )}
               >
@@ -407,7 +405,6 @@ function QuickActionCard({
             )}
           </div>
 
-          {/* Label + desc */}
           <div className="min-w-0">
             <p className="text-sm font-semibold text-foreground truncate">
               {action.label}

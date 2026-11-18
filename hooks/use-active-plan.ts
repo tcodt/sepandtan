@@ -2,9 +2,17 @@
 
 import { useCallback, useEffect, useState } from "react";
 import type { PlanAccess } from "@/lib/types/access";
-import { getActivePlanAccess } from "@/lib/api/access";
+import { fetchCurrentUserPlan } from "@/features/user-plan/api";
+import { toPlanAccessFromCurrent } from "@/features/user-plan/adapters";
 import { useUserStore } from "@/lib/store/user-store";
 
+/**
+ * Active training plan from GET /user-plan/my/current
+ * Still exposes PlanAccess shape for existing UI.
+ *
+ * MIGRATE consumers to useCurrentUserPlan() from features/user-plan/hooks
+ * then delete this adapter hook.
+ */
 export function useActivePlan() {
   const userId = useUserStore((s) => s.user?.id);
 
@@ -24,8 +32,8 @@ export function useActivePlan() {
     setError(null);
 
     try {
-      const result = await getActivePlanAccess(userId);
-      setData(result);
+      const current = await fetchCurrentUserPlan();
+      setData(current ? toPlanAccessFromCurrent(current, userId) : null);
     } catch (e) {
       setError(e instanceof Error ? e.message : "خطا در بارگذاری برنامه فعال");
       setData(null);
@@ -35,7 +43,8 @@ export function useActivePlan() {
   }, [userId]);
 
   useEffect(() => {
-    refetch();
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void refetch();
   }, [refetch]);
 
   return {

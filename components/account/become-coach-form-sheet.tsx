@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
 import { Loader2, CheckCircle2 } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 import {
   Sheet,
@@ -18,12 +19,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { useUserStore } from "@/lib/store/user-store";
-import { Textarea } from "../ui/textarea";
 import { submitCoachRequest } from "@/lib/api/coach-requests";
-import { useRouter } from "next/navigation";
 import { useMediaQuery } from "@/hooks/use-media-query";
+import { getErrorMessage } from "@/lib/api/client";
 
 const SPECIALTIES = [
   "کاهش وزن",
@@ -63,9 +64,11 @@ export function BecomeCoachFormSheet({ open, onOpenChange, onSuccess }: Props) {
   const router = useRouter();
   const user = useUserStore((s) => s.user);
   const setUser = useUserStore((s) => s.setUser);
+  const setAuthFromBackend = useUserStore((s) => s.setAuthFromBackend);
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedSpecialties, setSelectedSpecialties] = useState<string[]>([]);
-  const isDesktop = useMediaQuery("(min-width: 768px)"); // md breakpoint
+  const isDesktop = useMediaQuery("(min-width: 768px)");
 
   const {
     register,
@@ -101,9 +104,9 @@ export function BecomeCoachFormSheet({ open, onOpenChange, onSuccess }: Props) {
 
     setIsSubmitting(true);
     try {
-      // ارتقای کامل: role در db.users + ساخت رکورد در db.coaches
-      const result = await submitCoachRequest({
+      const { user: nextUser } = await submitCoachRequest({
         userId: user.id,
+        name: user.name,
         specialties: data.specialties,
         experienceYears: data.experienceYears,
         bio: data.bio,
@@ -111,8 +114,12 @@ export function BecomeCoachFormSheet({ open, onOpenChange, onSuccess }: Props) {
         website: data.website || null,
       });
 
-      // همگام‌سازی store با داده واقعی از db
-      setUser(result.user);
+      // CRITICAL: /coach layout checks role + roleStatus
+      if (typeof setAuthFromBackend === "function") {
+        setAuthFromBackend(nextUser);
+      } else {
+        setUser(nextUser);
+      }
 
       toast.success("پنل مربی فعال شد", {
         description: "حالا می‌تونی برنامه بسازی و هنرجو بگیری.",
@@ -123,13 +130,9 @@ export function BecomeCoachFormSheet({ open, onOpenChange, onSuccess }: Props) {
       onOpenChange(false);
       onSuccess?.();
 
-      // ریدایرکت به پنل مربی
-      setTimeout(() => {
-        router.replace("/coach");
-      }, 600);
+      router.replace("/coach");
     } catch (err) {
-      const message = err instanceof Error ? err.message : "خطا در ثبت درخواست";
-      toast.error(message);
+      toast.error(getErrorMessage(err, "خطا در ثبت درخواست مربیگری"));
     } finally {
       setIsSubmitting(false);
     }
@@ -140,10 +143,8 @@ export function BecomeCoachFormSheet({ open, onOpenChange, onSuccess }: Props) {
       <SheetContent
         side={isDesktop ? "right" : "bottom"}
         className={cn(
-          "rounded-t-3xl overflow-y-auto p-4 md:p-8",
-          // Mobile: bottom sheet look
+          "overflow-y-auto p-4 md:p-8",
           "h-[70vh] rounded-t-3xl",
-          // Desktop: right-side panel look
           "md:h-full md:w-120 md:max-w-full md:rounded-none md:rounded-l-3xl",
         )}
       >
@@ -155,7 +156,6 @@ export function BecomeCoachFormSheet({ open, onOpenChange, onSuccess }: Props) {
         </SheetHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-5 py-4">
-          {/* تخصص‌ها */}
           <div className="space-y-2">
             <Label>تخصص‌ها (حداقل یک مورد)</Label>
             <div className="flex flex-wrap gap-2">
@@ -185,7 +185,6 @@ export function BecomeCoachFormSheet({ open, onOpenChange, onSuccess }: Props) {
             )}
           </div>
 
-          {/* سابقه */}
           <div className="space-y-2">
             <Label htmlFor="experienceYears">سابقه مربیگری (سال)</Label>
             <Input
@@ -203,7 +202,6 @@ export function BecomeCoachFormSheet({ open, onOpenChange, onSuccess }: Props) {
             )}
           </div>
 
-          {/* بیو */}
           <div className="space-y-2">
             <Label htmlFor="bio">بیو کوتاه (حداکثر ۱۵۰ کاراکتر)</Label>
             <Textarea
@@ -218,7 +216,6 @@ export function BecomeCoachFormSheet({ open, onOpenChange, onSuccess }: Props) {
             )}
           </div>
 
-          {/* اینستاگرام */}
           <div className="space-y-2">
             <Label htmlFor="instagram">اینستاگرام (اختیاری)</Label>
             <Input
@@ -230,7 +227,6 @@ export function BecomeCoachFormSheet({ open, onOpenChange, onSuccess }: Props) {
             />
           </div>
 
-          {/* سایت */}
           <div className="space-y-2">
             <Label htmlFor="website">سایت یا لینک دیگر (اختیاری)</Label>
             <Input
@@ -245,7 +241,7 @@ export function BecomeCoachFormSheet({ open, onOpenChange, onSuccess }: Props) {
           <SheetFooter className="flex flex-col gap-2 pt-2">
             <Button
               type="submit"
-              className="w-full h-11 font-semibold"
+              className="w-full h-11 font-semibold gap-2"
               disabled={isSubmitting}
             >
               {isSubmitting ? (

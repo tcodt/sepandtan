@@ -1,189 +1,91 @@
-import { createId } from "./client";
+/**
+ * Compatibility layer for PlanAccess.
+ * Reads come from real /user-plan/* .
+ * Writes (createPlanAccessForPlan) are stubs until onboarding migrates off local generatePlan.
+ *
+ * REMOVE after:
+ * - hooks/use-user-plan-accesses.ts → useMyUserPlans
+ * - hooks/use-active-plan.ts → useCurrentUserPlan
+ * - components/plans/plans-screen.tsx
+ * - lib/api/plans.ts no longer calls createPlanAccessForPlan
+ */
 import type { PlanAccess } from "@/lib/types/access";
-import { PLAN_ACCESSES } from "@/lib/data/plan-accesses";
-import { Plan } from "../types/plan";
-
-function delay(ms = 280): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-/** کپی در حافظه برای عملیات write در MVP */
-let accesses: PlanAccess[] = [...PLAN_ACCESSES];
+import type { Plan } from "@/lib/types/plan";
+import {
+  fetchCurrentUserPlan,
+  fetchMyUserPlans,
+} from "@/features/user-plan/api";
+import {
+  toPlanAccessFromCurrent,
+  toPlanAccessFromListItem,
+} from "@/features/user-plan/adapters";
 
 export async function getUserPlanAccesses(
   userId: string,
 ): Promise<PlanAccess[]> {
-  await delay();
-  return accesses
-    .filter((a) => a.userId === userId)
-    .sort(
-      (a, b) =>
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-    );
+  const plans = await fetchMyUserPlans();
+  return plans.map((p) => toPlanAccessFromListItem(p, userId));
 }
 
 export async function getActivePlanAccess(
   userId: string,
 ): Promise<PlanAccess | null> {
-  await delay();
-  return (
-    accesses.find((a) => a.userId === userId && a.status === "active") ?? null
-  );
+  const current = await fetchCurrentUserPlan();
+  if (!current) return null;
+  return toPlanAccessFromCurrent(current, userId);
 }
 
 export async function getPlanAccessById(
   id: string,
 ): Promise<PlanAccess | null> {
-  await delay();
-  return accesses.find((a) => a.id === id) ?? null;
+  const plans = await fetchMyUserPlans();
+  const found = plans.find((p) => p.id === id);
+  if (!found) return null;
+  return toPlanAccessFromListItem(found, found.coach?.id ?? "");
 }
 
 /**
- * فعال‌سازی یک دسترسی pending
- * قانون قفل‌شده: فقط یک Active Plan مجاز است → قبلی‌ها expired می‌شوند
- */
-export async function activatePlanAccess(
-  accessId: string,
-  userId: string,
-): Promise<PlanAccess> {
-  await delay(400);
-
-  const target = accesses.find((a) => a.id === accessId && a.userId === userId);
-  if (!target) throw new Error("دسترسی پیدا نشد");
-  if (target.status === "expired") {
-    throw new Error("این دسترسی منقضی شده و قابل فعال‌سازی نیست");
-  }
-  if (target.status === "active") return target;
-
-  const now = new Date();
-  const end = new Date(now);
-  end.setDate(end.getDate() + target.durationDays);
-
-  accesses = accesses.map((a) => {
-    if (a.userId === userId && a.status === "active") {
-      return { ...a, status: "expired" as const };
-    }
-    if (a.id === accessId) {
-      return {
-        ...a,
-        status: "active" as const,
-        startDate: now.toISOString(),
-        endDate: end.toISOString(),
-        activatedAt: now.toISOString(),
-      };
-    }
-    return a;
-  });
-
-  return accesses.find((a) => a.id === accessId)!;
-}
-
-/** فقط برای تست */
-export function __resetPlanAccesses() {
-  accesses = [...PLAN_ACCESSES];
-}
-
-/**
- * ساخت PlanAccess برای برنامه (مثلاً بعد از آنبوردینگ رایگان)
+ * @deprecated Training plan activation is owned by backend user-plan + service-order.
+ * Kept so generateAndSavePlan does not crash until onboarding is migrated.
  */
 export async function createPlanAccessForPlan(input: {
   userId: string;
   plan: Plan;
-  durationDays?: 30 | 45 | 90;
-  pricePaid?: number;
-  status?: "active" | "pending_activation";
+  durationDays: number;
+  pricePaid: number;
+  status: PlanAccess["status"];
 }): Promise<PlanAccess> {
-  await delay(200);
-
-  const now = new Date();
-  const durationDays = input.durationDays ?? 30;
-  const status = input.status ?? "active";
-
-  const end = new Date(now);
-  end.setDate(end.getDate() + durationDays);
-
-  // اگر active است، بقیه activeهای همین کاربر را expired کن
-  if (status === "active") {
-    accesses = accesses.map((a) =>
-      a.userId === input.userId && a.status === "active"
-        ? { ...a, status: "expired" as const }
-        : a,
-    );
-  }
-
-  const access: PlanAccess = {
-    id: createId("access"),
+  console.warn(
+    "[access] createPlanAccessForPlan is deprecated — use user-plan / service-order APIs",
+    input.plan.id,
+  );
+  return {
+    id: input.plan.id,
     userId: input.userId,
     planId: input.plan.id,
-    durationDays,
-    startDate: status === "active" ? now.toISOString() : null,
-    endDate: status === "active" ? end.toISOString() : null,
-    status,
+    durationDays: (input.durationDays === 45
+      ? 45
+      : input.durationDays === 90
+        ? 90
+        : 30) as 30 | 45 | 90,
+    startDate: null,
+    endDate: null,
+    status: input.status,
     isRenewal: false,
-    purchaseId: createId("pay"),
-    pricePaid: input.pricePaid ?? 0,
-    createdAt: now.toISOString(),
-    activatedAt: status === "active" ? now.toISOString() : null,
-    planTitle: input.plan.title,
-    planSource: input.plan.source,
-    coachId: input.plan.coachId ?? null,
-    coachName: null,
+    purchaseId: input.plan.id,
+    pricePaid: input.pricePaid,
+    createdAt: new Date().toISOString(),
+    planTitle: input.plan.title ?? input.plan.id,
+    planSource: "ai",
   };
-
-  accesses = [access, ...accesses];
-  return { ...access };
 }
 
-/**
- * اگر کاربر currentPlanId دارد ولی Access ندارد، یکی بساز (همگام‌سازی)
- */
-export async function ensureAccessForCurrentPlan(input: {
-  userId: string;
-  planId: string;
-  planTitle?: string;
-  planSource?: "ai" | "coach";
-  durationDays?: 30 | 45 | 90;
-}): Promise<PlanAccess | null> {
-  await delay(100);
-
-  const existing = accesses.find(
-    (a) =>
-      a.userId === input.userId &&
-      a.planId === input.planId &&
-      (a.status === "active" || a.status === "pending_activation"),
+export async function activatePlanAccess(
+  id: string,
+): Promise<PlanAccess | null> {
+  console.warn(
+    "[access] activatePlanAccess is deprecated — coach activates via /user-plan/coach/{id}/activate",
+    id,
   );
-  if (existing) return { ...existing };
-
-  const now = new Date();
-  const durationDays = input.durationDays ?? 30;
-  const end = new Date(now);
-  end.setDate(end.getDate() + durationDays);
-
-  accesses = accesses.map((a) =>
-    a.userId === input.userId && a.status === "active"
-      ? { ...a, status: "expired" as const }
-      : a,
-  );
-
-  const access: PlanAccess = {
-    id: createId("access"),
-    userId: input.userId,
-    planId: input.planId,
-    durationDays,
-    startDate: now.toISOString(),
-    endDate: end.toISOString(),
-    status: "active",
-    isRenewal: false,
-    purchaseId: createId("pay"),
-    pricePaid: 0,
-    createdAt: now.toISOString(),
-    activatedAt: now.toISOString(),
-    planTitle: input.planTitle,
-    planSource: input.planSource ?? "ai",
-    coachId: null,
-    coachName: null,
-  };
-
-  accesses = [access, ...accesses];
-  return { ...access };
+  return getPlanAccessById(id);
 }
