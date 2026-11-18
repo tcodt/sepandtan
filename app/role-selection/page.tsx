@@ -16,10 +16,6 @@ import {
 } from "@/components/ui/card";
 import { useUserStore } from "@/lib/store/user-store";
 import { useRequireAuth } from "@/hooks/use-require-auth";
-import {
-  useRequestCoachRole,
-  useRequestStoreRole,
-} from "@/features/role/hooks/use-role-request";
 import { canRequestProfessionalRole, lockFromRole } from "@/lib/role-lock";
 import { cn } from "@/lib/utils";
 
@@ -60,13 +56,8 @@ export default function RoleSelectionPage() {
   const setRole = useUserStore((s) => s.setRole);
   const updateProfile = useUserStore((s) => s.updateProfile);
 
-  const coachMutation = useRequestCoachRole();
-  const storeMutation = useRequestStoreRole();
-
   const [selected, setSelected] = useState<SelectableRole | null>(null);
-
-  const isSubmitting = coachMutation.isPending || storeMutation.isPending;
-
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const lock = user?.professionalRoleLock ?? lockFromRole(user?.role) ?? null;
   const coachGate = canRequestProfessionalRole(user, "coach");
   const sellerGate = canRequestProfessionalRole(user, "seller");
@@ -85,6 +76,7 @@ export default function RoleSelectionPage() {
 
   const handleContinue = async () => {
     if (!selected || !user) return;
+    setIsSubmitting(true);
 
     try {
       if (selected === "trainee") {
@@ -106,10 +98,7 @@ export default function RoleSelectionPage() {
           toast.error(coachGate.message);
           return;
         }
-        coachMutation.mutate({
-          isAcceptingClients: true,
-          headline: "مربی فیتنس",
-        });
+        router.push("/role/coach-apply");
         return;
       }
 
@@ -118,13 +107,15 @@ export default function RoleSelectionPage() {
           toast.error(sellerGate.message);
           return;
         }
-        storeMutation.mutate({});
+        router.push("/role/seller-apply");
         return;
       }
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "خطایی رخ داد. دوباره تلاش کن.";
       toast.error(message);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 

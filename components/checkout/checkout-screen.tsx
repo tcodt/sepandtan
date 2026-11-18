@@ -12,9 +12,9 @@ import {
   CreditCard,
   Sparkles,
   ChevronLeft,
-  Clock,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -27,14 +27,19 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useUserStore } from "@/lib/store/user-store";
-import { updateUser } from "@/lib/api/users";
 import { getSubscriptionPlanById } from "@/lib/api/subscription-plans";
 import {
   clearSelectedPlan,
   readSelectedPlan,
 } from "@/lib/checkout/selected-plan";
-import type { SubscriptionPlan, SubscriptionStatus } from "@/lib/types/plan";
-import { subscriptionStatusFromPlan } from "@/lib/subscription/access";
+import type { SubscriptionPlan } from "@/lib/types/plan";
+import { subscribeToPlan } from "@/features/subscription/api";
+import { subscriptionKeys } from "@/features/subscription/hooks";
+import { getErrorMessage } from "@/lib/api/client";
+import {
+  paySubscription,
+  quoteSubscription,
+} from "@/features/service-order/api";
 
 function formatPrice(price: number) {
   return price.toLocaleString("fa-IR");
@@ -45,6 +50,7 @@ export function CheckoutScreen() {
   const searchParams = useSearchParams();
   const user = useUserStore((s) => s.user);
   const updateProfile = useUserStore((s) => s.updateProfile);
+  const queryClient = useQueryClient();
 
   const [plan, setPlan] = useState<SubscriptionPlan | null>(null);
   const [loading, setLoading] = useState(true);
@@ -52,8 +58,6 @@ export function CheckoutScreen() {
   const [error, setError] = useState<string | null>(null);
 
   const planIdFromQuery = searchParams.get("plan");
-
-  console.log("User Info: ", user);
 
   const resolvedPlanId = useMemo(() => {
     if (planIdFromQuery) return planIdFromQuery;
@@ -88,7 +92,7 @@ export function CheckoutScreen() {
       }
     }
 
-    load();
+    void load();
     return () => {
       cancelled = true;
     };
@@ -99,20 +103,33 @@ export function CheckoutScreen() {
 
     setSubmitting(true);
     try {
-      const nextStatus: SubscriptionStatus = subscriptionStatusFromPlan(plan);
+      // 1) Create PENDING/TRIALING subscription
+      const subscription = await subscribeToPlan({ planId: plan.id });
 
-      const updated = await updateUser(user.id, {
-        currentPlanId: plan.id,
-        subscriptionStatus: nextStatus,
+      // 2) Quote amount
+      await quoteSubscription({ subscriptionId: subscription.id });
+
+      // 3) Pay via gateway
+      const payment = await paySubscription({
+        subscriptionId: subscription.id,
+        method: "ZARINPAL",
       });
 
+      void queryClient.invalidateQueries({ queryKey: subscriptionKeys.all });
+
+      if (payment.paymentUrl) {
+        clearSelectedPlan();
+        toast.message("در حال انتقال به درگاه پرداخت...");
+        window.location.assign(payment.paymentUrl);
+        return;
+      }
+
+      // No redirect (wallet / free / already settled)
       updateProfile({
         currentPlanId: plan.id,
-        subscriptionStatus: updated.subscriptionStatus ?? nextStatus,
       });
-
       clearSelectedPlan();
-      toast.success(`پلن «${plan.name}» فعال شد`);
+      toast.success(`پرداخت «${plan.name}» ثبت شد`);
 
       if (!user.onboardingCompleted) {
         router.replace("/onboarding");
@@ -121,7 +138,7 @@ export function CheckoutScreen() {
       }
     } catch (e) {
       console.error(e);
-      toast.error("فعال‌سازی پلن ناموفق بود");
+      toast.error(getErrorMessage(e, "پرداخت یا فعال‌سازی پلن ناموفق بود"));
     } finally {
       setSubmitting(false);
     }
@@ -160,7 +177,6 @@ export function CheckoutScreen() {
   return (
     <div className="min-h-screen bg-linear-to-b from-background via-background to-muted/20">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10 lg:py-14">
-        {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 sm:mb-8">
           <div className="flex items-center gap-3">
             <Button
@@ -175,10 +191,10 @@ export function CheckoutScreen() {
             </Button>
             <div>
               <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-foreground">
-                تأیید و فعال‌سازی پلن
+                تأیید و پرداخت پلن
               </h1>
               <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-                بدون درگاه پرداخت — فعال‌سازی آزمایشی
+                پرداخت امن از طریق درگاه بانکی
               </p>
             </div>
           </div>
@@ -187,37 +203,37 @@ export function CheckoutScreen() {
             variant="secondary"
             className="self-start sm:self-auto gap-1.5 px-3 py-1.5 text-xs"
           >
-            <Clock className="w-3.5 h-3.5" />
-            فعال‌سازی فوری
+            <ShieldCheck className="w-3.5 h-3.5" />
+            پرداخت امن
           </Badge>
         </div>
 
-        {/* Main Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
-          {/* Plan Card — Main */}
           <div className="lg:col-span-2 order-2 lg:order-1">
             <Card className="border-border/60 bg-muted/50 backdrop-blur-sm shadow-sm overflow-hidden">
-              {/* Decorative top accent */}
-              <div className="h-1.5 bg-linear-to-l from-primary via-primary/70 to-primary/40" />
+              <div className="h-1.5 w-full bg-linear-to-l from-primary via-primary/80 to-primary/40" />
 
-              <CardHeader className="pb-4">
-                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-                  <div className="flex items-start gap-3">
+              <CardHeader className="pb-4 pt-6">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex items-center gap-3">
                     <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                      <Sparkles className="w-5 h-5 text-primary" />
+                      {plan.featured || plan.isPopular ? (
+                        <Zap className="w-5 h-5 text-primary" />
+                      ) : (
+                        <Sparkles className="w-5 h-5 text-primary" />
+                      )}
                     </div>
                     <div>
-                      <CardTitle className="text-lg sm:text-xl">
+                      <CardTitle className="text-base sm:text-lg">
                         {plan.name}
                       </CardTitle>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        دسترسی کامل به تمام امکانات
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {plan.periodLabel}
                       </p>
                     </div>
                   </div>
-
-                  <div className="text-left sm:text-right">
-                    <p className="text-2xl sm:text-3xl font-bold text-primary">
+                  <div className="text-left shrink-0">
+                    <p className="text-xl sm:text-2xl font-bold text-primary">
                       {formatPrice(plan.price)}
                       <span className="text-xs sm:text-sm text-muted-foreground font-normal mr-1.5">
                         تومان
@@ -255,7 +271,6 @@ export function CheckoutScreen() {
             </Card>
           </div>
 
-          {/* Summary / Action Sidebar */}
           <div className="lg:col-span-1 order-1 lg:order-2">
             <Card className="border-border/60 bg-muted/50 backdrop-blur-sm shadow-sm lg:sticky lg:top-6">
               <CardHeader className="pb-3">
@@ -280,7 +295,7 @@ export function CheckoutScreen() {
                 <Separator className="bg-border/60" />
 
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">
+                  <span className="text-sm font-medium text-foreground">
                     مبلغ قابل پرداخت
                   </span>
                   <span className="text-lg font-bold text-primary">
@@ -317,12 +332,12 @@ export function CheckoutScreen() {
                   {submitting ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin ml-2" />
-                      در حال فعال‌سازی...
+                      در حال اتصال به درگاه...
                     </>
                   ) : (
                     <>
-                      <CheckCircle2 className="w-4 h-4 ml-2" />
-                      تأیید و فعال‌سازی پلن
+                      <CreditCard className="w-4 h-4 ml-2" />
+                      پرداخت و فعال‌سازی
                     </>
                   )}
                 </Button>
@@ -330,8 +345,8 @@ export function CheckoutScreen() {
                 <div className="flex items-start gap-2 rounded-lg bg-primary/5 p-3 border border-primary/10">
                   <ShieldCheck className="w-4 h-4 text-primary shrink-0 mt-0.5" />
                   <p className="text-[11px] text-muted-foreground leading-relaxed">
-                    این مرحله آزمایشی است و پرداخت واقعی انجام نمی‌شود. بعداً
-                    درگاه زرین‌پال/پی‌پینگ به همین صفحه وصل می‌شود.
+                    پرداخت از طریق درگاه امن زرین‌پال انجام می‌شود. پس از تأیید،
+                    اشتراک شما فعال خواهد شد.
                   </p>
                 </div>
               </CardFooter>
@@ -339,9 +354,8 @@ export function CheckoutScreen() {
           </div>
         </div>
 
-        {/* Footer note */}
         <p className="text-[11px] text-muted-foreground text-center mt-8">
-          با فعال‌سازی پلن،{" "}
+          با پرداخت و فعال‌سازی پلن،{" "}
           <Link href="/terms" className="text-primary hover:underline">
             قوانین و مقررات
           </Link>{" "}

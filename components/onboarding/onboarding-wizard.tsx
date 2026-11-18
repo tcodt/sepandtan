@@ -16,16 +16,17 @@ import {
   type Equipment,
   type Goal,
 } from "@/lib/store/user-store";
-import { generateAndSavePlan } from "@/lib/api/plans";
-import { usePlanStore } from "@/lib/store/plan-store";
 import { addWeightLog } from "@/lib/api/logs";
 import { useCompleteOnboarding } from "@/features/onboarding/hooks/use-onboarding";
 
+/**
+ * Production onboarding — no local generateAndSavePlan.
+ * Plan after onboarding comes from GET /user-plan/my/current.
+ */
 export function OnboardingWizard() {
   const router = useRouter();
   const user = useUserStore((s) => s.user);
   const updateOnboardingStep = useUserStore((s) => s.updateOnboardingStep);
-  const setPlan = usePlanStore((s) => s.setPlan);
 
   const completeMutation = useCompleteOnboarding();
 
@@ -43,7 +44,6 @@ export function OnboardingWizard() {
     user?.equipment ?? null,
   );
 
-  // همگام‌سازی مرحله فعلی فقط در store محلی
   useEffect(() => {
     if (!user?.id) return;
     if (user.currentOnboardingStep !== step) {
@@ -75,7 +75,6 @@ export function OnboardingWizard() {
     setIsGenerating(true);
 
     try {
-      // ۱. اول اطلاعات پروفایل را روی بک‌اند ذخیره کن
       await completeMutation.mutateAsync({
         bodyInfo,
         equipment,
@@ -83,26 +82,13 @@ export function OnboardingWizard() {
         targetWeight,
       });
 
-      // ۲. بعد برنامه را بساز (فعلاً هنوز Fake Layer)
-      const { plan } = await generateAndSavePlan({
-        userId: user.id,
-        bodyInfo,
-        equipment,
-        goal,
-        targetWeight,
-      });
-
-      // ۳. plan را در store محلی بگذار
-      setPlan(plan);
-
-      // ۴. وزن اولیه را لاگ کن (فعلاً Fake)
       if (bodyInfo.weight) {
         try {
           await addWeightLog({
             userId: user.id,
             weight: bodyInfo.weight,
-            date: plan.startDate ?? new Date().toISOString().slice(0, 10),
-            note: "وزن شروع برنامه",
+            date: new Date().toISOString().slice(0, 10),
+            note: "وزن شروع",
           });
           localStorage.setItem("sepandtan-welcome-seen", "0");
         } catch (e) {
@@ -110,12 +96,12 @@ export function OnboardingWizard() {
         }
       }
 
-      toast.success("برنامه شخصی‌ات آماده شد!");
+      toast.success("اطلاعاتت ذخیره شد!");
       router.push("/welcome");
     } catch (err) {
       console.error(err);
       setIsGenerating(false);
-      toast.error("ساخت برنامه ناموفق بود", {
+      toast.error("ذخیره اطلاعات ناموفق بود", {
         description: "لطفاً دوباره تلاش کن.",
       });
     }

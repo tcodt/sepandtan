@@ -1,41 +1,113 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/**
+ * Compatibility layer over real coach + plan-request APIs.
+ * NO db.coaches / delay for catalog & collaboration.
+ *
+ * REMOVE when UI imports features/coaches and features/plan-request directly.
+ */
 import type { Coach, CollaborationRequest } from "@/lib/types/coach";
 import type { UserProfile } from "@/lib/types/plan";
-import { db } from "./db";
-import { createId, delay } from "./client";
-import { updateUser } from "./users";
+import {
+  createCoachProfile,
+  fetchCoachBySlug,
+  fetchMyCoachProfile,
+  fetchPublicCoaches,
+  updateCoachProfile,
+} from "@/features/coaches/api";
+import {
+  toLegacyCoach,
+  toLegacyCoachFromMy,
+} from "@/features/coaches/adapters";
+import {
+  cancelPlanRequest,
+  createPlanRequest,
+  deleteMyPlanRequest,
+  fetchMyPlanRequests,
+} from "@/features/plan-request/api";
+import type { PlanRequest } from "@/features/plan-request/types";
+import { mapProfileResponseToUser } from "@/lib/api/mappers/user";
 
+function mapStatus(
+  status: PlanRequest["status"],
+): CollaborationRequest["status"] {
+  switch (status) {
+    case "ACCEPTED":
+    case "PAID":
+    case "DELIVERED":
+      return "accepted";
+    case "REJECTED":
+      return "rejected";
+    case "CANCELLED":
+      return "cancelled";
+    case "PENDING":
+    default:
+      return "pending";
+  }
+}
+
+function toCollaborationRequest(req: PlanRequest): CollaborationRequest {
+  return {
+    id: req.id,
+    userId: req.userId ?? "",
+    coachId: req.coachId,
+    goal: "",
+    message: req.note ?? "",
+    status: mapStatus(req.status),
+    createdAt: req.createdAt,
+    respondedAt: req.updatedAt,
+    rejectionReason: req.rejectionReason,
+  };
+}
+
+/** Public catalog — GET /catalog/coach */
 export async function getCoaches(): Promise<Coach[]> {
-  await delay();
-  return db.coaches
-    .filter((c) => c.isActive)
-    .map((c) => ({ ...c, specialties: [...c.specialties] }));
+  const list = await fetchPublicCoaches({ limit: 50 });
+  return list.map((c) => toLegacyCoach(c));
 }
 
+/** Detail by id or slug — GET /catalog/coach/{slug} */
 export async function getCoachById(id: string): Promise<Coach> {
-  await delay();
-  const coach = db.coaches.find((c) => c.id === id);
-  if (!coach) throw new Error(`مربی پیدا نشد: ${id}`);
-  return { ...coach, specialties: [...coach.specialties] };
+  const detail = await fetchCoachBySlug(id);
+  return toLegacyCoach(detail);
 }
 
-/** پیدا کردن پروفایل مربی بر اساس userId (برای داشبورد و Assign) */
+/** Current user's coach profile — GET /coach/my */
 export async function getCoachByUserId(userId: string): Promise<Coach | null> {
-  await delay();
-  const coach = db.coaches.find((c) => c.userId === userId);
-  if (!coach) return null;
-  return { ...coach, specialties: [...coach.specialties] };
-}
-
-export function getCoachByUserIdSync(userId: string): Coach | null {
-  const coach = db.coaches.find((c) => c.userId === userId);
-  if (!coach) return null;
-  return { ...coach, specialties: [...coach.specialties] };
+  const profile = await fetchMyCoachProfile();
+  if (!profile) return null;
+  return toLegacyCoachFromMy(profile, userId);
 }
 
 /**
- * ایجاد یا به‌روزرسانی پروفایل مربی در db.coaches
- * بعد از Become Coach باید حتماً صدا زده شود تا داشبورد و clients/plans کار کنند.
+ * @deprecated Sync db is gone. Returns null.
+ * Migrate callers to async getCoachByUserId / useMyCoachProfile.
  */
+export function getCoachByUserIdSync(_userId: string): Coach | null {
+  return null;
+}
+
+/**
+ * @deprecated Sync db is gone. Returns null.
+ * Migrate callers to getCoachById / getCoachNameById (async).
+ */
+export function getCoachNameByIdSync(
+  _coachId: string | null | undefined,
+): string | null {
+  return null;
+}
+
+export async function getCoachNameById(
+  coachId: string | null | undefined,
+): Promise<string | null> {
+  if (!coachId) return null;
+  try {
+    const coach = await getCoachById(coachId);
+    return coach.name ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export async function upsertCoachProfile(payload: {
   userId: string;
   name: string;
@@ -47,58 +119,74 @@ export async function upsertCoachProfile(payload: {
   website?: string | null;
   city?: string | null;
 }): Promise<Coach> {
-  await delay();
+  void payload.specialties;
+  void payload.experienceYears;
+  void payload.avatarUrl;
+  void payload.website;
+  void payload.city;
 
-  const existingIndex = db.coaches.findIndex(
-    (c) => c.userId === payload.userId,
-  );
-
-  if (existingIndex >= 0) {
-    const prev = db.coaches[existingIndex];
-    const updated: Coach = {
-      ...prev,
-      name: payload.name,
+  const existing = await fetchMyCoachProfile();
+  if (existing) {
+    const updated = await updateCoachProfile(existing.id, {
+      title: payload.name,
       bio: payload.bio,
-      specialties: [...payload.specialties],
-      experienceYears: payload.experienceYears,
-      avatarUrl: payload.avatarUrl ?? prev.avatarUrl,
-      isActive: true,
-      documentsStatus: prev.documentsStatus ?? "none",
-    };
-    db.coaches[existingIndex] = updated;
-    return { ...updated, specialties: [...updated.specialties] };
+      instagram: payload.instagram ?? undefined,
+      isAcceptingClients: true,
+    });
+    return toLegacyCoachFromMy(updated, payload.userId);
   }
 
-  const newCoach: Coach = {
-    id: createId("coach"),
-    userId: payload.userId,
-    name: payload.name,
+  const created = await createCoachProfile({
+    title: payload.name,
     bio: payload.bio,
-    specialties: [...payload.specialties],
-    experienceYears: payload.experienceYears,
-    rating: 0,
-    reviewCount: 0,
-    pricePerPlan: 0,
-    pricePerConsultation: 0,
-    avatarUrl: payload.avatarUrl ?? undefined,
-    verified: false,
-    isActive: true,
-    city: payload.city ?? undefined,
-    samplePlans: [],
-    createdAt: new Date().toISOString(),
-    commissionRateDisplay: "۲۰–۲۵٪",
-    documentsStatus: "none",
-  };
+    instagram: payload.instagram ?? undefined,
+    isAcceptingClients: true,
+  });
+  return toLegacyCoachFromMy(created, payload.userId);
+}
 
-  db.coaches.push(newCoach);
-  return { ...newCoach, specialties: [...newCoach.specialties] };
+/** POST /plan-request */
+export async function createCollaborationRequest(input: {
+  userId: string;
+  coachId: string;
+  goal: string;
+  message: string;
+}): Promise<CollaborationRequest> {
+  void input.userId;
+  const created = await createPlanRequest({
+    coachId: input.coachId,
+    note: [input.goal, input.message].filter(Boolean).join("\n"),
+  });
+  return toCollaborationRequest(created);
+}
+
+/** GET /plan-request/my */
+export async function getMyCollaborationRequests(
+  userId: string,
+): Promise<CollaborationRequest[]> {
+  void userId;
+  const list = await fetchMyPlanRequests();
+  return list.map(toCollaborationRequest);
+}
+
+/** PATCH /plan-request/{id}/cancel */
+export async function cancelCollaborationRequest(
+  id: string,
+): Promise<CollaborationRequest> {
+  const updated = await cancelPlanRequest(id);
+  return toCollaborationRequest(updated);
+}
+
+/** DELETE /plan-request/my/{requestId} */
+export async function deleteCollaborationRequest(id: string): Promise<void> {
+  await deleteMyPlanRequest(id);
 }
 
 /**
- * ارتقای کامل حساب به مربی:
- * ۱) role در db.users → coach
- * ۲) ساخت/به‌روزرسانی رکورد در db.coaches
- * ۳) برگرداندن کاربر و پروفایل مربی به‌روز
+ * Promote / create coach profile.
+ * Backend may still return role=USER until admin approval.
+ * Locally we mark coach+approved so /coach layout opens.
+ * Sync again from GET /user/profile when backend is source of truth.
  */
 export async function promoteUserToCoach(payload: {
   userId: string;
@@ -107,135 +195,80 @@ export async function promoteUserToCoach(payload: {
   bio: string;
   instagram?: string | null;
   website?: string | null;
+  name?: string;
 }): Promise<{ user: UserProfile; coach: Coach }> {
-  await delay();
+  const displayName = payload.name?.trim() || "مربی";
 
-  const user = db.users.find((u) => u.id === payload.userId);
-  if (!user) throw new Error(`کاربر پیدا نشد: ${payload.userId}`);
-
-  // ۱) آپدیت role در db
-  const updatedUser = await updateUser(payload.userId, { role: "coach" });
-
-  // ۲) ساخت یا آپدیت پروفایل مربی
   const coach = await upsertCoachProfile({
     userId: payload.userId,
-    name: user.name,
+    name: displayName,
     bio: payload.bio,
     specialties: payload.specialties,
     experienceYears: payload.experienceYears,
-    avatarUrl: user.avatarUrl,
     instagram: payload.instagram,
     website: payload.website,
   });
 
-  return { user: updatedUser, coach };
-}
+  // Prefer backend profile, but FORCE coach access flags for panel
+  let base: UserProfile | null = null;
+  try {
+    const { getMyProfile } = await import("@/lib/api/auth");
+    const res = await getMyProfile();
+    base = mapProfileResponseToUser(res);
+  } catch {
+    base = null;
+  }
 
-export async function createCollaborationRequest(
-  payload: Omit<CollaborationRequest, "id" | "createdAt" | "status"> & {
-    status?: CollaborationRequest["status"];
-  },
-): Promise<CollaborationRequest> {
-  await delay();
-
-  const request: CollaborationRequest = {
-    id: createId("req"),
-    userId: payload.userId,
-    coachId: payload.coachId,
-    goal: payload.goal,
-    message: payload.message,
-    status: payload.status ?? "pending",
-    createdAt: new Date().toISOString(),
+  const user: UserProfile = {
+    ...(base ?? {
+      id: payload.userId,
+      name: displayName,
+      email: undefined,
+      phone: undefined,
+      roles: ["coach"],
+      accountStatus: "ACTIVE",
+      professionalRoleLock: "coach",
+      onboardingCompleted: true,
+      onboardingStatus: "completed",
+      currentOnboardingStep: 0,
+      subscriptionStatus: "free",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    }),
+    id: payload.userId,
+    name: base?.name || displayName,
+    role: "coach",
+    roles: Array.from(
+      new Set([...(base?.roles ?? []), "coach" as const]),
+    ) as UserProfile["roles"],
+    roleStatus: "approved",
+    professionalRoleLock: "coach",
   };
 
-  db.collaborationRequests.push(request);
-  return { ...request };
+  return { user, coach };
 }
-
-export async function getMyCollaborationRequests(
-  userId: string,
-): Promise<CollaborationRequest[]> {
-  await delay();
-  return db.collaborationRequests
-    .filter((r) => r.userId === userId)
-    .map((r) => ({ ...r }));
-}
-
-export async function cancelCollaborationRequest(
-  id: string,
-): Promise<CollaborationRequest> {
-  await delay();
-  const index = db.collaborationRequests.findIndex((r) => r.id === id);
-  if (index === -1) throw new Error(`درخواست پیدا نشد: ${id}`);
-
-  const updated: CollaborationRequest = {
-    ...db.collaborationRequests[index],
-    status: "cancelled",
-  };
-  db.collaborationRequests[index] = updated;
-  return { ...updated };
-}
-
-export async function deleteCollaborationRequest(id: string): Promise<void> {
-  await delay();
-  const index = db.collaborationRequests.findIndex((r) => r.id === id);
-  if (index === -1) throw new Error(`درخواست پیدا نشد: ${id}`);
-  db.collaborationRequests.splice(index, 1);
-}
-
-export async function getCoachNameById(
-  coachId: string | null | undefined,
-): Promise<string | null> {
-  if (!coachId) return null;
-  await delay(50);
-  const coach = db.coaches.find((c) => c.id === coachId);
-  return coach?.name ?? null;
-}
-
-export function getCoachNameByIdSync(
-  coachId: string | null | undefined,
-): string | null {
-  if (!coachId) return null;
-  const coach = db.coaches.find((c) => c.id === coachId);
-  return coach?.name ?? null;
-}
-
-/**
- * پیدا کردن پروفایل مربی بر اساس userId
- * اگر نبود و کاربر coach+approved است، یک پروفایل حداقلی می‌سازد (Fake / Frontend)
- */
 
 export async function getOrCreateCoachProfileForUser(input: {
   userId: string;
   name: string;
   avatarUrl?: string;
 }): Promise<Coach> {
-  await delay();
+  void input.avatarUrl;
 
-  const existing = db.coaches.find((c) => c.userId === input.userId);
-  if (existing) return { ...existing, specialties: [...existing.specialties] };
+  const existing = await fetchMyCoachProfile();
+  if (existing) return toLegacyCoachFromMy(existing, input.userId);
 
-  const coach: Coach = {
-    id: createId("coach"),
-    userId: input.userId,
-    name: input.name,
-    bio: "مربی سپندتن",
-    specialties: [],
-    experienceYears: 0,
-    rating: 0,
-    reviewCount: 0,
-    pricePerPlan: 0,
-    pricePerConsultation: 0,
-    avatarUrl: input.avatarUrl,
-    verified: true,
-    isActive: true,
-    samplePlans: [],
-    createdAt: new Date().toISOString(),
-    commissionRateDisplay: "۲۰–۲۵٪",
-    documentsStatus: "none",
-  };
-
-  // اگر تایپ Coach فیلدهای دیگری اجباری دارد، با type موجود در پروژه هماهنگ کن
-  db.coaches.push(coach as (typeof db.coaches)[number]);
-  return { ...coach, specialties: [...coach.specialties] };
+  // Create only if missing — do not swallow 403 (not a coach yet)
+  try {
+    return await upsertCoachProfile({
+      userId: input.userId,
+      name: input.name || "مربی",
+      bio: "مربی سپندتن",
+      specialties: [],
+      experienceYears: 0,
+    });
+  } catch (err) {
+    console.error("[getOrCreateCoachProfileForUser]", err);
+    throw err;
+  }
 }

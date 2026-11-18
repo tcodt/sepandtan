@@ -20,6 +20,7 @@ export function useAdminStores(filters: AdminStoresFilters) {
     queryKey: adminStoresKeys.list(filters),
     queryFn: () => fetchAdminStores(filters),
     placeholderData: (previous) => previous,
+    staleTime: 15_000,
   });
 }
 
@@ -47,24 +48,28 @@ export function useUpdateStoreByAdmin() {
       const status = vars.payload.status;
       const ownerId = vars.ownerId?.trim() || null;
       const roleSynced = data?.roleSynced === true;
+      const roleError = data?.roleError;
 
       if (status === "APPROVED") {
         if (ownerId) rememberAdminRoleLock(ownerId, "seller");
-        toast.success("فروشنده تأیید شد — نقش STORE و قفل seller ثبت شد");
+        if (roleSynced) {
+          toast.success("فروشنده تأیید شد — نقش STORE ثبت شد");
+        } else {
+          toast.success("وضعیت فروشنده APPROVED شد");
+          if (roleError) toast.warning(roleError);
+        }
       } else if (status === "REJECTED") {
-        // قفل seller می‌ماند (نمی‌تواند coach شود)
         if (ownerId) rememberAdminRoleLock(ownerId, "seller");
-
         if (roleSynced) {
           toast.success(
-            "رد شد — نقش USER شد؛ پنل فروشنده پس از همگام‌سازی پروفایل بسته می‌شود",
+            "رد شد — نقش USER شد؛ پنل فروشنده پس از رفرش پروفایل بسته می‌شود",
           );
-        } else if (ownerId) {
-          toast.success("رد شد — قفل seller ثبت شد");
         } else {
-          toast.success(
-            "رد شد. ownerId نبود؛ نقش را از Users روی USER بگذارید",
-          );
+          toast.success("درخواست فروشنده رد شد");
+          if (roleError) toast.warning(roleError);
+          else if (!ownerId) {
+            toast.warning("ownerId نبود؛ نقش را از Users روی USER بگذارید");
+          }
         }
       } else {
         toast.success("وضعیت به‌روزرسانی شد");

@@ -17,13 +17,22 @@ import {
   ShieldCheck,
   Sun,
   Moon,
-  House,
   User,
   X,
   Tags,
   Package,
   Award,
   Palette,
+  Target,
+  FolderTree,
+  Dumbbell,
+  Activity,
+  Home,
+  Wrench,
+  Apple,
+  CreditCard,
+  MessageSquare,
+  Wallet,
 } from "lucide-react";
 
 import { useAuth } from "@/features/auth/hooks/use-auth";
@@ -56,13 +65,26 @@ import { useRequireAuth } from "@/hooks/use-require-auth";
 const navItems = [
   { href: "/admin", label: "نمای کلی", icon: LayoutDashboard },
   { href: "/admin/users", label: "کاربران", icon: Users },
+  {
+    href: "/admin/subscription-plans",
+    label: "پلن‌های اشتراک",
+    icon: CreditCard,
+  },
   { href: "/admin/coaches", label: "درخواست مربی", icon: UserCheck },
   { href: "/admin/stores", label: "درخواست فروشنده", icon: Store },
+  { href: "/admin/tickets", label: "تیکت‌ها", icon: MessageSquare },
+  { href: "/admin/wallet", label: "کیف پول", icon: Wallet },
+  { href: "/admin/training-goals", label: "اهداف تمرینی", icon: Target },
+  { href: "/admin/specialty", label: "تخصص‌ها", icon: Tags },
+  { href: "/admin/muscle-group", label: "گروه عضلانی", icon: Dumbbell },
+  { href: "/admin/exercise", label: "تمرین‌ها", icon: Activity },
+  { href: "/admin/equipment", label: "تجهیزات", icon: Wrench },
+  { href: "/admin/food", label: "غذاها", icon: Apple },
   { href: "/admin/products", label: "محصولات", icon: Package },
-  { href: "/admin/categories", label: "دسته‌بندی‌ها", icon: Tags },
+  { href: "/admin/categories", label: "دسته‌بندی‌ها", icon: FolderTree },
   { href: "/admin/brands", label: "برندها", icon: Award },
   { href: "/admin/colors", label: "رنگ‌ها", icon: Palette },
-  { href: "/", label: "سایت", icon: House },
+  { href: "/", label: "سایت", icon: Home },
   { href: "/account", label: "حساب", icon: User },
 ] as const;
 
@@ -198,7 +220,7 @@ function NavList({
     <nav
       className={cn(
         "min-h-0 flex-1 space-y-1 overflow-y-auto px-3 py-3",
-        "[scrollbar-width:thin] [scrollbar-color:transparent_transparent]",
+        "scrollbar-thin [scrollbar-color:transparent_transparent]",
         "hover:[scrollbar-color:rgba(148,163,184,0.35)_transparent]",
         "[&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar]:bg-transparent",
         "[&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-transparent",

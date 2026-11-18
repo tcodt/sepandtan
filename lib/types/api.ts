@@ -111,6 +111,7 @@ export type UpdateProfileDto = {
   medicalConditions?: string | null;
   allergies?: string[] | null;
   dietaryRestrictions?: string[] | null;
+  trainingGoalId?: string | null;
 };
 
 export type ApiErrorBody = {

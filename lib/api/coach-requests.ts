@@ -9,23 +9,17 @@ type CoachRequestPayload = {
   bio: string;
   instagram?: string | null;
   website?: string | null;
+  name?: string;
 };
 
 /**
- * ثبت درخواست مربیگری + ارتقای فوری حساب (MVP بدون ادمین)
- * - role در db.users به coach تغییر می‌کند
- * - رکورد در db.coaches ساخته/به‌روز می‌شود
- * - localStorage فقط برای نمایش جزئیات اضافی در Account نگه داشته می‌شود
+ * Become coach → create coach profile on backend + activate local coach role.
  */
 export async function submitCoachRequest(
   payload: CoachRequestPayload,
 ): Promise<{ success: true; user: UserProfile; coach: Coach }> {
-  // شبیه‌سازی تأخیر شبکه
-  await new Promise((r) => setTimeout(r, 500));
-
   const { user, coach } = await promoteUserToCoach(payload);
 
-  // جزئیات اختیاری (اینستاگرام/سایت) برای بخش Account
   try {
     const key = `coach-profile-${payload.userId}`;
     localStorage.setItem(
@@ -42,7 +36,7 @@ export async function submitCoachRequest(
       }),
     );
   } catch {
-    // localStorage ممکن است در SSR یا حالت خصوصی در دسترس نباشد — مشکلی نیست
+    // ignore
   }
 
   return { success: true, user, coach };

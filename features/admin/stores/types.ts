@@ -1,4 +1,9 @@
-export type StoreRequestStatus = "PENDING" | "APPROVED" | "REJECTED";
+export type StoreRequestStatus =
+  | "PENDING"
+  | "APPROVED"
+  | "REJECTED"
+  | "SUSPENDED"
+  | "DELETED";
 
 export type AdminStoreItem = {
   id: string;
@@ -11,7 +16,7 @@ export type AdminStoreItem = {
   isActive?: boolean;
   isVerified?: boolean;
   businessType?: string | null;
-  /** شناسه کاربر مالک — برای ارتقای role لازم است */
+  /** User id of owner — required for role sync on approve/reject */
   ownerId?: string | null;
   ownerName?: string | null;
   createdAt?: string;

@@ -1,19 +1,29 @@
+/**
+ * Compatibility layer → real backend via features/subscription
+ *
+ * REMOVE this file when these import from features/subscription directly:
+ * - components/common/plans.tsx
+ * - components/checkout/checkout-screen.tsx
+ * - components/account/account-subscription-section.tsx
+ * - components/account/account-summary-cards.tsx
+ * - components/dashboard/active-plan-card.tsx
+ * - components/plans/active-plan-card.tsx
+ */
 import type { SubscriptionPlan } from "@/lib/types/plan";
-import { db } from "./db";
-import { delay } from "./client";
+import {
+  fetchSubscriptionPlanById,
+  fetchSubscriptionPlans,
+} from "@/features/subscription/api";
+import { toUiSubscriptionPlan } from "@/features/subscription/adapters";
 
 export async function getSubscriptionPlans(): Promise<SubscriptionPlan[]> {
-  await delay();
-  return db.subscriptionPlans
-    .filter((p) => p.isActive)
-    .sort((a, b) => a.sortOrder - b.sortOrder)
-    .map((p) => ({ ...p, features: [...p.features] }));
+  const { plans } = await fetchSubscriptionPlans();
+  return plans.map(toUiSubscriptionPlan);
 }
 
 export async function getSubscriptionPlanById(
   id: string,
 ): Promise<SubscriptionPlan | null> {
-  await delay();
-  const plan = db.subscriptionPlans.find((p) => p.id === id);
-  return plan ? { ...plan, features: [...plan.features] } : null;
+  const dto = await fetchSubscriptionPlanById(id);
+  return dto ? toUiSubscriptionPlan(dto) : null;
 }

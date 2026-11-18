@@ -4,7 +4,7 @@ import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
-import { requestCoachRole, requestStoreRole } from "../api";
+import { requestCoachRole, requestStoreRole, toCoachSlug } from "../api";
 import type { CreateCoachPayload, CreateStorePayload } from "../types";
 import { getErrorMessage } from "@/lib/api/client";
 import { useUserStore } from "@/lib/store/user-store";
@@ -31,9 +31,27 @@ export function useRequestCoachRole() {
   return useMutation({
     mutationFn: (payload: CreateCoachPayload = {}) => {
       if (!user?.id) throw new Error("کاربر یافت نشد");
+
       const gate = canRequestProfessionalRole(user, "coach");
       if (!gate.ok) throw new Error(gate.message);
-      return requestCoachRole(user.id, payload);
+
+      const title =
+        payload.title?.trim() ||
+        user.name?.trim() ||
+        payload.headline?.trim() ||
+        "مربی فیتنس";
+
+      const slug = payload.slug?.trim() || toCoachSlug(title, user.id);
+
+      return requestCoachRole(user.id, {
+        ...payload,
+        title,
+        slug,
+        headline: payload.headline?.trim() || title,
+        bio: payload.bio ?? "",
+        isAcceptingClients: payload.isAcceptingClients ?? true,
+        maxClients: payload.maxClients ?? 20,
+      });
     },
     onSuccess: () => {
       requestRole("coach");
@@ -74,8 +92,8 @@ export function useRequestStoreRole() {
         name,
         slug,
         description: payload?.description ?? "",
-        phone: payload?.phone ?? user.phone,
-        email: payload?.email ?? user.email,
+        phone: payload?.phone,
+        email: payload?.email,
         address: payload?.address,
         businessType: payload?.businessType ?? "INDIVIDUAL",
       });

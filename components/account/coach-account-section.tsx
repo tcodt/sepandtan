@@ -17,9 +17,9 @@ import { useUserStore } from "@/lib/store/user-store";
 import { getCoachByUserIdSync } from "@/lib/api/coaches";
 import {
   getClientRelationsForCoach,
+  getCoachCollaborationRequests,
   getCoachPlans,
 } from "@/lib/api/coach-plans";
-import { db } from "@/lib/api/db";
 
 type CoachProfile = {
   specialties: string[];
@@ -73,7 +73,7 @@ export function CoachAccountSection() {
             getClientRelationsForCoach(coach.id),
             getCoachPlans(coach.id),
           ]);
-          const pendingCount = db.collaborationRequests.filter(
+          const pendingCount = (await getCoachCollaborationRequests()).filter(
             (r) => r.coachId === coach.id && r.status === "pending",
           ).length;
 
