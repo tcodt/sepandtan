@@ -33,6 +33,9 @@ import {
   CreditCard,
   MessageSquare,
   Wallet,
+  ClipboardList,
+  MapPinned,
+  FileText,
 } from "lucide-react";
 
 import { useAuth } from "@/features/auth/hooks/use-auth";
@@ -73,6 +76,16 @@ const navItems = [
   { href: "/admin/coaches", label: "درخواست مربی", icon: UserCheck },
   { href: "/admin/stores", label: "درخواست فروشنده", icon: Store },
   { href: "/admin/tickets", label: "تیکت‌ها", icon: MessageSquare },
+  {
+    href: "/admin/plan-requests",
+    label: "درخواست برنامه",
+    icon: ClipboardList,
+  },
+  { href: "/admin/reviews", label: "نظرات", icon: MessageSquare },
+  { href: "/admin/user-plans", label: "برنامه‌های کاربران", icon: FileText },
+  { href: "/admin/subscriptions", label: "اشتراک کاربران", icon: CreditCard },
+  { href: "/admin/orders", label: "سفارش‌ها", icon: Package },
+  { href: "/admin/province", label: "استان و شهر", icon: MapPinned },
   { href: "/admin/wallet", label: "کیف پول", icon: Wallet },
   { href: "/admin/training-goals", label: "اهداف تمرینی", icon: Target },
   { href: "/admin/specialty", label: "تخصص‌ها", icon: Tags },
