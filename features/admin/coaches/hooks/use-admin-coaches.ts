@@ -3,7 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
-import { fetchAdminCoaches, updateCoachStatusByAdmin } from "../api";
+import { fetchAdminCoaches, updateCoachByAdmin } from "../api";
 import type { AdminCoachesFilters, UpdateCoachByAdminPayload } from "../types";
 import { getErrorMessage } from "@/lib/api/client";
 import { adminUsersKeys } from "@/features/admin/users/hooks/use-admin-users";
@@ -36,7 +36,7 @@ export function useUpdateCoachByAdmin() {
       coachId: string;
       payload: UpdateCoachByAdminPayload;
       userId?: string | null;
-    }) => updateCoachStatusByAdmin(coachId, payload, { userId }),
+    }) => updateCoachByAdmin(coachId, payload, { userId }),
 
     onSuccess: async (data, vars) => {
       const status = vars.payload.status;

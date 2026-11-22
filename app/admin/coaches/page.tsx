@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useCallback, useEffect, useId } from "react";
+import { useCallback, useEffect, useId, useMemo, useState } from "react";
 import {
   Check,
   X,
@@ -8,18 +8,26 @@ import {
   RefreshCw,
   UserRound,
   UserCheck,
-  AlertTriangle,
+  Instagram,
+  MapPin,
+  Calendar,
+  Users,
+  Eye,
   Search,
+  AlertTriangle,
+  Inbox,
   ChevronLeft,
   ChevronRight,
+  Shield,
   MessageSquareQuote,
+  UserX,
 } from "lucide-react";
-import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
@@ -30,12 +38,23 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import {
@@ -51,9 +70,37 @@ import type {
 /* Constants                                                                  */
 /* -------------------------------------------------------------------------- */
 
+const SEARCH_DEBOUNCE_MS = 350;
 const DEFAULT_PAGE_SIZE = 20;
 const PAGE_SIZE_OPTIONS = [10, 20, 50] as const;
-const SEARCH_DEBOUNCE_MS = 350;
+
+const STATUS_LABEL: Record<string, string> = {
+  PENDING: "در انتظار",
+  APPROVED: "تأیید شده",
+  REJECTED: "رد شده",
+  SUSPENDED: "معلق",
+  DELETED: "حذف‌شده",
+};
+
+const STATUS_STYLES: Record<string, string> = {
+  PENDING:
+    "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/25",
+  APPROVED:
+    "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/25",
+  REJECTED:
+    "bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/25",
+  SUSPENDED:
+    "bg-orange-500/10 text-orange-700 dark:text-orange-400 border-orange-500/25",
+  DELETED: "bg-zinc-500/10 text-zinc-600 dark:text-zinc-400 border-zinc-500/25",
+};
+
+const STATUS_DOT: Record<string, string> = {
+  PENDING: "bg-amber-500",
+  APPROVED: "bg-emerald-500",
+  REJECTED: "bg-rose-500",
+  SUSPENDED: "bg-orange-500",
+  DELETED: "bg-zinc-400",
+};
 
 type StatusFilter = CoachRequestStatus | "ALL";
 
@@ -65,150 +112,148 @@ const FILTERS: { id: StatusFilter; label: string }[] = [
   { id: "ALL", label: "همه" },
 ];
 
-type BadgeConfig = { label: string; className: string; dot: string };
+/* -------------------------------------------------------------------------- */
+/* Helpers                                                                    */
+/* -------------------------------------------------------------------------- */
 
-const STATUS_BADGE: Record<string, BadgeConfig> = {
-  APPROVED: {
-    label: "تأیید شده",
-    className:
-      "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/25",
-    dot: "bg-emerald-500",
-  },
-  REJECTED: {
-    label: "رد شده",
-    className:
-      "bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/25",
-    dot: "bg-rose-500",
-  },
-  SUSPENDED: {
-    label: "معلق",
-    className:
-      "bg-orange-500/10 text-orange-700 dark:text-orange-400 border-orange-500/25",
-    dot: "bg-orange-500",
-  },
-  DELETED: {
-    label: "حذف‌شده",
-    className:
-      "bg-zinc-500/10 text-zinc-600 dark:text-zinc-400 border-zinc-500/25",
-    dot: "bg-zinc-400",
-  },
-  PENDING: {
-    label: "در انتظار",
-    className:
-      "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/25",
-    dot: "bg-amber-500",
-  },
-};
-
-const FALLBACK_BADGE: BadgeConfig = {
-  label: "—",
-  className: "bg-muted text-muted-foreground border-border",
-  dot: "bg-zinc-400",
-};
-
-function getStatusBadge(status: string | null | undefined): BadgeConfig {
-  const key = (status ?? "PENDING").toUpperCase();
-  return STATUS_BADGE[key] ?? FALLBACK_BADGE;
-}
-
-const dateFormatter = new Intl.DateTimeFormat("fa-IR", {
-  dateStyle: "short",
-  timeStyle: "short",
+const yearFormatter = new Intl.DateTimeFormat("fa-IR", {
+  year: "numeric",
 });
 
-function formatDate(iso: string | undefined): string {
+function formatExperienceYear(iso: string | null | undefined): string {
   if (!iso) return "—";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
   try {
-    return dateFormatter.format(new Date(iso));
+    return yearFormatter.format(d);
   } catch {
     return "—";
   }
+}
+
+function normalizeStatus(s: string | null | undefined): string {
+  return (s ?? "PENDING").toUpperCase();
+}
+
+/* -------------------------------------------------------------------------- */
+/* Debounce                                                                   */
+/* -------------------------------------------------------------------------- */
+
+function useDebouncedValue(
+  input: string,
+  onCommit: (value: string) => void,
+  delay: number,
+) {
+  useEffect(() => {
+    const t = setTimeout(() => {
+      onCommit(input.trim());
+    }, delay);
+    return () => clearTimeout(t);
+  }, [input, onCommit, delay]);
 }
 
 /* -------------------------------------------------------------------------- */
 /* Sub-components                                                             */
 /* -------------------------------------------------------------------------- */
 
-function CoachAvatar({ item }: { item: AdminCoachItem }) {
+function StatusBadge({ status }: { status: string | null | undefined }) {
+  const key = normalizeStatus(status);
+  const label = STATUS_LABEL[key] ?? key;
+  const style = STATUS_STYLES[key] ?? STATUS_STYLES.DELETED;
+  const dot = STATUS_DOT[key] ?? "bg-zinc-400";
   return (
-    <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-muted">
-      {item.avatarUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={item.avatarUrl}
-          alt=""
-          width={40}
-          height={40}
-          loading="lazy"
-          className="h-full w-full object-cover"
-        />
-      ) : (
-        <UserRound
-          className="h-4 w-4 text-muted-foreground"
-          aria-hidden="true"
-        />
-      )}
+    <Badge
+      variant="outline"
+      className={cn("gap-1.5 text-[10px] font-medium", style)}
+    >
+      <span
+        className={cn("h-1.5 w-1.5 rounded-full", dot)}
+        aria-hidden="true"
+      />
+      {label}
+    </Badge>
+  );
+}
+
+function InfoRow({
+  label,
+  value,
+  dir,
+}: {
+  label: string;
+  value: React.ReactNode;
+  dir?: "ltr" | "rtl";
+}) {
+  const hasValue = value !== null && value !== undefined && value !== "";
+  return (
+    <div className="grid grid-cols-[110px_1fr] gap-2 text-sm">
+      <span className="text-muted-foreground">{label}</span>
+      <span className="wrap-break-word font-medium" dir={dir}>
+        {hasValue ? value : <span className="text-muted-foreground">—</span>}
+      </span>
     </div>
   );
 }
 
-function CoachCardSkeleton() {
+function ListSkeleton({ rows = 4 }: { rows?: number }) {
   return (
-    <Card className="border-border/60">
-      <CardContent className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center">
-        <div className="flex flex-1 items-start gap-3">
-          <Skeleton className="h-10 w-10 shrink-0 rounded-full" />
-          <div className="min-w-0 flex-1 space-y-2">
-            <Skeleton className="h-4 w-40" />
-            <Skeleton className="h-3 w-56" />
-            <Skeleton className="h-3 w-72" />
-          </div>
-        </div>
-        <div className="flex gap-2">
-          <Skeleton className="h-9 w-20 rounded-md" />
-          <Skeleton className="h-9 w-20 rounded-md" />
-        </div>
-      </CardContent>
-    </Card>
+    <div className="space-y-3" aria-busy="true">
+      <span className="sr-only">در حال بارگذاری مربی‌ها…</span>
+      {Array.from({ length: rows }).map((_, i) => (
+        <Card
+          key={i}
+          className="border-border/60"
+          style={{ opacity: 1 - i * 0.08 }}
+        >
+          <CardContent className="flex flex-col gap-3 p-4">
+            <div className="flex items-start gap-3">
+              <Skeleton className="h-12 w-12 shrink-0 rounded-full" />
+              <div className="min-w-0 flex-1 space-y-2">
+                <Skeleton className="h-4 w-40" />
+                <Skeleton className="h-3 w-56" />
+                <Skeleton className="h-3 w-72" />
+              </div>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Skeleton className="h-9 w-24 rounded-md" />
+              <Skeleton className="h-9 w-20 rounded-md" />
+              <Skeleton className="h-9 w-20 rounded-md" />
+            </div>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
   );
 }
 
 function EmptyState({
-  hasSearch,
-  hasFilter,
-  onReset,
+  hasFilters,
+  onClear,
 }: {
-  hasSearch: boolean;
-  hasFilter: boolean;
-  onReset: () => void;
+  hasFilters: boolean;
+  onClear: () => void;
 }) {
   return (
     <Card className="border-dashed">
       <CardContent className="flex flex-col items-center gap-3 py-16 text-center">
         <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-border bg-muted/40">
-          <UserRound
-            className="h-6 w-6 text-muted-foreground"
-            aria-hidden="true"
-          />
+          <Inbox className="h-6 w-6 text-muted-foreground" aria-hidden="true" />
         </div>
         <div className="space-y-1">
           <p className="text-sm font-semibold text-foreground">
-            {hasSearch
-              ? "مربی‌ای با این جستجو یافت نشد"
-              : hasFilter
-                ? "مربی‌ای با این وضعیت وجود ندارد"
-                : "هنوز درخواست مربیگری ثبت نشده است"}
+            {hasFilters
+              ? "مربی‌ای با این فیلترها یافت نشد"
+              : "هنوز درخواست مربیگری ثبت نشده است"}
           </p>
           <p className="text-xs text-muted-foreground">
-            {hasSearch
-              ? "عبارت جستجو را تغییر دهید."
-              : hasFilter
-                ? "وضعیت دیگری را انتخاب کنید یا فیلترها را پاک کنید."
-                : "با ثبت اولین درخواست، اینجا نمایش داده می‌شود."}
+            {hasFilters
+              ? "عبارت جستجو را تغییر دهید یا فیلترها را پاک کنید."
+              : "به‌محض ثبت اولین درخواست، اینجا نمایش داده می‌شود."}
           </p>
         </div>
-        {(hasSearch || hasFilter) && (
-          <Button variant="outline" size="sm" onClick={onReset}>
+        {hasFilters && (
+          <Button variant="outline" size="sm" onClick={onClear}>
+            <X className="me-1.5 h-3.5 w-3.5" aria-hidden="true" />
             پاک کردن فیلترها
           </Button>
         )}
@@ -250,14 +295,158 @@ function ErrorState({
           disabled={isRetrying}
         >
           {isRetrying ? (
-            <Loader2 className="me-2 h-4 w-4 animate-spin" />
+            <Loader2 className="me-2 h-4 w-4 animate-spin" aria-hidden="true" />
           ) : (
-            <RefreshCw className="me-2 h-4 w-4" />
+            <RefreshCw className="me-2 h-4 w-4" aria-hidden="true" />
           )}
           تلاش دوباره
         </Button>
       </CardContent>
     </Card>
+  );
+}
+
+function CoachAvatar({
+  src,
+  size = 12,
+}: {
+  src: string | null;
+  size?: 10 | 12 | 14;
+}) {
+  const dim =
+    size === 10 ? "h-10 w-10" : size === 14 ? "h-14 w-14" : "h-12 w-12";
+  const iconClass =
+    size === 14 ? "h-6 w-6" : size === 10 ? "h-4 w-4" : "h-5 w-5";
+  return (
+    <div
+      className={cn(
+        "flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-muted",
+        dim,
+      )}
+    >
+      {src ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={src}
+          alt=""
+          width={size * 4}
+          height={size * 4}
+          loading="lazy"
+          className="h-full w-full object-cover"
+        />
+      ) : (
+        <UserRound
+          className={cn("text-muted-foreground", iconClass)}
+          aria-hidden="true"
+        />
+      )}
+    </div>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/* Confirm dialog                                                             */
+/* -------------------------------------------------------------------------- */
+
+type ConfirmIntent = "success" | "danger" | "warning";
+
+type ConfirmState = {
+  title: string;
+  description: React.ReactNode;
+  confirmLabel: string;
+  intent: ConfirmIntent;
+  icon?: React.ComponentType<{ className?: string }>;
+  onConfirm: () => void | Promise<void>;
+} | null;
+
+const INTENT_STYLES: Record<ConfirmIntent, string> = {
+  success: "bg-emerald-600 text-white hover:bg-emerald-600/90",
+  danger: "bg-destructive text-destructive-foreground hover:bg-destructive/90",
+  warning: "bg-amber-600 text-white hover:bg-amber-600/90",
+};
+
+const INTENT_ICON_STYLES: Record<ConfirmIntent, string> = {
+  success:
+    "border-emerald-500/25 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
+  danger: "border-destructive/25 bg-destructive/10 text-destructive",
+  warning:
+    "border-amber-500/25 bg-amber-500/10 text-amber-700 dark:text-amber-400",
+};
+
+const INTENT_ICON: Record<ConfirmIntent, typeof Check> = {
+  success: UserCheck,
+  danger: UserX,
+  warning: AlertTriangle,
+};
+
+function ConfirmDialog({
+  state,
+  onClose,
+  isBusy,
+}: {
+  state: ConfirmState;
+  onClose: () => void;
+  isBusy: boolean;
+}) {
+  const intent = state?.intent ?? "warning";
+  const Icon = state?.icon ?? INTENT_ICON[intent];
+
+  return (
+    <AlertDialog
+      open={!!state}
+      onOpenChange={(open) => {
+        if (!open && !isBusy) onClose();
+      }}
+    >
+      <AlertDialogContent
+        dir="rtl"
+        className="max-w-[calc(100vw-2rem)] sm:max-w-md"
+      >
+        <AlertDialogHeader>
+          <div className="flex items-start gap-3">
+            <div
+              className={cn(
+                "flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border",
+                INTENT_ICON_STYLES[intent],
+              )}
+            >
+              <Icon className="h-5 w-5" aria-hidden="true" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <AlertDialogTitle className="text-start">
+                {state?.title}
+              </AlertDialogTitle>
+              <AlertDialogDescription className="mt-1 text-start">
+                {state?.description}
+              </AlertDialogDescription>
+            </div>
+          </div>
+        </AlertDialogHeader>
+        <AlertDialogFooter className="flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <AlertDialogCancel className="w-full sm:w-auto" disabled={isBusy}>
+            انصراف
+          </AlertDialogCancel>
+          <AlertDialogAction
+            onClick={(e) => {
+              e.preventDefault();
+              void state?.onConfirm();
+            }}
+            disabled={isBusy}
+            className={cn("w-full sm:w-auto", INTENT_STYLES[intent])}
+          >
+            {isBusy ? (
+              <Loader2
+                className="me-2 h-4 w-4 animate-spin"
+                aria-hidden="true"
+              />
+            ) : (
+              <Icon className="me-2 h-4 w-4" aria-hidden="true" />
+            )}
+            {state?.confirmLabel ?? "تأیید"}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }
 
@@ -267,31 +456,24 @@ function ErrorState({
 
 export default function AdminCoachesPage() {
   const [filter, setFilter] = useState<StatusFilter>("PENDING");
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
+
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [detail, setDetail] = useState<AdminCoachItem | null>(null);
 
   const [rejectOpen, setRejectOpen] = useState(false);
-  const [selected, setSelected] = useState<AdminCoachItem | null>(null);
+  const [rejectTarget, setRejectTarget] = useState<AdminCoachItem | null>(null);
   const [rejectReason, setRejectReason] = useState("");
+
+  const [confirm, setConfirm] = useState<ConfirmState>(null);
 
   const searchId = useId();
   const resultCountId = useId();
 
   const updateMutation = useUpdateCoachByAdmin();
-
-  // Debounced search → API param.
-  useEffect(() => {
-    const t = setTimeout(() => {
-      const next = searchInput.trim();
-      if (next !== search) {
-        setSearch(next);
-        setPage(1);
-      }
-    }, SEARCH_DEBOUNCE_MS);
-    return () => clearTimeout(t);
-  }, [searchInput, search]);
 
   const filters = useMemo(
     () => ({
@@ -309,25 +491,22 @@ export default function AdminCoachesPage() {
 
   const items = data?.data ?? [];
   const total = data?.pagination.total ?? items.length;
-  const totalPages = data?.pagination.totalPages ?? 1;
-  const hasSearch = !!search;
-  const hasFilter = filter !== "ALL";
-  const hasActiveFilters = hasSearch || hasFilter;
+  const totalPages = Math.max(1, data?.pagination.totalPages ?? 1);
+  const hasFilters = filter !== "ALL" || !!search;
 
-  // Clamp page when total shrinks after an action.
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (page > totalPages) setPage(totalPages);
-  }, [page, totalPages]);
-
-  const resetFilters = useCallback(() => {
-    setFilter("PENDING");
-    setSearch("");
-    setSearchInput("");
+  const commitSearch = useCallback((v: string) => {
+    setSearch(v);
     setPage(1);
   }, []);
 
-  /* --------------------------- Row busy tracking --------------------------- */
+  useDebouncedValue(searchInput, commitSearch, SEARCH_DEBOUNCE_MS);
+
+  useEffect(() => {
+    if (page > totalPages) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setPage(totalPages);
+    }
+  }, [page, totalPages]);
 
   const inFlight = updateMutation.variables;
   const isRowBusy = useCallback(
@@ -339,27 +518,64 @@ export default function AdminCoachesPage() {
     [updateMutation.isPending, inFlight],
   );
 
-  /* ------------------------------- Actions ------------------------------- */
+  const resetFilters = useCallback(() => {
+    setFilter("PENDING");
+    setSearch("");
+    setSearchInput("");
+    setPage(1);
+  }, []);
 
-  const handleApprove = useCallback(
-    async (item: AdminCoachItem) => {
-      const pathId = item.coachId || item.id;
-      if (!pathId) return;
-      try {
-        await updateMutation.mutateAsync({
-          coachId: pathId,
-          userId: item.userId ?? null,
-          payload: { status: "APPROVED" },
-        });
-      } catch {
-        // Hook's onError already toasts.
-      }
+  const openDetail = useCallback((item: AdminCoachItem) => {
+    setDetail(item);
+    setDetailOpen(true);
+  }, []);
+
+  const closeDetail = useCallback(() => {
+    setDetailOpen(false);
+    setDetail(null);
+  }, []);
+
+  const requestApprove = useCallback(
+    (item: AdminCoachItem) => {
+      setConfirm({
+        title: "تأیید درخواست مربیگری",
+        description: (
+          <span className="block space-y-2">
+            <span className="block">
+              درخواست «
+              <strong className="text-foreground">
+                {item.title || item.name}
+              </strong>
+              » تأیید شود؟
+            </span>
+            <span className="block rounded-lg border border-emerald-500/25 bg-emerald-500/10 px-2.5 py-2 text-xs text-emerald-900 dark:text-emerald-100">
+              پس از تأیید، نقش این کاربر به «مربی» تغییر می‌کند و می‌تواند شاگرد
+              بپذیرد.
+            </span>
+          </span>
+        ),
+        confirmLabel: "تأیید مربی",
+        intent: "success",
+        onConfirm: async () => {
+          try {
+            await updateMutation.mutateAsync({
+              coachId: item.coachId || item.id,
+              userId: item.userId,
+              payload: { status: "APPROVED" },
+            });
+            setConfirm(null);
+            closeDetail();
+          } catch {
+            /* Hook toasts */
+          }
+        },
+      });
     },
-    [updateMutation],
+    [updateMutation, closeDetail],
   );
 
   const openReject = useCallback((item: AdminCoachItem) => {
-    setSelected(item);
+    setRejectTarget(item);
     setRejectReason("");
     setRejectOpen(true);
   }, []);
@@ -367,7 +583,7 @@ export default function AdminCoachesPage() {
   const closeReject = useCallback(() => {
     if (updateMutation.isPending) return;
     setRejectOpen(false);
-    setSelected(null);
+    setRejectTarget(null);
     setRejectReason("");
   }, [updateMutation.isPending]);
 
@@ -375,26 +591,24 @@ export default function AdminCoachesPage() {
   const canSubmitReject = trimmedReason.length > 0 && !updateMutation.isPending;
 
   const confirmReject = useCallback(async () => {
-    if (!selected) return;
-    if (!trimmedReason) {
-      toast.error("دلیل رد را وارد کنید");
-      return;
-    }
-    const pathId = selected.coachId || selected.id;
-    if (!pathId) return;
+    if (!rejectTarget || !trimmedReason) return;
     try {
       await updateMutation.mutateAsync({
-        coachId: pathId,
-        userId: selected.userId ?? null,
-        payload: { status: "REJECTED", rejectionReason: trimmedReason },
+        coachId: rejectTarget.coachId || rejectTarget.id,
+        userId: rejectTarget.userId,
+        payload: {
+          status: "REJECTED",
+          rejectionReason: trimmedReason,
+        },
       });
       setRejectOpen(false);
-      setSelected(null);
+      setRejectTarget(null);
       setRejectReason("");
+      closeDetail();
     } catch {
-      // Hook's onError already toasts; keep dialog open for retry.
+      /* Hook toasts; keep dialog open for retry */
     }
-  }, [selected, trimmedReason, updateMutation]);
+  }, [rejectTarget, trimmedReason, updateMutation, closeDetail]);
 
   const displayError = error instanceof Error ? error.message : "خطای ناشناخته";
 
@@ -403,7 +617,6 @@ export default function AdminCoachesPage() {
       dir="rtl"
       className="mx-auto w-full max-w-5xl space-y-4 px-4 py-4 sm:space-y-5 sm:px-6 sm:py-6"
     >
-      {/* ------------------------------ Header ------------------------------ */}
       <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
@@ -414,11 +627,10 @@ export default function AdminCoachesPage() {
               مدیریت مربی‌ها
             </h1>
             <p className="text-xs text-muted-foreground">
-              تأیید یا رد درخواست‌های مربیگری
+              بررسی درخواست‌های مربیگری
             </p>
           </div>
         </div>
-
         <Button
           variant="outline"
           size="sm"
@@ -434,7 +646,6 @@ export default function AdminCoachesPage() {
         </Button>
       </header>
 
-      {/* ----------------------------- Filters ----------------------------- */}
       <section aria-label="فیلترها" className="space-y-3">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
           <div
@@ -469,7 +680,7 @@ export default function AdminCoachesPage() {
             </label>
             <Input
               id={searchId}
-              placeholder="جستجوی نام، ایمیل یا موبایل…"
+              placeholder="جستجوی نام، ایمیل، اینستاگرام، کد ملی…"
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
               onKeyDown={(e) => {
@@ -482,7 +693,7 @@ export default function AdminCoachesPage() {
               className="h-9 ps-9 pe-9"
               aria-describedby={resultCountId}
             />
-            {searchInput && (
+            {searchInput ? (
               <button
                 type="button"
                 onClick={() => {
@@ -495,10 +706,10 @@ export default function AdminCoachesPage() {
               >
                 <X className="h-3.5 w-3.5" aria-hidden="true" />
               </button>
-            )}
-            {isFetching && !isLoading && (
+            ) : null}
+            {isFetching && !isLoading ? (
               <Loader2 className="pointer-events-none absolute inset-e-8 top-1/2 h-3.5 w-3.5 -translate-y-1/2 animate-spin text-muted-foreground" />
-            )}
+            ) : null}
           </div>
         </div>
 
@@ -513,24 +724,14 @@ export default function AdminCoachesPage() {
             : isError
               ? "—"
               : `${total.toLocaleString("fa-IR")} مربی یافت شد${
-                  hasActiveFilters ? " (با فیلتر فعال)" : ""
+                  hasFilters ? " (با فیلتر فعال)" : ""
                 }`}
         </p>
       </section>
 
-      {/* ------------------------------ List ------------------------------ */}
-      <section
-        aria-label="لیست مربی‌ها"
-        aria-busy={isLoading || isFetching}
-        className="space-y-3"
-      >
+      <section aria-label="لیست مربی‌ها" aria-busy={isLoading || isFetching}>
         {isLoading ? (
-          <>
-            <span className="sr-only">در حال بارگذاری مربی‌ها…</span>
-            {Array.from({ length: 4 }).map((_, i) => (
-              <CoachCardSkeleton key={i} />
-            ))}
-          </>
+          <ListSkeleton />
         ) : isError ? (
           <ErrorState
             message={displayError}
@@ -538,68 +739,101 @@ export default function AdminCoachesPage() {
             isRetrying={isFetching}
           />
         ) : items.length === 0 ? (
-          <EmptyState
-            hasSearch={hasSearch}
-            hasFilter={hasFilter}
-            onReset={resetFilters}
-          />
+          <EmptyState hasFilters={hasFilters} onClear={resetFilters} />
         ) : (
           items.map((item) => {
             const pathId = item.coachId || item.id;
-            const badge = getStatusBadge(item.coachStatus);
             const busy = isRowBusy(item);
-            const isApproved = item.coachStatus === "APPROVED";
-            const isRejected = item.coachStatus === "REJECTED";
+            const status = normalizeStatus(item.coachStatus);
+            const isApproved = status === "APPROVED";
+            const isRejected = status === "REJECTED";
             const approveBusy = busy && inFlight?.payload.status === "APPROVED";
-            const noOwner = !item.userId;
+            const displayName = item.title || item.name;
 
             return (
               <Card
                 key={`${item.userId ?? "no-user"}-${pathId}`}
                 className={cn(
-                  "border-border/60 transition-colors duration-150",
+                  "mb-3 border-border/60 transition-colors duration-150",
                   busy && "border-primary/30 bg-primary/5",
                 )}
               >
-                <CardContent className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center">
-                  <div className="flex min-w-0 flex-1 items-start gap-3">
-                    <CoachAvatar item={item} />
-                    <div className="min-w-0 flex-1 space-y-1">
+                <CardContent className="flex flex-col gap-4 p-4">
+                  <div className="flex items-start gap-3">
+                    <CoachAvatar src={item.avatarUrl} size={12} />
+                    <div className="min-w-0 flex-1 space-y-1.5">
                       <div className="flex flex-wrap items-center gap-2">
                         <p className="truncate text-sm font-semibold text-foreground">
-                          {item.name}
+                          {displayName}
                         </p>
-                        <Badge
-                          variant="outline"
-                          className={cn(
-                            "h-5 gap-1.5 text-[10px] font-medium",
-                            badge.className,
-                          )}
-                        >
-                          <span
-                            className={cn(
-                              "h-1.5 w-1.5 rounded-full",
-                              badge.dot,
-                            )}
-                            aria-hidden="true"
-                          />
-                          {badge.label}
-                        </Badge>
+                        <StatusBadge status={item.coachStatus} />
+                        {item.role === "COACH" && !isApproved ? (
+                          <Badge
+                            variant="outline"
+                            className="gap-1 text-[10px] text-muted-foreground"
+                          >
+                            <Shield
+                              className="h-2.5 w-2.5"
+                              aria-hidden="true"
+                            />
+                            نقش: مربی
+                          </Badge>
+                        ) : null}
                       </div>
+
                       {item.headline ? (
-                        <p className="truncate text-xs text-muted-foreground">
+                        <p
+                          className="line-clamp-1 text-xs text-muted-foreground"
+                          title={item.headline}
+                        >
                           {item.headline}
                         </p>
                       ) : null}
-                      <p className="truncate text-[11px] text-muted-foreground">
-                        {[item.phone, item.email].filter(Boolean).join(" · ") ||
-                          "بدون تماس"}
-                      </p>
+
+                      <div className="flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
+                        {item.instagram ? (
+                          <span
+                            className="inline-flex items-center gap-1"
+                            dir="ltr"
+                          >
+                            <Instagram className="h-3 w-3" aria-hidden="true" />
+                            {item.instagram}
+                          </span>
+                        ) : null}
+                        {item.experienceYears ? (
+                          <span className="inline-flex items-center gap-1">
+                            <Calendar className="h-3 w-3" aria-hidden="true" />
+                            از {formatExperienceYear(item.experienceYears)}
+                          </span>
+                        ) : null}
+                        {item.maxClients != null ? (
+                          <span className="inline-flex items-center gap-1">
+                            <Users className="h-3 w-3" aria-hidden="true" />
+                            حداکثر {item.maxClients.toLocaleString(
+                              "fa-IR",
+                            )}{" "}
+                            شاگرد
+                          </span>
+                        ) : null}
+                        {item.cityName || item.provinceName ? (
+                          <span className="inline-flex items-center gap-1">
+                            <MapPin className="h-3 w-3" aria-hidden="true" />
+                            {[item.cityName, item.provinceName]
+                              .filter(Boolean)
+                              .join("، ")}
+                          </span>
+                        ) : null}
+                      </div>
+
                       {item.bio ? (
-                        <p className="line-clamp-2 text-xs text-foreground/80">
+                        <p
+                          className="line-clamp-2 pt-0.5 text-xs text-foreground/80"
+                          title={item.bio}
+                        >
                           {item.bio}
                         </p>
                       ) : null}
+
                       {item.rejectionReason ? (
                         <div className="flex items-start gap-1.5 rounded-md border border-rose-500/15 bg-rose-500/5 px-2 py-1 text-[11px] text-rose-700 dark:text-rose-400">
                           <MessageSquareQuote
@@ -611,23 +845,35 @@ export default function AdminCoachesPage() {
                           </span>
                         </div>
                       ) : null}
-                      {noOwner && (
-                        <p className="text-[10px] text-amber-600 dark:text-amber-400">
-                          userId نامشخص — همگام‌سازی نقش انجام نمی‌شود
-                        </p>
-                      )}
-                      <p className="text-[10px] text-muted-foreground tabular-nums">
-                        {formatDate(item.createdAt)}
-                      </p>
+
+                      <div className="flex flex-wrap gap-x-3 pt-0.5 text-[11px] text-muted-foreground">
+                        {item.email ? (
+                          <span dir="ltr">{item.email}</span>
+                        ) : null}
+                        {item.phone ? (
+                          <span dir="ltr">{item.phone}</span>
+                        ) : null}
+                      </div>
                     </div>
                   </div>
 
-                  <div className="flex shrink-0 gap-2 sm:flex-col md:flex-row">
+                  <div className="flex flex-wrap gap-2 sm:justify-end">
                     <Button
                       size="sm"
-                      className="h-9 flex-1 gap-1.5"
+                      variant="outline"
+                      className="h-9 gap-1.5"
+                      onClick={() => openDetail(item)}
+                      aria-label={`جزئیات کامل ${displayName}`}
+                    >
+                      <Eye className="h-3.5 w-3.5" aria-hidden="true" />
+                      جزئیات
+                    </Button>
+                    <Button
+                      size="sm"
+                      className="h-9 flex-1 gap-1.5 sm:flex-none"
                       disabled={busy || isApproved || !pathId}
-                      onClick={() => void handleApprove(item)}
+                      onClick={() => requestApprove(item)}
+                      aria-label={`تأیید درخواست ${displayName}`}
                     >
                       {approveBusy ? (
                         <Loader2
@@ -642,9 +888,10 @@ export default function AdminCoachesPage() {
                     <Button
                       size="sm"
                       variant="outline"
-                      className="h-9 flex-1 gap-1.5 text-destructive hover:text-destructive"
+                      className="h-9 flex-1 gap-1.5 text-destructive hover:text-destructive sm:flex-none"
                       disabled={busy || isRejected || !pathId}
                       onClick={() => openReject(item)}
+                      aria-label={`رد درخواست ${displayName}`}
                     >
                       <X className="h-3.5 w-3.5" aria-hidden="true" />
                       {isRejected ? "رد شده" : "رد"}
@@ -657,18 +904,17 @@ export default function AdminCoachesPage() {
         )}
       </section>
 
-      {/* ----------------------------- Pagination ----------------------------- */}
-      {items.length > 0 && !isError && (
+      {items.length > 0 && !isError ? (
         <div className="flex flex-col gap-3 pt-1 sm:flex-row sm:items-center sm:justify-between">
           <div className="order-2 flex items-center justify-between gap-3 sm:order-1 sm:justify-start">
             <p className="text-xs text-muted-foreground">
               {total.toLocaleString("fa-IR")} مورد
-              {isFetching && (
+              {isFetching ? (
                 <span className="ms-1 inline-flex items-center gap-1">
                   <Loader2 className="inline h-3 w-3 animate-spin" />
                   در حال به‌روزرسانی…
                 </span>
-              )}
+              ) : null}
             </p>
             <div className="flex items-center gap-1.5">
               <label
@@ -686,7 +932,7 @@ export default function AdminCoachesPage() {
               >
                 <SelectTrigger
                   id="coaches-page-size"
-                  className="h-8 w-18 text-xs"
+                  className="h-8 w-20 text-xs"
                   aria-label="تعداد ردیف در هر صفحه"
                 >
                   <SelectValue />
@@ -701,7 +947,6 @@ export default function AdminCoachesPage() {
               </Select>
             </div>
           </div>
-
           <div className="order-1 flex items-center justify-center gap-2 sm:order-2">
             <Button
               variant="outline"
@@ -711,11 +956,7 @@ export default function AdminCoachesPage() {
               className="h-9 flex-1 gap-1 sm:flex-none"
               aria-label="صفحه قبلی"
             >
-              <ChevronRight className="h-4 w-4 sm:hidden" aria-hidden="true" />
-              <ChevronLeft
-                className="hidden h-4 w-4 sm:inline"
-                aria-hidden="true"
-              />
+              <ChevronRight className="h-4 w-4" aria-hidden="true" />
               قبلی
             </Button>
             <span className="whitespace-nowrap text-sm tabular-nums text-muted-foreground">
@@ -731,17 +972,175 @@ export default function AdminCoachesPage() {
               aria-label="صفحه بعدی"
             >
               بعدی
-              <ChevronLeft className="h-4 w-4 sm:hidden" aria-hidden="true" />
-              <ChevronRight
-                className="hidden h-4 w-4 sm:inline"
-                aria-hidden="true"
-              />
+              <ChevronLeft className="h-4 w-4" aria-hidden="true" />
             </Button>
           </div>
         </div>
-      )}
+      ) : null}
 
-      {/* --------------------------- Reject dialog --------------------------- */}
+      <Dialog
+        open={detailOpen}
+        onOpenChange={(open) => {
+          if (!open) closeDetail();
+        }}
+      >
+        <DialogContent
+          dir="rtl"
+          className="max-h-[90vh] max-w-[calc(100vw-2rem)] overflow-y-auto sm:max-w-lg"
+        >
+          <DialogHeader className="p-3">
+            <DialogTitle className="text-start">
+              جزئیات درخواست مربی
+            </DialogTitle>
+            <DialogDescription className="text-start">
+              اطلاعات کامل درخواست برای بررسی و اقدام.
+            </DialogDescription>
+          </DialogHeader>
+
+          {detail ? (
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <CoachAvatar src={detail.avatarUrl} size={14} />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-semibold text-foreground">
+                    {detail.title || detail.name}
+                  </p>
+                  <div className="mt-1">
+                    <StatusBadge status={detail.coachStatus} />
+                  </div>
+                </div>
+              </div>
+
+              <Separator />
+
+              <div className="space-y-2.5">
+                <InfoRow
+                  label="نام نمایشی"
+                  value={detail.title || detail.name}
+                />
+                <InfoRow label="تیتر" value={detail.headline} />
+                <InfoRow label="Slug" value={detail.slug} dir="ltr" />
+                <InfoRow label="بیو" value={detail.bio} />
+                <InfoRow
+                  label="سال شروع"
+                  value={formatExperienceYear(detail.experienceYears)}
+                />
+                <InfoRow
+                  label="اینستاگرام"
+                  value={detail.instagram}
+                  dir="ltr"
+                />
+                <InfoRow
+                  label="حداکثر شاگرد"
+                  value={
+                    detail.maxClients != null
+                      ? detail.maxClients.toLocaleString("fa-IR")
+                      : null
+                  }
+                />
+                <InfoRow
+                  label="پذیرش شاگرد"
+                  value={
+                    detail.isAcceptingClients == null
+                      ? null
+                      : detail.isAcceptingClients
+                        ? "بله"
+                        : "خیر"
+                  }
+                />
+                <InfoRow
+                  label="کمیسیون"
+                  value={
+                    detail.commissionRate != null
+                      ? `${detail.commissionRate.toLocaleString("fa-IR")}٪`
+                      : null
+                  }
+                />
+                <InfoRow label="کد ملی" value={detail.nationalId} dir="ltr" />
+                <InfoRow
+                  label="شهر / استان"
+                  value={
+                    [detail.cityName, detail.provinceName]
+                      .filter(Boolean)
+                      .join("، ") || null
+                  }
+                />
+                <InfoRow label="ایمیل" value={detail.email} dir="ltr" />
+                <InfoRow label="موبایل" value={detail.phone} dir="ltr" />
+                <InfoRow label="نقش کاربر" value={detail.role} dir="ltr" />
+                <InfoRow
+                  label="وضعیت حساب"
+                  value={detail.accountStatus}
+                  dir="ltr"
+                />
+                <InfoRow label="User ID" value={detail.userId} dir="ltr" />
+                <InfoRow label="Coach ID" value={detail.coachId} dir="ltr" />
+                {detail.rejectionReason ? (
+                  <InfoRow label="دلیل رد" value={detail.rejectionReason} />
+                ) : null}
+              </div>
+
+              {(detail.banners?.length ?? 0) > 0 ? (
+                <>
+                  <Separator />
+                  <div className="space-y-2">
+                    <p className="text-sm text-muted-foreground">بنرها</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {(detail.banners ?? []).map((src) => (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          key={src}
+                          src={src}
+                          alt=""
+                          loading="lazy"
+                          className="h-24 w-full rounded-md border object-cover"
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </>
+              ) : null}
+
+              <DialogFooter className="flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                <Button
+                  variant="outline"
+                  className="w-full sm:w-auto"
+                  onClick={closeDetail}
+                  disabled={updateMutation.isPending}
+                >
+                  بستن
+                </Button>
+                {normalizeStatus(detail.coachStatus) !== "REJECTED" ? (
+                  <Button
+                    variant="destructive"
+                    className="w-full sm:w-auto"
+                    onClick={() => {
+                      const target = detail;
+                      closeDetail();
+                      openReject(target);
+                    }}
+                    disabled={updateMutation.isPending}
+                  >
+                    <X className="me-2 h-4 w-4" aria-hidden="true" />
+                    رد درخواست
+                  </Button>
+                ) : null}
+                {normalizeStatus(detail.coachStatus) !== "APPROVED" ? (
+                  <Button
+                    className="w-full gap-1.5 bg-emerald-600 text-white hover:bg-emerald-600/90 sm:w-auto"
+                    onClick={() => requestApprove(detail)}
+                    disabled={updateMutation.isPending}
+                  >
+                    <Check className="me-2 h-4 w-4" aria-hidden="true" />
+                    تأیید مربی
+                  </Button>
+                ) : null}
+              </DialogFooter>
+            </div>
+          ) : null}
+        </DialogContent>
+      </Dialog>
+
       <Dialog
         open={rejectOpen}
         onOpenChange={(open) => {
@@ -755,19 +1154,20 @@ export default function AdminCoachesPage() {
           <DialogHeader>
             <DialogTitle className="text-start">رد درخواست مربی</DialogTitle>
             <DialogDescription className="text-start">
-              {selected?.name
-                ? `درخواست «${selected.name}» رد شود؟ دلیل رد برای کاربر ذخیره می‌شود.`
-                : "درخواست رد شود؟"}
+              {rejectTarget?.title || rejectTarget?.name
+                ? `درخواست «${rejectTarget.title || rejectTarget.name}» رد شود؟`
+                : "درخواست رد شود؟"}{" "}
+              دلیل رد برای کاربر ذخیره می‌شود.
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-2">
-            <label
+            <Label
               htmlFor="coach-reject-reason"
               className="text-xs font-medium text-muted-foreground"
             >
               دلیل رد <span className="text-destructive">*</span>
-            </label>
+            </Label>
             <Textarea
               id="coach-reject-reason"
               rows={4}
@@ -805,13 +1205,19 @@ export default function AdminCoachesPage() {
               {updateMutation.isPending ? (
                 <Loader2 className="me-2 h-4 w-4 animate-spin" />
               ) : (
-                <MessageSquareQuote className="me-2 h-4 w-4" />
+                <X className="me-2 h-4 w-4" />
               )}
               تأیید رد
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ConfirmDialog
+        state={confirm}
+        onClose={() => setConfirm(null)}
+        isBusy={updateMutation.isPending}
+      />
     </div>
   );
 }

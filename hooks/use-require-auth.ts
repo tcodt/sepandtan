@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useUserStore } from "@/lib/store/user-store";
 import { setAccessToken } from "@/lib/api/client";
 import type { UserRole } from "@/lib/types/plan";
 import { getHomePathForRole } from "@/features/onboarding/utils";
+import { isRoleFlowPath } from "@/lib/auth/resolve-post-auth-path";
 
 type Options = {
   requireOnboarding?: boolean;
@@ -39,6 +40,7 @@ export function useRequireAuth(options: Options = {}) {
   } = options;
 
   const router = useRouter();
+  const pathname = usePathname();
   const hasHydrated = useUserStore((s) => s._hasHydrated);
   const isAuthenticated = useUserStore((s) => s.isAuthenticated);
   const user = useUserStore((s) => s.user);
@@ -74,14 +76,20 @@ export function useRequireAuth(options: Options = {}) {
         return;
       }
 
+      const onRoleFlow = isRoleFlowPath(pathname);
+
       // 2) coach/seller در انتظار تأیید
+      //    روی خود role-flow (selection/apply/pending) جابه‌جا نکن
       if (
         blockPending &&
         (user.role === "coach" || user.role === "seller") &&
         user.roleStatus &&
         user.roleStatus !== "approved"
       ) {
-        router.replace(redirectToRolePending);
+        if (!onRoleFlow && !pathname.startsWith("/role-pending")) {
+          const type = user.role === "seller" ? "seller" : "coach";
+          router.replace(`${redirectToRolePending}?type=${type}`);
+        }
         return;
       }
 
@@ -132,6 +140,11 @@ export function useRequireAuth(options: Options = {}) {
         return;
       }
 
+      // مسیرهای role-flow هرگز نباید به onboarding هل داده شوند
+      if (onRoleFlow) {
+        return;
+      }
+
       // 5) قفل حرفه‌ای → onboarding نده
       if (
         requireOnboarding &&
@@ -143,7 +156,7 @@ export function useRequireAuth(options: Options = {}) {
         return;
       }
 
-      // 6) onboarding ناقص
+      // 6) onboarding ناقص — فقط trainee و فقط وقتی صریحاً خواسته شده
       if (
         requireOnboarding &&
         user.role === "trainee" &&
@@ -161,6 +174,7 @@ export function useRequireAuth(options: Options = {}) {
     hasHydrated,
     isAuthenticated,
     user,
+    pathname,
     requireOnboarding,
     onlyTrainee,
     blockPending,

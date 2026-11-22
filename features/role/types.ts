@@ -1,16 +1,19 @@
 export type CreateCoachPayload = {
-  isAcceptingClients?: boolean;
+  title?: string;
+  slug?: string;
   headline?: string;
   bio?: string;
-  maxClients?: number;
-  experienceYears?: string | number;
-  nationalId?: string;
+  /** ISO date string — CreateCoachDto.experienceYears (format: date) */
+  experienceYears?: string;
   instagram?: string;
-  address?: string;
-  /** Display title — defaults to user name */
-  title?: string;
-  /** URL slug — auto-generated if omitted */
-  slug?: string;
+  maxClients?: number;
+  isAcceptingClients?: boolean;
+  nationalId?: string;
+  provinceId?: string;
+  cityId?: string;
+  addressId?: string;
+  /** فقط اگر مدیا از قبل آپلود شده باشد */
+  banner?: string[];
 };
 
 export type CreateStorePayload = {
@@ -28,4 +31,15 @@ export type RoleRequestResult = {
   status?: string;
   success?: boolean;
   [key: string]: unknown;
+};
+
+export type ProvinceItem = {
+  id: string;
+  name: string;
+};
+
+export type CityItem = {
+  id: string;
+  name: string;
+  provinceId: string;
 };

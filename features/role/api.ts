@@ -1,7 +1,9 @@
 import { apiClient } from "@/lib/api/client";
 import type {
+  CityItem,
   CreateCoachPayload,
   CreateStorePayload,
+  ProvinceItem,
   RoleRequestResult,
 } from "./types";
 
@@ -25,9 +27,24 @@ export function toCoachSlug(text: string, userId: string): string {
   return `coach-${idPart}`;
 }
 
+/** year → ISO required by CreateCoachDto.experienceYears */
+export function yearToExperienceIso(year: number): string {
+  const y = Math.max(
+    1970,
+    Math.min(new Date().getFullYear(), Math.floor(year)),
+  );
+  return `${y}-01-01T00:00:00.000Z`;
+}
+
+function asString(v: unknown): string | null {
+  if (typeof v === "string" && v.trim()) return v.trim();
+  if (typeof v === "number" && Number.isFinite(v)) return String(v);
+  return null;
+}
+
 /**
- * POST /user/coach
- * CreateCoachDto requires: userId (UUID string in body), title, slug
+ * POST /user/coach — CreateCoachDto
+ * فقط فیلدهایی که کاربر مجاز به ارسال است.
  */
 export async function requestCoachRole(
   userId: string,
@@ -46,6 +63,7 @@ export async function requestCoachRole(
       ? payload.slug.trim()
       : null) || toCoachSlug(title, userId);
 
+  // مطابق CreateCoachDto — بدون commissionRate / rejectionReason
   const body: Record<string, unknown> = {
     userId,
     title,
@@ -57,13 +75,28 @@ export async function requestCoachRole(
     status: "PENDING",
   };
 
-  if (payload.nationalId) body.nationalId = payload.nationalId;
-  if (payload.instagram) body.instagram = payload.instagram;
-  if (payload.experienceYears != null) {
+  if (payload.experienceYears) {
     body.experienceYears = payload.experienceYears;
   }
+  if (payload.instagram?.trim()) {
+    body.instagram = payload.instagram.trim().replace(/^@/, "");
+  }
+  if (payload.nationalId?.trim()) {
+    body.nationalId = payload.nationalId.trim();
+  }
+  if (payload.provinceId?.trim()) {
+    body.provinceId = payload.provinceId.trim();
+  }
+  if (payload.cityId?.trim()) {
+    body.cityId = payload.cityId.trim();
+  }
+  if (payload.addressId?.trim()) {
+    body.addressId = payload.addressId.trim();
+  }
+  if (payload.banner && payload.banner.length > 0) {
+    body.banner = payload.banner.slice(0, 10);
+  }
 
-  // IMPORTANT: userId only in body — not as query param
   const { data } = await apiClient.post<RoleRequestResult>("/user/coach", body);
   return data;
 }
@@ -91,4 +124,50 @@ export async function requestStoreRole(
     address: payload.address,
   });
   return data;
+}
+
+/** GET /province */
+export async function fetchProvinces(): Promise<ProvinceItem[]> {
+  const { data } = await apiClient.get("/province");
+  const root = (data ?? {}) as Record<string, unknown>;
+  const list =
+    (Array.isArray(root.province) && root.province) ||
+    (Array.isArray(root.data) && root.data) ||
+    (Array.isArray(root) && root) ||
+    [];
+
+  return (list as unknown[])
+    .map((raw) => {
+      const r = (raw ?? {}) as Record<string, unknown>;
+      const id = asString(r.id);
+      const name = asString(r.name);
+      if (!id || !name) return null;
+      return { id, name };
+    })
+    .filter((x): x is ProvinceItem => x !== null);
+}
+
+/** GET /province/city?provinceId=... */
+export async function fetchCities(provinceId?: string): Promise<CityItem[]> {
+  const { data } = await apiClient.get("/province/city", {
+    params: provinceId ? { provinceId } : undefined,
+  });
+  const root = (data ?? {}) as Record<string, unknown>;
+  const list =
+    (Array.isArray(root.city) && root.city) ||
+    (Array.isArray(root.cities) && root.cities) ||
+    (Array.isArray(root.data) && root.data) ||
+    (Array.isArray(root) && root) ||
+    [];
+
+  return (list as unknown[])
+    .map((raw) => {
+      const r = (raw ?? {}) as Record<string, unknown>;
+      const id = asString(r.id);
+      const name = asString(r.name);
+      const pId = asString(r.provinceId) || provinceId || "";
+      if (!id || !name) return null;
+      return { id, name, provinceId: pId };
+    })
+    .filter((x): x is CityItem => x !== null);
 }

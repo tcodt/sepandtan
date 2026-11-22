@@ -9,6 +9,7 @@ import type { CreateCoachPayload, CreateStorePayload } from "../types";
 import { getErrorMessage } from "@/lib/api/client";
 import { useUserStore } from "@/lib/store/user-store";
 import { canRequestProfessionalRole } from "@/lib/role-lock";
+import { clearRoleFlowIntent } from "@/lib/auth/resolve-post-auth-path";
 
 function toSlug(text: string): string {
   const base = text
@@ -54,6 +55,7 @@ export function useRequestCoachRole() {
       });
     },
     onSuccess: () => {
+      clearRoleFlowIntent();
       requestRole("coach");
       toast.success("درخواست مربیگری ثبت شد", {
         description: "بعد از بررسی ادمین نتیجه اعلام می‌شود.",
@@ -78,7 +80,7 @@ export function useRequestStoreRole() {
       const gate = canRequestProfessionalRole(user, "seller");
       if (!gate.ok) throw new Error(gate.message);
 
-      const name = payload?.name?.trim() || user.name?.trim() || "My Store";
+      const name = payload?.name?.trim() || user.name?.trim() || "فروشگاه من";
 
       const slug =
         (payload?.slug?.trim() &&
@@ -99,6 +101,7 @@ export function useRequestStoreRole() {
       });
     },
     onSuccess: () => {
+      clearRoleFlowIntent();
       requestRole("seller");
       toast.success("درخواست فروشندگی ثبت شد", {
         description: "بعد از بررسی ادمین نتیجه اعلام می‌شود.",

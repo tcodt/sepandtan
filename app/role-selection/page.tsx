@@ -18,6 +18,10 @@ import { useUserStore } from "@/lib/store/user-store";
 import { useRequireAuth } from "@/hooks/use-require-auth";
 import { canRequestProfessionalRole, lockFromRole } from "@/lib/role-lock";
 import { cn } from "@/lib/utils";
+import {
+  clearRoleFlowIntent,
+  setRoleFlowIntent,
+} from "@/lib/auth/resolve-post-auth-path";
 
 const roles = [
   {
@@ -63,6 +67,10 @@ export default function RoleSelectionPage() {
   const sellerGate = canRequestProfessionalRole(user, "seller");
 
   useEffect(() => {
+    setRoleFlowIntent("role-selection");
+  }, []);
+
+  useEffect(() => {
     if (isLoading || !isAuthenticated || !user) return;
 
     if (user.role === "coach" || user.role === "seller") {
@@ -77,6 +85,41 @@ export default function RoleSelectionPage() {
   const handleContinue = async () => {
     if (!selected || !user) return;
     setIsSubmitting(true);
+
+    if (selected === "trainee") {
+      clearRoleFlowIntent();
+      setRole("trainee", "approved");
+      updateProfile({
+        role: "trainee",
+        roleStatus: "approved",
+        roles: ["trainee"],
+        onboardingStatus: "not_started",
+        currentOnboardingStep: 1,
+      });
+      toast.success("عالی! حالا برنامه شخصیت رو می‌سازیم");
+      router.replace("/onboarding");
+      return;
+    }
+
+    if (selected === "coach") {
+      if (!coachGate.ok) {
+        toast.error(coachGate.message);
+        return;
+      }
+      setRoleFlowIntent("coach-apply");
+      router.push("/role/coach-apply");
+      return;
+    }
+
+    if (selected === "seller") {
+      if (!sellerGate.ok) {
+        toast.error(sellerGate.message);
+        return;
+      }
+      setRoleFlowIntent("seller-apply");
+      router.push("/role/seller-apply");
+      return;
+    }
 
     try {
       if (selected === "trainee") {

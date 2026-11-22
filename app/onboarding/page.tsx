@@ -16,6 +16,19 @@ export default function OnboardingPage() {
   });
 
   useEffect(() => {
+    if (!user) return;
+    if (user.role === "coach" || user.role === "seller") {
+      router.replace(
+        user.roleStatus === "approved"
+          ? user.role === "coach"
+            ? "/coach"
+            : "/seller"
+          : `/role-pending?type=${user.role}`,
+      );
+    }
+  }, [user, router]);
+
+  useEffect(() => {
     if (isLoading || !isAuthenticated || !user) return;
     if (user.onboardingStatus === "completed" || user.onboardingCompleted) {
       router.replace("/dashboard");

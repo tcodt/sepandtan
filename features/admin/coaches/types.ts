@@ -6,19 +6,40 @@ export type CoachRequestStatus =
   | "DELETED";
 
 export type AdminCoachItem = {
+  /** Path id for PATCH /user/coach/{coachId} */
   id: string;
   coachId: string;
+  /** User id — for role sync USER ↔ COACH */
+  userId: string | null;
+
+  // Identity / contact (from user or coach)
   name: string;
+  title: string | null;
   email: string | null;
   phone: string | null;
   role: string;
   accountStatus: string;
   avatarUrl: string | null;
   createdAt: string;
-  coachStatus: CoachRequestStatus | null;
-  bio: string | null;
+
+  // Coach profile (CreateCoachDto fields)
+  slug: string | null;
   headline: string | null;
-  userId: string | null;
+  bio: string | null;
+  instagram: string | null;
+  /** ISO date string from API */
+  experienceYears: string | null;
+  maxClients: number | null;
+  isAcceptingClients: boolean | null;
+  commissionRate: number | null;
+  nationalId: string | null;
+  banners: string[];
+  cityId: string | null;
+  provinceId: string | null;
+  cityName: string | null;
+  provinceName: string | null;
+
+  coachStatus: CoachRequestStatus | null;
   rejectionReason: string | null;
 };
 
@@ -45,10 +66,4 @@ export type AdminCoachesResponse = {
 export type UpdateCoachByAdminPayload = {
   status: CoachRequestStatus;
   rejectionReason?: string | null;
-};
-
-export type UpdateCoachByAdminResult = {
-  roleSynced: boolean;
-  userId: string | null;
-  roleError?: string;
 };
