@@ -1,8 +1,15 @@
 "use client";
 
-import { useCallback, useEffect, useId, useMemo, useState } from "react";
+import {
+  Suspense,
+  useCallback,
+  useEffect,
+  useId,
+  useMemo,
+  useState,
+} from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -27,6 +34,7 @@ import {
   IdCard,
   Building2,
   MapPinned,
+  RefreshCw,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -54,6 +62,7 @@ import { useRequestCoachRole } from "@/features/role/hooks/use-role-request";
 import {
   fetchCities,
   fetchProvinces,
+  fetchSpecialtySelector,
   yearToExperienceIso,
 } from "@/features/role/api";
 import { canRequestProfessionalRole } from "@/lib/role-lock";
@@ -64,32 +73,17 @@ import { setRoleFlowIntent } from "@/lib/auth/resolve-post-auth-path";
 /* Constants                                                                  */
 /* -------------------------------------------------------------------------- */
 
-const SPECIALTIES = [
-  "کاهش وزن",
-  "افزایش حجم",
-  "تناسب اندام",
-  "قدرتی",
-  "هوازی / استقامتی",
-  "تغذیه ورزشی",
-  "بازتوانی / آسیب",
-  "بدنسازی بانوان",
-  "آمادگی جسمانی عمومی",
-] as const;
-
 const BIO_MIN = 20;
 const BIO_MAX = 500;
 const HEADLINE_MAX = 80;
-
 const MIN_START_YEAR = 1970;
 const MAX_START_YEAR = new Date().getFullYear();
-
-const LOCATION_STALE_MS = 30 * 60 * 1000; // 30 minutes
+const STALE_MS = 30 * 60 * 1000;
 
 /* -------------------------------------------------------------------------- */
 /* Helpers                                                                    */
 /* -------------------------------------------------------------------------- */
 
-/** Persian/Arabic digits → Latin digits. */
 function toLatinDigits(raw: string): string {
   const map: Record<string, string> = {
     "۰": "0",
@@ -116,17 +110,25 @@ function toLatinDigits(raw: string): string {
   return raw.replace(/[۰-۹٠-٩]/g, (d) => map[d] ?? d);
 }
 
-/** Strip @ and URLs from Instagram handle. */
+/** پشتیبانی سال شمسی (~۱۳۰۰–۱۵۰۰) و میلادی */
+function normalizeStartYear(raw: string | number): number {
+  const n =
+    typeof raw === "number" ? raw : Number(toLatinDigits(String(raw)).trim());
+  if (!Number.isFinite(n)) return MAX_START_YEAR;
+  if (n >= 1300 && n <= 1500) return n + 621;
+  return Math.max(MIN_START_YEAR, Math.min(MAX_START_YEAR, Math.floor(n)));
+}
+
 function normalizeInstagram(raw: string | undefined): string {
   const v = (raw ?? "").trim();
   if (!v) return "";
-  const urlMatch = v.match(/instagram\.com\/([A-Za-z0-9_.]+)/i);
-  if (urlMatch) return urlMatch[1];
+  const m = v.match(/instagram\.com\/([A-Za-z0-9_.]+)/i);
+  if (m?.[1]) return m[1];
   return v.replace(/^@+/, "").replace(/[^A-Za-z0-9_.]/g, "");
 }
 
 /* -------------------------------------------------------------------------- */
-/* Schema — Zod v4 compatible                                                 */
+/* Schema                                                                     */
 /* -------------------------------------------------------------------------- */
 
 const requiredIntString = (label: string, min: number, max: number) =>
@@ -135,10 +137,11 @@ const requiredIntString = (label: string, min: number, max: number) =>
     .trim()
     .refine((v) => v.length > 0, `${label} الزامی است`)
     .transform(toLatinDigits)
-    .refine((v) => /^\d+$/.test(v), "فقط عدد صحیح غیرمنفی")
+    .refine((v) => /^\d+$/.test(v), "فقط عدد")
     .transform(Number)
-    .refine((n) => n >= min, `حداقل ${min}`)
-    .refine((n) => n <= max, `حداکثر ${max}`);
+    .refine((n) => Number.isFinite(n) && n >= min && n <= max, {
+      message: `بین ${min} تا ${max}`,
+    });
 
 const formSchema = z.object({
   title: z
@@ -160,7 +163,10 @@ const formSchema = z.object({
     "سال شروع فعالیت",
     MIN_START_YEAR,
     MAX_START_YEAR,
-  ),
+  ).refine((n) => {
+    const g = normalizeStartYear(n);
+    return g >= MIN_START_YEAR && g <= MAX_START_YEAR;
+  }, "سال نامعتبر است"),
   instagram: z
     .string()
     .trim()
@@ -179,14 +185,14 @@ const formSchema = z.object({
     .refine((v) => !v || /^\d{10}$/.test(v), "کد ملی باید ۱۰ رقم باشد"),
   provinceId: z.string().trim().optional().or(z.literal("")),
   cityId: z.string().trim().optional().or(z.literal("")),
-  specialties: z.array(z.string()).min(1, "حداقل یک تخصص انتخاب کنید"),
+  specialtyIds: z.array(z.string()).min(1, "حداقل یک تخصص انتخاب کنید"),
 });
 
 type FormInput = z.input<typeof formSchema>;
 type FormOutput = z.output<typeof formSchema>;
 
 /* -------------------------------------------------------------------------- */
-/* Sub-components                                                             */
+/* UI pieces                                                                  */
 /* -------------------------------------------------------------------------- */
 
 function PageLoadingState() {
@@ -215,13 +221,7 @@ function PageLoadingState() {
   );
 }
 
-function SuccessState({
-  name,
-  onBackToRoleSelection,
-}: {
-  name: string;
-  onBackToRoleSelection: () => void;
-}) {
+function SuccessState({ name, onBack }: { name: string; onBack: () => void }) {
   return (
     <div
       dir="rtl"
@@ -240,26 +240,15 @@ function SuccessState({
               درخواست شما ثبت شد
             </h2>
             <p className="max-w-sm text-sm text-muted-foreground">
-              درخواست مربیگری «{name}» به صف بررسی ادمین ارسال شد. پس از تأیید،
-              پنل مربی برای شما فعال می‌شود.
+              درخواست مربیگری «{name}» ثبت شد. پس از بررسی ادمین، نتیجه از طریق
+              اعلان‌ها اعلام می‌شود.
             </p>
-          </div>
-          <div className="w-full space-y-2 rounded-lg border border-border bg-muted/30 p-3 text-start">
-            <p className="flex items-center gap-1.5 text-xs font-medium text-foreground">
-              <Info className="h-3.5 w-3.5" aria-hidden="true" />
-              مرحله بعدی چیست؟
-            </p>
-            <ol className="ms-5 list-decimal space-y-1 text-xs text-muted-foreground">
-              <li>ادمین اطلاعات شما را بررسی می‌کند.</li>
-              <li>نتیجه از طریق اعلان‌ها و ایمیل به شما اطلاع داده می‌شود.</li>
-              <li>در صورت تأیید، از داشبورد به پنل مربی منتقل می‌شوید.</li>
-            </ol>
           </div>
           <div className="flex w-full flex-col gap-2 pt-2 sm:flex-row">
             <Button
               variant="outline"
               className="w-full gap-1.5 sm:flex-1"
-              onClick={onBackToRoleSelection}
+              onClick={onBack}
             >
               <ArrowRight className="h-4 w-4" aria-hidden="true" />
               بازگشت
@@ -277,12 +266,35 @@ function SuccessState({
   );
 }
 
+function SectionTitle({
+  icon: Icon,
+  children,
+  hint,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  children: React.ReactNode;
+  hint?: string;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-2">
+      <p className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
+        <Icon className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
+        {children}
+      </p>
+      {hint ? (
+        <span className="text-[10px] text-muted-foreground">{hint}</span>
+      ) : null}
+    </div>
+  );
+}
+
 /* -------------------------------------------------------------------------- */
-/* Page                                                                       */
+/* Content                                                                    */
 /* -------------------------------------------------------------------------- */
 
-export default function CoachApplyPage() {
+function CoachApplyContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { isLoading, isAuthenticated, user } = useRequireAuth({
     requireOnboarding: false,
     blockPending: false,
@@ -298,18 +310,37 @@ export default function CoachApplyPage() {
   const instagramId = useId();
   const nationalIdId = useId();
   const maxClientsId = useId();
-  const provinceId_ = useId();
-  const cityId_ = useId();
+  const provinceSelectId = useId();
+  const citySelectId = useId();
 
-  /* ----------------------------- Location queries ----------------------------- */
+  const fieldDomId: Record<string, string> = {
+    title: titleId,
+    headline: headlineId,
+    bio: bioId,
+    experienceStartYear: experienceId,
+    instagram: instagramId,
+    nationalId: nationalIdId,
+    maxClients: maxClientsId,
+    provinceId: provinceSelectId,
+    cityId: citySelectId,
+    specialtyIds: "coach-specialty-ids",
+  };
 
   const provincesQuery = useQuery({
     queryKey: ["provinces"],
     queryFn: fetchProvinces,
-    staleTime: LOCATION_STALE_MS,
+    staleTime: STALE_MS,
   });
 
-  /* ----------------------------- Auth gate ----------------------------- */
+  const specialtiesQuery = useQuery({
+    queryKey: ["specialty-selector"],
+    queryFn: () => fetchSpecialtySelector(),
+    staleTime: STALE_MS,
+  });
+
+  useEffect(() => {
+    setRoleFlowIntent("coach-apply");
+  }, []);
 
   useEffect(() => {
     if (isLoading || !user) return;
@@ -330,8 +361,6 @@ export default function CoachApplyPage() {
     }
   }, [isLoading, user, router]);
 
-  /* ------------------------------ Form setup ------------------------------ */
-
   const defaultValues = useMemo<FormInput>(
     () => ({
       title: user?.name ?? "",
@@ -344,7 +373,7 @@ export default function CoachApplyPage() {
       nationalId: "",
       provinceId: "",
       cityId: "",
-      specialties: [],
+      specialtyIds: [],
     }),
     [user?.name],
   );
@@ -352,15 +381,12 @@ export default function CoachApplyPage() {
   const form = useForm<FormInput, unknown, FormOutput>({
     resolver: zodResolver(formSchema),
     defaultValues,
+    mode: "onBlur",
   });
 
-  useEffect(() => {
-    setRoleFlowIntent("coach-apply");
-  }, []);
-
-  const specialtyValues = useWatch({
+  const specialtyIds = useWatch({
     control: form.control,
-    name: "specialties",
+    name: "specialtyIds",
   });
   const bioValue = useWatch({ control: form.control, name: "bio" });
   const headlineValue = useWatch({ control: form.control, name: "headline" });
@@ -378,32 +404,66 @@ export default function CoachApplyPage() {
     name: "isAcceptingClients",
   });
 
-  const selectedSpecialties = specialtyValues ?? [];
+  const selectedSpecialtyIds = specialtyIds ?? [];
   const isDirty = form.formState.isDirty;
 
   const citiesQuery = useQuery({
     queryKey: ["cities", provinceValue],
     queryFn: () => fetchCities(provinceValue || undefined),
     enabled: Boolean(provinceValue),
-    staleTime: LOCATION_STALE_MS,
+    staleTime: STALE_MS,
   });
 
-  // Derived "years of experience" for user reassurance.
+  const specialtyList = useMemo(
+    () => specialtiesQuery.data ?? [],
+    [specialtiesQuery.data],
+  );
+  const specialtyTitleById = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const s of specialtyList) map.set(s.id, s.title);
+    return map;
+  }, [specialtyList]);
+
   const derivedYears = useMemo(() => {
-    const year = Number(toLatinDigits(experienceStartYearValue ?? ""));
-    if (!Number.isFinite(year) || year < MIN_START_YEAR) return null;
-    return Math.max(0, MAX_START_YEAR - year);
+    const g = normalizeStartYear(experienceStartYearValue ?? "");
+    if (g < MIN_START_YEAR) return null;
+    return Math.max(0, MAX_START_YEAR - g);
   }, [experienceStartYearValue]);
 
-  /* ------------------------------ Handlers ------------------------------ */
+  const navigateBack = useCallback(
+    (skipDirtyGuard = false) => {
+      if (!skipDirtyGuard && isDirty) {
+        const ok = window.confirm(
+          "تغییرات ذخیره‌نشده دارید. بازگشت بدون ذخیره؟",
+        );
+        if (!ok) return;
+      }
+
+      const from = searchParams.get("from");
+      if (from === "account") {
+        router.push("/account");
+        return;
+      }
+      if (from === "role-selection") {
+        router.push("/role-selection");
+        return;
+      }
+      if (typeof window !== "undefined" && window.history.length > 1) {
+        router.back();
+        return;
+      }
+      router.push("/role-selection");
+    },
+    [isDirty, router, searchParams],
+  );
 
   const toggleSpecialty = useCallback(
-    (item: string) => {
-      const current = form.getValues("specialties") ?? [];
-      const next = current.includes(item)
-        ? current.filter((s) => s !== item)
-        : [...current, item];
-      form.setValue("specialties", next, {
+    (id: string) => {
+      const current = form.getValues("specialtyIds") ?? [];
+      const next = current.includes(id)
+        ? current.filter((x) => x !== id)
+        : [...current, id];
+      form.setValue("specialtyIds", next, {
         shouldValidate: true,
         shouldDirty: true,
       });
@@ -417,7 +477,6 @@ export default function CoachApplyPage() {
         shouldValidate: true,
         shouldDirty: true,
       });
-      // Reset city when province changes.
       form.setValue("cityId", "", { shouldDirty: true });
     },
     [form],
@@ -431,14 +490,24 @@ export default function CoachApplyPage() {
   const onSubmit = form.handleSubmit(
     (data) => {
       const instagram = normalizeInstagram(data.instagram);
-      const experienceIso = yearToExperienceIso(data.experienceStartYear);
+      const gregorianYear = normalizeStartYear(data.experienceStartYear);
+      const experienceIso = yearToExperienceIso(gregorianYear);
+
+      const specialtyTitles = data.specialtyIds
+        .map((id) => specialtyTitleById.get(id))
+        .filter((t): t is string => Boolean(t));
+
+      // CreateCoachDto فیلد specialty ندارد؛ عنوان‌ها در bio برای بررسی ادمین
+      const specialtyNote =
+        specialtyTitles.length > 0
+          ? `\n\nتخصص‌ها: ${specialtyTitles.join("، ")}`
+          : "";
 
       coachMutation.mutate(
         {
           title: data.title.trim(),
           headline: data.headline.trim(),
-          // ✅ Bio sent as-is; specialties NOT concatenated.
-          bio: data.bio.trim(),
+          bio: `${data.bio.trim()}${specialtyNote}`,
           experienceYears: experienceIso,
           instagram: instagram || undefined,
           maxClients: data.maxClients,
@@ -454,23 +523,15 @@ export default function CoachApplyPage() {
     },
     (errors) => {
       const first = Object.keys(errors)[0];
-      if (first) {
-        const el = document.getElementById(`coach-${first}`);
-        el?.scrollIntoView({ behavior: "smooth", block: "center" });
-        (el as HTMLInputElement | null)?.focus?.();
-      }
+      if (!first) return;
+      const id = fieldDomId[first];
+      if (!id) return;
+      const el = document.getElementById(id);
+      el?.scrollIntoView({ behavior: "smooth", block: "center" });
+      (el as HTMLElement | null)?.focus?.();
+      toast.error("لطفاً فیلدهای الزامی را تکمیل کنید");
     },
   );
-
-  const handleBackToRoleSelection = useCallback(() => {
-    if (isDirty) {
-      const ok = window.confirm("تغییرات ذخیره‌نشده دارید. بازگشت بدون ذخیره؟");
-      if (!ok) return;
-    }
-    router.push("/role-selection");
-  }, [isDirty, router]);
-
-  /* ------------------------------- Render ------------------------------- */
 
   if (isLoading || !isAuthenticated) {
     return <PageLoadingState />;
@@ -479,8 +540,8 @@ export default function CoachApplyPage() {
   if (submitted) {
     return (
       <SuccessState
-        name={user?.name || "شما"}
-        onBackToRoleSelection={() => router.push("/role-selection")}
+        name={form.getValues("title") || user?.name || "شما"}
+        onBack={() => navigateBack(true)}
       />
     );
   }
@@ -488,9 +549,9 @@ export default function CoachApplyPage() {
   const pending = coachMutation.isPending;
   const bioLength = (bioValue ?? "").trim().length;
   const headlineLength = (headlineValue ?? "").trim().length;
-
   const provinceList = provincesQuery.data ?? [];
   const cityList = citiesQuery.data ?? [];
+  const selectedCount = selectedSpecialtyIds.length;
 
   return (
     <div
@@ -498,14 +559,14 @@ export default function CoachApplyPage() {
       className="flex min-h-dvh items-start justify-center px-4 py-6 sm:py-10"
     >
       <Card className="w-full max-w-xl border-border shadow-lg">
-        {/* ------------------------------ Back nav ------------------------------ */}
+        {/* Header */}
         <div className="flex items-center justify-between border-b border-border px-4 py-2">
           <Button
             type="button"
             variant="ghost"
             size="sm"
             className="-ms-2 gap-1 text-muted-foreground"
-            onClick={handleBackToRoleSelection}
+            onClick={() => navigateBack(false)}
             disabled={pending}
           >
             <ArrowRight className="h-4 w-4" aria-hidden="true" />
@@ -517,7 +578,7 @@ export default function CoachApplyPage() {
           </span>
         </div>
 
-        <CardHeader className="space-y-1">
+        <CardHeader className="space-y-1 pb-3">
           <CardTitle className="text-xl">اطلاعات مربیگری</CardTitle>
           <CardDescription>
             این اطلاعات برای بررسی ادمین ثبت می‌شود. پس از تأیید، پنل مربی فعال
@@ -525,195 +586,203 @@ export default function CoachApplyPage() {
           </CardDescription>
         </CardHeader>
 
-        <CardContent>
-          <form onSubmit={onSubmit} className="space-y-4" noValidate>
-            {/* -------------------------- Title -------------------------- */}
-            <div className="space-y-2">
-              <Label htmlFor={titleId} className="flex items-center gap-1.5">
-                <User
-                  className="h-3.5 w-3.5 text-muted-foreground"
-                  aria-hidden="true"
-                />
-                نام نمایشی
-              </Label>
-              <Input
-                id={titleId}
-                className="h-11"
-                autoComplete="name"
-                {...form.register("title")}
-                aria-invalid={!!form.formState.errors.title}
-              />
-              {form.formState.errors.title && (
-                <p className="text-xs text-destructive" role="alert">
-                  {form.formState.errors.title.message}
-                </p>
-              )}
-            </div>
+        <CardContent className="pb-24 sm:pb-6">
+          <form onSubmit={onSubmit} className="space-y-5" noValidate>
+            {/* —— هویت —— */}
+            <section className="space-y-3">
+              <SectionTitle icon={User}>هویت حرفه‌ای</SectionTitle>
 
-            {/* -------------------------- Headline -------------------------- */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label
-                  htmlFor={headlineId}
-                  className="flex items-center gap-1.5"
-                >
-                  <Sparkles
-                    className="h-3.5 w-3.5 text-muted-foreground"
-                    aria-hidden="true"
-                  />
-                  تیتر حرفه‌ای
-                </Label>
-                <span
-                  className={cn(
-                    "text-[10px] tabular-nums",
-                    headlineLength > HEADLINE_MAX
-                      ? "text-destructive"
-                      : "text-muted-foreground",
-                  )}
-                >
-                  {headlineLength.toLocaleString("fa-IR")} /{" "}
-                  {HEADLINE_MAX.toLocaleString("fa-IR")}
-                </span>
+              <div className="space-y-2">
+                <Label htmlFor={titleId}>نام نمایشی</Label>
+                <Input
+                  id={titleId}
+                  className="h-11"
+                  autoComplete="name"
+                  {...form.register("title")}
+                  aria-invalid={!!form.formState.errors.title}
+                />
+                {form.formState.errors.title && (
+                  <p className="text-xs text-destructive" role="alert">
+                    {form.formState.errors.title.message}
+                  </p>
+                )}
               </div>
-              <Input
-                id={headlineId}
-                placeholder="مثلاً مربی کاهش وزن و تغذیه"
-                className="h-11"
-                {...form.register("headline")}
-                aria-invalid={!!form.formState.errors.headline}
-              />
-              {form.formState.errors.headline && (
-                <p className="text-xs text-destructive" role="alert">
-                  {form.formState.errors.headline.message}
-                </p>
-              )}
-            </div>
 
-            {/* -------------------------- Specialties -------------------------- */}
-            <fieldset className="space-y-2">
-              <legend className="flex items-center gap-1.5 text-sm font-medium">
-                <Briefcase
-                  className="h-3.5 w-3.5 text-muted-foreground"
-                  aria-hidden="true"
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label
+                    htmlFor={headlineId}
+                    className="flex items-center gap-1.5"
+                  >
+                    <Sparkles className="h-3.5 w-3.5 text-muted-foreground" />
+                    تیتر حرفه‌ای
+                  </Label>
+                  <span
+                    className={cn(
+                      "text-[10px] tabular-nums",
+                      headlineLength > HEADLINE_MAX
+                        ? "text-destructive"
+                        : "text-muted-foreground",
+                    )}
+                  >
+                    {headlineLength.toLocaleString("fa-IR")} /{" "}
+                    {HEADLINE_MAX.toLocaleString("fa-IR")}
+                  </span>
+                </div>
+                <Input
+                  id={headlineId}
+                  placeholder="مثلاً مربی کاهش وزن و تغذیه"
+                  className="h-11"
+                  {...form.register("headline")}
+                  aria-invalid={!!form.formState.errors.headline}
                 />
-                تخصص‌ها
-                <span className="text-xs text-muted-foreground">
-                  (حداقل یکی)
-                </span>
-              </legend>
-              <div
-                className="flex flex-wrap gap-2"
-                role="group"
-                aria-label="انتخاب تخصص‌ها"
+                {form.formState.errors.headline && (
+                  <p className="text-xs text-destructive" role="alert">
+                    {form.formState.errors.headline.message}
+                  </p>
+                )}
+              </div>
+            </section>
+
+            {/* —— تخصص‌ها (API) —— */}
+            <section className="space-y-3">
+              <SectionTitle
+                icon={Briefcase}
+                hint={
+                  selectedCount > 0
+                    ? `${selectedCount.toLocaleString("fa-IR")} انتخاب‌شده`
+                    : undefined
+                }
               >
-                {SPECIALTIES.map((item) => {
-                  const active = selectedSpecialties.includes(item);
-                  return (
-                    <button
-                      key={item}
-                      type="button"
-                      onClick={() => toggleSpecialty(item)}
-                      aria-pressed={active}
-                      className={cn(
-                        "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
-                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                        active
-                          ? "border-primary bg-primary text-primary-foreground"
-                          : "border-border bg-muted/50 text-muted-foreground hover:bg-muted",
-                      )}
-                    >
-                      {active && (
-                        <CheckCircle2 className="h-3 w-3" aria-hidden="true" />
-                      )}
-                      {item}
-                    </button>
-                  );
-                })}
-              </div>
-              {form.formState.errors.specialties && (
+                تخصص‌ها
+              </SectionTitle>
+
+              {specialtiesQuery.isLoading ? (
+                <div className="flex flex-wrap gap-2">
+                  {Array.from({ length: 8 }).map((_, i) => (
+                    <Skeleton key={i} className="h-8 w-24 rounded-full" />
+                  ))}
+                </div>
+              ) : specialtiesQuery.isError ? (
+                <div className="flex items-center justify-between gap-2 rounded-xl border border-destructive/30 bg-destructive/5 px-3 py-2.5">
+                  <p className="text-xs text-destructive">
+                    دریافت تخصص‌ها ناموفق بود.
+                  </p>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="h-8 gap-1.5"
+                    onClick={() => void specialtiesQuery.refetch()}
+                  >
+                    <RefreshCw className="h-3.5 w-3.5" />
+                    تلاش دوباره
+                  </Button>
+                </div>
+              ) : specialtyList.length === 0 ? (
+                <p className="rounded-xl border border-dashed border-border px-3 py-3 text-xs text-muted-foreground">
+                  تخصصی برای انتخاب تعریف نشده است. بعداً دوباره تلاش کنید.
+                </p>
+              ) : (
+                <div
+                  id="coach-specialty-ids"
+                  className="flex flex-wrap gap-2"
+                  role="group"
+                  aria-label="انتخاب تخصص‌ها"
+                >
+                  {specialtyList.map((item) => {
+                    const active = selectedSpecialtyIds.includes(item.id);
+                    return (
+                      <button
+                        key={item.id}
+                        type="button"
+                        onClick={() => toggleSpecialty(item.id)}
+                        aria-pressed={active}
+                        className={cn(
+                          "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
+                          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                          active
+                            ? "border-primary bg-primary text-primary-foreground shadow-sm"
+                            : "border-border bg-muted/40 text-muted-foreground hover:bg-muted",
+                        )}
+                      >
+                        {active && (
+                          <CheckCircle2
+                            className="h-3 w-3"
+                            aria-hidden="true"
+                          />
+                        )}
+                        {item.title}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
+              {form.formState.errors.specialtyIds && (
                 <p className="text-xs text-destructive" role="alert">
-                  {form.formState.errors.specialties.message}
+                  {form.formState.errors.specialtyIds.message}
                 </p>
               )}
-            </fieldset>
+            </section>
 
-            {/* ------------------ Experience + Max clients ------------------ */}
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label
-                  htmlFor={experienceId}
-                  className="flex items-center gap-1.5"
-                >
-                  <Clock
-                    className="h-3.5 w-3.5 text-muted-foreground"
-                    aria-hidden="true"
+            {/* —— تجربه و ظرفیت —— */}
+            <section className="space-y-3">
+              <SectionTitle icon={Clock}>تجربه و ظرفیت</SectionTitle>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor={experienceId}>سال شروع فعالیت</Label>
+                  <Input
+                    id={experienceId}
+                    type="text"
+                    inputMode="numeric"
+                    className="h-11 tabular-nums"
+                    placeholder="۲۰۱۹ یا ۱۳۹۸"
+                    {...form.register("experienceStartYear")}
+                    aria-invalid={!!form.formState.errors.experienceStartYear}
                   />
-                  سال شروع فعالیت
-                </Label>
-                <Input
-                  id={experienceId}
-                  type="text"
-                  inputMode="numeric"
-                  pattern="[0-9]*"
-                  placeholder="مثلاً 1398"
-                  className="h-11 tabular-nums"
-                  {...form.register("experienceStartYear")}
-                  aria-invalid={!!form.formState.errors.experienceStartYear}
-                />
-                {form.formState.errors.experienceStartYear && (
-                  <p className="text-xs text-destructive" role="alert">
-                    {form.formState.errors.experienceStartYear.message}
-                  </p>
-                )}
-                <p className="text-[10px] text-muted-foreground">
-                  سالی که فعالیت مربیگری را شروع کرده‌اید.
-                  {derivedYears !== null && (
-                    <span className="ms-1 text-foreground">
-                      (حدود {derivedYears.toLocaleString("fa-IR")} سال سابقه)
-                    </span>
+                  {form.formState.errors.experienceStartYear && (
+                    <p className="text-xs text-destructive" role="alert">
+                      {form.formState.errors.experienceStartYear.message}
+                    </p>
                   )}
-                </p>
-              </div>
+                  {derivedYears !== null && (
+                    <p className="text-[10px] text-muted-foreground">
+                      حدود {derivedYears.toLocaleString("fa-IR")} سال سابقه
+                    </p>
+                  )}
+                </div>
 
-              <div className="space-y-2">
-                <Label
-                  htmlFor={maxClientsId}
-                  className="flex items-center gap-1.5"
-                >
-                  <Users
-                    className="h-3.5 w-3.5 text-muted-foreground"
-                    aria-hidden="true"
+                <div className="space-y-2">
+                  <Label
+                    htmlFor={maxClientsId}
+                    className="flex items-center gap-1.5"
+                  >
+                    <Users className="h-3.5 w-3.5 text-muted-foreground" />
+                    ظرفیت شاگرد
+                  </Label>
+                  <Input
+                    id={maxClientsId}
+                    type="text"
+                    inputMode="numeric"
+                    className="h-11 tabular-nums"
+                    {...form.register("maxClients")}
+                    aria-invalid={!!form.formState.errors.maxClients}
                   />
-                  ظرفیت شاگرد
-                </Label>
-                <Input
-                  id={maxClientsId}
-                  type="text"
-                  inputMode="numeric"
-                  pattern="[0-9]*"
-                  className="h-11 tabular-nums"
-                  {...form.register("maxClients")}
-                  aria-invalid={!!form.formState.errors.maxClients}
-                />
-                {form.formState.errors.maxClients && (
-                  <p className="text-xs text-destructive" role="alert">
-                    {form.formState.errors.maxClients.message}
-                  </p>
-                )}
-                <p className="text-[10px] text-muted-foreground">
-                  حداکثر تعداد شاگردی که می‌توانید همزمان بپذیرید.
-                </p>
+                  {form.formState.errors.maxClients && (
+                    <p className="text-xs text-destructive" role="alert">
+                      {form.formState.errors.maxClients.message}
+                    </p>
+                  )}
+                </div>
               </div>
-            </div>
+            </section>
 
-            {/* -------------------------- Bio -------------------------- */}
-            <div className="space-y-2">
+            {/* —— بیو —— */}
+            <section className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label htmlFor={bioId} className="flex items-center gap-1.5">
-                  <MessageSquare
-                    className="h-3.5 w-3.5 text-muted-foreground"
-                    aria-hidden="true"
-                  />
+                  <MessageSquare className="h-3.5 w-3.5 text-muted-foreground" />
                   بیو
                 </Label>
                 <span
@@ -726,18 +795,13 @@ export default function CoachApplyPage() {
                 >
                   {bioLength.toLocaleString("fa-IR")} /{" "}
                   {BIO_MAX.toLocaleString("fa-IR")}
-                  {bioLength < BIO_MIN && (
-                    <span className="ms-1">
-                      (حداقل {BIO_MIN.toLocaleString("fa-IR")})
-                    </span>
-                  )}
                 </span>
               </div>
               <Textarea
                 id={bioId}
                 rows={4}
                 className="resize-none"
-                placeholder="درباره خودتان، سبک تمرین و رویکردتان با شاگردها بنویسید…"
+                placeholder="درباره خودتان، سبک تمرین و رویکردتان با شاگردها…"
                 {...form.register("bio")}
                 aria-invalid={!!form.formState.errors.bio}
               />
@@ -746,19 +810,16 @@ export default function CoachApplyPage() {
                   {form.formState.errors.bio.message}
                 </p>
               )}
-            </div>
+            </section>
 
-            {/* -------------------------- Instagram + National ID -------------------------- */}
-            <div className="grid gap-3 sm:grid-cols-2">
+            {/* —— تماس —— */}
+            <section className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label
                   htmlFor={instagramId}
                   className="flex items-center gap-1.5"
                 >
-                  <Instagram
-                    className="h-3.5 w-3.5 text-muted-foreground"
-                    aria-hidden="true"
-                  />
+                  <Instagram className="h-3.5 w-3.5 text-muted-foreground" />
                   اینستاگرام (اختیاری)
                 </Label>
                 <div className="flex h-11 items-center rounded-md border border-input bg-background px-3">
@@ -790,10 +851,7 @@ export default function CoachApplyPage() {
                   htmlFor={nationalIdId}
                   className="flex items-center gap-1.5"
                 >
-                  <IdCard
-                    className="h-3.5 w-3.5 text-muted-foreground"
-                    aria-hidden="true"
-                  />
+                  <IdCard className="h-3.5 w-3.5 text-muted-foreground" />
                   کد ملی (اختیاری)
                 </Label>
                 <Input
@@ -812,39 +870,29 @@ export default function CoachApplyPage() {
                   </p>
                 )}
               </div>
-            </div>
+            </section>
 
-            {/* -------------------------- Location -------------------------- */}
-            <div className="space-y-2">
+            {/* —— موقعیت —— */}
+            <section className="space-y-3">
               <div className="flex items-center justify-between">
-                <p className="flex items-center gap-1.5 text-sm font-medium">
-                  <MapPin
-                    className="h-3.5 w-3.5 text-muted-foreground"
-                    aria-hidden="true"
-                  />
-                  موقعیت (اختیاری)
-                </p>
-                {provinceValue && (
+                <SectionTitle icon={MapPin}>موقعیت (اختیاری)</SectionTitle>
+                {provinceValue ? (
                   <button
                     type="button"
                     onClick={clearProvince}
-                    className="text-[10px] text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    className="text-[10px] text-muted-foreground hover:text-foreground"
                   >
                     پاک کردن
                   </button>
-                )}
+                ) : null}
               </div>
-
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label
-                    htmlFor={provinceId_}
+                    htmlFor={provinceSelectId}
                     className="flex items-center gap-1.5 text-xs"
                   >
-                    <Building2
-                      className="h-3 w-3 text-muted-foreground"
-                      aria-hidden="true"
-                    />
+                    <Building2 className="h-3 w-3 text-muted-foreground" />
                     استان
                   </Label>
                   <Select
@@ -852,7 +900,10 @@ export default function CoachApplyPage() {
                     onValueChange={onProvinceChange}
                     disabled={provincesQuery.isLoading}
                   >
-                    <SelectTrigger id={provinceId_} className="h-11 w-full">
+                    <SelectTrigger
+                      id={provinceSelectId}
+                      className="h-11 w-full"
+                    >
                       <SelectValue
                         placeholder={
                           provincesQuery.isLoading
@@ -862,12 +913,6 @@ export default function CoachApplyPage() {
                       />
                     </SelectTrigger>
                     <SelectContent dir="rtl">
-                      {provinceList.length === 0 &&
-                        !provincesQuery.isLoading && (
-                          <div className="px-3 py-2 text-xs text-muted-foreground">
-                            استانی یافت نشد
-                          </div>
-                        )}
                       {provinceList.map((p) => (
                         <SelectItem key={p.id} value={p.id}>
                           {p.name}
@@ -879,13 +924,10 @@ export default function CoachApplyPage() {
 
                 <div className="space-y-2">
                   <Label
-                    htmlFor={cityId_}
+                    htmlFor={citySelectId}
                     className="flex items-center gap-1.5 text-xs"
                   >
-                    <MapPinned
-                      className="h-3 w-3 text-muted-foreground"
-                      aria-hidden="true"
-                    />
+                    <MapPinned className="h-3 w-3 text-muted-foreground" />
                     شهر
                   </Label>
                   <Select
@@ -896,17 +938,13 @@ export default function CoachApplyPage() {
                         shouldDirty: true,
                       })
                     }
-                    disabled={
-                      !provinceValue ||
-                      citiesQuery.isLoading ||
-                      citiesQuery.isFetching
-                    }
+                    disabled={!provinceValue || citiesQuery.isLoading}
                   >
-                    <SelectTrigger id={cityId_} className="h-11 w-full">
+                    <SelectTrigger id={citySelectId} className="h-11 w-full">
                       <SelectValue
                         placeholder={
                           !provinceValue
-                            ? "ابتدا استان را انتخاب کنید"
+                            ? "ابتدا استان"
                             : citiesQuery.isLoading
                               ? "در حال بارگذاری…"
                               : "انتخاب شهر"
@@ -914,13 +952,6 @@ export default function CoachApplyPage() {
                       />
                     </SelectTrigger>
                     <SelectContent dir="rtl">
-                      {cityList.length === 0 &&
-                        !citiesQuery.isLoading &&
-                        provinceValue && (
-                          <div className="px-3 py-2 text-xs text-muted-foreground">
-                            شهری یافت نشد
-                          </div>
-                        )}
                       {cityList.map((c) => (
                         <SelectItem key={c.id} value={c.id}>
                           {c.name}
@@ -930,10 +961,10 @@ export default function CoachApplyPage() {
                   </Select>
                 </div>
               </div>
-            </div>
+            </section>
 
-            {/* -------------------------- Accepting toggle -------------------------- */}
-            <div className="flex items-center justify-between gap-3 rounded-lg border border-border bg-muted/20 px-3 py-2.5">
+            {/* —— پذیرش شاگرد —— */}
+            <div className="flex items-center justify-between gap-3 rounded-xl border border-border bg-muted/20 px-3 py-2.5">
               <div className="min-w-0">
                 <Label
                   htmlFor="coach-isAcceptingClients"
@@ -942,40 +973,37 @@ export default function CoachApplyPage() {
                   پذیرش شاگرد جدید
                 </Label>
                 <p className="text-[10px] text-muted-foreground">
-                  اگر فعال باشد، کاربران می‌توانند درخواست مربیگری بفرستند.
+                  در صورت غیرفعال بودن، درخواست جدید دریافت نمی‌کنید.
                 </p>
               </div>
               <Switch
                 id="coach-isAcceptingClients"
-                checked={isAcceptingClientsValue}
+                checked={!!isAcceptingClientsValue}
                 onCheckedChange={(v) =>
-                  form.setValue("isAcceptingClients", v, {
-                    shouldDirty: true,
-                  })
+                  form.setValue("isAcceptingClients", v, { shouldDirty: true })
                 }
               />
             </div>
 
-            {/* -------------------------- What happens next -------------------------- */}
-            <div className="rounded-lg border border-border bg-muted/30 p-3">
-              <p className="flex items-center gap-1.5 text-xs font-medium text-foreground">
+            <div className="rounded-xl border border-border bg-muted/30 p-3">
+              <p className="flex items-center gap-1.5 text-xs font-medium">
                 <Info className="h-3.5 w-3.5" aria-hidden="true" />
-                پس از ارسال چه می‌شود؟
+                پس از ارسال
               </p>
               <ol className="ms-5 mt-1.5 list-decimal space-y-1 text-[11px] text-muted-foreground">
-                <li>درخواست شما به صف بررسی ادمین می‌رود.</li>
-                <li>معمولاً طی ۲۴ تا ۴۸ ساعت بررسی می‌شود.</li>
-                <li>نتیجه از طریق اعلان‌ها به شما اطلاع داده می‌شود.</li>
+                <li>درخواست به صف بررسی ادمین می‌رود.</li>
+                <li>نتیجه از طریق اعلان‌ها اعلام می‌شود.</li>
+                <li>پس از تأیید، پنل مربی فعال می‌شود.</li>
               </ol>
             </div>
 
-            {/* -------------------------- Submit -------------------------- */}
-            <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row">
+            {/* Desktop actions */}
+            <div className="hidden flex-col-reverse gap-2 pt-1 sm:flex sm:flex-row">
               <Button
                 type="button"
                 variant="outline"
                 className="h-11 w-full sm:w-auto"
-                onClick={handleBackToRoleSelection}
+                onClick={() => navigateBack(false)}
                 disabled={pending}
               >
                 <X className="me-1.5 h-4 w-4" aria-hidden="true" />
@@ -984,19 +1012,16 @@ export default function CoachApplyPage() {
               <Button
                 type="submit"
                 className="h-11 w-full flex-1 gap-2"
-                disabled={pending}
+                disabled={pending || specialtiesQuery.isLoading}
               >
                 {pending ? (
                   <>
-                    <Loader2
-                      className="h-4 w-4 animate-spin"
-                      aria-hidden="true"
-                    />
+                    <Loader2 className="h-4 w-4 animate-spin" />
                     در حال ثبت…
                   </>
                 ) : (
                   <>
-                    <Send className="h-4 w-4" aria-hidden="true" />
+                    <Send className="h-4 w-4" />
                     ثبت درخواست
                   </>
                 )}
@@ -1004,7 +1029,48 @@ export default function CoachApplyPage() {
             </div>
           </form>
         </CardContent>
+
+        {/* Sticky mobile CTA */}
+        <div className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-background/95 p-3 backdrop-blur supports-backdrop-filter:bg-background/80 sm:hidden">
+          <div className="mx-auto flex max-w-xl gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              className="h-11 shrink-0"
+              onClick={() => navigateBack(false)}
+              disabled={pending}
+            >
+              انصراف
+            </Button>
+            <Button
+              type="button"
+              className="h-11 flex-1 gap-2"
+              disabled={pending || specialtiesQuery.isLoading}
+              onClick={() => void onSubmit()}
+            >
+              {pending ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  در حال ثبت…
+                </>
+              ) : (
+                <>
+                  <Send className="h-4 w-4" />
+                  ثبت درخواست
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
       </Card>
     </div>
+  );
+}
+
+export default function CoachApplyPage() {
+  return (
+    <Suspense fallback={<PageLoadingState />}>
+      <CoachApplyContent />
+    </Suspense>
   );
 }

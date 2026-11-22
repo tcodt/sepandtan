@@ -6,6 +6,7 @@ import type {
   ProvinceItem,
   RoleRequestResult,
 } from "./types";
+import { SpecialtyAdmin } from "../admin/specialty/types";
 
 /** Latin slug; Persian names fall back to coach-{suffix} */
 export function toCoachSlug(text: string, userId: string): string {
@@ -170,4 +171,37 @@ export async function fetchCities(provinceId?: string): Promise<CityItem[]> {
       return { id, name, provinceId: pId };
     })
     .filter((x): x is CityItem => x !== null);
+}
+
+/** GET /coach/specialty/selector — لیست انتخاب تخصص برای فرم‌ها */
+export async function fetchSpecialtySelector(
+  title?: string,
+): Promise<SpecialtyAdmin[]> {
+  const { data } = await apiClient.get("/coach/specialty/selector", {
+    params: title?.trim() ? { title: title.trim() } : undefined,
+  });
+
+  const list = Array.isArray(data)
+    ? data
+    : Array.isArray((data as { specialty?: unknown[] })?.specialty)
+      ? (data as { specialty: unknown[] }).specialty
+      : Array.isArray((data as { data?: unknown[] })?.data)
+        ? (data as { data: unknown[] }).data
+        : [];
+
+  return list
+    .map((raw) => {
+      const r = (raw ?? {}) as Record<string, unknown>;
+      const id = asString(r.id);
+      const slug = asString(r.slug) ?? "";
+      const t = asString(r.title);
+      if (!id || !t) return null;
+      return {
+        id,
+        slug,
+        title: t,
+        createdAt: asString(r.createdAt) || "",
+      } satisfies SpecialtyAdmin;
+    })
+    .filter((x): x is SpecialtyAdmin => x !== null);
 }
