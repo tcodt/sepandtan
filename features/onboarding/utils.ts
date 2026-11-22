@@ -1,16 +1,36 @@
 import type { UserProfile } from "@/lib/types/plan";
+import {
+  getRoleFlowIntent,
+  type RoleFlowIntent,
+} from "@/lib/auth/resolve-post-auth-path";
 
 /** مسیرهایی که فقط برای trainee (بدون قفل حرفه‌ای) معنا دارند */
-const TRAINEE_FITNESS_PREFIXES = [
-  "/onboarding",
-  "/dashboard",
+const TRAINEE_FITNESS_PREFIXES = ["/onboarding", "/dashboard"] as const;
+
+/** مسیرهای flow انتخاب نقش / درخواست حرفه‌ای */
+const ROLE_FLOW_PREFIXES = [
   "/role-selection",
+  "/role/coach-apply",
+  "/role/seller-apply",
+  "/role-pending",
 ] as const;
 
 function pathStartsWithAny(path: string, prefixes: readonly string[]): boolean {
   return prefixes.some(
     (p) => path === p || path.startsWith(`${p}/`) || path.startsWith(p),
   );
+}
+
+function intentToPath(intent: RoleFlowIntent): string {
+  switch (intent) {
+    case "coach-apply":
+      return "/role/coach-apply";
+    case "seller-apply":
+      return "/role/seller-apply";
+    case "role-selection":
+    default:
+      return "/role-selection";
+  }
 }
 
 export function needsOnboarding(user: UserProfile | null | undefined): boolean {
@@ -25,6 +45,10 @@ export function needsOnboarding(user: UserProfile | null | undefined): boolean {
   return !(user.onboardingCompleted || user.onboardingStatus === "completed");
 }
 
+/**
+ * مسیر خانه صرفاً بر اساس role (fallback).
+ * ترجیحاً از getCanonicalPathForUser / getPostAuthRedirect استفاده کن.
+ */
 export function getHomePathForRole(role: UserProfile["role"]): string {
   switch (role) {
     case "admin":
@@ -38,6 +62,10 @@ export function getHomePathForRole(role: UserProfile["role"]): string {
   }
 }
 
+/**
+ * مقصد canonical کاربر بر اساس نقش + وضعیت + intent role-flow.
+ * این تابع جلوی پرتاب اشتباه به /onboarding را می‌گیرد.
+ */
 export function getCanonicalPathForUser(user: UserProfile): string {
   if (user.accountStatus === "SUSPENDED") return "/login?reason=suspended";
   if (user.accountStatus === "DELETED") return "/login?reason=deleted";
@@ -46,14 +74,14 @@ export function getCanonicalPathForUser(user: UserProfile): string {
 
   if (user.role === "coach") {
     if (user.roleStatus && user.roleStatus !== "approved") {
-      return "/role-pending";
+      return "/role-pending?type=coach";
     }
     return "/coach";
   }
 
   if (user.role === "seller") {
     if (user.roleStatus && user.roleStatus !== "approved") {
-      return "/role-pending";
+      return "/role-pending?type=seller";
     }
     return "/seller";
   }
@@ -66,6 +94,13 @@ export function getCanonicalPathForUser(user: UserProfile): string {
     return "/dashboard?notice=coach_revoked";
   }
 
+  // وسط role-flow (تب بسته / برگشت) → همان flow
+  const intent = getRoleFlowIntent();
+  if (intent) {
+    return intentToPath(intent);
+  }
+
+  // trainee بدون intent
   if (needsOnboarding(user)) return "/onboarding";
   return "/dashboard";
 }
@@ -74,14 +109,27 @@ export function getPostAuthRedirect(user: UserProfile): string {
   return getCanonicalPathForUser(user);
 }
 
+/**
+ * بعد از ثبت‌نام:
+ * - نقش حرفه‌ای → پنل / pending
+ * - در غیر این صورت همیشه role-selection (نه onboarding مستقیم)
+ */
 export function getPostRegisterRedirect(user: UserProfile): string {
   if (user.role === "admin") return "/admin";
+
   if (user.role === "coach") {
-    return user.roleStatus === "approved" ? "/coach" : "/role-pending";
+    return user.roleStatus === "approved"
+      ? "/coach"
+      : "/role-pending?type=coach";
   }
+
   if (user.role === "seller") {
-    return user.roleStatus === "approved" ? "/seller" : "/role-pending";
+    return user.roleStatus === "approved"
+      ? "/seller"
+      : "/role-pending?type=seller";
   }
+
+  // trainee تازه‌ثبت‌نام → انتخاب مسیر
   return "/role-selection";
 }
 
@@ -95,37 +143,16 @@ export function getRoleMismatchRedirect(
 ): string | null {
   const path = pathname.split("?")[0] || pathname;
 
-  // مسیرهای عمومی مارکت / سایت
-  if (
-    path === "/" ||
-    path.startsWith("/login") ||
-    path.startsWith("/register") ||
-    path.startsWith("/store") ||
-    path.startsWith("/cart") ||
-    path.startsWith("/wishlist") ||
-    path.startsWith("/account") ||
-    path.startsWith("/settings") ||
-    path.startsWith("/about") ||
-    path.startsWith("/contact") ||
-    path.startsWith("/products")
-  ) {
-    // account برای همه نقش‌ها مجاز است
-    // استثنا: پایین‌تر برای seller روی fitness چک می‌شود
-  }
-
   if (user.accountStatus === "SUSPENDED" || user.accountStatus === "DELETED") {
     return getCanonicalPathForUser(user);
   }
 
   const onTraineeFitness = pathStartsWithAny(path, TRAINEE_FITNESS_PREFIXES);
+  const onRoleFlow = pathStartsWithAny(path, ROLE_FLOW_PREFIXES);
 
-  // —— Seller تأییدشده: پنل خودش؛ نه dashboard/onboarding ——
+  // —— Seller تأییدشده ——
   if (user.role === "seller" && user.roleStatus === "approved") {
-    if (
-      onTraineeFitness ||
-      path.startsWith("/role-pending") ||
-      path.startsWith("/coach")
-    ) {
+    if (onTraineeFitness || onRoleFlow || path.startsWith("/coach")) {
       return "/seller";
     }
   }
@@ -136,18 +163,20 @@ export function getRoleMismatchRedirect(
     user.roleStatus &&
     user.roleStatus !== "approved"
   ) {
-    if (onTraineeFitness || path.startsWith("/seller")) {
-      return "/role-pending";
+    if (
+      onTraineeFitness ||
+      path.startsWith("/seller") ||
+      path === "/role-selection" ||
+      path.startsWith("/role/coach-apply") ||
+      path.startsWith("/role/seller-apply")
+    ) {
+      return "/role-pending?type=seller";
     }
   }
 
   // —— Coach تأییدشده ——
   if (user.role === "coach" && user.roleStatus === "approved") {
-    if (
-      onTraineeFitness ||
-      path.startsWith("/role-pending") ||
-      path.startsWith("/seller")
-    ) {
+    if (onTraineeFitness || onRoleFlow || path.startsWith("/seller")) {
       return "/coach";
     }
   }
@@ -158,8 +187,14 @@ export function getRoleMismatchRedirect(
     user.roleStatus &&
     user.roleStatus !== "approved"
   ) {
-    if (onTraineeFitness || path.startsWith("/coach")) {
-      return "/role-pending";
+    if (
+      onTraineeFitness ||
+      path.startsWith("/coach") ||
+      path === "/role-selection" ||
+      path.startsWith("/role/coach-apply") ||
+      path.startsWith("/role/seller-apply")
+    ) {
+      return "/role-pending?type=coach";
     }
   }
 
@@ -170,7 +205,7 @@ export function getRoleMismatchRedirect(
     }
   }
 
-  // —— دسترسی به پنل فروشنده بدون نقش ——
+  // —— پنل فروشنده بدون نقش ——
   if (
     path.startsWith("/seller") &&
     user.role !== "seller" &&
@@ -179,7 +214,7 @@ export function getRoleMismatchRedirect(
     return "/login?reason=seller_revoked";
   }
 
-  // —— دسترسی به پنل مربی بدون نقش ——
+  // —— پنل مربی بدون نقش ——
   if (
     path.startsWith("/coach") &&
     user.role !== "coach" &&
@@ -188,7 +223,7 @@ export function getRoleMismatchRedirect(
     return "/login?reason=coach_revoked";
   }
 
-  // —— Trainee با قفل seller: onboarding ممنوع ——
+  // —— Trainee با قفل حرفه‌ای: onboarding ممنوع ——
   if (
     user.role === "trainee" &&
     user.professionalRoleLock === "seller" &&
@@ -203,6 +238,23 @@ export function getRoleMismatchRedirect(
     path.startsWith("/onboarding")
   ) {
     return "/dashboard?notice=coach_revoked";
+  }
+
+  // —— Trainee وسط role-flow: onboarding ممنوع ——
+  // اگر intent دارد و الان روی onboarding است → برگردان به flow
+  if (user.role === "trainee" && path.startsWith("/onboarding")) {
+    const intent = getRoleFlowIntent();
+    if (intent) return intentToPath(intent);
+  }
+
+  // role-selection / apply برای trainee (یا user تازه‌وارد) مجاز است
+  if (
+    user.role === "trainee" &&
+    (path === "/role-selection" ||
+      path.startsWith("/role/coach-apply") ||
+      path.startsWith("/role/seller-apply"))
+  ) {
+    return null;
   }
 
   return null;

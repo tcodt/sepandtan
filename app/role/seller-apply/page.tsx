@@ -48,6 +48,7 @@ import { useRequireAuth } from "@/hooks/use-require-auth";
 import { useRequestStoreRole } from "@/features/role/hooks/use-role-request";
 import { canRequestProfessionalRole } from "@/lib/role-lock";
 import { cn } from "@/lib/utils";
+import { setRoleFlowIntent } from "@/lib/auth/resolve-post-auth-path";
 
 /* -------------------------------------------------------------------------- */
 /* Constants                                                                  */
@@ -275,6 +276,10 @@ export default function SellerApplyPage() {
   const emailId = useId();
 
   /* ----------------------------- Auth gate ----------------------------- */
+
+  useEffect(() => {
+    setRoleFlowIntent("seller-apply");
+  }, []);
 
   useEffect(() => {
     if (isLoading || !user) return;

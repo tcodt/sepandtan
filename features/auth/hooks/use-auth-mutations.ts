@@ -21,6 +21,7 @@ import {
   getPostAuthRedirect,
   getPostRegisterRedirect,
 } from "@/features/onboarding/utils";
+import { clearRoleFlowIntent } from "@/lib/auth/resolve-post-auth-path";
 import { PROFILE_QUERY_KEY } from "./use-auth";
 
 function blockIfInactive(status: string | undefined | null): string | null {
@@ -56,6 +57,7 @@ export function useLoginMutation() {
       if (blocked) {
         setAccessToken(null);
         logoutStore();
+        clearRoleFlowIntent();
         toast.error(blocked);
         router.replace(
           status === "SUSPENDED"
@@ -72,6 +74,8 @@ export function useLoginMutation() {
       setAuthFromBackend(user);
       queryClient.setQueryData(PROFILE_QUERY_KEY, profile ?? undefined);
       toast.success("ورود موفق");
+
+      // مقصد از utils — intent + role + onboarding را رعایت می‌کند
       router.replace(getPostAuthRedirect(user));
     },
     onError: (error) => {
@@ -110,6 +114,8 @@ export function useRegisterMutation() {
       setAuthFromBackend(user);
       if (profile) queryClient.setQueryData(PROFILE_QUERY_KEY, profile);
       toast.success("ثبت‌نام موفق");
+
+      // تازه‌ثبت‌نام → معمولاً /role-selection
       router.replace(getPostRegisterRedirect(user));
     },
     onError: (error) => {
@@ -127,6 +133,7 @@ export function useLogoutMutation() {
     mutationFn: () => logoutRequest(),
     onSettled: () => {
       logout();
+      clearRoleFlowIntent();
       queryClient.removeQueries({ queryKey: PROFILE_QUERY_KEY });
       router.replace("/login");
     },
