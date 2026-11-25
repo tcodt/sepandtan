@@ -157,13 +157,23 @@ export async function updateAdminUser(
   await apiClient.put(`/user/${encodeURIComponent(id)}`, body);
 }
 
-/** DELETE /user/{id} — Super Admin */
+/** DELETE /user/{id} — حذف حساب (Super Admin) */
 export async function deleteAdminUser(id: string): Promise<void> {
   if (!id?.trim()) throw new Error("شناسه کاربر نامعتبر است");
   await apiClient.delete(`/user/${encodeURIComponent(id)}`);
 }
 
-/** Soft delete = status DELETED */
+/**
+ * DELETE /user/db/{id}
+ * حذف دائم از دیتابیس — فقط Super Admin
+ * توضیح swagger: با حذف، کاربر برای همیشه از DB پاک می‌شود
+ */
+export async function hardDeleteAdminUserFromDb(id: string): Promise<void> {
+  if (!id?.trim()) throw new Error("شناسه کاربر نامعتبر است");
+  await apiClient.delete(`/user/db/${encodeURIComponent(id)}`);
+}
+
+/** Soft delete از طریق UpdateUserDto.status = DELETED */
 export async function softDeleteAdminUser(id: string): Promise<void> {
   await updateAdminUser(id, { status: "DELETED" });
 }

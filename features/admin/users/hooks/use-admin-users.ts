@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import {
   createAdminUser,
   deleteAdminUser,
+  hardDeleteAdminUserFromDb,
   fetchAdminUsers,
   softDeleteAdminUser,
   updateAdminUser,
@@ -144,6 +145,7 @@ export function useUpdateAdminUser() {
   });
 }
 
+/** حذف منطقی: PUT status=DELETED */
 export function useSoftDeleteAdminUser() {
   const queryClient = useQueryClient();
 
@@ -159,15 +161,36 @@ export function useSoftDeleteAdminUser() {
   });
 }
 
-/**
- * حذف دائم از سرور — بدون soft-fallback
- * اگر 403 بگیرید یعنی نقش شما Super Admin نیست.
- */
+/** DELETE /user/{id} — حذف حساب (Super Admin) */
 export function useDeleteAdminUser() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (id: string) => deleteAdminUser(id),
+    onSuccess: () => {
+      toast.success("حساب کاربر حذف شد");
+      void queryClient.invalidateQueries({ queryKey: adminUsersKeys.all });
+    },
+    onError: (error) => {
+      toast.error(
+        getErrorMessage(
+          error,
+          "حذف حساب ناموفق بود. معمولاً فقط Super Admin مجاز است.",
+        ),
+      );
+    },
+  });
+}
+
+/**
+ * DELETE /user/db/{id} — حذف دائم از دیتابیس
+ * این همان «حذف از دیتابیس» است.
+ */
+export function useHardDeleteAdminUserFromDb() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => hardDeleteAdminUserFromDb(id),
 
     onMutate: async (id) => {
       await queryClient.cancelQueries({ queryKey: adminUsersKeys.all });
@@ -200,13 +223,13 @@ export function useDeleteAdminUser() {
       toast.error(
         getErrorMessage(
           error,
-          "حذف دائم ناموفق بود. معمولاً فقط Super Admin مجاز است.",
+          "حذف از دیتابیس ناموفق بود. فقط Super Admin مجاز است.",
         ),
       );
     },
 
     onSuccess: () => {
-      toast.success("کاربر برای همیشه از سرور حذف شد");
+      toast.success("کاربر برای همیشه از دیتابیس حذف شد");
     },
 
     onSettled: () => {

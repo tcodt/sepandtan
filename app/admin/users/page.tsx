@@ -37,6 +37,7 @@ import {
   useAdminUsers,
   useUpdateAdminUser,
   useDeleteAdminUser,
+  useHardDeleteAdminUserFromDb,
   useSoftDeleteAdminUser,
 } from "@/features/admin/users/hooks/use-admin-users";
 import type { BackendRole, BackendUserStatus } from "@/lib/types/api";
@@ -293,7 +294,7 @@ function ConfirmDialog({
 }
 
 /* -------------------------------------------------------------------------- */
-/* Verified Indicator                                                         */
+/* Verified / Badges                                                          */
 /* -------------------------------------------------------------------------- */
 
 function VerifiedIndicator({
@@ -327,10 +328,6 @@ function VerifiedIndicator({
     </div>
   );
 }
-
-/* -------------------------------------------------------------------------- */
-/* Role / Status Badges                                                       */
-/* -------------------------------------------------------------------------- */
 
 function RoleBadge({ role }: { role: BackendRole }) {
   const Icon = ROLE_ICON[role];
@@ -366,7 +363,7 @@ function StatusBadge({ status }: { status: BackendUserStatus }) {
 }
 
 /* -------------------------------------------------------------------------- */
-/* User Actions                                                               */
+/* User Actions — فقط callback؛ هیچ mutation اینجا نیست                       */
 /* -------------------------------------------------------------------------- */
 
 function UserActions({
@@ -375,14 +372,16 @@ function UserActions({
   onChangeRole,
   onChangeStatus,
   onSoftDelete,
-  onDelete,
+  onDeleteAccount,
+  onHardDelete,
 }: {
   user: AdminUser;
   onEdit: (user: AdminUser) => void;
   onChangeRole: (user: AdminUser, role: BackendRole) => void;
   onChangeStatus: (user: AdminUser, status: BackendUserStatus) => void;
   onSoftDelete: (user: AdminUser) => void;
-  onDelete: (user: AdminUser) => void;
+  onDeleteAccount: (user: AdminUser) => void;
+  onHardDelete: (user: AdminUser) => void;
 }) {
   const lock = getAdminRoleLock(user.id, user.role);
   const disableCoach = lock === "seller" || user.role === "STORE";
@@ -459,19 +458,27 @@ function UserActions({
         </DropdownMenuItem>
         <DropdownMenuItem
           disabled={user.status === "DELETED"}
-          className="text-amber-700 focus:text-amber-700 dark:text-amber-400 dark:focus:text-amber-400"
+          className="text-amber-700 focus:text-amber-700 dark:text-amber-400"
           onClick={() => onSoftDelete(user)}
         >
-          حذف منطقی
+          <Ban className="me-2 h-3.5 w-3.5" aria-hidden="true" />
+          غیرفعال‌سازی حساب
         </DropdownMenuItem>
 
         <DropdownMenuSeparator />
         <DropdownMenuItem
           className="text-destructive focus:text-destructive"
-          onClick={() => onDelete(user)}
+          onClick={() => onDeleteAccount(user)}
         >
           <UserX className="me-2 h-3.5 w-3.5" aria-hidden="true" />
-          حذف دائم از سرور
+          حذف حساب
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          className="text-destructive focus:text-destructive"
+          onClick={() => onHardDelete(user)}
+        >
+          <Trash2 className="me-2 h-3.5 w-3.5" aria-hidden="true" />
+          حذف دائمی کاربر
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -684,7 +691,7 @@ function EditUserSheet({
               <SelectContent dir="rtl">
                 <SelectItem value="ACTIVE">فعال</SelectItem>
                 <SelectItem value="SUSPENDED">معلق</SelectItem>
-                <SelectItem value="DELETED">حذف منطقی</SelectItem>
+                <SelectItem value="DELETED">غیرفعال‌شده</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -721,7 +728,7 @@ function EditUserSheet({
 }
 
 /* -------------------------------------------------------------------------- */
-/* Skeleton                                                                   */
+/* Skeletons / Empty / Error                                                  */
 /* -------------------------------------------------------------------------- */
 
 function TableSkeleton({ rows = 8 }: { rows?: number }) {
@@ -793,10 +800,6 @@ function MobileCardsSkeleton({ rows = 4 }: { rows?: number }) {
     </div>
   );
 }
-
-/* -------------------------------------------------------------------------- */
-/* Empty / Error States                                                       */
-/* -------------------------------------------------------------------------- */
 
 function EmptyState({
   hasFilters,
@@ -888,6 +891,7 @@ type BulkAction =
   | { kind: "role"; role: BackendRole }
   | { kind: "status"; status: BackendUserStatus }
   | { kind: "softDelete" }
+  | { kind: "deleteAccount" }
   | { kind: "hardDelete" };
 
 type BulkResult = {
@@ -1010,7 +1014,7 @@ function BulkActionsBar({
         onClick={() => onRequestBulk({ kind: "softDelete" })}
       >
         <Ban className="me-1.5 h-3.5 w-3.5" aria-hidden="true" />
-        حذف منطقی
+        غیرفعال‌سازی
       </Button>
 
       <Button
@@ -1021,7 +1025,7 @@ function BulkActionsBar({
         onClick={() => onRequestBulk({ kind: "hardDelete" })}
       >
         <Trash2 className="me-1.5 h-3.5 w-3.5" aria-hidden="true" />
-        حذف دائم
+        حذف دائمی
       </Button>
 
       <div className="ms-auto flex items-center gap-1">
@@ -1064,7 +1068,6 @@ export default function AdminUsersPage() {
   const filtersPanelId = useId();
   const resultCountId = useId();
 
-  // SSR-safe media query — no hydration flash on Sheet side prop.
   const [isDesktop, setIsDesktop] = useState(false);
   useEffect(() => {
     const mq = window.matchMedia("(min-width: 768px)");
@@ -1089,15 +1092,15 @@ export default function AdminUsersPage() {
   const { data, isLoading, isFetching, isError, error, refetch } =
     useAdminUsers(filters);
   const updateMutation = useUpdateAdminUser();
-  const deleteMutation = useDeleteAdminUser();
   const softDeleteMutation = useSoftDeleteAdminUser();
+  const deleteAccountMutation = useDeleteAdminUser();
+  const hardDeleteMutation = useHardDeleteAdminUserFromDb();
 
   const users = useMemo(() => data?.users ?? [], [data?.users]);
   const total = data?.pagination.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const hasActiveFilters = !!search || role !== "ALL" || status !== "ACTIVE";
 
-  // Debounced live search — 350ms, resets page.
   useEffect(() => {
     const t = setTimeout(() => {
       setSearch((prev) => {
@@ -1109,12 +1112,10 @@ export default function AdminUsersPage() {
     return () => clearTimeout(t);
   }, [searchInput]);
 
-  // Clear selection when page/filters change.
   useEffect(() => {
     setSelectedIds(new Set());
   }, [page, pageSize, search, role, status]);
 
-  // Clamp page when total shrinks (e.g. after delete).
   useEffect(() => {
     if (page > totalPages) setPage(totalPages);
   }, [page, totalPages]);
@@ -1198,28 +1199,25 @@ export default function AdminUsersPage() {
               <strong className="text-foreground">{nextLabel}</strong> تغییر
               می‌کند.
             </span>
-
             {isDemoteStore && (
               <span className="block rounded-lg border border-amber-500/25 bg-amber-500/10 px-2.5 py-2 text-xs text-amber-900 dark:text-amber-100">
-                دسترسی پنل فروشنده پس از همگام‌سازی پروفایل قطع می‌شود. کاربر
-                نباید به onboarding تناسب‌اندام برود (قفل فروشنده حفظ می‌شود).
+                دسترسی پنل فروشنده پس از همگام‌سازی پروفایل قطع می‌شود.
               </span>
             )}
             {isPromoteStore && (
               <span className="block rounded-lg border border-emerald-500/25 bg-emerald-500/10 px-2.5 py-2 text-xs text-emerald-900 dark:text-emerald-100">
-                اگر کاربر آنلاین باشد و روی onboarding یا dashboard باشد، به
-                مسیر <span className="font-mono">/seller</span> هدایت می‌شود.
+                کاربر به مسیر <span className="font-mono">/seller</span> هدایت
+                می‌شود.
               </span>
             )}
             {isDemoteCoach && (
               <span className="block rounded-lg border border-amber-500/25 bg-amber-500/10 px-2.5 py-2 text-xs text-amber-900 dark:text-amber-100">
-                دسترسی پنل مربی قطع می‌شود. قفل مربی برای جلوگیری از تبدیل به
-                فروشنده حفظ می‌شود.
+                دسترسی پنل مربی قطع می‌شود.
               </span>
             )}
             {isPromoteCoach && (
               <span className="block rounded-lg border border-sky-500/25 bg-sky-500/10 px-2.5 py-2 text-xs text-sky-900 dark:text-sky-100">
-                کاربر به‌عنوان مربی علامت‌گذاری می‌شود (قفل coach).
+                کاربر به‌عنوان مربی علامت‌گذاری می‌شود.
               </span>
             )}
           </span>
@@ -1228,31 +1226,12 @@ export default function AdminUsersPage() {
         intent,
         icon: Shield,
         action: async () => {
-          await updateMutation.mutateAsync(
-            { id: user.id, payload: { role: newRole } },
-            {
-              onSuccess: () => {
-                const nextLock = lockFromRole(newRole);
-                if (nextLock) rememberAdminRoleLock(user.id, nextLock);
-
-                if (isDemoteStore) {
-                  toast.success(
-                    "نقش USER شد — پنل فروشنده برای کاربر بسته می‌شود",
-                  );
-                } else if (isPromoteStore) {
-                  toast.success(
-                    "نقش STORE شد — کاربر به پنل فروشنده منتقل می‌شود",
-                  );
-                } else if (isPromoteCoach) {
-                  toast.success("نقش مربی ثبت شد");
-                } else if (isDemoteCoach) {
-                  toast.success("نقش USER شد — دسترسی مربی قطع می‌شود");
-                } else {
-                  toast.success("نقش کاربر به‌روزرسانی شد");
-                }
-              },
-            },
-          );
+          await updateMutation.mutateAsync({
+            id: user.id,
+            payload: { role: newRole },
+          });
+          const nextLock = lockFromRole(newRole);
+          if (nextLock) rememberAdminRoleLock(user.id, nextLock);
         },
       });
     },
@@ -1291,19 +1270,12 @@ export default function AdminUsersPage() {
             </span>
             {newStatus === "SUSPENDED" && (
               <span className="block rounded-lg border border-amber-500/25 bg-amber-500/10 px-2.5 py-2 text-xs text-amber-900 dark:text-amber-100">
-                با همگام‌سازی پروفایل، کاربر از همه پنل‌ها خارج و به صفحه ورود
-                با پیام تعلیق هدایت می‌شود.
-              </span>
-            )}
-            {newStatus === "ACTIVE" && (
-              <span className="block text-xs text-muted-foreground">
-                حساب دوباره قابل ورود خواهد بود.
+                کاربر از پنل‌ها خارج و به صفحه ورود هدایت می‌شود.
               </span>
             )}
             {newStatus === "DELETED" && (
               <span className="block rounded-lg border border-destructive/20 bg-destructive/10 px-2.5 py-2 text-xs text-destructive">
-                حذف منطقی: رکورد می‌ماند ولی ورود معمولاً مسدود است. برای حذف
-                فیزیکی از «حذف دائم» استفاده کنید.
+                حساب غیرفعال می‌شود و اطلاعات کاربر در سیستم باقی می‌ماند.
               </span>
             )}
           </span>
@@ -1317,16 +1289,10 @@ export default function AdminUsersPage() {
         intent,
         icon,
         action: async () => {
-          await updateMutation.mutateAsync(
-            { id: user.id, payload: { status: newStatus } },
-            {
-              onSuccess: () => {
-                if (newStatus === "SUSPENDED") toast.success("حساب معلق شد");
-                else if (newStatus === "ACTIVE") toast.success("حساب فعال شد");
-                else toast.success("وضعیت کاربر به‌روزرسانی شد");
-              },
-            },
-          );
+          await updateMutation.mutateAsync({
+            id: user.id,
+            payload: { status: newStatus },
+          });
         },
       });
     },
@@ -1337,50 +1303,66 @@ export default function AdminUsersPage() {
   const requestSoftDelete = useCallback(
     (user: AdminUser) => {
       setConfirm({
-        title: "حذف منطقی کاربر",
+        title: "غیرفعال‌سازی حساب کاربر",
         description: (
           <>
-            «{user.name}» غیرفعال (حذف منطقی) می‌شود. حساب کاربر دیگر نمی‌تواند
-            وارد شود، اما داده‌ها برای بازبینی باقی می‌مانند و امکان بازیابی
-            وجود دارد.
+            حساب «{user.name}» غیرفعال می‌شود. اطلاعات کاربر در سیستم باقی
+            می‌ماند.
           </>
         ),
-        confirmLabel: "حذف منطقی",
+        confirmLabel: "غیرفعال‌سازی حساب",
         intent: "warning",
         icon: Ban,
         action: async () => {
-          await softDeleteMutation.mutateAsync(user.id, {
-            onSuccess: () => toast.success("کاربر غیرفعال شد"),
-          });
+          await softDeleteMutation.mutateAsync(user.id);
         },
       });
     },
     [softDeleteMutation],
   );
 
-  /* --------------------------- Permanent delete ------------------------ */
-  const requestHardDelete = useCallback(
+  /* --------------------------- Account deletion ------------------------ */
+  const requestDeleteAccount = useCallback(
     (user: AdminUser) => {
       setConfirm({
-        title: "حذف دائم کاربر",
+        title: "حذف حساب کاربری",
         description: (
           <>
-            «{user.name}» برای همیشه از پایگاه‌داده حذف می‌شود و دیگر نمی‌تواند
-            وارد شود. این عملیات قابل بازگشت نیست. برای غیرفعال‌سازی موقت از
-            «حذف منطقی» استفاده کنید.
+            آیا از حذف حساب کاربری «{user.name}» اطمینان دارید؟ این عملیات ممکن
+            است دسترسی کاربر به خدمات را قطع کند.
           </>
         ),
-        confirmLabel: "حذف دائم",
+        confirmLabel: "حذف حساب",
         intent: "danger",
         icon: UserX,
         action: async () => {
-          await deleteMutation.mutateAsync(user.id, {
-            onSuccess: () => toast.success("کاربر به‌طور دائم حذف شد"),
-          });
+          await deleteAccountMutation.mutateAsync(user.id);
         },
       });
     },
-    [deleteMutation],
+    [deleteAccountMutation],
+  );
+
+  /* --------------------------- Permanent deletion ---------------------- */
+  const requestHardDelete = useCallback(
+    (user: AdminUser) => {
+      setConfirm({
+        title: "حذف دائمی کاربر",
+        description: (
+          <>
+            اطلاعات کاربر «{user.name}» برای همیشه حذف می‌شود. این عملیات قابل
+            بازگشت نیست.
+          </>
+        ),
+        confirmLabel: "حذف دائمی",
+        intent: "danger",
+        icon: Trash2,
+        action: async () => {
+          await hardDeleteMutation.mutateAsync(user.id);
+        },
+      });
+    },
+    [hardDeleteMutation],
   );
 
   /* ----------------------------- Edit submit --------------------------- */
@@ -1395,7 +1377,6 @@ export default function AdminUsersPage() {
               if (nextLock) rememberAdminRoleLock(id, nextLock);
             }
             setEditingUser(null);
-            toast.success("اطلاعات کاربر ذخیره شد");
           },
         },
       );
@@ -1404,7 +1385,6 @@ export default function AdminUsersPage() {
   );
 
   /* --------------------------- Bulk operations ------------------------- */
-
   const selectedUsers = useMemo(
     () => users.filter((u) => selectedIds.has(u.id)),
     [users, selectedIds],
@@ -1445,8 +1425,10 @@ export default function AdminUsersPage() {
             });
           } else if (action.kind === "softDelete") {
             await softDeleteMutation.mutateAsync(user.id);
+          } else if (action.kind === "deleteAccount") {
+            await deleteAccountMutation.mutateAsync(user.id);
           } else if (action.kind === "hardDelete") {
-            await deleteMutation.mutateAsync(user.id);
+            await hardDeleteMutation.mutateAsync(user.id);
           }
           result.succeeded += 1;
         } catch (err) {
@@ -1458,7 +1440,6 @@ export default function AdminUsersPage() {
         }
       });
 
-      // Chunked execution: 5 concurrent requests at a time.
       const CHUNK = 5;
       for (let i = 0; i < tasks.length; i += CHUNK) {
         await Promise.all(tasks.slice(i, i + CHUNK));
@@ -1466,7 +1447,13 @@ export default function AdminUsersPage() {
 
       return result;
     },
-    [selectedUsers, updateMutation, softDeleteMutation, deleteMutation],
+    [
+      selectedUsers,
+      updateMutation,
+      softDeleteMutation,
+      deleteAccountMutation,
+      hardDeleteMutation,
+    ],
   );
 
   const summarizeBulk = useCallback((r: BulkResult): string => {
@@ -1476,6 +1463,23 @@ export default function AdminUsersPage() {
     if (r.failed) parts.push(`${r.failed} ناموفق`);
     return parts.join(" · ") || "نتیجه‌ای ثبت نشد";
   }, []);
+
+  const notifyBulkResult = useCallback(
+    (label: string, result: BulkResult) => {
+      const message = `${label}: ${summarizeBulk(result)}`;
+
+      if (result.failed > 0) {
+        toast.error(message);
+      } else if (result.skipped > 0) {
+        toast.warning(message);
+      } else if (result.succeeded > 0) {
+        toast.success(message);
+      } else {
+        toast.info(message);
+      }
+    },
+    [summarizeBulk],
+  );
 
   const requestBulk = useCallback(
     (action: BulkAction) => {
@@ -1507,8 +1511,7 @@ export default function AdminUsersPage() {
           title: "تغییر گروهی نقش",
           description: buildDescription(
             <span className="block rounded-lg border border-amber-500/25 bg-amber-500/10 px-2.5 py-2 text-xs text-amber-900 dark:text-amber-100">
-              کاربرانی که قفل مربی/فروشنده دارند رد می‌شوند و در گزارش نتیجه
-              نمایش داده می‌شوند.
+              کاربرانی که قفل مربی/فروشنده دارند رد می‌شوند.
             </span>,
           ),
           confirmLabel: `تبدیل به ${targetLabel}`,
@@ -1518,23 +1521,10 @@ export default function AdminUsersPage() {
             setIsBulkRunning(true);
             try {
               const r = await runBulk(action);
-              const summary = summarizeBulk(r);
+              notifyBulkResult("تغییر گروهی نقش", r);
               if (r.failed === 0 && r.skipped === 0) {
-                toast.success(
-                  `نقش ${r.succeeded} کاربر تغییر کرد — ${summary}`,
-                );
-              } else {
-                toast.warning(`تغییر گروهی نقش: ${summary}`, {
-                  description:
-                    r.skips.length > 0
-                      ? `رد شده‌ها: ${r.skips
-                          .slice(0, 3)
-                          .map((s) => s.name)
-                          .join("، ")}${r.skips.length > 3 ? "…" : ""}`
-                      : undefined,
-                });
+                setSelectedIds(new Set());
               }
-              setSelectedIds(new Set());
             } finally {
               setIsBulkRunning(false);
             }
@@ -1544,18 +1534,7 @@ export default function AdminUsersPage() {
         const targetLabel = STATUS_LABEL[action.status];
         opts = {
           title: "تغییر گروهی وضعیت",
-          description: buildDescription(
-            action.status === "SUSPENDED" ? (
-              <span className="block rounded-lg border border-amber-500/25 bg-amber-500/10 px-2.5 py-2 text-xs text-amber-900 dark:text-amber-100">
-                با همگام‌سازی پروفایل، کاربران انتخاب‌شده از پنل‌ها خارج و به
-                صفحه ورود هدایت می‌شوند.
-              </span>
-            ) : (
-              <span className="block text-xs text-muted-foreground">
-                حساب‌ها دوباره قابل ورود خواهند بود.
-              </span>
-            ),
-          ),
+          description: buildDescription(),
           confirmLabel: `تبدیل به ${targetLabel}`,
           intent: action.status === "SUSPENDED" ? "warning" : "primary",
           icon: action.status === "SUSPENDED" ? Ban : CheckCircle2,
@@ -1563,15 +1542,10 @@ export default function AdminUsersPage() {
             setIsBulkRunning(true);
             try {
               const r = await runBulk(action);
-              const summary = summarizeBulk(r);
-              if (r.failed === 0) {
-                toast.success(
-                  `وضعیت ${r.succeeded} کاربر تغییر کرد — ${summary}`,
-                );
-              } else {
-                toast.warning(`تغییر گروهی وضعیت: ${summary}`);
+              notifyBulkResult("تغییر گروهی وضعیت", r);
+              if (r.failed === 0 && r.skipped === 0) {
+                setSelectedIds(new Set());
               }
-              setSelectedIds(new Set());
             } finally {
               setIsBulkRunning(false);
             }
@@ -1579,63 +1553,50 @@ export default function AdminUsersPage() {
         };
       } else if (action.kind === "softDelete") {
         opts = {
-          title: "حذف منطقی گروهی",
+          title: "غیرفعال‌سازی گروهی حساب‌ها",
           description: buildDescription(
             <span className="block rounded-lg border border-amber-500/25 bg-amber-500/10 px-2.5 py-2 text-xs text-amber-900 dark:text-amber-100">
-              حساب‌ها غیرفعال می‌شوند ولی رکورد باقی می‌ماند. قابل بازیابی است.
+              حساب‌های انتخاب‌شده غیرفعال می‌شوند و اطلاعات آن‌ها در سیستم باقی
+              می‌ماند.
             </span>,
           ),
-          confirmLabel: "حذف منطقی",
+          confirmLabel: "غیرفعال‌سازی حساب‌ها",
           intent: "warning",
           icon: Ban,
           action: async () => {
             setIsBulkRunning(true);
             try {
               const r = await runBulk(action);
-              const summary = summarizeBulk(r);
-              if (r.failed === 0) {
-                toast.success(`${r.succeeded} کاربر غیرفعال شد — ${summary}`);
-              } else {
-                toast.warning(`حذف منطقی گروهی: ${summary}`);
+              notifyBulkResult("غیرفعال‌سازی گروهی حساب‌ها", r);
+              if (r.failed === 0 && r.skipped === 0) {
+                setSelectedIds(new Set());
               }
-              setSelectedIds(new Set());
             } finally {
               setIsBulkRunning(false);
             }
           },
         };
       } else {
+        // hardDelete (DB)
         opts = {
-          title: "حذف دائم گروهی",
+          title: "حذف دائمی گروهی کاربران",
           description: buildDescription(
             <span className="block rounded-lg border border-destructive/20 bg-destructive/10 px-2.5 py-2 text-xs text-destructive">
-              این عملیات قابل بازگشت نیست. فقط Super Admin مجاز است.
+              تمام اطلاعات کاربران انتخاب‌شده برای همیشه حذف می‌شود. این عملیات
+              قابل بازگشت نیست.
             </span>,
           ),
-          confirmLabel: "حذف دائم",
+          confirmLabel: "حذف دائمی کاربران",
           intent: "danger",
-          icon: UserX,
+          icon: Trash2,
           action: async () => {
             setIsBulkRunning(true);
             try {
               const r = await runBulk(action);
-              const summary = summarizeBulk(r);
-              if (r.failed === 0) {
-                toast.success(
-                  `${r.succeeded} کاربر برای همیشه حذف شد — ${summary}`,
-                );
-              } else {
-                toast.warning(`حذف دائم گروهی: ${summary}`, {
-                  description:
-                    r.failures.length > 0
-                      ? `ناموفق‌ها: ${r.failures
-                          .slice(0, 3)
-                          .map((f) => f.name)
-                          .join("، ")}${r.failures.length > 3 ? "…" : ""}`
-                      : undefined,
-                });
+              notifyBulkResult("حذف دائمی گروهی کاربران", r);
+              if (r.failed === 0 && r.skipped === 0) {
+                setSelectedIds(new Set());
               }
-              setSelectedIds(new Set());
             } finally {
               setIsBulkRunning(false);
             }
@@ -1645,18 +1606,26 @@ export default function AdminUsersPage() {
 
       setConfirm(opts);
     },
-    [selectedUsers, runBulk, summarizeBulk],
+    [selectedUsers, runBulk, notifyBulkResult],
   );
 
   const displayError =
     error instanceof Error ? error.message : "خطا در دریافت کاربران";
+
+  const actionsProps = {
+    onEdit: setEditingUser,
+    onChangeRole: requestRoleChange,
+    onChangeStatus: requestStatusChange,
+    onSoftDelete: requestSoftDelete,
+    onDeleteAccount: requestDeleteAccount,
+    onHardDelete: requestHardDelete,
+  };
 
   return (
     <div
       dir="rtl"
       className="mx-auto w-full max-w-7xl space-y-4 px-4 py-4 sm:space-y-6 sm:px-6 sm:py-6 lg:px-8"
     >
-      {/* ------------------------------ Header ------------------------------ */}
       <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div className="flex flex-col gap-1">
           <h1 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">
@@ -1676,7 +1645,6 @@ export default function AdminUsersPage() {
         </Button>
       </header>
 
-      {/* ----------------------------- Filters ----------------------------- */}
       <section aria-label="فیلترها" className="space-y-3">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
           <div className="relative flex-1">
@@ -1710,12 +1678,6 @@ export default function AdminUsersPage() {
                 <X className="h-3.5 w-3.5" aria-hidden="true" />
               </button>
             )}
-            {isFetching && !isLoading && (
-              <Loader2
-                className="pointer-events-none absolute inset-s-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-muted-foreground"
-                aria-hidden="true"
-              />
-            )}
           </div>
 
           <Button
@@ -1727,11 +1689,6 @@ export default function AdminUsersPage() {
           >
             <SlidersHorizontal className="me-2 h-4 w-4" aria-hidden="true" />
             فیلتر
-            {hasActiveFilters && (
-              <span className="ms-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold text-primary-foreground">
-                {(role !== "ALL" ? 1 : 0) + (status !== "ACTIVE" ? 1 : 0)}
-              </span>
-            )}
           </Button>
         </div>
 
@@ -1805,11 +1762,7 @@ export default function AdminUsersPage() {
                 setPage(1);
               }}
             >
-              <SelectTrigger
-                className="h-10"
-                dir="rtl"
-                aria-label="جهت مرتب‌سازی"
-              >
+              <SelectTrigger className="h-10" dir="rtl">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent dir="rtl">
@@ -1833,23 +1786,18 @@ export default function AdminUsersPage() {
         </div>
       </section>
 
-      {/* --------------------------- Result count --------------------------- */}
       <p
         id={resultCountId}
         className="text-xs text-muted-foreground"
         aria-live="polite"
-        aria-atomic="true"
       >
         {isLoading
           ? "در حال بارگذاری…"
           : isError
             ? "—"
-            : `${total.toLocaleString("fa-IR")} کاربر یافت شد${
-                hasActiveFilters ? " (با فیلتر فعال)" : ""
-              }`}
+            : `${total.toLocaleString("fa-IR")} کاربر یافت شد`}
       </p>
 
-      {/* --------------------------- Bulk actions --------------------------- */}
       <BulkActionsBar
         count={selectedIds.size}
         onClearSelection={() => setSelectedIds(new Set())}
@@ -1857,7 +1805,6 @@ export default function AdminUsersPage() {
         isBulkRunning={isBulkRunning}
       />
 
-      {/* ------------------------------ Table ------------------------------ */}
       <section className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
         {isLoading ? (
           <>
@@ -1871,18 +1818,17 @@ export default function AdminUsersPage() {
         ) : isError ? (
           <ErrorState
             message={displayError}
-            onRetry={() => refetch()}
+            onRetry={() => void refetch()}
             isRetrying={isFetching}
           />
         ) : users.length === 0 ? (
           <EmptyState
             hasFilters={hasActiveFilters}
             onClear={handleReset}
-            onAdd={() => toast.info("فرم ساخت کاربر را به‌زودی متصل می‌کنیم")}
+            onAdd={() => setCreateOpen(true)}
           />
         ) : (
           <>
-            {/* -------------------- Mobile cards -------------------- */}
             <div className="space-y-3 p-3 md:hidden">
               {users.map((user) => {
                 const selected = selectedIds.has(user.id);
@@ -1919,14 +1865,7 @@ export default function AdminUsersPage() {
                           </p>
                         </div>
                       </div>
-                      <UserActions
-                        user={user}
-                        onEdit={setEditingUser}
-                        onChangeRole={requestRoleChange}
-                        onChangeStatus={requestStatusChange}
-                        onSoftDelete={requestSoftDelete}
-                        onDelete={requestHardDelete}
-                      />
+                      <UserActions user={user} {...actionsProps} />
                     </div>
                     <div className="mt-3 flex flex-wrap gap-2">
                       <RoleBadge role={user.role} />
@@ -1949,7 +1888,6 @@ export default function AdminUsersPage() {
               })}
             </div>
 
-            {/* -------------------- Desktop table -------------------- */}
             <div className="hidden md:block">
               <Table>
                 <TableHeader className="sticky top-0 z-10 bg-card/95 backdrop-blur supports-backdrop-filter:bg-card/75">
@@ -1965,7 +1903,7 @@ export default function AdminUsersPage() {
                       <button
                         type="button"
                         onClick={() => toggleSort("name")}
-                        className="inline-flex items-center gap-1 rounded-md px-1 py-0.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        className="inline-flex items-center gap-1 rounded-md px-1 py-0.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
                       >
                         نام
                         {sortField === "name" ? (
@@ -2012,16 +1950,12 @@ export default function AdminUsersPage() {
                         </TableCell>
                         <TableCell>
                           <div className="text-xs text-muted-foreground">
-                            <div
-                              className="max-w-64 truncate"
-                              title={user.email || "—"}
-                            >
+                            <div className="max-w-64 truncate">
                               {user.email || "—"}
                             </div>
                             <div
                               dir="ltr"
                               className="max-w-48 truncate text-start"
-                              title={user.phone || "—"}
                             >
                               {user.phone || "—"}
                             </div>
@@ -2048,14 +1982,7 @@ export default function AdminUsersPage() {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <UserActions
-                            user={user}
-                            onEdit={setEditingUser}
-                            onChangeRole={requestRoleChange}
-                            onChangeStatus={requestStatusChange}
-                            onSoftDelete={requestSoftDelete}
-                            onDelete={requestHardDelete}
-                          />
+                          <UserActions user={user} {...actionsProps} />
                         </TableCell>
                       </TableRow>
                     );
@@ -2064,7 +1991,6 @@ export default function AdminUsersPage() {
               </Table>
             </div>
 
-            {/* -------------------- Pagination -------------------- */}
             <div className="flex flex-col gap-3 border-t border-border px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="order-2 flex items-center justify-between gap-3 sm:order-1 sm:justify-start">
                 <p className="text-xs text-muted-foreground">
@@ -2090,11 +2016,7 @@ export default function AdminUsersPage() {
                       setPage(1);
                     }}
                   >
-                    <SelectTrigger
-                      id="page-size"
-                      className="h-8 w-18 text-xs"
-                      aria-label="تعداد ردیف در هر صفحه"
-                    >
+                    <SelectTrigger id="page-size" className="h-8 w-18 text-xs">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent dir="rtl">
@@ -2114,16 +2036,8 @@ export default function AdminUsersPage() {
                   disabled={page <= 1 || isFetching}
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
                   className="h-9 flex-1 sm:flex-none"
-                  aria-label="صفحه قبلی"
                 >
-                  <ChevronRight
-                    className="me-1 h-4 w-4 sm:hidden"
-                    aria-hidden="true"
-                  />
-                  <ChevronRight
-                    className="me-1 hidden h-4 w-4 sm:inline"
-                    aria-hidden="true"
-                  />
+                  <ChevronRight className="me-1 h-4 w-4" />
                   قبلی
                 </Button>
                 <span className="whitespace-nowrap text-sm tabular-nums text-muted-foreground">
@@ -2136,17 +2050,9 @@ export default function AdminUsersPage() {
                   disabled={page >= totalPages || isFetching}
                   onClick={() => setPage((p) => p + 1)}
                   className="h-9 flex-1 sm:flex-none"
-                  aria-label="صفحه بعدی"
                 >
                   بعدی
-                  <ChevronLeft
-                    className="ms-1 h-4 w-4 sm:hidden"
-                    aria-hidden="true"
-                  />
-                  <ChevronLeft
-                    className="ms-1 hidden h-4 w-4 sm:inline"
-                    aria-hidden="true"
-                  />
+                  <ChevronLeft className="ms-1 h-4 w-4" />
                 </Button>
               </div>
             </div>
@@ -2154,7 +2060,6 @@ export default function AdminUsersPage() {
         )}
       </section>
 
-      {/* ---------------------- Edit user (sheet) ---------------------- */}
       <EditUserSheet
         user={editingUser}
         open={!!editingUser}
@@ -2164,7 +2069,6 @@ export default function AdminUsersPage() {
         isDesktop={isDesktop}
       />
 
-      {/* ---------------------- Create user (sheet) ---------------------- */}
       <CreateUserSheet
         open={createOpen}
         onOpenChange={setCreateOpen}
@@ -2172,7 +2076,6 @@ export default function AdminUsersPage() {
         isDesktop={isDesktop}
       />
 
-      {/* ---------------------- Unified confirm ---------------------- */}
       <ConfirmDialog state={confirm} onClose={() => setConfirm(null)} />
     </div>
   );

@@ -110,7 +110,6 @@ function toLatinDigits(raw: string): string {
   return raw.replace(/[۰-۹٠-٩]/g, (d) => map[d] ?? d);
 }
 
-/** پشتیبانی سال شمسی (~۱۳۰۰–۱۵۰۰) و میلادی */
 function normalizeStartYear(raw: string | number): number {
   const n =
     typeof raw === "number" ? raw : Number(toLatinDigits(String(raw)).trim());
@@ -185,7 +184,7 @@ const formSchema = z.object({
     .refine((v) => !v || /^\d{10}$/.test(v), "کد ملی باید ۱۰ رقم باشد"),
   provinceId: z.string().trim().optional().or(z.literal("")),
   cityId: z.string().trim().optional().or(z.literal("")),
-  specialtyIds: z.array(z.string()).min(1, "حداقل یک تخصص انتخاب کنید"),
+  specialtyIds: z.array(z.string()).default([]),
 });
 
 type FormInput = z.input<typeof formSchema>;
@@ -336,6 +335,7 @@ function CoachApplyContent() {
     queryKey: ["specialty-selector"],
     queryFn: () => fetchSpecialtySelector(),
     staleTime: STALE_MS,
+    retry: 1,
   });
 
   useEffect(() => {
@@ -418,6 +418,7 @@ function CoachApplyContent() {
     () => specialtiesQuery.data ?? [],
     [specialtiesQuery.data],
   );
+
   const specialtyTitleById = useMemo(() => {
     const map = new Map<string, string>();
     for (const s of specialtyList) map.set(s.id, s.title);
@@ -489,6 +490,18 @@ function CoachApplyContent() {
 
   const onSubmit = form.handleSubmit(
     (data) => {
+      if (specialtyList.length > 0 && data.specialtyIds.length === 0) {
+        form.setError("specialtyIds", {
+          type: "manual",
+          message: "حداقل یک تخصص انتخاب کنید",
+        });
+        document
+          .getElementById("coach-specialty-ids")
+          ?.scrollIntoView({ behavior: "smooth", block: "center" });
+        toast.error("حداقل یک تخصص انتخاب کنید");
+        return;
+      }
+
       const instagram = normalizeInstagram(data.instagram);
       const gregorianYear = normalizeStartYear(data.experienceStartYear);
       const experienceIso = yearToExperienceIso(gregorianYear);
@@ -497,7 +510,6 @@ function CoachApplyContent() {
         .map((id) => specialtyTitleById.get(id))
         .filter((t): t is string => Boolean(t));
 
-      // CreateCoachDto فیلد specialty ندارد؛ عنوان‌ها در bio برای بررسی ادمین
       const specialtyNote =
         specialtyTitles.length > 0
           ? `\n\nتخصص‌ها: ${specialtyTitles.join("، ")}`
@@ -515,6 +527,7 @@ function CoachApplyContent() {
           nationalId: data.nationalId || undefined,
           provinceId: data.provinceId || undefined,
           cityId: data.cityId || undefined,
+          specialtyIds: data.specialtyIds,
         },
         {
           onSuccess: () => setSubmitted(true),
@@ -559,7 +572,6 @@ function CoachApplyContent() {
       className="flex min-h-dvh items-start justify-center px-4 py-6 sm:py-10"
     >
       <Card className="w-full max-w-xl border-border shadow-lg">
-        {/* Header */}
         <div className="flex items-center justify-between border-b border-border px-4 py-2">
           <Button
             type="button"
@@ -588,7 +600,6 @@ function CoachApplyContent() {
 
         <CardContent className="pb-24 sm:pb-6">
           <form onSubmit={onSubmit} className="space-y-5" noValidate>
-            {/* —— هویت —— */}
             <section className="space-y-3">
               <SectionTitle icon={User}>هویت حرفه‌ای</SectionTitle>
 
@@ -644,7 +655,6 @@ function CoachApplyContent() {
               </div>
             </section>
 
-            {/* —— تخصص‌ها (API) —— */}
             <section className="space-y-3">
               <SectionTitle
                 icon={Briefcase}
@@ -681,7 +691,8 @@ function CoachApplyContent() {
                 </div>
               ) : specialtyList.length === 0 ? (
                 <p className="rounded-xl border border-dashed border-border px-3 py-3 text-xs text-muted-foreground">
-                  تخصصی برای انتخاب تعریف نشده است. بعداً دوباره تلاش کنید.
+                  تخصصی از سرور دریافت نشد. می‌توانید بدون تخصص ارسال کنید یا
+                  بعداً در پنل مربی اضافه کنید.
                 </p>
               ) : (
                 <div
@@ -726,7 +737,6 @@ function CoachApplyContent() {
               )}
             </section>
 
-            {/* —— تجربه و ظرفیت —— */}
             <section className="space-y-3">
               <SectionTitle icon={Clock}>تجربه و ظرفیت</SectionTitle>
               <div className="grid gap-3 sm:grid-cols-2">
@@ -778,7 +788,6 @@ function CoachApplyContent() {
               </div>
             </section>
 
-            {/* —— بیو —— */}
             <section className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label htmlFor={bioId} className="flex items-center gap-1.5">
@@ -812,7 +821,6 @@ function CoachApplyContent() {
               )}
             </section>
 
-            {/* —— تماس —— */}
             <section className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label
@@ -872,7 +880,6 @@ function CoachApplyContent() {
               </div>
             </section>
 
-            {/* —— موقعیت —— */}
             <section className="space-y-3">
               <div className="flex items-center justify-between">
                 <SectionTitle icon={MapPin}>موقعیت (اختیاری)</SectionTitle>
@@ -963,7 +970,6 @@ function CoachApplyContent() {
               </div>
             </section>
 
-            {/* —— پذیرش شاگرد —— */}
             <div className="flex items-center justify-between gap-3 rounded-xl border border-border bg-muted/20 px-3 py-2.5">
               <div className="min-w-0">
                 <Label
@@ -997,7 +1003,6 @@ function CoachApplyContent() {
               </ol>
             </div>
 
-            {/* Desktop actions */}
             <div className="hidden flex-col-reverse gap-2 pt-1 sm:flex sm:flex-row">
               <Button
                 type="button"
@@ -1012,7 +1017,7 @@ function CoachApplyContent() {
               <Button
                 type="submit"
                 className="h-11 w-full flex-1 gap-2"
-                disabled={pending || specialtiesQuery.isLoading}
+                disabled={pending}
               >
                 {pending ? (
                   <>
@@ -1030,7 +1035,6 @@ function CoachApplyContent() {
           </form>
         </CardContent>
 
-        {/* Sticky mobile CTA */}
         <div className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-background/95 p-3 backdrop-blur supports-backdrop-filter:bg-background/80 sm:hidden">
           <div className="mx-auto flex max-w-xl gap-2">
             <Button
@@ -1045,7 +1049,7 @@ function CoachApplyContent() {
             <Button
               type="button"
               className="h-11 flex-1 gap-2"
-              disabled={pending || specialtiesQuery.isLoading}
+              disabled={pending}
               onClick={() => void onSubmit()}
             >
               {pending ? (
