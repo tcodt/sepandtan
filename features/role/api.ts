@@ -5,8 +5,8 @@ import type {
   CreateStorePayload,
   ProvinceItem,
   RoleRequestResult,
+  SpecialtySelectorItem,
 } from "./types";
-import { SpecialtyAdmin } from "../admin/specialty/types";
 
 /** Latin slug; Persian names fall back to coach-{suffix} */
 export function toCoachSlug(text: string, userId: string): string {
@@ -64,7 +64,6 @@ export async function requestCoachRole(
       ? payload.slug.trim()
       : null) || toCoachSlug(title, userId);
 
-  // مطابق CreateCoachDto — بدون commissionRate / rejectionReason
   const body: Record<string, unknown> = {
     userId,
     title,
@@ -133,6 +132,7 @@ export async function fetchProvinces(): Promise<ProvinceItem[]> {
   const root = (data ?? {}) as Record<string, unknown>;
   const list =
     (Array.isArray(root.province) && root.province) ||
+    (Array.isArray(root.provinces) && root.provinces) ||
     (Array.isArray(root.data) && root.data) ||
     (Array.isArray(root) && root) ||
     [];
@@ -173,35 +173,76 @@ export async function fetchCities(provinceId?: string): Promise<CityItem[]> {
     .filter((x): x is CityItem => x !== null);
 }
 
-/** GET /coach/specialty/selector — لیست انتخاب تخصص برای فرم‌ها */
+function mapSpecialtyItem(raw: unknown): SpecialtySelectorItem | null {
+  const r = (raw ?? {}) as Record<string, unknown>;
+  const id = asString(r.id);
+  const title = asString(r.title) ?? asString(r.name);
+  if (!id || !title) return null;
+  return {
+    id,
+    title,
+    slug: asString(r.slug) ?? "",
+  };
+}
+
+function extractSpecialtyList(data: unknown): unknown[] {
+  if (Array.isArray(data)) return data;
+  const root = (data ?? {}) as Record<string, unknown>;
+  for (const key of [
+    "specialty",
+    "specialties",
+    "items",
+    "data",
+    "results",
+    "selector",
+  ]) {
+    if (Array.isArray(root[key])) return root[key] as unknown[];
+  }
+  return [];
+}
+
+/**
+ * GET /coach/specialty/selector
+ * fallback: GET /coach/specialty
+ */
+//! Connect to real API
 export async function fetchSpecialtySelector(
   title?: string,
-): Promise<SpecialtyAdmin[]> {
-  const { data } = await apiClient.get("/coach/specialty/selector", {
-    params: title?.trim() ? { title: title.trim() } : undefined,
+): Promise<SpecialtySelectorItem[]> {
+  try {
+    const { data } = await apiClient.get("/coach/specialty/selector", {
+      params: title?.trim() ? { title: title.trim() } : undefined,
+    });
+    return extractSpecialtyList(data)
+      .map(mapSpecialtyItem)
+      .filter((x): x is SpecialtySelectorItem => x !== null);
+  } catch (err) {
+    const status =
+      typeof err === "object" &&
+      err !== null &&
+      "response" in err &&
+      typeof (err as { response?: { status?: number } }).response?.status ===
+        "number"
+        ? (err as { response: { status: number } }).response.status
+        : null;
+
+    if (status === 401 || status === 403) return [];
+    throw err;
+  }
+}
+
+/**
+ * PATCH /coach/specialty?ids=uuid&ids=uuid
+ * ممکن است تا APPROVED/coach بودن 403 بدهد.
+ */
+export async function attachCoachSpecialties(ids: string[]): Promise<void> {
+  const clean = ids.map((id) => id.trim()).filter(Boolean);
+  if (clean.length === 0) return;
+
+  await apiClient.patch("/coach/specialty", undefined, {
+    params: { ids: clean },
+    paramsSerializer: {
+      indexes: null,
+    },
   });
-
-  const list = Array.isArray(data)
-    ? data
-    : Array.isArray((data as { specialty?: unknown[] })?.specialty)
-      ? (data as { specialty: unknown[] }).specialty
-      : Array.isArray((data as { data?: unknown[] })?.data)
-        ? (data as { data: unknown[] }).data
-        : [];
-
-  return list
-    .map((raw) => {
-      const r = (raw ?? {}) as Record<string, unknown>;
-      const id = asString(r.id);
-      const slug = asString(r.slug) ?? "";
-      const t = asString(r.title);
-      if (!id || !t) return null;
-      return {
-        id,
-        slug,
-        title: t,
-        createdAt: asString(r.createdAt) || "",
-      } satisfies SpecialtyAdmin;
-    })
-    .filter((x): x is SpecialtyAdmin => x !== null);
 }

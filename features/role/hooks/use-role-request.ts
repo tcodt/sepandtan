@@ -1,66 +1,45 @@
 "use client";
 
-import { useMutation } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
-import { requestCoachRole, requestStoreRole, toCoachSlug } from "../api";
+import {
+  attachCoachSpecialties,
+  requestCoachRole,
+  requestStoreRole,
+} from "../api";
 import type { CreateCoachPayload, CreateStorePayload } from "../types";
 import { getErrorMessage } from "@/lib/api/client";
 import { useUserStore } from "@/lib/store/user-store";
-import { canRequestProfessionalRole } from "@/lib/role-lock";
 import { clearRoleFlowIntent } from "@/lib/auth/resolve-post-auth-path";
-
-function toSlug(text: string): string {
-  const base = text
-    .trim()
-    .toLowerCase()
-    .replace(/[\s_]+/g, "-")
-    .replace(/[^a-z0-9-]/g, "")
-    .replace(/-+/g, "-")
-    .replace(/^-|-$/g, "");
-
-  if (base.length >= 2) return base;
-  return `store-${Date.now().toString(36)}`;
-}
+import { PROFILE_QUERY_KEY } from "@/features/auth/hooks/use-auth";
 
 export function useRequestCoachRole() {
-  const router = useRouter();
+  const queryClient = useQueryClient();
   const user = useUserStore((s) => s.user);
-  const requestRole = useUserStore((s) => s.requestRole);
 
   return useMutation({
-    mutationFn: (payload: CreateCoachPayload = {}) => {
-      if (!user?.id) throw new Error("کاربر یافت نشد");
+    mutationFn: async (payload: CreateCoachPayload) => {
+      const userId = user?.id;
+      if (!userId) throw new Error("وارد حساب نشده‌اید");
 
-      const gate = canRequestProfessionalRole(user, "coach");
-      if (!gate.ok) throw new Error(gate.message);
+      const result = await requestCoachRole(userId, payload);
 
-      const title =
-        payload.title?.trim() ||
-        user.name?.trim() ||
-        payload.headline?.trim() ||
-        "مربی فیتنس";
+      // بعد از ایجاد coach — best-effort
+      if (payload.specialtyIds?.length) {
+        try {
+          await attachCoachSpecialties(payload.specialtyIds);
+        } catch {
+          // PENDING ممکن است PATCH را نپذیرد؛ عناوین در bio هستند
+        }
+      }
 
-      const slug = payload.slug?.trim() || toCoachSlug(title, user.id);
-
-      return requestCoachRole(user.id, {
-        ...payload,
-        title,
-        slug,
-        headline: payload.headline?.trim() || title,
-        bio: payload.bio ?? "",
-        isAcceptingClients: payload.isAcceptingClients ?? true,
-        maxClients: payload.maxClients ?? 20,
-      });
+      return result;
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       clearRoleFlowIntent();
-      requestRole("coach");
-      toast.success("درخواست مربیگری ثبت شد", {
-        description: "بعد از بررسی ادمین نتیجه اعلام می‌شود.",
-      });
-      router.replace("/role-pending?type=coach");
+      toast.success("درخواست مربیگری ثبت شد");
+      await queryClient.invalidateQueries({ queryKey: PROFILE_QUERY_KEY });
     },
     onError: (error) => {
       toast.error(getErrorMessage(error, "ثبت درخواست مربیگری ناموفق بود"));
@@ -69,44 +48,19 @@ export function useRequestCoachRole() {
 }
 
 export function useRequestStoreRole() {
-  const router = useRouter();
+  const queryClient = useQueryClient();
   const user = useUserStore((s) => s.user);
-  const requestRole = useUserStore((s) => s.requestRole);
 
   return useMutation({
-    mutationFn: (payload?: Partial<CreateStorePayload>) => {
-      if (!user?.id) throw new Error("کاربر یافت نشد");
-
-      const gate = canRequestProfessionalRole(user, "seller");
-      if (!gate.ok) throw new Error(gate.message);
-
-      const name = payload?.name?.trim() || user.name?.trim() || "فروشگاه من";
-
-      const slug =
-        (payload?.slug?.trim() &&
-        /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(payload.slug.trim())
-          ? payload.slug.trim()
-          : null) ||
-        toSlug(name) ||
-        `store-${user.id.replace(/[^a-z0-9]/gi, "").slice(0, 8) || Date.now().toString(36)}`;
-
-      return requestStoreRole(user.id, {
-        name,
-        slug,
-        description: payload?.description ?? "",
-        phone: payload?.phone,
-        email: payload?.email,
-        address: payload?.address,
-        businessType: payload?.businessType ?? "INDIVIDUAL",
-      });
+    mutationFn: async (payload: CreateStorePayload) => {
+      const userId = user?.id;
+      if (!userId) throw new Error("وارد حساب نشده‌اید");
+      return requestStoreRole(userId, payload);
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       clearRoleFlowIntent();
-      requestRole("seller");
-      toast.success("درخواست فروشندگی ثبت شد", {
-        description: "بعد از بررسی ادمین نتیجه اعلام می‌شود.",
-      });
-      router.replace("/role-pending?type=seller");
+      toast.success("درخواست فروشندگی ثبت شد");
+      await queryClient.invalidateQueries({ queryKey: PROFILE_QUERY_KEY });
     },
     onError: (error) => {
       toast.error(getErrorMessage(error, "ثبت درخواست فروشندگی ناموفق بود"));
